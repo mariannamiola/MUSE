@@ -1,0 +1,62 @@
+{
+    "description": {
+        "model": "Valeport-Hyperion Chl-a",
+        "power_supply_unit": "volt",
+        "temperature_unit": "celsius",
+        "warm_up_unit": "n/a",
+        "max_depth_unit": "meter",
+        "max_depth": 6000.0,
+        "power_supply_min": 9.0,
+        "power_supply_max": 30.0,
+        "temperature_min": -2.0,
+        "temperature_max": 60.0,
+        "warm_up_time": 0.0
+    },
+    "sensors": [
+        {
+            "description": {
+                "name": "Valeport-Hyperion Chl-a",
+                "detector": "Optical",
+                "type": "Digital"
+            },
+            "measures": [
+                {
+                    "name": "Chlorophyll-a Parameter Mean ",
+                    "data_type": "Decimal",
+                    "frequency": 0.5,
+                    "frequence_unit": "hertz",
+                    "sensor_output_min": 0.0,
+                    "sensor_output_max": 0.0,
+                    "sensor_output_unit": "n\\a",
+                    "measurement_min": 0.0,
+                    "measurement_max": 800.0,
+                    "measurement_unit": "ug/l",
+                    "accuracy": 0.025,
+                    "accuracy_unit": "ug/l",
+                    "resolution": 0.025,
+                    "resolution_unit": "ug/l",
+                    "response_time": 2.0,
+                    "response_time_unit": "seconds"
+                },
+                {
+                    "name": "Parameter SD Chlorophyll-a",
+                    "data_type": "Decimal",
+                    "frequency": 0.5,
+                    "frequence_unit": "hertz",
+                    "sensor_output_min": 0.0,
+                    "sensor_output_max": 0.0,
+                    "sensor_output_unit": "n\\a",
+                    "measurement_min": 0.0,
+                    "measurement_max": 800.0,
+                    "measurement_unit": "ug/l",
+                    "accuracy": 0.025,
+                    "accuracy_unit": "ug/l",
+                    "resolution": 0.025,
+                    "resolution_unit": "ug/l",
+                    "response_time": 2.0,
+                    "response_time_unit": "seconds"
+                }
+            ]
+        }
+    ]
+}

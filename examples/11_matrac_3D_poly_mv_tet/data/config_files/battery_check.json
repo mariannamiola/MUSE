@@ -1,0 +1,89 @@
+{
+    "description": {
+        "model": "Battery Check",
+        "power_supply_unit": "volt",
+        "temperature_unit": "Celsius",
+        "warm_up_unit": "minutes",
+        "max_depth_unit": "meter",
+        "max_depth": 300.0,
+        "power_supply_min": 6.0,
+        "power_supply_max": 18.0,
+        "temperature_min": -2.0,
+        "temperature_max": 35.0,
+        "warm_up_time": 3.0
+    },
+    "sensors": [
+        {
+            "description": {
+                "name": "Converter Power",
+                "detector": "",
+                "type": "Digital"
+            },
+            "measures": [
+                {
+                    "name": "Voltage 5V",
+                    "data_type": "Decimal",
+                    "frequency": 0.1,
+                    "frequence_unit": "continua",
+                    "sensor_output_min": 0.0,
+                    "sensor_output_max": 0.0,
+                    "sensor_output_unit": "volt",
+                    "measurement_min": 0.0,
+                    "measurement_max": 0.0,
+                    "measurement_unit": "to be done",
+                    "accuracy": 0.0,
+                    "accuracy_unit": "Percentage",
+                    "resolution": 0.0,
+                    "resolution_unit": "to be done",
+                    "response_time": 0.0,
+                    "response_time_unit": ""
+                },
+                {
+                    "name": "Voltage 12V",
+                    "data_type": "Decimal",
+                    "frequency": 0.1,
+                    "frequence_unit": "continua",
+                    "sensor_output_min": 0.0,
+                    "sensor_output_max": 0.0,
+                    "sensor_output_unit": "volt",
+                    "measurement_min": 0.0,
+                    "measurement_max": 0.0,
+                    "measurement_unit": "to be done",
+                    "accuracy": 0.0,
+                    "accuracy_unit": "Percentage",
+                    "resolution": 0.0,
+                    "resolution_unit": "",
+                    "response_time": 0.0,
+                    "response_time_unit": "to be done"
+                }
+            ]
+        },
+        {
+            "description": {
+                "name": "Transmitter Power",
+                "detector": "",
+                "type": "Digital"
+            },
+            "measures": [
+                {
+                    "name": "Voltage 12V",
+                    "data_type": "Decimal",
+                    "frequency": 0.1,
+                    "frequence_unit": "continua",
+                    "sensor_output_min": 0.0,
+                    "sensor_output_max": 0.0,
+                    "sensor_output_unit": "volt",
+                    "measurement_min": 0.0,
+                    "measurement_max": 0.0,
+                    "measurement_unit": "to be done",
+                    "accuracy": 0.0,
+                    "accuracy_unit": "Percentage",
+                    "resolution": 0.0,
+                    "resolution_unit": "",
+                    "response_time": 0.0,
+                    "response_time_unit": "to be done"
+                }
+            ]
+        }
+    ]
+}

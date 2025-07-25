@@ -1,0 +1,64 @@
+{
+    "description": {
+        "model": "Seapoint Turbidity STM-S",
+        "power_supply_unit": "volt",
+        "temperature_unit": "Celsius",
+        "warm_up_unit": "seconds",
+        "max_depth_unit": "meter",
+        "max_depth": 6000.0,
+        "power_supply_min": 4.8,
+        "power_supply_max": 20.0,
+        "temperature_min": 0.0,
+        "temperature_max": 65.0,
+        "warm_up_time": 1,
+        "is_gps": false,
+      	"epsg": ""
+    },
+    "sensors": [
+        {
+            "description": {
+                "name": "Turbidity sensor",
+                "detector": "Photodiode",
+                "type": "Serial"
+            },
+            "measures": [
+                {
+                    "name": "StandardTurbidity",
+                    "data_type": "Decimal",
+                    "frequency": 1.0,
+                    "frequence_unit": "hertz",
+                    "sensor_output_min": 0.0,
+                    "sensor_output_max": 5.0,
+                    "sensor_output_unit": "volt",
+                    "measurement_min": 0.0,
+                    "measurement_max": 4000.0,
+                    "measurement_unit": "FTU",
+                    "accuracy": 0.005,
+                    "accuracy_unit": "FTU",
+                    "resolution": 0.005,
+                    "resolution_unit": "FTU",
+                    "response_time": 0.1,
+                    "response_time_unit": "seconds"
+                },
+                {
+                    "name": "HighTurbidity",
+                    "data_type": "Decimal",
+                    "frequency": 1.0,
+                    "frequence_unit": "hertz",
+                    "sensor_output_min": 0.0,
+                    "sensor_output_max": 5.0,
+                    "sensor_output_unit": "volt",
+                    "measurement_min": 0.0,
+                    "measurement_max": 20000.0,
+                    "measurement_unit": "FTU",
+                    "accuracy": 0.005,
+                    "accuracy_unit": "FTU",
+                    "resolution": 0.005,
+                    "resolution_unit": "FTU",
+                    "response_time": 0.1,
+                    "response_time_unit": "seconds"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "description": {
+        "model": "AMT Amperometric H2S",
+        "power_supply_unit": "volt",
+        "temperature_unit": "Celsius",
+        "warm_up_unit": "minutes",
+        "max_depth_unit": "meter",
+        "max_depth": 100.0,
+        "power_supply_min": 9.0,
+        "power_supply_max": 30.0,
+        "temperature_min": 0.0,
+        "temperature_max": 30.0,
+        "warm_up_time": 60.0
+    },
+    "sensors": [
+        {
+            "description": {
+                "name": "AMT Amperometric H2S",
+                "detector": "Amperometric - Membrane",
+                "type": "Analog"
+            },
+            "measures": [
+                {
+                    "name": "H2S dissolved gas",
+                    "data_type": "Decimal",
+                    "frequency": 0.0,
+                    "frequence_unit": "continua",
+                    "sensor_output_min": 0.0,
+                    "sensor_output_max": 5.0,
+                    "sensor_output_unit": "volt",
+                    "measurement_min": 0.0,
+                    "measurement_max": 0.5,
+                    "measurement_unit": "mg/l",
+                    "accuracy": 2.0,
+                    "accuracy_unit": "Percentage",
+                    "resolution": 0.0,
+                    "resolution_unit": "",
+                    "response_time": 1.0,
+                    "response_time_unit": "seconds"
+                }
+            ]
+        }
+    ]
+}

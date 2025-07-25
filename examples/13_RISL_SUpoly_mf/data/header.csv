@@ -1,0 +1,6 @@
+id;date;east_UTM;north_UTM;forecast
+;;m;m; 
+V;V;R;R;R+
+;;;; 
+id_pluv;date;x_coord_UTM;y_coord_UTM;cumulative
+;;;; 

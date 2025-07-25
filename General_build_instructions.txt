@@ -1,0 +1,8 @@
+BUILD INSTRUCTION
+
+### FTETWILD
+cd muse/external
+mkdir build
+cd build
+cmake .. 
+make

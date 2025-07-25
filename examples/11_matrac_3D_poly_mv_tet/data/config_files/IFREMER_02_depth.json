@@ -1,0 +1,82 @@
+{
+    "description": {
+        "model": "Depth ISD4000",
+        "power_supply_unit": "volt",
+        "temperature_unit": "Celsius",
+        "warm_up_unit": "seconds",
+        "max_depth_unit": "meter",
+        "max_depth": 500.0,
+        "power_supply_min": 7.0,
+        "power_supply_max": 32.0,
+        "temperature_min": -10.0,
+        "temperature_max": 60.0,
+        "warm_up_time": 0.0 ,
+        "is_gps": false,
+      	"epsg": ""
+    },
+    "sensors": [
+        {
+            "description": {
+                "name": "depth sensor",
+                "detector": "Piezo-Resistive foil",
+                "type": "Serial"
+            },
+            "measures": [
+                {
+                    "name": "Depth",
+                    "data_type": "Decimal",
+                    "frequency": 2.0,
+                    "frequence_unit": "hertz",
+                    "sensor_output_min": 0.0,
+                    "sensor_output_max": 5.0,
+                    "sensor_output_unit": "volt",
+                    "measurement_min": 0.0,
+                    "measurement_max": 300.0,
+                    "measurement_unit": "meter",
+                    "accuracy": 0.01,
+                    "accuracy_unit": "meter",
+                    "resolution": 0.001,
+                    "resolution_unit": "meter",
+                    "response_time": 0.0,
+                    "response_time_unit": "seconds"
+                },
+                {
+                    "name": "pressure",
+                    "data_type": "Decimal",
+                    "frequency": 2.0,
+                    "frequence_unit": "hertz",
+                    "sensor_output_min": 0.0,
+                    "sensor_output_max": 5.0,
+                    "sensor_output_unit": "volt",
+                    "measurement_min": 0.0,
+                    "measurement_max": 300.0,
+                    "measurement_unit": "bar",
+                    "accuracy": 0.01,
+                    "accuracy_unit": "Percentage",
+                    "resolution": 0.001,
+                    "resolution_unit": "Percentage",
+                    "response_time": 0.0,
+                    "response_time_unit": "seconds"
+                },
+                {
+                    "name": "temperature",
+                    "data_type": "Decimal",
+                    "frequency": 2.0,
+                    "frequence_unit": "hertz",
+                    "sensor_output_min": 0.0,
+                    "sensor_output_max": 5.0,
+                    "sensor_output_unit": "volt",
+                    "measurement_min": -10.0,
+                    "measurement_max": 60.0,
+                    "measurement_unit": "Celsius",
+                    "accuracy": 0.01,
+                    "accuracy_unit": "Celsius",
+                    "resolution": 0.001,
+                    "resolution_unit": "Celsius",
+                    "response_time": 0.0,
+                    "response_time_unit": "seconds"
+                }
+            ]
+        }
+    ]
+}
