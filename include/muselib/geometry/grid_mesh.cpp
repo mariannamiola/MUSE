@@ -48,6 +48,103 @@ Quadmesh<M,V,E,P>::Quadmesh (const uint polys_per_row, const uint polys_per_col)
 }
 
 
+///
+/// \brief Quadmesh::Quadmesh constructor
+/// \param polys_per_row: number of polygons per row
+/// \param polys_per_col: number of polygons per column
+/// \param pixel_size_x
+/// \param pixel_size_y
+/// \param XOrigin
+/// \param YOrigin
+///
+template<class M, class V, class E, class P>
+Quadmesh<M,V,E,P>::Quadmesh (const uint polys_per_row, const uint polys_per_col,
+                               const float pixel_size_x, const float pixel_size_y,
+                               const float XOrigin, const float YOrigin)
+{
+    std::vector<cinolib::vec3d> verts;
+    std::vector<uint> polys;
+
+    for (uint r = 0; r <= polys_per_row; ++r)
+    {
+        for (uint c = 0; c <= polys_per_col; ++c)
+        {
+            double x = XOrigin + c * pixel_size_x;
+            double y = YOrigin + r * pixel_size_y;
+
+            verts.emplace_back(x, y, 0.0);
+
+            if (r < polys_per_row && c < polys_per_col)
+            {
+                int p0 = r * (polys_per_col + 1) + c;
+                int p1 = p0 + 1;
+                int p2 = p0 + (polys_per_col + 1) + 1;
+                int p3 = p0 + (polys_per_col + 1);
+
+                polys.push_back(p0);
+                polys.push_back(p1);
+                polys.push_back(p2);
+                polys.push_back(p3);
+            }
+        }
+    }
+
+    this->init(verts, cinolib::polys_from_serialized_vids(polys, 4));
+    std::cout << "Creation Quadmesh ... COMPLETED." << std::endl;
+}
+
+
+///
+/// \brief Quadmesh::Quadmesh constructor
+/// \param polys_per_row: number of polygons per row
+/// \param polys_per_col: number of polygons per column
+/// \param pixel_size_x
+/// \param pixel_size_y
+/// \param XOrigin
+/// \param YOrigin
+/// \param elevation: assign z value for 2.5D representation
+///
+template<class M, class V, class E, class P>
+Quadmesh<M,V,E,P>::Quadmesh (const uint polys_per_row, const uint polys_per_col,
+                               const float pixel_size_x, const float pixel_size_y,
+                               const float XOrigin, const float YOrigin, const std::vector<std::vector<float>> &elevation)
+{
+    std::vector<cinolib::vec3d> verts;
+    std::vector<uint> polys;
+
+    // Controllo sicurezza: elevazione coerente con dimensioni input
+    assert(elevation.size() == polys_per_row + 1);
+    assert(elevation[0].size() == polys_per_col + 1);
+
+    for (uint r = 0; r <= polys_per_row; ++r)
+    {
+        for (uint c = 0; c <= polys_per_col; ++c)
+        {
+            double x = XOrigin + c * pixel_size_x;
+            double y = YOrigin + r * pixel_size_y;
+            double z = static_cast<double>(elevation[r][c]);
+
+            verts.emplace_back(x, y, z);
+
+            if (r < polys_per_row && c < polys_per_col)
+            {
+                int p0 = r * (polys_per_col + 1) + c;
+                int p1 = p0 + 1;
+                int p2 = p0 + (polys_per_col + 1) + 1;
+                int p3 = p0 + (polys_per_col + 1);
+
+                polys.push_back(p0);
+                polys.push_back(p1);
+                polys.push_back(p2);
+                polys.push_back(p3);
+            }
+        }
+    }
+
+    this->init(verts, cinolib::polys_from_serialized_vids(polys, 4));
+    std::cout << "Creation Quadmesh ... COMPLETED." << std::endl;
+}
+
 template<class M, class V, class E, class P>
 Quadmesh<M,V,E,P>::Quadmesh (const double &res_x, const double &res_y, const double &z, const std::vector<Point3D> &boundary)
 {

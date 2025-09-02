@@ -14,19 +14,19 @@
 
 //https://gdal.org/tutorials/raster_api_tut.html
 
-int load_rasterfile(const std::string filename, std::vector<std::vector<float>> &points, float &XOrigin, float &YOrigin, int &nXSize, int &nYSize)
+int load_rasterfile(const std::string filename, std::vector<std::vector<float>> &points, float &XOrigin, float &YOrigin, int &nXSize, int &nYSize, float &XSizePixel, float &YSizePixel)
 {
     const std::string ext = filename.substr(filename.find_last_of("."));
 
     if (ext.compare(".asc") == 0 || ext.compare(".gpkg") == 0)
-        return load_gridfile(filename, points, XOrigin, YOrigin, nXSize, nYSize);
+        return load_gridfile(filename, points, XOrigin, YOrigin, nXSize, nYSize, XSizePixel, YSizePixel);
 
     std::cerr << "ERROR: Unsupported Raster File format." << std::endl;
     return IOERROR;
 }
 
 
-int load_gridfile (const std::string filename, std::vector<std::vector<float>> &points, float &XOrigin, float &YOrigin, int &XPixel, int &YPixel)
+int load_gridfile (const std::string filename, std::vector<std::vector<float>> &points, float &XOrigin, float &YOrigin, int &XPixel, int &YPixel, float &XSizePixel, float &YSizePixel)
 {
     points.clear();
 
@@ -68,8 +68,8 @@ int load_gridfile (const std::string filename, std::vector<std::vector<float>> &
 
     XOrigin = adfGeoTransform[0];
     YOrigin = adfGeoTransform[3];
-    XPixel = adfGeoTransform[1];
-    YPixel = adfGeoTransform[5];
+    XSizePixel = adfGeoTransform[1];
+    YSizePixel = adfGeoTransform[5];
 
     GDALRasterBand  *poBand;
     int             nBlockXSize, nBlockYSize;
@@ -79,7 +79,7 @@ int load_gridfile (const std::string filename, std::vector<std::vector<float>> &
     poBand = poDataset->GetRasterBand( 1 );
     poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
     printf( "Block = %dx%d Type = %s, ColorInterp = %s\n", nBlockXSize, nBlockYSize, GDALGetDataTypeName(poBand->GetRasterDataType()),
-            GDALGetColorInterpretationName(poBand->GetColorInterpretation()) );
+           GDALGetColorInterpretationName(poBand->GetColorInterpretation()) );
 
     adfMinMax[0] = poBand->GetMinimum( &bGotMin );
     adfMinMax[1] = poBand->GetMaximum( &bGotMax );
@@ -95,6 +95,8 @@ int load_gridfile (const std::string filename, std::vector<std::vector<float>> &
     int nXSize = poBand->GetXSize(); //width
     int nYSize = poBand->GetYSize(); //height
     int   bands = poDataset->GetRasterCount();
+    XPixel = nXSize;
+    YPixel = nYSize;
 
     float *pafScanline;
     pafScanline = (float *) CPLMalloc(sizeof(float)*nXSize*nYSize);
@@ -108,8 +110,8 @@ int load_gridfile (const std::string filename, std::vector<std::vector<float>> &
     {
         for(int i = 0; i < nXSize; i++)
         {
-            out_vec[i][j] = pafScanline[j*nXSize+i];
-            std::cout << "row = " << i  << "; col = " << j << "; val = " << out_vec [i][j] << std::endl;
+            out_vec[j][i] = pafScanline[j*nXSize + i];
+            //std::cout << "row = " << j  << "; col = " << i << "; val = " << out_vec [j][i] << std::endl;
         }
     }
     CPLFree(pafScanline);

@@ -1296,7 +1296,11 @@ int main(int argc, char** argv)
 
 
 
-    // TO DO: AGGIUNGERE INFO JSON E CREAZIONE SUPERFICIE (GRIGLIA?!)
+    ///
+    /// Surface modeling from loading raster files
+    /// To test: (1) removing convex/concave/boundary flags: the raster is always a grid!
+    /// To test: (2) updating JSON information
+    ///
     if(loadRaster.isSet())
     {
         MUSE::SurfaceMeta geometa;
@@ -1310,204 +1314,211 @@ int main(int argc, char** argv)
         if(!filesystem::exists(out_rast))
             filesystem::create_directory(out_rast);
 
-        std::vector<std::vector<float>> grid;
-        float XOrigin, YOrigin;
-        int nXSize, nYSize;
-
         if(filesystem::is_empty(in_geometry))
         {
-            std::cerr << "\033[0;31mInput ERROR: Insert raster file into: " << in_geometry << "\033[0m" << std::endl;
+            std::cerr << "\033[0;31m=== Input ERROR: Insert raster file into: " << in_geometry << "\033[0m" << std::endl;
             exit(1);
         }
 
         std::vector<std::string> dir_grid = get_directories(in_geometry);
         if(dir_grid.empty())
         {
-            std::cout << "### Input ERROR: no directories found!" << std::endl;
+            std::cout << "=== Input ERROR: no directories found!" << std::endl;
             dir_grid.push_back(in_geometry);
             std::cout << dir_grid.at(0) << std::endl;
         }
 
-        //int id = 0;
-
         MUSE::GeospatialData Geometry;
+        MUSE::Surface Surface;
+        MUSE::Surface::Parameters paramSurface;
+
         for(size_t i=0; i<dir_grid.size(); i++)
         {
             std::vector<std::string> list_grid = get_rasterfiles(dir_grid.at(i));
 
             if(list_grid.size() == 0)
                 continue; //vado alla dir_shape.at(i+1)
-            else
+
+            for(size_t j=0; j< list_grid.size(); j++)
             {
-                for(size_t j=0; j< list_grid.size(); j++)
+                std::vector<std::vector<float>> grid;
+                float XOrigin, YOrigin;
+                int nXSize, nYSize;
+                float XSizePixel = 1.0;
+                float YSizePixel = 1.0;
+
+                // Read raster file
+                load_rasterfile (list_grid.at(j), grid, XOrigin, YOrigin, nXSize, nYSize, XSizePixel, YSizePixel);
+
+                std::cout << "=== Columns number (nXSize): " << nXSize << ", Rows number (nYSize): " << nYSize << std::endl;
+                std::cout << std::fixed << std::setprecision(6) << "=== XOrigin: " << XOrigin << ", YOrigin: " << YOrigin << std::endl;
+                std::cout << "=== Grid size: " << grid.size() << " x " << (grid.empty() ? 0 : grid[0].size()) << std::endl;
+                std::cout << "=== X Pixel size: " << XSizePixel << ", Y Pixel size: " << YSizePixel << std::endl;
+                std::cout << "\033[0;32m=== Import raster file: " << list_grid.at(j) << "... COMPLETED.\033[0m" << std::endl;
+
+                // Set Geometry class
+                Geometry.setName(list_grid.at(j).substr(list_grid.at(j).find_last_of("/")+1, list_grid.at(j).length()));
+                Geometry.setFormat(get_extension(list_grid.at(j)));
+
+                if(setEPSG.isSet())
+                    Geometry.setAuthority(setEPSG.getValue());
+
+                geometa.write(out_rast + "/" + Geometry.getName() + ".json");
+
+                std::vector<Point3D> data, uniq_data;
+                for(int row = 0; row < nYSize; row++)
                 {
-                    // Read raster file
-                    load_rasterfile (list_grid.at(j), grid, XOrigin, YOrigin, nXSize, nYSize);
-
-                    std::cout << "\033[0;32mImport raster file: " << list_grid.at(j) << "... COMPLETED.\033[0m" << std::endl;
-
-                    // Set Geometry class
-                    Geometry.setName(list_grid.at(j).substr(list_grid.at(j).find_last_of("/")+1, list_grid.at(j).length()));
-                    Geometry.setFormat(get_extension(list_grid.at(j)));
-
-                    if(setEPSG.isSet())
-                        Geometry.setAuthority(setEPSG.getValue());
-
-                    geometa.write(out_rast + "/" + Geometry.getName() + ".json");
-
-                }
-            }
-        }
-
-        //std::vector<double> x_coord, y_coord, z_coord;
-        std::cout << "Extract coordinates ..." << std::endl;
-        std::vector<Point3D> data, uniq_data;
-        ////// TO DO: PARTE DA CONTROLLARE!!!!!!!!!!!!!!!1
-        for(uint col=0; col<nXSize; col++)
-        {
-            Point3D p;
-            p.y = YOrigin + col*nYSize;
-            //std::cout << YOrigin + col*nYSize << std::endl;
-            //y_coord.push_back(YOrigin + col*nYSize);
-
-            for(uint row=0; row<nYSize; row++)
-            {
-                //std::cout << XOrigin + row*nXSize << std::endl;
-                p.x = XOrigin + row*nXSize;
-                p.z = grid.at(col).at(row);
-
-                //x_coord.push_back(p.x);
-                //z_coord.push_back(p.z);
-                data.push_back(p);
-            }
-        }
-        std::cout << "Extract coordinates ... COMPLETED." << std::endl;
-
-        MUSE::Surface Surface;
-        MUSE::Surface::Parameters paramSurface;
-
-        if(triFlag.isSet())
-        {
-            remove_duplicates_test_opt(data, uniq_data);
-
-            cinolib::Trimesh<> trimesh;
-            trimesh.clear();
-
-            //FOR JSON ...
-            paramSurface.type = "TRIMESH";
-
-            std::cout << "WARNING: Triangulation is performed on XY plane." << std::endl;
-
-            //Convex hull
-            if (convexFlag.isSet())
-            {
-                paramSurface.opt = "c";
-
-                if(optFlag.isSet())
-                    paramSurface.opt = paramSurface.opt + optFlag.getValue();
-
-                trimesh.clear();
-                trimesh = points_triangulation(uniq_data, paramSurface.opt);
-                remove_isolate_vertices(trimesh);
-
-                paramSurface.boundary = "CONVEX HULL";
-
-                std::cout << "\033[0;32mTriangulation with convex hull ... COMPLETED.\033[0m" << std::endl;
-            }
-            else if (concaveFlag.isSet())
-            {
-                // 1. Calcolo il convex hull (passando per la triangolazione dei punti) e lo trasformo in int da uint
-                trimesh = points_triangulation(data, "c");
-                std::vector<int> convexhull;
-                std::vector<unsigned int> convex_uint = trimesh.get_ordered_boundary_vertices();
-                for(int i: convex_uint)
-                    convexhull.push_back((short) i);
-
-                std::vector<int> b_id;
-                std::vector<Point3D> concavehull = computing_concavehull(data, convexhull, b_id);
-
-                // 2. Removing points of concavehull (boundary) from datasets
-                std::sort(b_id.begin(), b_id.end());
-                std::vector<Point3D> unique_data;
-                for(size_t i=0; i< data.size(); i++)
-                {
-                    if (!check_index(b_id, i))
+                    for(int col = 0; col < nXSize; col++)
                     {
-                        Point3D unique_p;
-                        unique_p.x = data.at(i).x;
-                        unique_p.y = data.at(i).y;
-                        unique_p.z = data.at(i).z;
+                        Point3D p;
+                        p.x = XOrigin + col * (/* pixel_size_x se disponibile, altrimenti assumere 1.0 */ XSizePixel);
+                        p.y = YOrigin + row * (/* pixel_size_y se disponibile, altrimenti assumere 1.0 */ YSizePixel);
+                        p.z = grid.at(row).at(col);
+                        p.index = row * nXSize + col;
 
-                        unique_data.push_back(unique_p);
+                        data.push_back(p);
                     }
                 }
+                std::cout << "=== Extract coordinates ... COMPLETED." << std::endl;
 
-                if(optFlag.isSet())
-                    paramSurface.opt = paramSurface.opt + optFlag.getValue();
-
-                trimesh.clear();
-                trimesh = concavehull_triangulation(concavehull, unique_data, paramSurface.opt);
-                remove_isolate_vertices(trimesh);
-
-                paramSurface.boundary = "CONCAVE HULL";
-
-                std::cout << "\033[0;32mTriangulation with concave hull ... COMPLETED.\033[0m" << std::endl;
-            }
-            // External boundary from cmd
-            else if (setBoundary.isSet()) //se gli passo da linea di comando un bordo esterno: 1) leggi 2) triangola i punti vincolati al bordo
-            {
-                std::vector<Point3D> boundary;
-                load_xyzfile(setBoundary.getValue(), boundary);
-
-                if(setRotAxis.isSet())
+                if(triFlag.isSet())
                 {
-                    for(size_t i=0; i<boundary.size(); i++)
+                    cinolib::Trimesh<> trimesh;
+                    trimesh.clear();
+
+                    // FOR JSON ...
+                    paramSurface.type = "TRIMESH";
+
+                    std::cout << "WARNING: Triangulation is performed on XY plane." << std::endl;
+
+                    // Convex hull
+                    if(convexFlag.isSet())
                     {
-                        cinolib::vec3d sample (boundary.at(i).x, boundary.at(i).y, boundary.at(i).z);
-                        cinolib::vec3d axis = set_rotation_axis(setRotAxis.getValue());
-                        cinolib::vec3d c (setRotCenterX.getValue(), setRotCenterY.getValue(), setRotCenterZ.getValue());
+                        paramSurface.opt = "c";
 
-                        sample = point_rotation(sample, axis, setRotAngle.getValue(), c);
+                        if(optFlag.isSet())
+                            paramSurface.opt = paramSurface.opt + optFlag.getValue();
 
-                        boundary.at(i).x = sample.x();
-                        boundary.at(i).y = sample.y();
-                        boundary.at(i).z = sample.z();
+                        remove_duplicates_test_opt(data, uniq_data);
+                        trimesh.clear();
+                        trimesh = points_triangulation(uniq_data, paramSurface.opt);
+                        remove_isolate_vertices(trimesh);
+
+                        paramSurface.boundary = "CONVEX HULL";
+
+                        std::cout << "\033[0;32mTriangulation with convex hull ... COMPLETED.\033[0m" << std::endl;
                     }
+                    else if(concaveFlag.isSet())
+                    {
+                        // 1. Calcolo il convex hull e lo trasformo in int da uint
+                        trimesh = points_triangulation(data, "c");
+                        std::vector<int> convexhull;
+                        std::vector<unsigned int> convex_uint = trimesh.get_ordered_boundary_vertices();
+                        for(unsigned int idx : convex_uint)
+                            convexhull.push_back((int)idx);
+
+                        std::vector<int> b_id;
+                        std::vector<Point3D> concavehull = computing_concavehull(data, convexhull, b_id);
+
+                        // 2. Removing points of concavehull (boundary) from datasets
+                        std::sort(b_id.begin(), b_id.end());
+                        std::vector<Point3D> unique_data;
+                        for(size_t k = 0; k < data.size(); k++)
+                        {
+                            if(!check_index(b_id, k))
+                            {
+                                Point3D unique_p;
+                                unique_p.x = data.at(k).x;
+                                unique_p.y = data.at(k).y;
+                                unique_p.z = data.at(k).z;
+
+                                unique_data.push_back(unique_p);
+                            }
+                        }
+
+                        if(optFlag.isSet())
+                            paramSurface.opt = optFlag.getValue();
+                        else
+                            paramSurface.opt = "";
+
+                        trimesh.clear();
+                        trimesh = concavehull_triangulation(concavehull, unique_data, paramSurface.opt);
+                        remove_isolate_vertices(trimesh);
+
+                        paramSurface.boundary = "CONCAVE HULL";
+
+                        std::cout << "\033[0;32mTriangulation with concave hull ... COMPLETED.\033[0m" << std::endl;
+                    }
+                    // External boundary from cmd
+                    else if(setBoundary.isSet())
+                    {
+                        std::vector<Point3D> boundary;
+                        load_xyzfile(setBoundary.getValue(), boundary);
+
+                        if(setRotAxis.isSet())
+                        {
+                            for(size_t k = 0; k < boundary.size(); k++)
+                            {
+                                cinolib::vec3d sample(boundary.at(k).x, boundary.at(k).y, boundary.at(k).z);
+                                cinolib::vec3d axis = set_rotation_axis(setRotAxis.getValue());
+                                cinolib::vec3d c(setRotCenterX.getValue(), setRotCenterY.getValue(), setRotCenterZ.getValue());
+
+                                sample = point_rotation(sample, axis, setRotAngle.getValue(), c);
+
+                                boundary.at(k).x = sample.x();
+                                boundary.at(k).y = sample.y();
+                                boundary.at(k).z = sample.z();
+                            }
+                        }
+
+                        paramSurface.opt = "";
+
+                        if(optFlag.isSet())
+                            paramSurface.opt = optFlag.getValue();
+
+                        trimesh.clear();
+                        trimesh = constrained_triangulation2(boundary, data, paramSurface.opt);
+
+                        paramSurface.boundary = "CONSTRAINED";
+                    }
+                    else
+                    {
+                        std::cerr << "ERROR: Required argument missing: --convex, --concave or --boundary -m <filename>." << std::endl;
+                        exit(1);
+                    }
+
+                    Surface.setParameters(paramSurface);
+                    Surface.setSummary(trimesh);
+
+                    std::string out_mesh = out_rast + "/" + get_basename(Geometry.getName()) + ext_surf;
+                    trimesh.save(out_mesh.c_str());
+                }
+                else if(gridFlag.isSet())
+                {
+                    paramSurface.type = "QUADMESH";
+                    paramSurface.resx = XSizePixel;
+                    paramSurface.resy = YSizePixel;
+                    paramSurface.resz = 0.0;
+
+                    //MUSE::Quadmesh<> quadmesh(nYSize-1, nXSize-1, XSizePixel, YSizePixel, XOrigin, YOrigin);
+                    MUSE::Quadmesh<> quadmesh(nYSize-1, nXSize-1, XSizePixel, YSizePixel, XOrigin, YOrigin, grid);
+
+                    std::string out_mesh = out_rast + "/grid_" + get_basename(Geometry.getName()) + ext_surf;
+                    quadmesh.save(out_mesh.c_str());
+
+                    Surface.setParameters(paramSurface);
+                    Surface.setSummary(quadmesh);
+
+                    std::cout << "\033[0;32m=== Saved quadmesh: " << out_mesh << "\033[0m" << std::endl;
                 }
 
-                paramSurface.opt = "";
+                geometa.setMeshSummary(Surface);
+                geometa.setGeospatialData(Geometry);
 
-                if(optFlag.isSet())
-                    paramSurface.opt = paramSurface.opt + optFlag.getValue();
-
-                trimesh.clear();
-                trimesh = constrained_triangulation2(boundary, data, paramSurface.opt);
-
+                // CORREZIONE: Usa Geometry.getName() invece di Geometry.name
+                geometa.write(out_rast + "/" + Geometry.getName() + ".json");
             }
-            else
-            {
-                std::cerr << "ERROR: Required argument missing: --convex, --concave or --boundary -m <filename>." << std::endl;
-                exit(1);
-            }
-
-            Surface.setParameters(paramSurface);
-            Surface.setSummary(trimesh);
-
-            std::string out_mesh = out_rast + "/" + Geometry.getName() + ext_surf;
-
-            trimesh.save(out_mesh.c_str());
         }
-        else if (gridFlag.isSet())
-        {
-
-            std::cerr << FRED("GRID FLAG IS NOT ACTIVE!!") << std::endl;
-            exit(1);
-        }
-
-        geometa.setMeshSummary(Surface);
-        geometa.setGeospatialData(Geometry);
-
-        geometa.write(out_surf + "/"+ Geometry.name + ".json");
     }
 
 

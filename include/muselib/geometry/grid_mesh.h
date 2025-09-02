@@ -16,18 +16,26 @@ template<class M = cinolib::Mesh_std_attributes, // default template arguments
 class Quadmesh : public cinolib::Polygonmesh<M,V,E,P>
 //class Quadmesh : public cinolib::Quadmesh<M,V,E,P>
 {
-    public:
+public:
 
-        explicit Quadmesh(){}
+    explicit Quadmesh(){}
 
-        explicit Quadmesh(const char * filename);
+    explicit Quadmesh(const char * filename);
 
-        explicit Quadmesh (const uint polys_per_row, const uint polys_per_col);
+    explicit Quadmesh (const uint polys_per_row, const uint polys_per_col);
 
-        explicit Quadmesh (const double &res_x, const double &res_y, const double &z, const std::vector<Point3D> &boundary);
+    explicit Quadmesh (const uint polys_per_row, const uint polys_per_col,
+                      const float pixel_size_x, const float pixel_size_y,
+                      const float XOrigin, const float YOrigin);
 
-        void remove_isolate_vert();
-        void remove_isolate_poly();
+    explicit Quadmesh (const uint polys_per_row, const uint polys_per_col,
+                      const float pixel_size_x, const float pixel_size_y,
+                      const float XOrigin, const float YOrigin, const std::vector<std::vector<float>> &elevation);
+
+    explicit Quadmesh (const double &res_x, const double &res_y, const double &z, const std::vector<Point3D> &boundary);
+
+    void remove_isolate_vert();
+    void remove_isolate_poly();
 };
 }
 
