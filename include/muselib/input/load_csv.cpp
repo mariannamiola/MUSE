@@ -100,6 +100,12 @@ void read_csv_with_header (const std::string filename, int nrows_header,
             row.push_back(word);
         }
 
+        // ✅ FIX: handle trailing delimiter (missing last empty field)
+        if (!line.empty() && line.back() == delimiter)
+        {
+            row.push_back("");
+        }
+
         if(count <= nrows_header)
             matrix_header.push_back(row);
         else
