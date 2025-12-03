@@ -5,8 +5,8 @@
 //modified with python implementation: https://scipython.com/blog/direct-linear-least-squares-fitting-of-an-ellipse/
 //added inline in ellipse_fit.cpp
 
-#include <eigen3/Eigen/Dense>
-#include <eigen3/Eigen/Core>
+#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <iostream>
 #include <vector>
 using namespace std;
