@@ -38,7 +38,7 @@ cd ${BUILD}
 cmake -DCMAKE_BUILD_TYPE=Release ..
 #cmake -DCMAKE_BUILD_TYPE=Debug ..
 #make
-cmake --build . --parallel 8
+cmake --build . #--parallel 8
 
 # Bin creation
 
