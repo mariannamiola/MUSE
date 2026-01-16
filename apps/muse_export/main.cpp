@@ -108,6 +108,8 @@ int main(int argc, char **argv)
         ValueArg<std::string> geomModel("m", "geom", "Geometry model", false, "name_geometry", "string", cmd);
         ValueArg<std::string> output("o", "out", "Output directory", false, "output_directory", "path", cmd);
 
+        ValueArg<std::string> analysis("", "type", "Type of analysis", false, "type", "string", cmd);
+
         ValueArg<std::string> multiframe("", "mf", "multiframe name", false, "multiframe", "string", cmd);
         // Define variogram direction options
         std::vector<std::string> allowedVarioDir = {"OMNI", "DIR"};
@@ -159,6 +161,16 @@ int main(int argc, char **argv)
 
         // Build a list of suffixes for compute output filenames
         std::vector<std::string> suffix = {"_mean", "_median", "_Q1", "_Q3", "_QCD" ,"_stdev", "_mean_m_stdev", "_mean_p_stdev"};
+        if(analysis.getValue().compare("INDICATOR") == 0)
+        {
+            suffix.clear();
+            std::vector<std::string> suffix_tmp = {"_best"};
+            suffix = suffix_tmp;
+        }
+        else
+        {
+            compute_folder += "_varspace";
+        }
 
         // Inizializza la struttura dati per le colonne
         std::vector<ColumnInfo> table_data;
@@ -174,7 +186,8 @@ int main(int argc, char **argv)
         // Read data from compute files
         for (const std::string &s : suffix)
         {
-            std::string compute_file = compute_folder + "/_varspace/_stats/" + variable.getValue() + s + ".csv";
+            //std::string compute_file = compute_folder + "/_varspace/_stats/" + variable.getValue() + s + ".csv";
+            std::string compute_file = compute_folder + "/_stats/" + variable.getValue() + s + ".csv";
             std::cout << "Working on file:\t" << compute_file << std::endl;
             std::ifstream file(compute_file);
             if (!file)
@@ -196,13 +209,24 @@ int main(int argc, char **argv)
         // If number of simulations is greater than 0, read simulation data
         if (numSim.getValue() > 0)
         {
+            if(analysis.getValue().compare("INDICATOR") == 0)
+                compute_folder += "/pdf_";
+            else
+                compute_folder += "/";
+
             for (int i = 0; i < numSim.getValue(); i++)
             {
                 std::stringstream ss;
-                ss << setw(4) << setfill('0') << i;
+                if(analysis.getValue().compare("INDICATOR") == 0)
+                    ss << i+1;
+                else
+                    ss << setw(4) << setfill('0') << i;
+
                 string number_str = ss.str();
 
-                std::string compute_file = compute_folder + "/_varspace/" + variable.getValue() + "_" + number_str + ".csv";
+
+                //std::string compute_file = compute_folder + "/_varspace/" + variable.getValue() + "_" + number_str + ".csv";
+                std::string compute_file = compute_folder + variable.getValue() + "_" + number_str + ".csv";
                 std::cout << "Working on file: " << compute_file << std::endl;
                 std::ifstream file(compute_file);
                 if (!file)

@@ -1876,23 +1876,25 @@ int main(int argc, char** argv)
                 else if(setCRIT.getValue().compare("SISIM") == 0)
                 {
 
-                        if(ext_mesh == ".off" || ext_mesh == ".obj")
-                        {
+                    if(ext_mesh == ".off" || ext_mesh == ".obj")
+                    {
 
 
-                            parallel_sis(nodes, surf_mesh ,input, categ, variograms, setNsim.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue());
+                        parallel_sis(nodes, surf_mesh ,input, categ, variograms, setNsim.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue());
 
-                        }
-                        else if(ext_mesh == ".mesh" || ext_mesh == ".vtk")
-                        {
+                    }
+                    else if(ext_mesh == ".mesh" || ext_mesh == ".vtk")
+                    {
 
-                            parallel_sis(nodes, vol_mesh ,input, categ, variograms, setNsim.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue());
+                        parallel_sis(nodes, vol_mesh ,input, categ, variograms, setNsim.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue());
 
-                        }
-
+                    }
 
                    // parallel_sis(nodes, mesh ,input, categ, variograms, setNsim.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue());
-                    app_folder += "/sisim";
+
+                    app_folder += "/_stats"; //sisim";
+                    if(!filesystem::exists(app_folder))
+                        filesystem::create_directory(app_folder);
 
                     std::cout << FGRN("Indicator Simulation ... COMPLETED.") << std::endl;
                 }
@@ -1910,8 +1912,8 @@ int main(int argc, char** argv)
                     results_z.push_back(nodes.at(n).get(2));
                     results_v.push_back(nodes.at(n).get_value(0));
                 }
-                export_idxyzv (app_folder + "_withlocations.csv", results_x, results_y, results_z, results_v);
-                export1d_xyz (app_folder + ".csv", results_v);
+                export_idxyzv (app_folder + "/" + data.getName() + "_best_withlocations.csv", results_x, results_y, results_z, results_v);
+                export1d_xyz (app_folder + "/" + data.getName() + "_best.csv", results_v);
 
                 break;
             }
