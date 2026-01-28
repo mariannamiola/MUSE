@@ -61,7 +61,7 @@ To visualize results, please run bash script file (_20_test_MUSE_example_name.sh
 ```
 
 ## Authors contact
-- Marianna Miola (DISTAV-UNIGE, Genova, Italy), email: marianna.miola@edu.unige.it
+- Marianna Miola (CNR-IMATI, Genova, Italy), email: marianna.miola@cnr.it
 - Daniela Cabiddu (CNR-IMATI, Genova, Italy), email: daniela.cabiddu@cnr.it
 - Simone Pittaluga (CNR-IMATI, Genova, Italy)
 - Marino Vetuschi Zuccolini (DISTAV-UNIGE, Genova, Italy)
