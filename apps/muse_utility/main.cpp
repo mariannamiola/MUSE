@@ -35,18 +35,90 @@ int main(int argc, char** argv)
     // MAIN FUNCTIONALITIES:
 
     // Option 0.
+    /**
+
+     * @brief File List
+
+     * @param list Enable file list
+
+     */
+
     SwitchArg fileList                  ("L", "list", "File List", cmd, false); //booleano
+    /**
+
+     * @brief Directory
+
+     * @param pdir Path to directory
+
+     */
+
     ValueArg<std::string> projectFolder ("p", "pdir", "Directory", false, "Directory", "path", cmd);
+    /**
+
+     * @brief Type of file
+
+     * @param type Path to type of file
+
+     */
+
     ValueArg<std::string> fileType      ("", "type", "Type of file", false, "Directory", "path", cmd);
 
     // Option 1. TO DO ...
+    /**
+
+     * @brief Query for creation path
+
+     * @param query Enable query for creation path
+
+     */
+
     SwitchArg Query                     ("Q", "query", "Query for creation path", cmd, false); //booleano
 
     // Option 2. Print processing history following JSONs
+    /**
+
+     * @brief Set JSON history
+
+     * @param history Enable set json history
+
+     */
+
     SwitchArg setHistory                ("H", "history", "Set JSON history", cmd, false); //booleano
+    /**
+
+     * @brief Set json file
+
+     * @param json Path to set json file
+
+     */
+
     ValueArg<std::string> setJSON       ("", "json", "Set json file", false, "path", "string", cmd);
+    /**
+
+     * @brief Set JSON history (recursively - back)
+
+     * @param back Enable set json history (recursively - back)
+
+     */
+
     SwitchArg setBackInfo               ("", "back", "Set JSON history (recursively - back)", cmd, false); //booleano
+    /**
+
+     * @brief Set JSON history (recursively - forward)
+
+     * @param forward Enable set json history (recursively - forward)
+
+     */
+
     SwitchArg setForwardInfo            ("", "forward", "Set JSON history (recursively - forward)", cmd, false); //booleano
+    /**
+
+     * @brief Set JSON history (recursively - forward) and commands
+
+     * @param more Enable set json history (recursively - forward) and commands
+
+     */
+
     SwitchArg setMoreInfo               ("", "more", "Set JSON history (recursively - forward) and commands", cmd, false); //booleano
 
 

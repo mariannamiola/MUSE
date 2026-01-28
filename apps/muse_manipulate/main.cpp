@@ -84,52 +84,264 @@ int main(int argc, char** argv)
     // MAIN FUNCTIONALITIES:
 
     // Option 0. Index extraction from geometry model
+    /**
+
+     * @brief Extraction data
+
+     * @param extract Enable extraction data
+
+     */
+
     SwitchArg setExtract                    ("E", "extract", "Extraction data", cmd, false); //booleano
+    /**
+
+     * @brief Project directory
+
+     * @param pdir Path to project directory
+
+     */
+
     ValueArg<std::string> projectFolder     ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
 
+    /**
+
+
+     * @brief Geometry model
+
+
+     * @param geom geometry model
+
+
+     */
+
+
     ValueArg<std::string> geomModel         ("", "geom", "Geometry model", false, "name_geometry", "string", cmd);
+
+    /**
+
+
+     * @brief Coordinate Z
+
+
+     * @param zcoord coordinate z
+
+
+     */
+
 
     ValueArg<std::string> setZcoord         ("z", "zcoord", "Coordinate Z", false, "z_name", "string", cmd);
 
 
 
     // Option 1. Index extraction from interval
+    /**
+
+     * @brief Extraction data from interval
+
+     * @param intextr Enable extraction data from interval
+
+     */
+
     SwitchArg setIntervalExtraction         ("I", "intextr", "Extraction data from interval", cmd, false); //booleano
+    /**
+
+     * @brief Set sup interval
+
+     * @param sup sup interval
+
+     */
+
     ValueArg<int> supInterval               ("", "sup", "Set sup interval", false, 0, "int", cmd);
+    /**
+
+     * @brief Set inf interval
+
+     * @param inf inf interval
+
+     */
+
     ValueArg<int> infInterval               ("", "inf", "Set inf interval", false, 0, "int", cmd);
 
+    /**
+
+
+     * @brief Set variable to check
+
+
+     * @param nvar Name of set variable to check
+
+
+     */
+
+
     ValueArg<std::string> nameVar           ("", "nvar", "Set variable to check", false, "var_name", "string", cmd);
+
+    /**
+
+
+     * @brief Extraction sub dataset basing on geometry
+
+
+     * @param sub extraction sub dataset basing on geometry
+
+
+     */
+
 
     ValueArg<std::string> subDataset        ("", "sub", "Extraction sub dataset basing on geometry", false, "name", "path", cmd);
 
 
 
+    /**
+
+
+
+
+     * @brief Set rotation axis
+
+
+
+
+     * @param rotaxis rotation axis
+
+
+
+
+     */
+
+
+
+
     ValueArg<std::string> setRotAxis        ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
+    /**
+
+     * @brief Set rotation angle (clockwise)
+
+     * @param rotangle rotation angle (clockwise)
+
+     */
+
     ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set rotation center x
+
+     * @param rotcx rotation center x
+
+     */
+
     ValueArg<double> setRotCenterX          ("", "rotcx", "Set rotation center x", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set rotation center y
+
+     * @param rotcy rotation center y
+
+     */
+
     ValueArg<double> setRotCenterY          ("", "rotcy", "Set rotation center y", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set rotation center z
+
+     * @param rotcz rotation center z
+
+     */
+
     ValueArg<double> setRotCenterZ          ("", "rotcz", "Set rotation center z", false, 0.0, "double", cmd);
 
 
 
 
     // Option 2. Point projection on surfaces
+    /**
+
+     * @brief Points projection on surfaces
+
+     * @param prsurf Enable points projection on surfaces
+
+     */
+
     SwitchArg setProjectionOnSurface        ("P", "prsurf", "Points projection on surfaces", cmd, false);
+    /**
+
+     * @brief Compute points projection on boundary (2D section case).
+
+     * @param prsect Flag to compute points projection on boundary (2d section case).
+
+     */
+
     SwitchArg setProjectionOnSection        ("S", "prsect", "Compute points projection on boundary (2D section case).", cmd, false);
+    /**
+
+     * @brief Points projection on quads sections
+
+     * @param prqsect Enable points projection on quads sections
+
+     */
+
     SwitchArg setProjectionOnQSection       ("R", "prqsect", "Points projection on quads sections", cmd, false);
 
+    /**
+
+
+     * @brief Compute points projection on boundary (3D volumetric case).
+
+
+     * @param prvol Flag to compute points projection on boundary (3d volumetric case).
+
+
+     */
+
+
     SwitchArg setProjectionOnVolume         ("V", "prvol", "Compute points projection on boundary (3D volumetric case).", cmd, false);
+    /**
+
+     * @brief Set number of steps for geometry model
+
+     * @param step Number of set number of steps for geometry model
+
+     */
+
     ValueArg<double> setStepGeometry        ("", "step", "Set number of steps for geometry model", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set tolerance to enlarge bounding box
+
+     * @param epsilon tolerance to enlarge bounding box
+
+     */
+
     ValueArg<double> setBBEpsilon           ("", "epsilon", "Set tolerance to enlarge bounding box", false, 1.0, "double", cmd);
 
     //SwitchArg setProjectionOnVolume        ("Q", "prqvol", "Points qprojection on volumes", cmd, false);
     //SwitchArg setProjectionOnVolume2        ("R", "prvol2", "Points projection on volumes2", cmd, false);
     MultiArg<std::string> meshFiles         ("m", "mgeom", "Multi-geometry to pass", false, "string", cmd );
 
+    /**
+
+
+     * @brief Set direction of projection
+
+
+     * @param prdir Path to set direction of projection
+
+
+     */
+
+
     ValueArg<std::string> setProjDir        ("", "prdir", "Set direction of projection", false, "Y", "string", cmd);
 
     std::vector<std::string> allowedType = {"SAMPLES","TET","HEX","VOLUME","GEOMETRY","QUADMESH"};
     ValuesConstraint<std::string> allowedValsT(allowedType);
+    /**
+
+     * @brief Set type
+
+     * @param type type
+
+     */
+
     ValueArg<std::string> setType           ("", "type", "Set type", false, "SAMPLES", &allowedValsT, cmd);
     allowedType.clear();
 
@@ -138,21 +350,121 @@ int main(int argc, char** argv)
     std::vector<std::string> allowedStratigraphicCondition = {"PROPORTIONAL","TRUNCATION","ONLAP","COMBINATION"};
     ValuesConstraint<std::string> allowedValsSC(allowedStratigraphicCondition);
 
+    /**
+
+
+     * @brief Points projection on surfaces
+
+
+     * @param strat Enable points projection on surfaces
+
+
+     */
+
+
     SwitchArg setStratigraphicTransf        ("T", "strat", "Points projection on surfaces", cmd, false);
+    /**
+
+     * @brief Name of geometry model
+
+     * @param name Name of name of geometry model
+
+     */
+
     ValueArg<std::string> geomName          ("", "name", "Name of geometry model", false, "name", "string", cmd);
+    /**
+
+     * @brief Set type of stratigraphic transformation
+
+     * @param sttype type of stratigraphic transformation
+
+     */
+
     ValueArg<std::string> stratCondition    ("", "sttype", "Set type of stratigraphic transformation", false, "NO", &allowedValsSC, cmd);
+    /**
+
+     * @brief Top geometry model
+
+     * @param top top geometry model
+
+     */
+
     ValueArg<std::string> topSurface        ("", "top", "Top geometry model", false, "name top geometry", "string", cmd);
+    /**
+
+     * @brief Bottom geometry model
+
+     * @param bot bottom geometry model
+
+     */
+
     ValueArg<std::string> botSurface        ("", "bot", "Bottom geometry model", false, "name bottom geometry", "string", cmd);
+    /**
+
+     * @brief Set region growing
+
+     * @param reggrow Enable set region growing
+
+     */
+
     SwitchArg setRegionGrowing              ("", "reggrow", "Set region growing", cmd, false); //booleano
 
 
     // ---------------------------------------------------------------------------------------------------------
     // ADDITIONAL FUNCTIONALITIES:
 
+    /**
+
+
+     * @brief Saving trimesh in obj format
+
+
+     * @param obj Enable saving trimesh in obj format
+
+
+     */
+
+
     SwitchArg objConversion                 ("", "obj", "Saving trimesh in obj format", cmd, false); //booleano
+    /**
+
+     * @brief Saving tetmesh in vtk format
+
+     * @param vtk Enable saving tetmesh in vtk format
+
+     */
+
     SwitchArg vtkConversion                 ("", "vtk", "Saving tetmesh in vtk format", cmd, false); //booleano
+    /**
+
+     * @brief Saving extraction as set of points
+
+     * @param save Enable saving extraction as set of points
+
+     */
+
     SwitchArg saveExtraction                ("", "save", "Saving extraction as set of points", cmd, false); //booleano
+    /**
+
+     * @brief Variable
+
+     * @param var Name of variable
+
+     */
+
     ValueArg<std::string> Variable          ("v", "var", "Variable", false, "variable to analyse", "name", cmd);
+
+    /**
+
+
+     * @brief Path file
+
+
+     * @param file Path to path file
+
+
+     */
+
 
     ValueArg<std::string> setFileData       ("", "file", "Path file", false, "path", "string", cmd);
 

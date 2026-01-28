@@ -76,88 +76,251 @@ int main(int argc, char** argv)
     // MAIN FUNCTIONALITIES:
 
     // Option 0. New project creation
+    /**
+     * @brief Enable computation mode for MUSE
+     * @param compute Flag to enable computation mode
+     */
     SwitchArg interpolationCompute      ("C", "compute", "Creation new project", cmd, false); //booleano
+    
+    /**
+     * @brief Set computation mode
+     * @param mode Computation mode setting (default: AUTO)
+     */
     ValueArg<std::string> modeCompute   ("", "mode", "Set mode for compute", false, "string", "AUTO", cmd);
+    
+    /**
+     * @brief Specify project directory
+     * @param pdir Path to the project directory
+     */
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", false, "Directory", "path", cmd);
+    
+    /**
+     * @brief Specify variable name to analyze
+     * @param var Name of the variable to process
+     */
     ValueArg<std::string> Variable      ("v", "var", "Variable", false, "name_var", "string", cmd);
+    
+    /**
+     * @brief Specify geometry model name
+     * @param geom Name of the geometry model to use
+     */
     ValueArg<std::string> geomModel     ("m", "geom", "Geometry model", false, "name_geometry", "string", cmd);
 
+    /**
+     * @brief Extract sub-dataset based on geometry
+     * @param sub Path to sub-dataset extraction directory
+     */
     ValueArg<std::string> subDataset    ("", "sub", "Extraction sub dataset basing on geometry", false, "Directory", "path", cmd);
 
     // Option 0a. Data rotation
+    /**
+     * @brief Set rotation axis for data transformation
+     * @param rotaxis Axis for rotation (default: NO)
+     */
     ValueArg<std::string> setRotAxis    ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
+    
+    /**
+     * @brief Set rotation angle in degrees (clockwise)
+     * @param rotangle Rotation angle in degrees
+     */
     ValueArg<double> setRotAngle        ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
+    
+    /**
+     * @brief Set X coordinate of rotation center
+     * @param rotcx X coordinate of rotation center
+     */
     ValueArg<double> setRotCenterX      ("", "rotcx", "Set rotation center x", false, 0.0, "double", cmd);
+    
+    /**
+     * @brief Set Y coordinate of rotation center
+     * @param rotcy Y coordinate of rotation center
+     */
     ValueArg<double> setRotCenterY      ("", "rotcy", "Set rotation center y", false, 0.0, "double", cmd);
+    
+    /**
+     * @brief Set Z coordinate of rotation center
+     * @param rotcz Z coordinate of rotation center
+     */
     ValueArg<double> setRotCenterZ      ("", "rotcz", "Set rotation center z", false, 0.0, "double", cmd);
 
 
     //ValueArg<std::string> filenameStrat ("f", "filestrat", "Set filename of samples in stratigraphic coordinates", false, "filename", "path", cmd);
+    
+    /**
+     * @brief Set fixed variogram parameters
+     * @param vario Path to variogram configuration file
+     */
     ValueArg<std::string> setVario      ("", "vario", "Set fixed variogram", false, "string", "path", cmd);
 
 
     // Option: types of variogram directions
     std::vector<std::string> allowedVarioDir = {"OMNI","DIR"};
     ValuesConstraint<std::string> allowedValsVD(allowedVarioDir);
+    
+    /**
+     * @brief Set variogram direction type
+     * @param dir Type of variogram direction (OMNI or DIR)
+     */
     ValueArg<std::string> varioDirection ("", "dir", "type of variogram direction", false, "OMNI", &allowedValsVD, cmd);
 
     // Option: types of variogram dimensions
     std::vector<std::string> allowedVarioDim = {"3D","3Dxy","3Dz","2D","1Dz","1D"};
     ValuesConstraint<std::string> allowedValsVDm(allowedVarioDim);
+    
+    /**
+     * @brief Set variogram dimension type
+     * @param dim Type of variogram dimension (3D, 3Dxy, 3Dz, 2D, 1Dz, 1D)
+     */
     ValueArg<std::string> varioDimension ("", "dim", "type of variogram dimension", false, "3D", &allowedValsVDm, cmd);
+    
+    /**
+     * @brief Set range in Z direction
+     * @param zrange Range value in Z direction
+     */
     ValueArg<double> setZRange           ("", "zrange", "Set range in Z direction", false, 1, "double", cmd);
 
     // Option: set interpolation criteria
     std::vector<std::string> allowedCRIT = {"SGS","IK","SISIM"};
     ValuesConstraint<std::string> allowedValsCRIT(allowedCRIT);
+    
+    /**
+     * @brief Set interpolation algorithm
+     * @param crit Interpolation algorithm (SGS, IK, or SISIM)
+     */
     ValueArg<std::string> setCRIT       ("", "crit", "Set interpolation algorithm", false, "SGS", &allowedValsCRIT, cmd);
 
     // Option 0b. Parameters for simulations
+    /**
+     * @brief Enable back normal score transformation integrated into SGS
+     * @param bnscore Flag to enable back normal score transformation
+     */
     SwitchArg setBackNormalScore        ("", "bnscore", "Set to do back normal score integrated into SGS", cmd, false); //booleano
+    
+    /**
+     * @brief Set extrapolation type
+     * @param extr Type of extrapolation (default: none)
+     */
     ValueArg<std::string> setExtrType   ("", "extr", "Set extrapolation type", false, "none", "string", cmd); //di default settata su "none"
+    
+    /**
+     * @brief Set minimum value for extrapolation
+     * @param minextr Minimum extrapolation value
+     */
     ValueArg<double> setMinExtr         ("", "minextr", "Min value for extrapolation", false, 0.0, "double", cmd); //n. di simulazioni = 10 di default
+    
+    /**
+     * @brief Set maximum value for extrapolation
+     * @param maxextr Maximum extrapolation value
+     */
     ValueArg<double> setMaxExtr         ("", "maxextr", "Max value for extrapolation", false, 100000.0, "double", cmd); //n. di simulazioni = 10 di default
 
+    /**
+     * @brief Set number of simulation iterations
+     * @param nsim Number of simulation iterations (default: 10)
+     */
     ValueArg<uint> setNsim              ("", "nsim", "Number of iterations", false, 10, "uint", cmd); //n. di simulazioni = 10 di default
 
     // Option: set 2D declustering on data
+    /**
+     * @brief Set cell size for 2D declustering
+     * @param csize Cell size for 2D declustering
+     */
     ValueArg<double> setCellSize            ("", "csize", "Set cell size for 2D declustering", false, 0.0, "double", cmd);
+    
+    /**
+     * @brief Set number of steps for 2D declustering grid translation
+     * @param nstep Number of steps for 2D declustering
+     */
     ValueArg<int> setNStep                  ("", "nstep", "Set n steps for 2D declustering (grid translation)", false, 0, "int", cmd);
 
     // Option 1. Statistical analysis on simulation results
+    /**
+     * @brief Enable statistical analysis on simulation results
+     * @param stats Flag to compute statistical analysis
+     */
     SwitchArg statisticalAnalysis       ("S", "stats", "Compute statistical analysis on simulation results", cmd, false); //booleano
+    
     // Option: set interpolation criteria
     std::vector<std::string> allowedSPACE = {"NORMAL","VAR"};
     ValuesConstraint<std::string> allowedValsSPACE(allowedSPACE);
+    
+    /**
+     * @brief Set space type for analysis
+     * @param space Space type (NORMAL or VAR)
+     */
     ValueArg<std::string> setSpace      ("", "space", "Set space", false, "NORMAL", &allowedValsSPACE, cmd);
 
 
     // Option 2. Back normal score
+    /**
+     * @brief Enable back normal score transformation
+     * @param bns Flag to perform back normal score transformation
+     */
     SwitchArg doBackNormalScore         ("B", "bns", "Do back normal score", cmd, false); //booleano
+    
+    /**
+     * @brief Set input file path
+     * @param file Path to input file
+     */
     ValueArg<std::string> setFile       ("f", "file", "Set file", false, "Directory", "path", cmd);
 
     //ValueArg<std::string> setJSON       ("", "json", "Set JSON file", false, "Directory", "path", cmd);
 
 
     // Option 3. Database creation to store simulation results
+    /**
+     * @brief Enable database creation from simulations
+     * @param db Flag to create database from simulation results
+     */
     SwitchArg createDatabase            ("D", "db", "Create database from simulations", cmd, false); //booleano
 
 
     // ---------------------------------------------------------------------------------------------------------
     // ADDITIONAL FUNCTIONALITIES:
 
+    /**
+     * @brief Set number of input samples
+     * @param input Number of input samples to use (default: 4)
+     */
     ValueArg<uint> setInputSamples      ("", "input", "Set number of input samples", false, 4, "int", cmd);
+    
+    /**
+     * @brief Set number of simulated points
+     * @param simulated Number of points to simulate (default: 3)
+     */
     ValueArg<uint> setSimulatedPoints   ("", "simulated", "Set number of simulated points", false, 3, "int", cmd);
+    
+    /**
+     * @brief Set scale factor of search radius
+     * @param scaleradius Scale factor for search radius (default: 1.0)
+     */
     ValueArg<double> setScaleRadius     ("", "scaleradius", "Set scale factor of search radius", false, 1.0, "double", cmd);
+    
+    /**
+     * @brief Enable octant search in SGS algorithm
+     * @param octant Flag to enable octant search
+     */
     SwitchArg doOctantSearch            ("", "octant", "Do octant search in SGS algorithm", cmd, false); //booleano
 
+    /**
+     * @brief Enable CSV format for output files
+     * @param csv Flag to save files in CSV format
+     */
     SwitchArg csvConversion             ("", "csv", "Saving file as csv", cmd, false); //booleano
 
     std::vector<std::string> allowedSGS = {"MEAN","VECSIM"};
     ValuesConstraint<std::string> allowedValsSGS(allowedSGS);
+    
+    /**
+     * @brief Set type of SGS output
+     * @param out Type of SGS output (MEAN or VECSIM)
+     */
     ValueArg<std::string> setSGSoutput  ("", "out", "Set type of SGS output", false, "MEAN", &allowedValsSGS, cmd); //di default settata su "none"
 
-    //Set for encoding output with data format
+    /**
+     * @brief Set data format encoding for output
+     * @param format Enable data format encoding (default: YES)
+     */
     ValueArg<std::string> setFormat     ("", "format", "Set for encoding output by data format", false, "YES", "string", cmd);
 
     // ---------------------------------------------------------------------------------------------------------

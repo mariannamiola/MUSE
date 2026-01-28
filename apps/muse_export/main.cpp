@@ -103,31 +103,135 @@ int main(int argc, char **argv)
         CmdLine cmd("MUSE = Modelling of Uncertainty as a Support of Environment; Export tool", ' ', "version 0.5");
 
         // Define main functionalities options
+        /**
+
+         * @brief Project directory
+
+         * @param pdir Path to project directory
+
+         */
+
         ValueArg<std::string> projectFolder("p", "pdir", "Project directory", true, "Directory", "path", cmd);
+        /**
+
+         * @brief Variable
+
+         * @param var Name of variable
+
+         */
+
         ValueArg<std::string> variable("v", "var", "Variable", true, "name_var", "string", cmd);
+        /**
+
+         * @brief Geometry model
+
+         * @param geom geometry model
+
+         */
+
         ValueArg<std::string> geomModel("m", "geom", "Geometry model", false, "name_geometry", "string", cmd);
+        /**
+
+         * @brief Output directory
+
+         * @param out Path to output directory
+
+         */
+
         ValueArg<std::string> output("o", "out", "Output directory", false, "output_directory", "path", cmd);
 
+        /**
+
+
+         * @brief Type of analysis
+
+
+         * @param type type of analysis
+
+
+         */
+
+
         ValueArg<std::string> analysis("", "type", "Type of analysis", false, "type", "string", cmd);
+
+        /**
+
+
+         * @brief multiframe name
+
+
+         * @param mf multiframe name
+
+
+         */
+
 
         ValueArg<std::string> multiframe("", "mf", "multiframe name", false, "multiframe", "string", cmd);
         // Define variogram direction options
         std::vector<std::string> allowedVarioDir = {"OMNI", "DIR"};
         ValuesConstraint<std::string> allowedValsVD(allowedVarioDir);
+        /**
+
+         * @brief type of variogram direction
+
+         * @param dir Path to type of variogram direction
+
+         */
+
         ValueArg<std::string> varioDirection("", "dir", "type of variogram direction", false, "OMNI", &allowedValsVD, cmd);
 
         // Define variogram dimension options
         std::vector<std::string> allowedVarioDim = {"3D", "3Dxy", "3Dz", "2D", "1Dz", "1D"};
         ValuesConstraint<std::string> allowedValsVDm(allowedVarioDim);
+        /**
+
+         * @brief type of variogram dimension
+
+         * @param dim type of variogram dimension
+
+         */
+
         ValueArg<std::string> varioDimension("", "dim", "type of variogram dimension", false, "3D", &allowedValsVDm, cmd);
 
         // Define number of simulations option
+        /**
+
+         * @brief Number of simulations to export
+
+         * @param nsim Number of number of simulations to export
+
+         */
+
         ValueArg<int> numSim("N", "nsim", "Number of simulations to export", false, 0, "int", cmd);
 
         // Define append existing table
+        /**
+
+         * @brief Append existing table (csv)
+
+         * @param append_csv_table append existing table (csv)
+
+         */
+
         ValueArg<std::string> appendTable("", "append_csv_table", "Append existing table (csv)", false, "append_table", "path", cmd);
+        /**
+
+         * @brief Separator for append table
+
+         * @param append_sep separator for append table
+
+         */
+
         ValueArg<std::string> appendSep("", "append_sep", "Separator for append table", false, ";", "string", cmd);
         // Define append existing gpkg table
+        /**
+
+         * @brief Append existing table (gpkg)
+
+         * @param append_gpkg append existing table (gpkg)
+
+         */
+
         ValueArg<std::string> appendGpkg("", "append_gpkg", "Append existing table (gpkg)", false, "append_table", "path", cmd);
 
         // Define export options

@@ -81,38 +81,158 @@ int main(int argc, char** argv)
     // MAIN FUNCTIONALITIES:
 
     // Option 0. Compute varioagram for a variable
+    /**
+
+     * @brief Compute variogram
+
+     * @param variogram Flag to compute variogram
+
+     */
+
     SwitchArg varioCompute                  ("V", "variogram", "Compute variogram", cmd, false); //booleano
+    /**
+
+     * @brief Project directory
+
+     * @param pdir Path to project directory
+
+     */
+
     ValueArg<std::string> projectFolder     ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
     //ValueArg<std::string> subFolder         ("", "subdir", "Project subdirectory", false, "Directory", "path", cmd);
+    /**
+
+     * @brief Variable
+
+     * @param var Name of variable
+
+     */
+
     ValueArg<std::string> Variable          ("v", "var", "Variable", true, "variable to analyse", "name", cmd);
 
     // Option: set third coordinate (z), if necessary
     //ValueArg<std::string> setZcoord         ("z", "setZ", "Set Z Coordinate", false, "Unknown", "Name Z coordinate", cmd);
 
     // Option: use subdataset (related to a specified domain)
+    /**
+
+     * @brief Set extracted sub-dataset referring to specified geometry domain
+
+     * @param sub extracted sub-dataset referring to specified geometry domain
+
+     */
+
     ValueArg<std::string> subDataset        ("", "sub", "Set extracted sub-dataset referring to specified geometry domain", false, "Directory", "path", cmd);
 
     // Option: set data rotation
+    /**
+
+     * @brief Set rotation axis
+
+     * @param rotaxis rotation axis
+
+     */
+
     ValueArg<std::string> setRotAxis        ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
+    /**
+
+     * @brief Set rotation angle (clockwise)
+
+     * @param rotangle rotation angle (clockwise)
+
+     */
+
     ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set rotation center x
+
+     * @param rotcx rotation center x
+
+     */
+
     ValueArg<double> setRotCenterX          ("", "rotcx", "Set rotation center x", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set rotation center y
+
+     * @param rotcy rotation center y
+
+     */
+
     ValueArg<double> setRotCenterY          ("", "rotcy", "Set rotation center y", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set rotation center z
+
+     * @param rotcz rotation center z
+
+     */
+
     ValueArg<double> setRotCenterZ          ("", "rotcz", "Set rotation center z", false, 0.0, "double", cmd);
 
     // Option: compute normal score transformation on variable
+    /**
+
+     * @brief Set normal score transformation
+
+     * @param nscore Number of set normal score transformation
+
+     */
+
     ValueArg<std::string> setNormalScore    ("", "nscore", "Set normal score transformation", false, "NO", "string", cmd);
 
     // Option: set 2D declustering on data
     //ValueArg<std::string> setDeclustering2d ("", "decl", "Set 2D declustering", false, "NO", "string", cmd);
+    /**
+
+     * @brief Set 2D declustering
+
+     * @param decl Enable set 2d declustering
+
+     */
+
     SwitchArg setDeclustering2d             ("", "decl", "Set 2D declustering", cmd, false); //booleano
+    /**
+
+     * @brief Set cell size for 2D declustering
+
+     * @param csize cell size for 2d declustering
+
+     */
+
     ValueArg<double> setCellSize            ("", "csize", "Set cell size for 2D declustering", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set n steps for 2D declustering (grid translation)
+
+     * @param nstep Number of set n steps for 2d declustering (grid translation)
+
+     */
+
     ValueArg<int> setNStep                  ("", "nstep", "Set n steps for 2D declustering (grid translation)", false, 0, "int", cmd);
 
 
     // Option: variography on stratigraphic coordinates model (ref. manipulate)
     std::vector<std::string> allowedStratigraphicCondition = {"PROPORTIONAL","TRUNCATION","ONLAP","COMBINATION"};
     ValuesConstraint<std::string> allowedValsSC(allowedStratigraphicCondition);
+    /**
+
+     * @brief Set stratigraphic condition for coordinate transformation
+
+     * @param sttype stratigraphic condition for coordinate transformation
+
+     */
+
     ValueArg<std::string> stratCondition    ("", "sttype", "Set stratigraphic condition for coordinate transformation", false, "NO", &allowedValsSC, cmd);
+    /**
+
+     * @brief Set filename of samples in stratigraphic coordinates
+
+     * @param filestrat Path to set filename of samples in stratigraphic coordinates
+
+     */
+
     ValueArg<std::string> filenameStrat     ("f", "filestrat", "Set filename of samples in stratigraphic coordinates", false, "filename", "path", cmd);
 
 
@@ -120,30 +240,118 @@ int main(int argc, char** argv)
     // Option: set types of variograms
     std::vector<std::string> allowedVarioType = {"EXPERIMENTAL","MODEL"};
     ValuesConstraint<std::string> allowedValsVT(allowedVarioType);
+    /**
+
+     * @brief type of variogram
+
+     * @param vario Name of type of variogram
+
+     */
+
     ValueArg<std::string> varioType         ("", "vario", "type of variogram", false, "EXPERIMENTAL", &allowedValsVT, cmd);
 
     // Option: types of variogram directions
     std::vector<std::string> allowedVarioDir = {"OMNI","DIR"};
     ValuesConstraint<std::string> allowedValsVD(allowedVarioDir);
+    /**
+
+     * @brief type of variogram direction
+
+     * @param dir Path to type of variogram direction
+
+     */
+
     ValueArg<std::string> varioDirection    ("", "dir", "type of variogram direction", false, "OMNI", &allowedValsVD, cmd);
 
     // Option: types of variogram dimensions
     std::vector<std::string> allowedVarioDim = {"3D","3Dxy","3Dz","2D","1Dz","1D"};
     ValuesConstraint<std::string> allowedValsVDm(allowedVarioDim);
+    /**
+
+     * @brief type of variogram dimension
+
+     * @param dim type of variogram dimension
+
+     */
+
     ValueArg<std::string> varioDimension    ("", "dim", "type of variogram dimension", false, "3D", &allowedValsVDm, cmd);
 
     // Option: compute variogram with variable/constant lag spacing
     std::vector<std::string> allowedLag = {"VARIABLE","CONSTANT","FIXED"};
     ValuesConstraint<std::string> allowedValsLag(allowedLag);
+    /**
+
+     * @brief Set lag spacing type
+
+     * @param lagspac lag spacing type
+
+     */
+
     ValueArg<std::string> setLagType        ("", "lagspac", "Set lag spacing type", false, "VARIABLE", &allowedValsLag, cmd);
+    /**
+
+     * @brief Set spacing samples for vertical variogram
+
+     * @param spac spacing samples for vertical variogram
+
+     */
+
     ValueArg<double> setSpacingSamples      ("", "spac", "Set spacing samples for vertical variogram", false, 0.0, "meters", cmd);
 
     // Option: set parameters for directional variogram computation
+    /**
+
+     * @brief Set degree step (in degree)
+
+     * @param deg degree step (in degree)
+
+     */
+
     ValueArg<double> setDegree              ("", "deg", "Set degree step (in degree)", false, 45.0, "degree", cmd);
+    /**
+
+     * @brief Set tolerance (in degree)
+
+     * @param degtol tolerance (in degree)
+
+     */
+
     ValueArg<double> setTol                 ("", "degtol", "Set tolerance (in degree)", false, 45.0, "degree", cmd);
+    /**
+
+     * @brief Set vertical tolerance (in degree)
+
+     * @param zdegtol vertical tolerance (in degree)
+
+     */
+
     ValueArg<double> setVertTol             ("", "zdegtol", "Set vertical tolerance (in degree)", false, 22.5, "degree", cmd);
+    /**
+
+     * @brief Load discrete directions (in degree)
+
+     * @param dirs Path to load discrete directions (in degree)
+
+     */
+
     ValueArg<std::string> loadDirs          ("", "dirs", "Load discrete directions (in degree)", false, "dir0,dir1", "string", cmd);
+    /**
+
+     * @brief Set bandwidth
+
+     * @param bandw bandwidth
+
+     */
+
     ValueArg<double> setBandwidth           ("", "bandw", "Set bandwidth", false, DBL_MAX, "double", cmd);
+    /**
+
+     * @brief Set vertical bandwidth
+
+     * @param vertbandw vertical bandwidth
+
+     */
+
     ValueArg<double> setVertBandwidth       ("", "vertbandw", "Set vertical bandwidth", false, DBL_MAX, "double", cmd);
 
 
@@ -151,10 +359,34 @@ int main(int argc, char** argv)
     // Option: types of permissible models
     std::vector<std::string> allowedModel = {"AUTO","SPHERICAL","GAUSSIAN","EXPONENTIAL","LINEAR","DEFAULT"};
     ValuesConstraint<std::string> allowedValsMl(allowedModel);
+    /**
+
+     * @brief Set type of model variogram
+
+     * @param type type of model variogram
+
+     */
+
     ValueArg<std::string> setModel          ("", "type", "Set type of model variogram", false, "AUTO", &allowedValsMl, cmd);
 
     // Option: set model parameters
+    /**
+
+     * @brief Nugget
+
+     * @param nugget Number of nugget
+
+     */
+
     ValueArg<double> setNugget              ("", "nugget", "Nugget", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Sill (NOT ENABLE)
+
+     * @param sill sill (not enable)
+
+     */
+
     ValueArg<double> setSill                ("", "sill", "Sill (NOT ENABLE)", false, 0.0, "double", cmd);
     //ValueArg<double> setRange               ("", "range", "Range (NOT ENABLE)", false, 0.0, "double", cmd);
 
@@ -180,27 +412,139 @@ int main(int argc, char** argv)
     // ADDITIONAL FUNCTIONALITIES:
 
     // Option: set parameters
+    /**
+
+     * @brief Set number of experimental variogram points
+
+     * @param npoints Number of set number of experimental variogram points
+
+     */
+
     ValueArg<uint> setPointsVario           ("", "npoints", "Set number of experimental variogram points", false, 15, "int", cmd); //n. di punti per la discretizzazione del variogramma sperimentale = 15 di default
     //ValueArg<uint> setStartPointsVario      ("", "nstartpoints", "Number of discretized experimental variogram in coverage/2 extended zone (TO REMOVE)", false, 10, "int", cmd); //n. di punti per la discretizzazione del variogramma sperimentale = 15 di default
     //ValueArg<double> setPointStep           ("", "pstep", "Set points step (TO REMOVE)", false, 0.8, "double", cmd);
 
+    /**
+
+
+     * @brief Set cleaning variogram points
+
+
+     * @param vclean cleaning variogram points
+
+
+     */
+
+
     ValueArg<uint> setVarioCleanPoints      ("", "vclean", "Set cleaning variogram points", false, 0, "int", cmd); //n. di punti minimo (clean variogram) = 10 di default
 
+    /**
+
+
+     * @brief Set range step
+
+
+     * @param rangestep range step
+
+
+     */
+
+
     ValueArg<double> setRangeStep           ("", "rangestep", "Set range step", false, 100.0, "double", cmd);
+    /**
+
+     * @brief Set nugget step
+
+     * @param nugstep Number of set nugget step
+
+     */
+
     ValueArg<double> setNuggetStep          ("", "nugstep", "Set nugget step", false, 100.0, "double", cmd);
 
+    /**
+
+
+     * @brief Set maximum distance between points for computing experimental variogram
+
+
+     * @param maxdist maximum distance between points for computing experimental variogram
+
+
+     */
+
+
     ValueArg<double> setMaxDistance         ("", "maxdist", "Set maximum distance between points for computing experimental variogram", false, -DBL_MAX, "double", cmd);
+    /**
+
+     * @brief Set tolerance factor for computing experimental variogram
+
+     * @param tolfac tolerance factor for computing experimental variogram
+
+     */
+
     ValueArg<double> setToleranceFactor     ("", "tolfac", "Set tolerance factor for computing experimental variogram", false, 2.0, "double", cmd);
+
+    /**
+
+
+     * @brief Set multiplier factor for computing variable lag spacing for experimental variogram
+
+
+     * @param fac multiplier factor for computing variable lag spacing for experimental variogram
+
+
+     */
+
 
     ValueArg<double> setFactor              ("", "fac", "Set multiplier factor for computing variable lag spacing for experimental variogram", false, 1.0, "double", cmd);
 
+    /**
+
+
+     * @brief Set weight on nugget to compute directional variogram
+
+
+     * @param weight Flag to set weight on nugget to compute directional variogram
+
+
+     */
+
+
     SwitchArg setWeight                     ("", "weight", "Set weight on nugget to compute directional variogram", cmd, false); //booleano
+
+    /**
+
+
+     * @brief Load experimental variogram
+
+
+     * @param expvario Name of load experimental variogram
+
+
+     */
+
 
     ValueArg<std::string> loadExpVario      ("", "expvario", "Load experimental variogram", false, "filename", "string", cmd);
 
 
     //  Option: plotting tools
+    /**
+
+     * @brief Set eps for plot centering
+
+     * @param eps eps for plot centering
+
+     */
+
     ValueArg<double> setEps                 ("", "eps", "Set eps for plot centering", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set eps_y for plot on y axis
+
+     * @param epsy eps_y for plot on y axis
+
+     */
+
     ValueArg<double> setEps_y               ("", "epsy", "Set eps_y for plot on y axis", false, 0.05, "double", cmd);
 
 

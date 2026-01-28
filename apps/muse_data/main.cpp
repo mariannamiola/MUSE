@@ -63,32 +63,88 @@ int main(int argc, char** argv)
     // MAIN FUNCTIONALITIES:
 
     // Option 0. New project creation
+    /**
+     * @brief Create a new project
+     * @param new_project Flag to create a new project
+     */
     SwitchArg projectCreation           ("N", "new_project", "Creation new project", cmd, false); //booleano
+    
+    /**
+     * @brief Specify project directory
+     * @param pdir Path to the project directory (required)
+     */
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
 
     // Option 0a. Project creation - optional: setting project EPSG
+    /**
+     * @brief Set project EPSG coordinate system
+     * @param setEPSG EPSG authority code (default: Unknown)
+     */
     ValueArg<std::string> setEPSG       ("", "setEPSG", "Set project EPSG", false, "Unknown", "authority", cmd);
 
     // Option 1. Project creation - optional: setting coordinate columns
+    /**
+     * @brief Enable manual setting of coordinate column numbers
+     * @param setIDXYZ Flag to set coordinate column numbers
+     */
     SwitchArg setIDXYZ                  ("S", "setIDXYZ", "Set n. column coordinate", cmd, false); //booleano
+    
+    /**
+     * @brief Set ID column number
+     * @param setID Column number for ID field
+     */
     ValueArg<int> Colid                 ("", "setID", "Set ID", false, 0, "int" , cmd);
+    
+    /**
+     * @brief Set X coordinate column number
+     * @param setX Column number for X coordinate
+     */
     ValueArg<int> Colx                  ("", "setX", "Set coordinate x", false, 0, "int" , cmd);
+    
+    /**
+     * @brief Set Y coordinate column number
+     * @param setY Column number for Y coordinate
+     */
     ValueArg<int> Coly                  ("", "setY", "Set coordinate y", false, 0, "int" , cmd);
+    
+    /**
+     * @brief Set Z coordinate column number
+     * @param setZ Column number for Z coordinate
+     */
     ValueArg<int> Colz                  ("", "setZ", "Set coordinate z", false, 0, "int" , cmd);
 
     // Option 2b. Converter function - optional: setting delimiter
     std::vector<std::string> allowedDel = {"DEFAULT", "COMMA"}; //default = ;
     ValuesConstraint<std::string> allowedValsD(allowedDel);
+    
+    /**
+     * @brief Set CSV delimiter type
+     * @param setDel Type of CSV delimiter (DEFAULT or COMMA)
+     */
     ValueArg<std::string> Delimiter     ("", "setDel", "Set type of csv delimiter", false, "DEFAULT", &allowedValsD, cmd);
     allowedDel.clear();
 
     // Option 2a. Converter function - SINGLE DATASET
+    /**
+     * @brief Convert CSV format data into MUSE format
+     * @param converter Flag to enable data conversion
+     */
     SwitchArg converterFunction         ("C", "converter", "Converter data (csv format) into MUSE format", cmd, false); //booleano
     //UnlabeledValueArg<int> n_rowsHeader ("n_rows_header", "Number of header rows", false, 6, "int", cmd);
 
     // Option 2a. Option for variables check
     //ValueArg<double> scaleFactor        ("", "scale", "Set scale factor unity (only for compositional variables)", false, 1.0, "double", cmd);
+    
+    /**
+     * @brief Set inferior limit for variable values
+     * @param inf Inferior limit value
+     */
     ValueArg<double> infLimit           ("", "inf", "Set inf limit", false, 0, "inf", cmd);
+    
+    /**
+     * @brief Set superior limit for variable values
+     * @param sup Superior limit value
+     */
     ValueArg<double> supLimit           ("", "sup", "Set sup limit", false, 1, "sup", cmd);
 
     // Option 2a. Converter function - optional: setting flag row
@@ -96,20 +152,52 @@ int main(int argc, char** argv)
 //    ValueArg<int> FlagRow               ("r", "row", "Set row ", false, 0, "row", cmd);
 
     // Option 3. Reading MUSE format
+    /**
+     * @brief Enable reading of MUSE format files
+     * @param read Flag to enable MUSE format reading
+     */
     SwitchArg readFunction              ("R", "read", "Reading MUSE format", cmd, false); //booleano
+    
+    /**
+     * @brief Specify variable name to read
+     * @param var Variable name (default: ALL_INPUT)
+     */
     ValueArg<std::string> Variable      ("v", "var", "Variable", false, "ALL_INPUT", "name", cmd);
+    
+    /**
+     * @brief Set number of realization to process
+     * @param nrealiz Number of realization (default: 0)
+     */
     ValueArg<int> setNrealization       ("n", "nrealiz", "Set number of realization", false, 0, "int", cmd);
 
 
     // Option 3a. Options for histograms
+    /**
+     * @brief Enable histogram computation and plotting
+     * @param hist Flag to compute histogram plots
+     */
     SwitchArg getHistogram              ("", "hist", "Compute plot - hitogram", cmd, false); //booleano
+    
+    /**
+     * @brief Set minimum number of values for histogram plotting
+     * @param nval Minimum number of values (default: 20)
+     */
     ValueArg<int> setNMaxValues         ("", "nval", "Set min number of values, sufficient for histogram plot", false, 20, "int", cmd);
+    
+    /**
+     * @brief Set number of bins for histogram plot
+     * @param nbin Number of bins for histogram (default: 1)
+     */
     ValueArg<size_t> setNbins           ("", "nbin", "Set number of bins for histogram plot", false, 1, "size_t", cmd);
 
 
     // ---------------------------------------------------------------------------------------------------------
     // ADDITIONAL FUNCTIONALITIES:
 
+    /**
+     * @brief Enable CSV format for output files
+     * @param csv Flag to save files in CSV format
+     */
     SwitchArg csvConversion             ("", "csv", "Saving file as csv", cmd, false); //booleano
 
 //    // Option 2a. Converter function - MULTI DATASET

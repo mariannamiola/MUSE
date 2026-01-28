@@ -43,24 +43,120 @@ int main(int argc, char** argv)
     // MAIN FUNCTIONALITIES:
 
     // Option 0.
+    /**
+
+     * @brief Creation histogram plot
+
+     * @param histogram Enable creation histogram plot
+
+     */
+
     SwitchArg histogramPlot             ("H", "histogram", "Creation histogram plot", cmd, false); //booleano
+    /**
+
+     * @brief Project directory
+
+     * @param pdir Path to project directory
+
+     */
+
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
+    /**
+
+     * @brief Set values
+
+     * @param val values
+
+     */
+
     ValueArg<std::string> setValues     ("v", "val", "Set values", false, "File path", "file", cmd);
 
+    /**
+
+
+     * @brief Set min number of values, sufficient for histogram plot
+
+
+     * @param nval Number of set min number of values, sufficient for histogram plot
+
+
+     */
+
+
     ValueArg<int> setNMaxValues         ("", "nval", "Set min number of values, sufficient for histogram plot", false, 20, "int", cmd);
+    /**
+
+     * @brief Set number of bins for histogram plot
+
+     * @param nbin Number of set number of bins for histogram plot
+
+     */
+
     ValueArg<size_t> setNbins           ("", "nbin", "Set number of bins for histogram plot", false, 1, "size_t", cmd);
+
+    /**
+
+
+     * @brief Name variable1
+
+
+     * @param x_variable Name of name variable1
+
+
+     */
+
 
     ValueArg<std::string> Variable1     ("x", "x_variable", "Name variable1", false, "File path", "file", cmd);
 
     // Option 1a.
+    /**
+
+     * @brief Creation bivariate plot
+
+     * @param bivariate_plot Enable creation bivariate plot
+
+     */
+
     SwitchArg bivariatePlot             ("B", "bivariate_plot", "Creation bivariate plot", cmd, false); //booleano
+    /**
+
+     * @brief Name variable2
+
+     * @param y_variable Name of name variable2
+
+     */
+
     ValueArg<std::string> Variable2     ("y", "y_variable", "Name variable2", false, "File path", "file", cmd);
 
     // Option 2.
+    /**
+
+     * @brief Creation error plot
+
+     * @param error_plot Enable creation error plot
+
+     */
+
     SwitchArg errorPlot                 ("E", "error_plot", "Creation error plot", cmd, false); //booleano
 
     // Option 3.
+    /**
+
+     * @brief Creation triangular plot
+
+     * @param triangular_plot Enable creation triangular plot
+
+     */
+
     SwitchArg triangularPlot            ("T", "triangular_plot", "Creation triangular plot", cmd, false); //booleano
+    /**
+
+     * @brief Name variable3
+
+     * @param z_variable Name of name variable3
+
+     */
+
     ValueArg<std::string> Variable3     ("z", "z_variable", "Name variable3", false, "File path", "file", cmd);
 
     // ---------------------------------------------------------------------------------------------------------

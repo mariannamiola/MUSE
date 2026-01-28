@@ -91,55 +91,299 @@ int main(int argc, char** argv)
     // MAIN FUNCTIONALITIES:
 
     // Option 0. New project creation
+    /**
+
+     * @brief Creation of new geometry
+
+     * @param geometry Flag to creation of new geometry
+
+     */
+
     SwitchArg geometryCreation          ("N", "geometry", "Creation of new geometry", cmd, false); //booleano
+    /**
+
+     * @brief Project directory
+
+     * @param pdir Path to project directory
+
+     */
+
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", false, "Directory", "path", cmd);
 
     // Option 0a. Project creation - optional: setting project EPSG
+    /**
+
+     * @brief Set project EPSG
+
+     * @param setEPSG project epsg
+
+     */
+
     ValueArg<std::string> setEPSG        ("", "setEPSG", "Set project EPSG", false, "Unknown", "authority", cmd);
 
 
     // Option 1. Reading vector file (+ flag for triangulation)
     // Include: shape (.shp), geopackage (.gpkg)
+    /**
+
+     * @brief Load Vector file
+
+     * @param vector Enable load vector file
+
+     */
+
     SwitchArg loadVector                ("V", "vector", "Load Vector file", cmd, false); //booleano
+    /**
+
+     * @brief Saving data content of geospatial files
+
+     * @param save Enable saving data content of geospatial files
+
+     */
+
     SwitchArg setSave                   ("", "save", "Saving data content of geospatial files", cmd, false); //booleano
+    /**
+
+     * @brief Save attribute table from geospatial file
+
+     * @param attribute Enable save attribute table from geospatial file
+
+     */
+
     SwitchArg setSaveAttributesTable    ("", "attribute", "Save attribute table from geospatial file", cmd, false); //booleano
 
 
     // Option 2. Reading raster file (+ flag for triangulation)
     // Include: ASCIIGRID (.ASCII)
+    /**
+
+     * @brief Load Raster file
+
+     * @param raster Enable load raster file
+
+     */
+
     SwitchArg loadRaster                ("R", "raster", "Load Raster file", cmd, false); //booleano
 
     // Option 3. Reading xyz_file (point cloud)
     // Include: yxz, dat, txt
+    /**
+
+     * @brief Load point cloud
+
+     * @param pcl Enable load point cloud
+
+     */
+
     SwitchArg loadPointCloud            ("P", "pcl", "Load point cloud", cmd, false); //booleano
+    /**
+
+     * @brief Load filename as POINTS geometry type
+
+     * @param points Path to load filename as points geometry type
+
+     */
+
     ValueArg<std::string> setPoints     ("", "points", "Load filename as POINTS geometry type", false, "", "filename", cmd);
+    /**
+
+     * @brief Load filename as POLYGON geometry type
+
+     * @param polygon Path to load filename as polygon geometry type
+
+     */
+
     ValueArg<std::string> setPolygon    ("", "polygon", "Load filename as POLYGON geometry type", false, "", "filename", cmd);
+
+    /**
+
+
+     * @brief Grid data - test
+
+
+     * @param gridata Enable grid data - test
+
+
+     */
+
 
     SwitchArg gridData                  ("G", "gridata", "Grid data - test", cmd, false); //booleano
     MultiArg<std::string> setBBPoints   ("", "bbp", "Set bounding box points", false, "string", cmd );
 
 
+    /**
+
+
+
+     * @brief Set rotation axis
+
+
+
+     * @param rotaxis rotation axis
+
+
+
+     */
+
+
+
     ValueArg<std::string> setRotAxis    ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
+    /**
+
+     * @brief Set clockwise rotation angle (in degree)
+
+     * @param rotangle clockwise rotation angle (in degree)
+
+     */
+
     ValueArg<double> setRotAngle        ("", "rotangle", "Set clockwise rotation angle (in degree)", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set coordinte X of rotation center
+
+     * @param rotcx coordinte x of rotation center
+
+     */
+
     ValueArg<double> setRotCenterX      ("", "rotcx", "Set coordinte X of rotation center", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set coordinte Y of rotation center
+
+     * @param rotcy coordinte y of rotation center
+
+     */
+
     ValueArg<double> setRotCenterY      ("", "rotcy", "Set coordinte Y of rotation center", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set coordinte Z of rotation center
+
+     * @param rotcz coordinte z of rotation center
+
+     */
+
     ValueArg<double> setRotCenterZ      ("", "rotcz", "Set coordinte Z of rotation center", false, 0.0, "double", cmd);
 
 
+    /**
+
+
+
+     * @brief Set triangulation for 2D meshing
+
+
+
+     * @param tri Enable set triangulation for 2d meshing
+
+
+
+     */
+
+
+
     SwitchArg triFlag                   ("", "tri", "Set triangulation for 2D meshing", cmd, false); //booleano
+    /**
+
+     * @brief Set convex hull for points triangulation
+
+     * @param convex Enable set convex hull for points triangulation
+
+     */
+
     SwitchArg convexFlag                ("", "convex", "Set convex hull for points triangulation", cmd, false); //booleano
+    /**
+
+     * @brief Set concave hull for points triangulation
+
+     * @param concave Enable set concave hull for points triangulation
+
+     */
+
     SwitchArg concaveFlag               ("", "concave", "Set concave hull for points triangulation", cmd, false); //booleano
+    /**
+
+     * @brief Set external boundary for points triangulation
+
+     * @param boundary external boundary for points triangulation
+
+     */
+
     ValueArg<std::string> setBoundary   ("", "boundary", "Set external boundary for points triangulation", false, "", "filename", cmd);
+    /**
+
+     * @brief Set optimization flags
+
+     * @param opt optimization flags
+
+     */
+
     ValueArg<std::string> optFlag       ("", "opt", "Set optimization flags", false, "", "flag", cmd);
 
     // Option 4. Set grid
+    /**
+
+     * @brief Set grid for 2D meshing
+
+     * @param grid Enable set grid for 2d meshing
+
+     */
+
     SwitchArg gridFlag                  ("", "grid", "Set grid for 2D meshing", cmd, false); //booleano
+    /**
+
+     * @brief Set x resolution
+
+     * @param resx x resolution
+
+     */
+
     ValueArg<double> setResx            ("", "resx", "Set x resolution", false, 1.0, "double", cmd);
+    /**
+
+     * @brief Set y resolution
+
+     * @param resy y resolution
+
+     */
+
     ValueArg<double> setResy            ("", "resy", "Set y resolution", false, 1.0, "double", cmd);
+    /**
+
+     * @brief Set z resolution
+
+     * @param resz z resolution
+
+     */
+
     ValueArg<double> setResz            ("", "resz", "Set z resolution", false, 1.0, "double", cmd);
+
+    /**
+
+
+     * @brief Set generic polygon mesh for 2D meshing
+
+
+     * @param poly Enable set generic polygon mesh for 2d meshing
+
+
+     */
+
 
     SwitchArg polygonFlag               ("", "poly", "Set generic polygon mesh for 2D meshing", cmd, false); //booleano
     //ValueArg<std::string> setFeatures   ("", "features", "Set features", false, "DEFAULT", "string" , cmd);
+
+    /**
+
+
+     * @brief Set (random) subset of points
+
+
+     * @param subset (random) subset of points
+
+
+     */
+
 
     ValueArg<int> subSet                ("", "subset", "Set (random) subset of points", false, 10,"int", cmd); //booleano
 
@@ -147,56 +391,316 @@ int main(int argc, char** argv)
     // Option: compute variogram with variable/constant lag spacing
     std::vector<std::string> allowedMethod = {"MEAN","CONSTANT","NEAR","KRIGING"};
     ValuesConstraint<std::string> allowedValsMethod(allowedMethod);
+    /**
+
+     * @brief Set method for z values
+
+     * @param meth method for z values
+
+     */
+
     ValueArg<std::string> setMethodZ    ("", "meth", "Set method for z values", false, "CONSTANT", &allowedValsMethod, cmd);
+    /**
+
+     * @brief Set const z values for new points
+
+     * @param setz const z values for new points
+
+     */
+
     ValueArg<double> setNewZ            ("", "setz", "Set const z values for new points", false, 0.0, "double", cmd);
 
 
     // Option 6. Apply offset on mesh (only extrusion in z direction is enabled)
+    /**
+
+     * @brief Load polygon mesh and apply offset
+
+     * @param offset Enable load polygon mesh and apply offset
+
+     */
+
     SwitchArg setOffset                 ("O", "offset", "Load polygon mesh and apply offset", cmd, false); //booleano
+    /**
+
+     * @brief Set DELTA offset
+
+     * @param delta Enable set delta offset
+
+     */
+
     SwitchArg deltazExtrusion           ("", "delta", "Set DELTA offset", cmd, false); //booleano
+    /**
+
+     * @brief Set ABSOLUTE ELEVATION offset
+
+     * @param abs Enable set absolute elevation offset
+
+     */
+
     SwitchArg abszExtrusion             ("", "abs", "Set ABSOLUTE ELEVATION offset", cmd, false); //booleano
+    /**
+
+     * @brief Set offset in Z direction
+
+     * @param zoffset offset in z direction
+
+     */
+
     ValueArg<double> zOffset            ("z", "zoffset", "Set offset in Z direction", false, 0.0, "double" , cmd);
+
+
+    /**
+
+
+
+     * @brief Append meshes
+
+
+
+     * @param append Enable append meshes
+
+
+
+     */
+
 
 
     SwitchArg appendMeshes              ("A", "append", "Append meshes", cmd, false); //booleano
 
 
     // Option 4. Creating triobject: lateral closure of meshes
+    /**
+
+     * @brief Load trimeshes and create an object closed by surface meshes
+
+     * @param triobj Flag to load trimeshes and create an object closed by surface meshes
+
+     */
+
     SwitchArg createTriObject           ("T", "triobj", "Load trimeshes and create an object closed by surface meshes", cmd, false); //booleano
     MultiArg<std::string> meshFiles     ("m", "mesh", "Set (multi) mesh files", false, "string", cmd );
 
+    /**
+
+
+     * @brief Load quadmeshes and create an object closed by surface meshes
+
+
+     * @param quadobj Flag to load quadmeshes and create an object closed by surface meshes
+
+
+     */
+
+
     SwitchArg createQuadObject          ("Q", "quadobj", "Load quadmeshes and create an object closed by surface meshes", cmd, false); //booleano
+    /**
+
+     * @brief Clean quadrilateral mesh from isolated polys
+
+     * @param clean Enable clean quadrilateral mesh from isolated polys
+
+     */
+
     SwitchArg cleanPoly                 ("", "clean", "Clean quadrilateral mesh from isolated polys", cmd, false); //booleano
 
     // Option 7. Creating volumetric object
+    /**
+
+     * @brief Load polygonal mesh and create polyedral mesh
+
+     * @param volmesh Flag to load polygonal mesh and create polyedral mesh
+
+     */
+
     SwitchArg createVolObject           ("M", "volmesh", "Load polygonal mesh and create polyedral mesh", cmd, false); //booleano
+    /**
+
+     * @brief Set tetrahedralization
+
+     * @param tet Enable set tetrahedralization
+
+     */
+
     SwitchArg tetFlag                   ("", "tet", "Set tetrahedralization", cmd, false); //booleano
+    /**
+
+     * @brief Set voxel as polyedralmesh
+
+     * @param vox Enable set voxel as polyedralmesh
+
+     */
+
     SwitchArg voxFlag                   ("", "vox", "Set voxel as polyedralmesh", cmd, false); //booleano
+    /**
+
+     * @brief Set hexmesh as polyedral
+
+     * @param hex Enable set hexmesh as polyedral
+
+     */
+
     SwitchArg hexFlag                   ("", "hex", "Set hexmesh as polyedral", cmd, false); //booleano
+
+    /**
+
+
+     * @brief Set n max voxel per side
+
+
+     * @param nmaxvox Number of set n max voxel per side
+
+
+     */
+
 
     ValueArg<int> setMaxVoxelperSide    ("", "nmaxvox", "Set n max voxel per side", false, 1, "int", cmd);
 
     // Option 8. Loading surface mesh
+    /**
+
+     * @brief Load trimesh file
+
+     * @param trimesh Enable load trimesh file
+
+     */
+
     SwitchArg loadSurface               ("L", "trimesh", "Load trimesh file", cmd, false); //booleano
+    /**
+
+     * @brief Set polys split method
+
+     * @param splmet polys split method
+
+     */
+
     ValueArg<std::string> splitMethod   ("", "splmet", "Set polys split method", false, "CENTROID", "string", cmd);
+    /**
+
+     * @brief Set remeshing
+
+     * @param remesh Enable set remeshing
+
+     */
+
     SwitchArg setRemeshing              ("", "remesh", "Set remeshing", cmd, false); //booleano
+    /**
+
+     * @brief Set marked boundary edges for remeshing
+
+     * @param mark Enable set marked boundary edges for remeshing
+
+     */
+
     SwitchArg setMarkedEdge             ("", "mark", "Set marked boundary edges for remeshing", cmd, false); //booleano
+    /**
+
+     * @brief Set collapse on edge to simplify mesh boundary
+
+     * @param collapse Enable set collapse on edge to simplify mesh boundary
+
+     */
+
     SwitchArg setEdgeCollpase           ("", "collapse", "Set collapse on edge to simplify mesh boundary", cmd, false);
+    /**
+
+     * @brief Set extract boundary points
+
+     * @param extractbp Enable set extract boundary points
+
+     */
+
     SwitchArg boundaryExtract           ("", "extractbp", "Set extract boundary points", cmd, false); //booleano
+    /**
+
+     * @brief Set number of iterations
+
+     * @param it Number of set number of iterations
+
+     */
+
     ValueArg<int> setIterations         ("", "it", "Set number of iterations", false, 1.0, "int" , cmd);
 
+    /**
+
+
+     * @brief Set scale mesh
+
+
+     * @param scale Enable set scale mesh
+
+
+     */
+
+
     SwitchArg setScaleMesh              ("", "scale", "Set scale mesh", cmd, false);
+    /**
+
+     * @brief Set scale factor in X direction
+
+     * @param sx scale factor in x direction
+
+     */
+
     ValueArg<double> setScaleFactorX    ("", "sx", "Set scale factor in X direction", false, 1.0, "double" , cmd);
+    /**
+
+     * @brief Set scale factor in Y direction
+
+     * @param sy scale factor in y direction
+
+     */
+
     ValueArg<double> setScaleFactorY    ("", "sy", "Set scale factor in Y direction", false, 1.0, "double" , cmd);
+    /**
+
+     * @brief Set scale factor in Z direction
+
+     * @param sz scale factor in z direction
+
+     */
+
     ValueArg<double> setScaleFactorZ    ("", "sz", "Set scale factor in Z direction", false, 1.0, "double" , cmd);
 
     // Option 9. Loading volumetric mesh
+    /**
+
+     * @brief Load tetmesh file
+
+     * @param tetmesh Enable load tetmesh file
+
+     */
+
     SwitchArg loadVolume                ("Z", "tetmesh", "Load tetmesh file", cmd, false); //booleano
+    /**
+
+     * @brief Extract surface from volume
+
+     * @param surf Enable extract surface from volume
+
+     */
+
     SwitchArg extractSurface            ("", "surf", "Extract surface from volume", cmd, false); //booleano
 
 
     // Format conversion for saving meshes
+    /**
+
+     * @brief Saving mesh in obj format
+
+     * @param obj Enable saving mesh in obj format
+
+     */
+
     SwitchArg objConversion             ("", "obj", "Saving mesh in obj format", cmd, false); //booleano
+    /**
+
+     * @brief Saving mesh in vtk format
+
+     * @param vtk Enable saving mesh in vtk format
+
+     */
+
     SwitchArg vtkConversion             ("", "vtk", "Saving mesh in vtk format", cmd, false); //booleano
 
 
@@ -205,15 +709,87 @@ int main(int argc, char** argv)
     // ADDITIONAL FUNCTIONALITIES:
 
     // Option 7. Merge two meshes
+    /**
+
+     * @brief Merge two trimesh
+
+     * @param merge Enable merge two trimesh
+
+     */
+
     SwitchArg mergeMeshes               ("U", "merge", "Merge two trimesh", cmd, false); //booleano
+    /**
+
+     * @brief Set proximaty threshold
+
+     * @param proxthresh proximaty threshold
+
+     */
+
     ValueArg<int> proxThreshold         ("", "proxthresh", "Set proximaty threshold", false, 0, "int" , cmd);
+
+    /**
+
+
+     * @brief Split two trimesh
+
+
+     * @param split Enable split two trimesh
+
+
+     */
+
 
     SwitchArg extractMeshes             ("S", "split", "Split two trimesh", cmd, false); //booleano
 
 
+    /**
+
+
+
+     * @brief Create scalar field from centroids configuration and real samples
+
+
+
+     * @param cscalar Flag to create scalar field from centroids configuration and real samples
+
+
+
+     */
+
+
+
     SwitchArg createScalarField             ("F", "cscalar", "Create scalar field from centroids configuration and real samples", cmd, false); //booleano
+    /**
+
+     * @brief Set samples mesh associated to (real) values
+
+     * @param smesh samples mesh associated to (real) values
+
+     */
+
     ValueArg<std::string> setSamplesMesh    ("","smesh","Set samples mesh associated to (real) values", false, "", "string", cmd);
+    /**
+
+     * @brief Set samples values associated to each vertex of samples mesh
+
+     * @param sval samples values associated to each vertex of samples mesh
+
+     */
+
     ValueArg<std::string> setSamplesValues  ("","sval","Set samples values associated to each vertex of samples mesh", false, "", "string", cmd);
+
+    /**
+
+
+     * @brief Restore scalar field from centroids configuration and real samples
+
+
+     * @param rscalar Enable restore scalar field from centroids configuration and real samples
+
+
+     */
+
 
     SwitchArg restoreScalarField            ("", "rscalar", "Restore scalar field from centroids configuration and real samples", cmd, false); //booleano
 
@@ -223,9 +799,45 @@ int main(int argc, char** argv)
 
 
     // Option 9. Multi-resolution approach (associate a scalar field to meshes with different resolutions)
+    /**
+
+     * @brief Set multiresolution
+
+     * @param res Enable set multiresolution
+
+     */
+
     SwitchArg setMultiResolution            ("D", "res", "Set multiresolution", cmd, false); //booleano
+    /**
+
+     * @brief Set scalar field file
+
+     * @param file Path to set scalar field file
+
+     */
+
     ValueArg<std::string> setScalarField    ("f", "file", "Set scalar field file", false, "Directory", "path", cmd);
+    /**
+
+     * @brief Geometry model
+
+     * @param refmod geometry model
+
+     */
+
     ValueArg<std::string> setRefModel       ("", "refmod", "Geometry model", false, "name_geometry", "string", cmd);
+
+    /**
+
+
+     * @brief Set folder to save outputs
+
+
+     * @param outf Path to set folder to save outputs
+
+
+     */
+
 
     ValueArg<std::string> setOutFolder      ("", "outf", "Set folder to save outputs", false, "Directory", "string", cmd);
 
