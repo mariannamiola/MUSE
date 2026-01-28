@@ -5,7 +5,7 @@
 ### Usage
 
 ```bash
-muse_compute [OPTIONS]
+muse_compute -v <VAR> -m <GEOM> [OPTIONS]
 ```
 
 ### Options

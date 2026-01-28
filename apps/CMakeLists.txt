@@ -240,17 +240,36 @@ include_directories(BEFORE "../external/muse_database/include")
 find_package(Python3 COMPONENTS Interpreter)
 if(Python3_FOUND)
     set(CLI_DOCS_SCRIPT "${CMAKE_SOURCE_DIR}/../scripts/generate_cli_docs.py")
-    set(CLI_DOCS_OUTPUT "${CMAKE_SOURCE_DIR}/../docs/CLI-OPTIONS.md")
+    set(HTML_DOCS_SCRIPT "${CMAKE_SOURCE_DIR}/../scripts/generate_html_docs.py")
+    set(MD_DOCS_OUTPUT "${CMAKE_SOURCE_DIR}/../docs/md")
+    set(HTML_DOCS_OUTPUT "${CMAKE_SOURCE_DIR}/../docs/html")
     
-    add_custom_target(cli-docs ALL
-        COMMAND ${Python3_EXECUTABLE} ${CLI_DOCS_SCRIPT} ${CMAKE_SOURCE_DIR} ${CLI_DOCS_OUTPUT}
+    # Generate Markdown documentation
+    add_custom_target(cli-docs-md ALL
+        COMMAND ${Python3_EXECUTABLE} ${CLI_DOCS_SCRIPT} ${CMAKE_SOURCE_DIR} ${MD_DOCS_OUTPUT}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/..
-        COMMENT "Generating CLI documentation from source code..."
+        COMMENT "Generating CLI markdown documentation from source code..."
         VERBATIM
     )
     
+    # Generate HTML documentation from Markdown
+    add_custom_target(cli-docs-html ALL
+        COMMAND ${Python3_EXECUTABLE} ${HTML_DOCS_SCRIPT} ${MD_DOCS_OUTPUT} ${HTML_DOCS_OUTPUT}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/..
+        DEPENDS cli-docs-md
+        COMMENT "Generating HTML documentation from markdown..."
+        VERBATIM
+    )
+    
+    # Combined target for both
+    add_custom_target(cli-docs ALL
+        DEPENDS cli-docs-md cli-docs-html
+        COMMENT "Generating complete CLI documentation (Markdown + HTML)"
+    )
+    
     message(STATUS "CLI documentation generation enabled")
-    message(STATUS "Documentation output: ${CLI_DOCS_OUTPUT}")
+    message(STATUS "Markdown output: ${MD_DOCS_OUTPUT}")
+    message(STATUS "HTML output: ${HTML_DOCS_OUTPUT}")
 else()
     message(WARNING "Python3 not found - CLI documentation generation disabled")
 endif()
