@@ -29,6 +29,10 @@ def markdown_to_html(md_content: str) -> str:
     html = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', html)
     html = re.sub(r'\*(.*?)\*', r'<em>\1</em>', html)
     
+    # Handle Type and Description metadata lines specifically
+    html = re.sub(r'^<strong>Type:</strong>(.+)$', r'<p><strong>Type:</strong>\1</p>', html, flags=re.MULTILINE)
+    html = re.sub(r'^<strong>Description:</strong>(.+)$', r'<p><strong>Description:</strong>\1</p>', html, flags=re.MULTILINE)
+    
     # Special formatting for Dependencies and Examples
     html = re.sub(r'<strong>Dependencies:</strong>\s*(.+?)(?=\n\n|\n<strong>|\n$)', 
                   r'<div class="dependencies"><strong>Dependencies:</strong> \1</div>', html, flags=re.DOTALL)

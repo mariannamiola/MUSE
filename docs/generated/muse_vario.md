@@ -5,7 +5,7 @@
 ### Usage
 
 ```bash
-muse_vario [OPTIONS]
+muse_vario -v <VAR> [OPTIONS]
 ```
 
 ### Options

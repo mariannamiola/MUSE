@@ -5,7 +5,7 @@
 ### Usage
 
 ```bash
-muse_utility [OPTIONS]
+muse_utility [SWITCHES] [OPTIONS]
 ```
 
 ### Options

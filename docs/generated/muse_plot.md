@@ -5,7 +5,7 @@
 ### Usage
 
 ```bash
-muse_plot [OPTIONS]
+muse_plot [SWITCHES] [OPTIONS]
 ```
 
 ### Options

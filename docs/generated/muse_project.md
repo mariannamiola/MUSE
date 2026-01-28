@@ -5,7 +5,7 @@
 ### Usage
 
 ```bash
-muse_project [OPTIONS]
+muse_project -p <PDIR> -n <NAME> [-N] [OPTIONS]
 ```
 
 ### Options

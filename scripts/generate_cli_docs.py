@@ -210,6 +210,83 @@ class MarkdownGenerator:
         md += self._generate_common_section()
         return md
     
+    def _generate_usage_string(self, app_name: str, options: List[Dict]) -> str:
+        """Generate detailed usage string based on parsed options"""
+        usage_parts = [app_name]
+        
+        # Separate required and optional arguments
+        required_args = []
+        optional_args = []
+        switches = []
+        
+        for opt in options:
+            flag_name = opt.get('long_flag', '')
+            short_flag = opt.get('short_flag', '')
+            opt_type = opt.get('type', '')
+            note = opt.get('note', '')
+            
+            # More precise required flag detection
+            is_required = (
+                'MANDATORY when using' in note and flag_name in ['var', 'geom'] or  # Only var and geom are truly required
+                note.startswith('MANDATORY:') or  # Explicit mandatory marker
+                (flag_name in ['pdir', 'name'] and 'required' in note.lower())  # Project-specific requirements
+            )
+            
+            # Create flag representation
+            if short_flag:
+                flag_repr = f"-{short_flag}"
+            else:
+                flag_repr = f"--{flag_name}"
+                
+            if opt_type == 'Switch':
+                switches.append(flag_repr)
+            elif opt_type == 'Value':
+                value_name = flag_name.upper().replace('-', '_')
+                if is_required:
+                    required_args.append(f"{flag_repr} <{value_name}>")
+                else:
+                    optional_args.append(f"[{flag_repr} <{value_name}>]")
+        
+        # Add required arguments first
+        if required_args:
+            usage_parts.extend(required_args)
+        
+        # For complex apps, limit the usage line length
+        total_options = len(optional_args) + len(switches)
+        if total_options > 15:
+            usage_parts.append("[OPTIONS]")
+        else:
+            # Add most important optional arguments first (up to 8)
+            important_flags = ['pdir', 'mode', 'sub', 'out', 'format', 'input']
+            important_optional = []
+            other_optional = []
+            
+            for opt_arg in optional_args:
+                flag_found = False
+                for imp_flag in important_flags:
+                    if f"--{imp_flag}" in opt_arg or f"-{imp_flag[0].upper()}" in opt_arg:
+                        important_optional.append(opt_arg)
+                        flag_found = True
+                        break
+                if not flag_found:
+                    other_optional.append(opt_arg)
+            
+            # Add important optional args (max 6)
+            usage_parts.extend(important_optional[:6])
+            
+            # Add switches (max 3)
+            if switches:
+                if len(switches) <= 3:
+                    usage_parts.extend([f"[{s}]" for s in switches[:3]])
+                else:
+                    usage_parts.append("[SWITCHES]")
+            
+            # Add [OPTIONS] if there are more
+            if len(other_optional) > 0 or len(important_optional) > 6 or len(switches) > 3:
+                usage_parts.append("[OPTIONS]")
+        
+        return " ".join(usage_parts)
+    
     def _generate_app_section(self, app_name: str, app_info: Dict) -> str:
         """Generate documentation section for one application"""
         md = f"## {app_name}\n\n"
@@ -223,8 +300,11 @@ class MarkdownGenerator:
             md += "---\n\n"
             return md
         
+        # Generate enhanced usage string
+        usage_string = self._generate_usage_string(app_name, app_info['options'])
+        
         md += "### Usage\n\n"
-        md += f"```bash\n{app_name} [OPTIONS]\n```\n\n"
+        md += f"```bash\n{usage_string}\n```\n\n"
         
         md += "### Options\n\n"
         
@@ -252,6 +332,7 @@ class MarkdownGenerator:
         
         md += f"#### {flag_str} {{#{anchor_id}}}\n"
         md += f"**Type:** {opt['type']} (flag)\n"
+        md += "\n"  # Add blank line between Type and Description
         
         if opt.get('brief'):
             md += f"**Description:** {opt['brief']}\n"
