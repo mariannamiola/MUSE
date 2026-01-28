@@ -162,6 +162,24 @@
 
 <p>Flag to creation of new geometry</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> When creating new geometry, requires:
+<ul>
+  <li>Input data source (choose one):</li>
+  <li>-V/<a href="#vector">--vector</a>: Load vector file (.shp, .gpkg)</li>
+  <li>-R/<a href="#raster">--raster</a>: Load raster file (.ASCII)</li>
+  <li>-P/<a href="#pcl">--pcl</a>: Load point cloud (.xyz, .dat, .txt)</li>
+  <li>Processing method (choose one):</li>
+  <li><a href="#tri">--tri</a>: Triangulation for 2D meshing</li>
+  <li><a href="#grid">--grid</a>: Grid for 2D meshing</li>
+</ul>
+OPTIONAL:
+<ul>
+  <li><a href="#pdir">--pdir</a>: Project directory</li>
+  <li><a href="#setEPSG">--setEPSG</a>: Set coordinate system</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -N --vector --tri --pdir /path/to/project</code></div>
+
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Project directory
@@ -179,6 +197,15 @@
 <strong>Description:</strong> Load Vector file
 
 <p>Enable load vector file</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -R/<a href="#raster">--raster</a> and -P/<a href="#pcl">--pcl</a>
+Used with -N/<a href="#geometry">--geometry</a> for geometry creation
+Supports: .shp, .gpkg formats
+OPTIONAL modifiers:
+<ul>
+  <li><a href="#save">--save</a>: Save data content</li>
+  <li><a href="#attribute">--attribute</a>: Save attribute table</div></li>
+</ul>
 
 <h4 id="save"><code>--save</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -198,11 +225,24 @@
 
 <p>Enable load raster file</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -V/<a href="#vector">--vector</a> and -P/<a href="#pcl">--pcl</a>
+Used with -N/<a href="#geometry">--geometry</a> for geometry creation
+Supports: .ASCII format</div>
+
 <h4 id="pcl"><code>-P</code>, <code>--pcl</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Load point cloud
 
 <p>Enable load point cloud</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -V/<a href="#vector">--vector</a> and -R/<a href="#raster">--raster</a>
+Used with -N/<a href="#geometry">--geometry</a> for geometry creation
+Supports: .xyz, .dat, .txt formats
+Can be used with:
+<ul>
+  <li><a href="#points">--points</a>: Specify points geometry file</li>
+  <li><a href="#polygon">--polygon</a>: Specify polygon geometry file</div></li>
+</ul>
 
 <h4 id="points"><code>--points</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -228,11 +268,22 @@
 
 <p>rotation axis</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> When using rotation, these flags work together:
+<ul>
+  <li><a href="#rotaxis">--rotaxis</a>: Rotation axis (X, Y, Z)</li>
+  <li><a href="#rotangle">--rotangle</a>: Rotation angle (required if rotaxis != NO)</li>
+  <li><a href="#rotcx">--rotcx</a>, <a href="#rotcy">--rotcy</a>, <a href="#rotcz">--rotcz</a>: Rotation center coordinates</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0</code></div>
+
 <h4 id="rotangle"><code>--rotangle</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set clockwise rotation angle (in degree)
 
 <p>clockwise rotation angle (in degree)</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO</div>
 
 <h4 id="rotcx"><code>--rotcx</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -258,17 +309,36 @@
 
 <p>Enable set triangulation for 2d meshing</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with <a href="#grid">--grid</a> meshing method
+Used with -N/<a href="#geometry">--geometry</a> for mesh creation
+Triangulation configuration (choose one):
+<ul>
+  <li><a href="#convex">--convex</a>: Convex hull triangulation (mutually exclusive with <a href="#concave">--concave</a>)</li>
+  <li><a href="#concave">--concave</a>: Concave hull triangulation (mutually exclusive with <a href="#convex">--convex</a>)</li>
+</ul>
+OPTIONAL:
+<ul>
+  <li><a href="#boundary">--boundary</a>: External boundary file</li>
+  <li><a href="#opt">--opt</a>: Optimization flags</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>--tri --convex OR --tri --concave --boundary /path/to/boundary.shp</code></div>
+
 <h4 id="convex"><code>--convex</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set convex hull for points triangulation
 
 <p>Enable set convex hull for points triangulation</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#tri">--tri</a> flag. Mutually exclusive with <a href="#concave">--concave</a></div>
+
 <h4 id="concave"><code>--concave</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set concave hull for points triangulation
 
 <p>Enable set concave hull for points triangulation</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#tri">--tri</a> flag. Mutually exclusive with <a href="#convex">--convex</a></div>
 
 <h4 id="boundary"><code>--boundary</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -288,17 +358,37 @@
 
 <p>Enable set grid for 2d meshing</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with <a href="#tri">--tri</a> triangulation method
+Used with -N/<a href="#geometry">--geometry</a> for mesh creation
+Grid configuration requires:
+<ul>
+  <li><a href="#resx">--resx</a>: X resolution (mandatory)</li>
+  <li><a href="#resy">--resy</a>: Y resolution (mandatory)</li>
+</ul>
+OPTIONAL:
+<ul>
+  <li><a href="#resz">--resz</a>: Z resolution (for 3D grids)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>--grid --resx 10.0 --resy 10.0</code></div>
+
 <h4 id="resx"><code>--resx</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set x resolution
 
 <p>x resolution</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#grid">--grid</a> flag. Required for grid meshing
+Must be used together with <a href="#resy">--resy</a></div>
+
 <h4 id="resy"><code>--resy</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set y resolution
 
 <p>y resolution</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#grid">--grid</a> flag. Required for grid meshing
+Must be used together with <a href="#resx">--resx</a></div>
 
 <h4 id="resz"><code>--resz</code></h4>
 <strong>Type:</strong> Value (flag)

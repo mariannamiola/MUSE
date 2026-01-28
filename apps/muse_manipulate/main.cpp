@@ -85,11 +85,14 @@ int main(int argc, char** argv)
 
     // Option 0. Index extraction from geometry model
     /**
-
      * @brief Extraction data
-
      * @param extract Enable extraction data
-
+     * @note When using -E/--extract, requires:
+     * - --geom: Geometry model (mandatory)
+     * OPTIONAL:
+     * - --zcoord: Z coordinate specification
+     * - --sub: Sub-dataset extraction
+     * @example -E --geom mesh_model --zcoord elevation
      */
 
     SwitchArg setExtract                    ("E", "extract", "Extraction data", cmd, false); //booleano
@@ -104,14 +107,10 @@ int main(int argc, char** argv)
     ValueArg<std::string> projectFolder     ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
 
     /**
-
-
      * @brief Geometry model
-
-
      * @param geom geometry model
-
-
+     * @note Required when using -E/--extract flag
+     * The geometry model must exist in the project
      */
 
 
@@ -135,42 +134,38 @@ int main(int argc, char** argv)
 
     // Option 1. Index extraction from interval
     /**
-
      * @brief Extraction data from interval
-
      * @param intextr Enable extraction data from interval
-
+     * @note When using -I/--intextr, requires:
+     * - --sup: Superior interval limit (mandatory)
+     * - --inf: Inferior interval limit (mandatory)
+     * - --nvar: Variable name to check (mandatory)
+     * @example -I --sup 100 --inf 0 --nvar temperature
      */
 
     SwitchArg setIntervalExtraction         ("I", "intextr", "Extraction data from interval", cmd, false); //booleano
     /**
-
      * @brief Set sup interval
-
      * @param sup sup interval
-
+     * @note Used with -I/--intextr flag. Required for interval extraction
+     * Must be used together with --inf and --nvar
      */
 
     ValueArg<int> supInterval               ("", "sup", "Set sup interval", false, 0, "int", cmd);
     /**
-
      * @brief Set inf interval
-
      * @param inf inf interval
-
+     * @note Used with -I/--intextr flag. Required for interval extraction
+     * Must be used together with --sup and --nvar
      */
 
     ValueArg<int> infInterval               ("", "inf", "Set inf interval", false, 0, "int", cmd);
 
     /**
-
-
      * @brief Set variable to check
-
-
      * @param nvar Name of set variable to check
-
-
+     * @note Used with -I/--intextr flag. Required for interval extraction
+     * Must be used together with --sup and --inf
      */
 
 
@@ -193,20 +188,13 @@ int main(int argc, char** argv)
 
 
     /**
-
-
-
-
      * @brief Set rotation axis
-
-
-
-
      * @param rotaxis rotation axis
-
-
-
-
+     * @note When using rotation, these flags work together:
+     * - --rotaxis: Rotation axis (X, Y, Z)
+     * - --rotangle: Rotation angle (required if rotaxis != NO)
+     * - --rotcx, --rotcy, --rotcz: Rotation center coordinates
+     * @example For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
 
 
@@ -214,11 +202,9 @@ int main(int argc, char** argv)
 
     ValueArg<std::string> setRotAxis        ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
     /**
-
      * @brief Set rotation angle (clockwise)
-
      * @param rotangle rotation angle (clockwise)
-
+     * @note Used together with --rotaxis flag. Required when rotaxis != NO
      */
 
     ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
@@ -255,29 +241,29 @@ int main(int argc, char** argv)
 
     // Option 2. Point projection on surfaces
     /**
-
      * @brief Points projection on surfaces
-
      * @param prsurf Enable points projection on surfaces
-
+     * @note Projection mode selection (mutually exclusive):
+     * - -P/--prsurf: Surface projection
+     * - -S/--prsect: Section projection (2D)
+     * - -R/--prqsect: Quad section projection
+     * Choose only ONE projection mode per operation
      */
 
     SwitchArg setProjectionOnSurface        ("P", "prsurf", "Points projection on surfaces", cmd, false);
     /**
-
      * @brief Compute points projection on boundary (2D section case).
-
      * @param prsect Flag to compute points projection on boundary (2d section case).
-
+     * @note Mutually exclusive with -P/--prsurf and -R/--prqsect
+     * Use for 2D section projection operations
      */
 
     SwitchArg setProjectionOnSection        ("S", "prsect", "Compute points projection on boundary (2D section case).", cmd, false);
     /**
-
      * @brief Points projection on quads sections
-
      * @param prqsect Enable points projection on quads sections
-
+     * @note Mutually exclusive with -P/--prsurf and -S/--prsect
+     * Use for quad-based section projection operations
      */
 
     SwitchArg setProjectionOnQSection       ("R", "prqsect", "Points projection on quads sections", cmd, false);

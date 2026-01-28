@@ -162,6 +162,20 @@
 
 <p>Flag to compute variogram</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> MANDATORY when computing variograms. Requires:
+<ul>
+  <li><a href="#pdir">--pdir</a>: Project directory (mandatory)</li>
+  <li><a href="#var">--var</a>: Variable name (mandatory)</li>
+</ul>
+OPTIONAL but commonly used:
+<ul>
+  <li><a href="#vario">--vario</a>: Variogram type (EXPERIMENTAL, MODEL)</li>
+  <li><a href="#dir">--dir</a>: Direction type (OMNI, DIR)</li>
+  <li><a href="#dim">--dim</a>: Dimension (3D, 2D, 1Dz, etc.)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>muse_vario -V --pdir /path/to/project --var temperature --vario EXPERIMENTAL --dir OMNI --dim 3D</code></div>
+
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Project directory
@@ -173,6 +187,9 @@
 <strong>Description:</strong> Variable
 
 <p>Name of variable</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> MANDATORY when using -V/<a href="#variogram">--variogram</a> flag
+The variable must exist in the project data</div>
 
 <h4 id="sub"><code>--sub</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -186,11 +203,22 @@
 
 <p>rotation axis</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> When using rotation, these flags work together:
+<ul>
+  <li><a href="#rotaxis">--rotaxis</a>: Rotation axis (X, Y, Z)</li>
+  <li><a href="#rotangle">--rotangle</a>: Rotation angle (required if rotaxis != NO)</li>
+  <li><a href="#rotcx">--rotcx</a>, <a href="#rotcy">--rotcy</a>, <a href="#rotcz">--rotcz</a>: Rotation center coordinates</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0</code></div>
+
 <h4 id="rotangle"><code>--rotangle</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation angle (clockwise)
 
 <p>rotation angle (clockwise)</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO</div>
 
 <h4 id="rotcx"><code>--rotcx</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -222,11 +250,21 @@
 
 <p>Enable set 2d declustering</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> When using declustering, requires:
+<ul>
+  <li><a href="#csize">--csize</a>: Cell size for declustering (mandatory)</li>
+  <li><a href="#nstep">--nstep</a>: Number of grid translation steps (mandatory)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>--decl --csize 100 --nstep 5</code></div>
+
 <h4 id="csize"><code>--csize</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set cell size for 2D declustering
 
 <p>cell size for 2d declustering</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#decl">--decl</a> flag for 2D declustering</div>
 
 <h4 id="nstep"><code>--nstep</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -234,17 +272,29 @@
 
 <p>Number of set n steps for 2d declustering (grid translation)</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#decl">--decl</a> flag for 2D declustering</div>
+
 <h4 id="sttype"><code>--sttype</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set stratigraphic condition for coordinate transformation
 
 <p>stratigraphic condition for coordinate transformation</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> When using stratigraphic transformation, requires:
+<ul>
+  <li><a href="#filestrat">--filestrat</a>: Filename of samples in stratigraphic coordinates (mandatory)</li>
+</ul>
+Available conditions: PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION</div>
+
+<div class="example"><strong>Example:</strong> <code>--sttype PROPORTIONAL --filestrat /path/to/strat_coords.dat</code></div>
+
 <h4 id="filestrat"><code>-f</code>, <code>--filestrat</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set filename of samples in stratigraphic coordinates
 
 <p>Path to set filename of samples in stratigraphic coordinates</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required when using <a href="#sttype">--sttype</a> flag for stratigraphic transformation</div>
 
 <h4 id="vario"><code>--vario</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -257,6 +307,17 @@
 <strong>Description:</strong> type of variogram direction
 
 <p>Path to type of variogram direction</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using DIR (directional), directional parameters become important:
+<ul>
+  <li><a href="#deg">--deg</a>: Degree step (default: 45°)</li>
+  <li><a href="#degtol">--degtol</a>: Tolerance (default: 45°)</li>
+  <li><a href="#zdegtol">--zdegtol</a>: Vertical tolerance (default: 22.5°)</li>
+  <li><a href="#bandw">--bandw</a>: Bandwidth (optional)</li>
+  <li><a href="#vertbandw">--vertbandw</a>: Vertical bandwidth (optional)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>--dir DIR --deg 30 --degtol 15 --zdegtol 10</code></div>
 
 <h4 id="dim"><code>--dim</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -282,17 +343,26 @@
 
 <p>degree step (in degree)</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#dir">--dir</a> DIR for directional variogram computation
+Works together with <a href="#degtol">--degtol</a> and <a href="#zdegtol">--zdegtol</a></div>
+
 <h4 id="degtol"><code>--degtol</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set tolerance (in degree)
 
 <p>tolerance (in degree)</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#dir">--dir</a> DIR for directional variogram computation
+Works together with <a href="#deg">--deg</a> and <a href="#zdegtol">--zdegtol</a> for direction tolerance</div>
+
 <h4 id="zdegtol"><code>--zdegtol</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set vertical tolerance (in degree)
 
 <p>vertical tolerance (in degree)</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#dir">--dir</a> DIR for directional variogram computation
+Works together with <a href="#deg">--deg</a> and <a href="#degtol">--degtol</a> for vertical direction tolerance</div>
 
 <h4 id="dirs"><code>--dirs</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -306,11 +376,17 @@
 
 <p>bandwidth</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#dir">--dir</a> DIR for directional variogram computation
+Often used together with <a href="#vertbandw">--vertbandw</a> for 3D directional analysis</div>
+
 <h4 id="vertbandw"><code>--vertbandw</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set vertical bandwidth
 
 <p>vertical bandwidth</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#dir">--dir</a> DIR for directional variogram computation
+Often used together with <a href="#bandw">--bandw</a> for 3D directional analysis</div>
 
 <h4 id="type"><code>--type</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -318,17 +394,34 @@
 
 <p>type of model variogram</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> When using <a href="#vario">--vario</a> MODEL, this flag becomes important
+For model fitting, use together with:
+<ul>
+  <li><a href="#nugget">--nugget</a>: Nugget value (optional)</li>
+  <li><a href="#sill">--sill</a>: Sill value (optional, not fully enabled)</li>
+</ul>
+Available models: AUTO, SPHERICAL, GAUSSIAN, EXPONENTIAL, LINEAR, DEFAULT</div>
+
+<div class="example"><strong>Example:</strong> <code>--vario MODEL --type SPHERICAL --nugget 0.1</code></div>
+
 <h4 id="nugget"><code>--nugget</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Nugget
 
 <p>Number of nugget</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#vario">--vario</a> MODEL and <a href="#type">--type</a> for model fitting
+Often used together with <a href="#sill">--sill</a> for complete model specification</div>
+
 <h4 id="sill"><code>--sill</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Sill (NOT ENABLE)
 
 <p>sill (not enable)</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#vario">--vario</a> MODEL and <a href="#type">--type</a> for model fitting
+Often used together with <a href="#nugget">--nugget</a> for complete model specification
+WARNING: This parameter is not fully enabled in current version</div>
 
 <h4 id="npoints"><code>--npoints</code></h4>
 <strong>Type:</strong> Value (flag)

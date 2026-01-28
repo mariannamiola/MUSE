@@ -104,29 +104,26 @@ int main(int argc, char **argv)
 
         // Define main functionalities options
         /**
-
          * @brief Project directory
-
          * @param pdir Path to project directory
-
+         * @note MANDATORY for all export operations
+         * The project directory must contain MUSE data files
          */
 
         ValueArg<std::string> projectFolder("p", "pdir", "Project directory", true, "Directory", "path", cmd);
         /**
-
          * @brief Variable
-
          * @param var Name of variable
-
+         * @note MANDATORY for all export operations
+         * The variable must exist in the project data
          */
 
         ValueArg<std::string> variable("v", "var", "Variable", true, "name_var", "string", cmd);
         /**
-
          * @brief Geometry model
-
          * @param geom geometry model
-
+         * @note Often required depending on export type
+         * The geometry model must be available in the project
          */
 
         ValueArg<std::string> geomModel("m", "geom", "Geometry model", false, "name_geometry", "string", cmd);
@@ -171,11 +168,12 @@ int main(int argc, char **argv)
         std::vector<std::string> allowedVarioDir = {"OMNI", "DIR"};
         ValuesConstraint<std::string> allowedValsVD(allowedVarioDir);
         /**
-
          * @brief type of variogram direction
-
          * @param dir Path to type of variogram direction
-
+         * @note Used with variogram export operations
+         * Works together with --dim for variogram configuration
+         * Available options: OMNI, DIR
+         * @example --dir DIR --dim 3D
          */
 
         ValueArg<std::string> varioDirection("", "dir", "type of variogram direction", false, "OMNI", &allowedValsVD, cmd);
@@ -184,22 +182,22 @@ int main(int argc, char **argv)
         std::vector<std::string> allowedVarioDim = {"3D", "3Dxy", "3Dz", "2D", "1Dz", "1D"};
         ValuesConstraint<std::string> allowedValsVDm(allowedVarioDim);
         /**
-
          * @brief type of variogram dimension
-
          * @param dim type of variogram dimension
-
+         * @note Used with variogram export operations
+         * Works together with --dir for variogram configuration
+         * Available options: 3D, 3Dxy, 3Dz, 2D, 1Dz, 1D
+         * @example --dir OMNI --dim 2D
          */
 
         ValueArg<std::string> varioDimension("", "dim", "type of variogram dimension", false, "3D", &allowedValsVDm, cmd);
 
         // Define number of simulations option
         /**
-
          * @brief Number of simulations to export
-
          * @param nsim Number of number of simulations to export
-
+         * @note Used for exporting multiple simulation results
+         * Requires simulation data to be available in project
          */
 
         ValueArg<int> numSim("N", "nsim", "Number of simulations to export", false, 0, "int", cmd);
@@ -225,11 +223,10 @@ int main(int argc, char **argv)
         ValueArg<std::string> appendSep("", "append_sep", "Separator for append table", false, ";", "string", cmd);
         // Define append existing gpkg table
         /**
-
          * @brief Append existing table (gpkg)
-
          * @param append_gpkg append existing table (gpkg)
-
+         * @note Requires existing geopackage file at specified path
+         * Use with --geopkg output format
          */
 
         ValueArg<std::string> appendGpkg("", "append_gpkg", "Append existing table (gpkg)", false, "append_table", "path", cmd);

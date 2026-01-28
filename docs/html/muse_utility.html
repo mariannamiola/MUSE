@@ -162,11 +162,28 @@
 
 <p>Enable file list</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Operation mode selection (mutually exclusive):
+<ul>
+  <li>-L/<a href="#list">--list</a>: File listing operation</li>
+  <li>-Q/<a href="#query">--query</a>: Query path creation</li>
+  <li>-H/<a href="#history">--history</a>: JSON history analysis</li>
+</ul>
+When using file listing:
+<ul>
+  <li><a href="#pdir">--pdir</a>: Directory path (optional)</li>
+  <li><a href="#type">--type</a>: File type filter (optional)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-L --pdir /project --type JSON</code></div>
+
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Directory
 
 <p>Path to directory</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -L/<a href="#list">--list</a> flag for file listing operations
+Specifies the directory to search for files</div>
 
 <h4 id="type"><code>--type</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -174,11 +191,17 @@
 
 <p>Path to type of file</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Used with -L/<a href="#list">--list</a> flag for file filtering
+Available types: JSON, MESH</div>
+
 <h4 id="query"><code>-Q</code>, <code>--query</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Query for creation path
 
 <p>Enable query for creation path</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -L/<a href="#list">--list</a> and -H/<a href="#history">--history</a>
+Operation mode for path creation queries</div>
 
 <h4 id="history"><code>-H</code>, <code>--history</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -186,11 +209,28 @@
 
 <p>Enable set json history</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -L/<a href="#list">--list</a> and -Q/<a href="#query">--query</a>
+History analysis operation requires:
+<ul>
+  <li><a href="#json">--json</a>: JSON file path (mandatory)</li>
+</ul>
+OPTIONAL history navigation flags:
+<ul>
+  <li><a href="#back">--back</a>: Recursive backward navigation</li>
+  <li><a href="#forward">--forward</a>: Recursive forward navigation</li>
+  <li><a href="#more">--more</a>: Forward navigation with commands</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-H --json /path/to/history.json --more</code></div>
+
 <h4 id="json"><code>--json</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set json file
 
 <p>Path to set json file</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required when using -H/<a href="#history">--history</a> flag
+Specifies the JSON file containing processing history</div>
 
 <h4 id="back"><code>--back</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -198,17 +238,26 @@
 
 <p>Enable set json history (recursively - back)</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Optional modifier for -H/<a href="#history">--history</a> operations
+Enables recursive backward navigation through history</div>
+
 <h4 id="forward"><code>--forward</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set JSON history (recursively - forward)
 
 <p>Enable set json history (recursively - forward)</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Optional modifier for -H/<a href="#history">--history</a> operations
+Enables recursive forward navigation through history</div>
+
 <h4 id="more"><code>--more</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set JSON history (recursively - forward) and commands
 
 <p>Enable set json history (recursively - forward) and commands</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional modifier for -H/<a href="#history">--history</a> operations
+Provides detailed forward navigation with command information</div>
 
 <p>---</p>
 

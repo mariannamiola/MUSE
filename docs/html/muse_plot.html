@@ -162,6 +162,21 @@
 
 <p>Enable creation histogram plot</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Plot type selection (mutually exclusive):
+<ul>
+  <li>-H/<a href="#histogram">--histogram</a>: Histogram plot (choose this OR others)</li>
+  <li>-B/<a href="#bivariate-plot">--bivariate_plot</a>: Bivariate plot</li>
+  <li>-E/<a href="#error-plot">--error_plot</a>: Error plot</li>
+  <li>-T/<a href="#triangular-plot">--triangular_plot</a>: Triangular plot</li>
+</ul>
+When using histogram, configure with:
+<ul>
+  <li><a href="#nval">--nval</a>: Minimum number of values (default: 20)</li>
+  <li><a href="#nbin">--nbin</a>: Number of bins (default: 1)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-H --nval 50 --nbin 25</code></div>
+
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Project directory
@@ -186,11 +201,20 @@
 
 <p>Number of set number of bins for histogram plot</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Used with -H/<a href="#histogram">--histogram</a> flag
+Controls histogram resolution and detail level</div>
+
 <h4 id="x-variable"><code>-x</code>, <code>--x_variable</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Name variable1
 
 <p>Name of name variable1</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required for:
+<ul>
+  <li>-B/<a href="#bivariate-plot">--bivariate_plot</a>: X-axis variable (must use with <a href="#y-variable">--y_variable</a>)</li>
+  <li>-T/<a href="#triangular-plot">--triangular_plot</a>: First variable (must use with <a href="#y-variable">--y_variable</a> and <a href="#z-variable">--z_variable</a>)</div></li>
+</ul>
 
 <h4 id="bivariate-plot"><code>-B</code>, <code>--bivariate_plot</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -198,11 +222,26 @@
 
 <p>Enable creation bivariate plot</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -H/<a href="#histogram">--histogram</a>, -E/<a href="#error-plot">--error_plot</a>, -T/<a href="#triangular-plot">--triangular_plot</a>
+Requires both:
+<ul>
+  <li><a href="#x-variable">--x_variable</a>: X-axis variable (mandatory)</li>
+  <li><a href="#y-variable">--y_variable</a>: Y-axis variable (mandatory)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-B --x_variable temperature --y_variable pressure</code></div>
+
 <h4 id="y-variable"><code>-y</code>, <code>--y_variable</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Name variable2
 
 <p>Name of name variable2</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required for:
+<ul>
+  <li>-B/<a href="#bivariate-plot">--bivariate_plot</a>: Y-axis variable (must use with <a href="#x-variable">--x_variable</a>)</li>
+  <li>-T/<a href="#triangular-plot">--triangular_plot</a>: Second variable (must use with <a href="#x-variable">--x_variable</a> and <a href="#z-variable">--z_variable</a>)</div></li>
+</ul>
 
 <h4 id="error-plot"><code>-E</code>, <code>--error_plot</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -210,17 +249,32 @@
 
 <p>Enable creation error plot</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -H/<a href="#histogram">--histogram</a>, -B/<a href="#bivariate-plot">--bivariate_plot</a>, -T/<a href="#triangular-plot">--triangular_plot</a></div>
+
 <h4 id="triangular-plot"><code>-T</code>, <code>--triangular_plot</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Creation triangular plot
 
 <p>Enable creation triangular plot</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -H/<a href="#histogram">--histogram</a>, -B/<a href="#bivariate-plot">--bivariate_plot</a>, -E/<a href="#error-plot">--error_plot</a>
+Requires all three variables:
+<ul>
+  <li><a href="#x-variable">--x_variable</a>: First variable (mandatory)</li>
+  <li><a href="#y-variable">--y_variable</a>: Second variable (mandatory)</li>
+  <li><a href="#z-variable">--z_variable</a>: Third variable (mandatory)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-T --x_variable var1 --y_variable var2 --z_variable var3</code></div>
+
 <h4 id="z-variable"><code>-z</code>, <code>--z_variable</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Name variable3
 
 <p>Name of name variable3</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required for -T/<a href="#triangular-plot">--triangular_plot</a>
+Must be used together with <a href="#x-variable">--x_variable</a> and <a href="#y-variable">--y_variable</a></div>
 
 <p>---</p>
 

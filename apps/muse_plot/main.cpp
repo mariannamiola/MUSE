@@ -44,11 +44,17 @@ int main(int argc, char** argv)
 
     // Option 0.
     /**
-
      * @brief Creation histogram plot
-
      * @param histogram Enable creation histogram plot
-
+     * @note Plot type selection (mutually exclusive):
+     * - -H/--histogram: Histogram plot (choose this OR others)
+     * - -B/--bivariate_plot: Bivariate plot
+     * - -E/--error_plot: Error plot
+     * - -T/--triangular_plot: Triangular plot
+     * When using histogram, configure with:
+     * - --nval: Minimum number of values (default: 20)
+     * - --nbin: Number of bins (default: 1)
+     * @example -H --nval 50 --nbin 25
      */
 
     SwitchArg histogramPlot             ("H", "histogram", "Creation histogram plot", cmd, false); //booleano
@@ -85,24 +91,20 @@ int main(int argc, char** argv)
 
     ValueArg<int> setNMaxValues         ("", "nval", "Set min number of values, sufficient for histogram plot", false, 20, "int", cmd);
     /**
-
      * @brief Set number of bins for histogram plot
-
      * @param nbin Number of set number of bins for histogram plot
-
+     * @note Used with -H/--histogram flag
+     * Controls histogram resolution and detail level
      */
 
     ValueArg<size_t> setNbins           ("", "nbin", "Set number of bins for histogram plot", false, 1, "size_t", cmd);
 
     /**
-
-
      * @brief Name variable1
-
-
      * @param x_variable Name of name variable1
-
-
+     * @note Required for:
+     * - -B/--bivariate_plot: X-axis variable (must use with --y_variable)
+     * - -T/--triangular_plot: First variable (must use with --y_variable and --z_variable)
      */
 
 
@@ -110,51 +112,53 @@ int main(int argc, char** argv)
 
     // Option 1a.
     /**
-
      * @brief Creation bivariate plot
-
      * @param bivariate_plot Enable creation bivariate plot
-
+     * @note Mutually exclusive with -H/--histogram, -E/--error_plot, -T/--triangular_plot
+     * Requires both:
+     * - --x_variable: X-axis variable (mandatory)
+     * - --y_variable: Y-axis variable (mandatory)
+     * @example -B --x_variable temperature --y_variable pressure
      */
 
     SwitchArg bivariatePlot             ("B", "bivariate_plot", "Creation bivariate plot", cmd, false); //booleano
     /**
-
      * @brief Name variable2
-
      * @param y_variable Name of name variable2
-
+     * @note Required for:
+     * - -B/--bivariate_plot: Y-axis variable (must use with --x_variable)
+     * - -T/--triangular_plot: Second variable (must use with --x_variable and --z_variable)
      */
 
     ValueArg<std::string> Variable2     ("y", "y_variable", "Name variable2", false, "File path", "file", cmd);
 
     // Option 2.
     /**
-
      * @brief Creation error plot
-
      * @param error_plot Enable creation error plot
-
+     * @note Mutually exclusive with -H/--histogram, -B/--bivariate_plot, -T/--triangular_plot
      */
 
     SwitchArg errorPlot                 ("E", "error_plot", "Creation error plot", cmd, false); //booleano
 
     // Option 3.
     /**
-
      * @brief Creation triangular plot
-
      * @param triangular_plot Enable creation triangular plot
-
+     * @note Mutually exclusive with -H/--histogram, -B/--bivariate_plot, -E/--error_plot
+     * Requires all three variables:
+     * - --x_variable: First variable (mandatory)
+     * - --y_variable: Second variable (mandatory)
+     * - --z_variable: Third variable (mandatory)
+     * @example -T --x_variable var1 --y_variable var2 --z_variable var3
      */
 
     SwitchArg triangularPlot            ("T", "triangular_plot", "Creation triangular plot", cmd, false); //booleano
     /**
-
      * @brief Name variable3
-
      * @param z_variable Name of name variable3
-
+     * @note Required for -T/--triangular_plot
+     * Must be used together with --x_variable and --y_variable
      */
 
     ValueArg<std::string> Variable3     ("z", "z_variable", "Name variable3", false, "File path", "file", cmd);

@@ -16,6 +16,20 @@ muse_geometry [OPTIONS]
 
 Flag to creation of new geometry
 
+**Dependencies:** When creating new geometry, requires:
+- Input data source (choose one):
+- -V/[--vector](#vector): Load vector file (.shp, .gpkg)
+- -R/[--raster](#raster): Load raster file (.ASCII)
+- -P/[--pcl](#pcl): Load point cloud (.xyz, .dat, .txt)
+- Processing method (choose one):
+- [--tri](#tri): Triangulation for 2D meshing
+- [--grid](#grid): Grid for 2D meshing
+OPTIONAL:
+- [--pdir](#pdir): Project directory
+- [--setEPSG](#setEPSG): Set coordinate system
+
+**Example:** `muse_geometry -N --vector --tri --pdir /path/to/project`
+
 #### `-p`, `--pdir` {#pdir}
 **Type:** Value (flag)
 **Description:** Project directory
@@ -33,6 +47,13 @@ project epsg
 **Description:** Load Vector file
 
 Enable load vector file
+
+**Dependencies:** Mutually exclusive with -R/[--raster](#raster) and -P/[--pcl](#pcl)
+Used with -N/[--geometry](#geometry) for geometry creation
+Supports: .shp, .gpkg formats
+OPTIONAL modifiers:
+- [--save](#save): Save data content
+- [--attribute](#attribute): Save attribute table
 
 #### `--save` {#save}
 **Type:** Switch (flag)
@@ -52,11 +73,22 @@ Enable save attribute table from geospatial file
 
 Enable load raster file
 
+**Dependencies:** Mutually exclusive with -V/[--vector](#vector) and -P/[--pcl](#pcl)
+Used with -N/[--geometry](#geometry) for geometry creation
+Supports: .ASCII format
+
 #### `-P`, `--pcl` {#pcl}
 **Type:** Switch (flag)
 **Description:** Load point cloud
 
 Enable load point cloud
+
+**Dependencies:** Mutually exclusive with -V/[--vector](#vector) and -R/[--raster](#raster)
+Used with -N/[--geometry](#geometry) for geometry creation
+Supports: .xyz, .dat, .txt formats
+Can be used with:
+- [--points](#points): Specify points geometry file
+- [--polygon](#polygon): Specify polygon geometry file
 
 #### `--points` {#points}
 **Type:** Value (flag)
@@ -82,11 +114,20 @@ Enable grid data - test
 
 rotation axis
 
+**Dependencies:** When using rotation, these flags work together:
+- [--rotaxis](#rotaxis): Rotation axis (X, Y, Z)
+- [--rotangle](#rotangle): Rotation angle (required if rotaxis != NO)
+- [--rotcx](#rotcx), [--rotcy](#rotcy), [--rotcz](#rotcz): Rotation center coordinates
+
+**Example:** `For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0`
+
 #### `--rotangle` {#rotangle}
 **Type:** Value (flag)
 **Description:** Set clockwise rotation angle (in degree)
 
 clockwise rotation angle (in degree)
+
+**Dependencies:** Used together with [--rotaxis](#rotaxis) flag. Required when rotaxis != NO
 
 #### `--rotcx` {#rotcx}
 **Type:** Value (flag)
@@ -112,17 +153,32 @@ coordinte z of rotation center
 
 Enable set triangulation for 2d meshing
 
+**Dependencies:** Mutually exclusive with [--grid](#grid) meshing method
+Used with -N/[--geometry](#geometry) for mesh creation
+Triangulation configuration (choose one):
+- [--convex](#convex): Convex hull triangulation (mutually exclusive with [--concave](#concave))
+- [--concave](#concave): Concave hull triangulation (mutually exclusive with [--convex](#convex))
+OPTIONAL:
+- [--boundary](#boundary): External boundary file
+- [--opt](#opt): Optimization flags
+
+**Example:** `--tri --convex OR --tri --concave --boundary /path/to/boundary.shp`
+
 #### `--convex` {#convex}
 **Type:** Switch (flag)
 **Description:** Set convex hull for points triangulation
 
 Enable set convex hull for points triangulation
 
+**Dependencies:** Used with [--tri](#tri) flag. Mutually exclusive with [--concave](#concave)
+
 #### `--concave` {#concave}
 **Type:** Switch (flag)
 **Description:** Set concave hull for points triangulation
 
 Enable set concave hull for points triangulation
+
+**Dependencies:** Used with [--tri](#tri) flag. Mutually exclusive with [--convex](#convex)
 
 #### `--boundary` {#boundary}
 **Type:** Value (flag)
@@ -142,17 +198,33 @@ optimization flags
 
 Enable set grid for 2d meshing
 
+**Dependencies:** Mutually exclusive with [--tri](#tri) triangulation method
+Used with -N/[--geometry](#geometry) for mesh creation
+Grid configuration requires:
+- [--resx](#resx): X resolution (mandatory)
+- [--resy](#resy): Y resolution (mandatory)
+OPTIONAL:
+- [--resz](#resz): Z resolution (for 3D grids)
+
+**Example:** `--grid --resx 10.0 --resy 10.0`
+
 #### `--resx` {#resx}
 **Type:** Value (flag)
 **Description:** Set x resolution
 
 x resolution
 
+**Dependencies:** Used with [--grid](#grid) flag. Required for grid meshing
+Must be used together with [--resy](#resy)
+
 #### `--resy` {#resy}
 **Type:** Value (flag)
 **Description:** Set y resolution
 
 y resolution
+
+**Dependencies:** Used with [--grid](#grid) flag. Required for grid meshing
+Must be used together with [--resx](#resx)
 
 #### `--resz` {#resz}
 **Type:** Value (flag)

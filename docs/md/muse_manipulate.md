@@ -16,6 +16,14 @@ muse_manipulate [OPTIONS]
 
 Enable extraction data
 
+**Dependencies:** When using -E/[--extract](#extract), requires:
+- [--geom](#geom): Geometry model (mandatory)
+OPTIONAL:
+- [--zcoord](#zcoord): Z coordinate specification
+- [--sub](#sub): Sub-dataset extraction
+
+**Example:** `-E --geom mesh_model --zcoord elevation`
+
 #### `-p`, `--pdir` {#pdir}
 **Type:** Value (flag)
 **Description:** Project directory
@@ -27,6 +35,9 @@ Path to project directory
 **Description:** Geometry model
 
 geometry model
+
+**Dependencies:** Required when using -E/[--extract](#extract) flag
+The geometry model must exist in the project
 
 #### `-z`, `--zcoord` {#zcoord}
 **Type:** Value (flag)
@@ -40,11 +51,21 @@ coordinate z
 
 Enable extraction data from interval
 
+**Dependencies:** When using -I/[--intextr](#intextr), requires:
+- [--sup](#sup): Superior interval limit (mandatory)
+- [--inf](#inf): Inferior interval limit (mandatory)
+- [--nvar](#nvar): Variable name to check (mandatory)
+
+**Example:** `-I --sup 100 --inf 0 --nvar temperature`
+
 #### `--sup` {#sup}
 **Type:** Value (flag)
 **Description:** Set sup interval
 
 sup interval
+
+**Dependencies:** Used with -I/[--intextr](#intextr) flag. Required for interval extraction
+Must be used together with [--inf](#inf) and [--nvar](#nvar)
 
 #### `--inf` {#inf}
 **Type:** Value (flag)
@@ -52,11 +73,17 @@ sup interval
 
 inf interval
 
+**Dependencies:** Used with -I/[--intextr](#intextr) flag. Required for interval extraction
+Must be used together with [--sup](#sup) and [--nvar](#nvar)
+
 #### `--nvar` {#nvar}
 **Type:** Value (flag)
 **Description:** Set variable to check
 
 Name of set variable to check
+
+**Dependencies:** Used with -I/[--intextr](#intextr) flag. Required for interval extraction
+Must be used together with [--sup](#sup) and [--inf](#inf)
 
 #### `--sub` {#sub}
 **Type:** Value (flag)
@@ -70,11 +97,20 @@ extraction sub dataset basing on geometry
 
 rotation axis
 
+**Dependencies:** When using rotation, these flags work together:
+- [--rotaxis](#rotaxis): Rotation axis (X, Y, Z)
+- [--rotangle](#rotangle): Rotation angle (required if rotaxis != NO)
+- [--rotcx](#rotcx), [--rotcy](#rotcy), [--rotcz](#rotcz): Rotation center coordinates
+
+**Example:** `For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0`
+
 #### `--rotangle` {#rotangle}
 **Type:** Value (flag)
 **Description:** Set rotation angle (clockwise)
 
 rotation angle (clockwise)
+
+**Dependencies:** Used together with [--rotaxis](#rotaxis) flag. Required when rotaxis != NO
 
 #### `--rotcx` {#rotcx}
 **Type:** Value (flag)
@@ -100,17 +136,29 @@ rotation center z
 
 Enable points projection on surfaces
 
+**Dependencies:** Projection mode selection (mutually exclusive):
+- -P/[--prsurf](#prsurf): Surface projection
+- -S/[--prsect](#prsect): Section projection (2D)
+- -R/[--prqsect](#prqsect): Quad section projection
+Choose only ONE projection mode per operation
+
 #### `-S`, `--prsect` {#prsect}
 **Type:** Switch (flag)
 **Description:** Compute points projection on boundary (2D section case).
 
 Flag to compute points projection on boundary (2d section case).
 
+**Dependencies:** Mutually exclusive with -P/[--prsurf](#prsurf) and -R/[--prqsect](#prqsect)
+Use for 2D section projection operations
+
 #### `-R`, `--prqsect` {#prqsect}
 **Type:** Switch (flag)
 **Description:** Points projection on quads sections
 
 Enable points projection on quads sections
+
+**Dependencies:** Mutually exclusive with -P/[--prsurf](#prsurf) and -S/[--prsect](#prsect)
+Use for quad-based section projection operations
 
 #### `-V`, `--prvol` {#prvol}
 **Type:** Switch (flag)

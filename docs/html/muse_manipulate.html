@@ -162,6 +162,18 @@
 
 <p>Enable extraction data</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> When using -E/<a href="#extract">--extract</a>, requires:
+<ul>
+  <li><a href="#geom">--geom</a>: Geometry model (mandatory)</li>
+</ul>
+OPTIONAL:
+<ul>
+  <li><a href="#zcoord">--zcoord</a>: Z coordinate specification</li>
+  <li><a href="#sub">--sub</a>: Sub-dataset extraction</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-E --geom mesh_model --zcoord elevation</code></div>
+
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Project directory
@@ -173,6 +185,9 @@
 <strong>Description:</strong> Geometry model
 
 <p>geometry model</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required when using -E/<a href="#extract">--extract</a> flag
+The geometry model must exist in the project</div>
 
 <h4 id="zcoord"><code>-z</code>, <code>--zcoord</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -186,11 +201,23 @@
 
 <p>Enable extraction data from interval</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> When using -I/<a href="#intextr">--intextr</a>, requires:
+<ul>
+  <li><a href="#sup">--sup</a>: Superior interval limit (mandatory)</li>
+  <li><a href="#inf">--inf</a>: Inferior interval limit (mandatory)</li>
+  <li><a href="#nvar">--nvar</a>: Variable name to check (mandatory)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-I --sup 100 --inf 0 --nvar temperature</code></div>
+
 <h4 id="sup"><code>--sup</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set sup interval
 
 <p>sup interval</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
+Must be used together with <a href="#inf">--inf</a> and <a href="#nvar">--nvar</a></div>
 
 <h4 id="inf"><code>--inf</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -198,11 +225,17 @@
 
 <p>inf interval</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
+Must be used together with <a href="#sup">--sup</a> and <a href="#nvar">--nvar</a></div>
+
 <h4 id="nvar"><code>--nvar</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set variable to check
 
 <p>Name of set variable to check</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
+Must be used together with <a href="#sup">--sup</a> and <a href="#inf">--inf</a></div>
 
 <h4 id="sub"><code>--sub</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -216,11 +249,22 @@
 
 <p>rotation axis</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> When using rotation, these flags work together:
+<ul>
+  <li><a href="#rotaxis">--rotaxis</a>: Rotation axis (X, Y, Z)</li>
+  <li><a href="#rotangle">--rotangle</a>: Rotation angle (required if rotaxis != NO)</li>
+  <li><a href="#rotcx">--rotcx</a>, <a href="#rotcy">--rotcy</a>, <a href="#rotcz">--rotcz</a>: Rotation center coordinates</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0</code></div>
+
 <h4 id="rotangle"><code>--rotangle</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation angle (clockwise)
 
 <p>rotation angle (clockwise)</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO</div>
 
 <h4 id="rotcx"><code>--rotcx</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -246,17 +290,31 @@
 
 <p>Enable points projection on surfaces</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Projection mode selection (mutually exclusive):
+<ul>
+  <li>-P/<a href="#prsurf">--prsurf</a>: Surface projection</li>
+  <li>-S/<a href="#prsect">--prsect</a>: Section projection (2D)</li>
+  <li>-R/<a href="#prqsect">--prqsect</a>: Quad section projection</li>
+</ul>
+Choose only ONE projection mode per operation</div>
+
 <h4 id="prsect"><code>-S</code>, <code>--prsect</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Compute points projection on boundary (2D section case).
 
 <p>Flag to compute points projection on boundary (2d section case).</p>
 
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -P/<a href="#prsurf">--prsurf</a> and -R/<a href="#prqsect">--prqsect</a>
+Use for 2D section projection operations</div>
+
 <h4 id="prqsect"><code>-R</code>, <code>--prqsect</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Points projection on quads sections
 
 <p>Enable points projection on quads sections</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -P/<a href="#prsurf">--prsurf</a> and -S/<a href="#prsect">--prsect</a>
+Use for quad-based section projection operations</div>
 
 <h4 id="prvol"><code>-V</code>, <code>--prvol</code></h4>
 <strong>Type:</strong> Switch (flag)

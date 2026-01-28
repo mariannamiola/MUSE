@@ -82,11 +82,16 @@ int main(int argc, char** argv)
 
     // Option 0. Compute varioagram for a variable
     /**
-
      * @brief Compute variogram
-
      * @param variogram Flag to compute variogram
-
+     * @note MANDATORY when computing variograms. Requires:
+     * - --pdir: Project directory (mandatory)
+     * - --var: Variable name (mandatory)
+     * OPTIONAL but commonly used:
+     * - --vario: Variogram type (EXPERIMENTAL, MODEL)
+     * - --dir: Direction type (OMNI, DIR)
+     * - --dim: Dimension (3D, 2D, 1Dz, etc.)
+     * @example muse_vario -V --pdir /path/to/project --var temperature --vario EXPERIMENTAL --dir OMNI --dim 3D
      */
 
     SwitchArg varioCompute                  ("V", "variogram", "Compute variogram", cmd, false); //booleano
@@ -101,11 +106,10 @@ int main(int argc, char** argv)
     ValueArg<std::string> projectFolder     ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
     //ValueArg<std::string> subFolder         ("", "subdir", "Project subdirectory", false, "Directory", "path", cmd);
     /**
-
      * @brief Variable
-
      * @param var Name of variable
-
+     * @note MANDATORY when using -V/--variogram flag
+     * The variable must exist in the project data
      */
 
     ValueArg<std::string> Variable          ("v", "var", "Variable", true, "variable to analyse", "name", cmd);
@@ -126,20 +130,20 @@ int main(int argc, char** argv)
 
     // Option: set data rotation
     /**
-
      * @brief Set rotation axis
-
      * @param rotaxis rotation axis
-
+     * @note When using rotation, these flags work together:
+     * - --rotaxis: Rotation axis (X, Y, Z)
+     * - --rotangle: Rotation angle (required if rotaxis != NO)
+     * - --rotcx, --rotcy, --rotcz: Rotation center coordinates
+     * @example For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
 
     ValueArg<std::string> setRotAxis        ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
     /**
-
      * @brief Set rotation angle (clockwise)
-
      * @param rotangle rotation angle (clockwise)
-
+     * @note Used together with --rotaxis flag. Required when rotaxis != NO
      */
 
     ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
@@ -185,29 +189,26 @@ int main(int argc, char** argv)
     // Option: set 2D declustering on data
     //ValueArg<std::string> setDeclustering2d ("", "decl", "Set 2D declustering", false, "NO", "string", cmd);
     /**
-
      * @brief Set 2D declustering
-
      * @param decl Enable set 2d declustering
-
+     * @note When using declustering, requires:
+     * - --csize: Cell size for declustering (mandatory)
+     * - --nstep: Number of grid translation steps (mandatory)
+     * @example --decl --csize 100 --nstep 5
      */
 
     SwitchArg setDeclustering2d             ("", "decl", "Set 2D declustering", cmd, false); //booleano
     /**
-
      * @brief Set cell size for 2D declustering
-
      * @param csize cell size for 2d declustering
-
+     * @note Used together with --decl flag for 2D declustering
      */
 
     ValueArg<double> setCellSize            ("", "csize", "Set cell size for 2D declustering", false, 0.0, "double", cmd);
     /**
-
      * @brief Set n steps for 2D declustering (grid translation)
-
      * @param nstep Number of set n steps for 2d declustering (grid translation)
-
+     * @note Used together with --decl flag for 2D declustering
      */
 
     ValueArg<int> setNStep                  ("", "nstep", "Set n steps for 2D declustering (grid translation)", false, 0, "int", cmd);
@@ -217,20 +218,19 @@ int main(int argc, char** argv)
     std::vector<std::string> allowedStratigraphicCondition = {"PROPORTIONAL","TRUNCATION","ONLAP","COMBINATION"};
     ValuesConstraint<std::string> allowedValsSC(allowedStratigraphicCondition);
     /**
-
      * @brief Set stratigraphic condition for coordinate transformation
-
      * @param sttype stratigraphic condition for coordinate transformation
-
+     * @note When using stratigraphic transformation, requires:
+     * - --filestrat: Filename of samples in stratigraphic coordinates (mandatory)
+     * Available conditions: PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION
+     * @example --sttype PROPORTIONAL --filestrat /path/to/strat_coords.dat
      */
 
     ValueArg<std::string> stratCondition    ("", "sttype", "Set stratigraphic condition for coordinate transformation", false, "NO", &allowedValsSC, cmd);
     /**
-
      * @brief Set filename of samples in stratigraphic coordinates
-
      * @param filestrat Path to set filename of samples in stratigraphic coordinates
-
+     * @note Required when using --sttype flag for stratigraphic transformation
      */
 
     ValueArg<std::string> filenameStrat     ("f", "filestrat", "Set filename of samples in stratigraphic coordinates", false, "filename", "path", cmd);
@@ -254,11 +254,15 @@ int main(int argc, char** argv)
     std::vector<std::string> allowedVarioDir = {"OMNI","DIR"};
     ValuesConstraint<std::string> allowedValsVD(allowedVarioDir);
     /**
-
      * @brief type of variogram direction
-
      * @param dir Path to type of variogram direction
-
+     * @note When using DIR (directional), directional parameters become important:
+     * - --deg: Degree step (default: 45°)
+     * - --degtol: Tolerance (default: 45°)
+     * - --zdegtol: Vertical tolerance (default: 22.5°)
+     * - --bandw: Bandwidth (optional)
+     * - --vertbandw: Vertical bandwidth (optional)
+     * @example --dir DIR --deg 30 --degtol 15 --zdegtol 10
      */
 
     ValueArg<std::string> varioDirection    ("", "dir", "type of variogram direction", false, "OMNI", &allowedValsVD, cmd);
@@ -300,29 +304,26 @@ int main(int argc, char** argv)
 
     // Option: set parameters for directional variogram computation
     /**
-
      * @brief Set degree step (in degree)
-
      * @param deg degree step (in degree)
-
+     * @note Used with --dir DIR for directional variogram computation
+     * Works together with --degtol and --zdegtol
      */
 
     ValueArg<double> setDegree              ("", "deg", "Set degree step (in degree)", false, 45.0, "degree", cmd);
     /**
-
      * @brief Set tolerance (in degree)
-
      * @param degtol tolerance (in degree)
-
+     * @note Used with --dir DIR for directional variogram computation
+     * Works together with --deg and --zdegtol for direction tolerance
      */
 
     ValueArg<double> setTol                 ("", "degtol", "Set tolerance (in degree)", false, 45.0, "degree", cmd);
     /**
-
      * @brief Set vertical tolerance (in degree)
-
      * @param zdegtol vertical tolerance (in degree)
-
+     * @note Used with --dir DIR for directional variogram computation
+     * Works together with --deg and --degtol for vertical direction tolerance
      */
 
     ValueArg<double> setVertTol             ("", "zdegtol", "Set vertical tolerance (in degree)", false, 22.5, "degree", cmd);
@@ -336,20 +337,18 @@ int main(int argc, char** argv)
 
     ValueArg<std::string> loadDirs          ("", "dirs", "Load discrete directions (in degree)", false, "dir0,dir1", "string", cmd);
     /**
-
      * @brief Set bandwidth
-
      * @param bandw bandwidth
-
+     * @note Used with --dir DIR for directional variogram computation
+     * Often used together with --vertbandw for 3D directional analysis
      */
 
     ValueArg<double> setBandwidth           ("", "bandw", "Set bandwidth", false, DBL_MAX, "double", cmd);
     /**
-
      * @brief Set vertical bandwidth
-
      * @param vertbandw vertical bandwidth
-
+     * @note Used with --dir DIR for directional variogram computation
+     * Often used together with --bandw for 3D directional analysis
      */
 
     ValueArg<double> setVertBandwidth       ("", "vertbandw", "Set vertical bandwidth", false, DBL_MAX, "double", cmd);
@@ -360,31 +359,33 @@ int main(int argc, char** argv)
     std::vector<std::string> allowedModel = {"AUTO","SPHERICAL","GAUSSIAN","EXPONENTIAL","LINEAR","DEFAULT"};
     ValuesConstraint<std::string> allowedValsMl(allowedModel);
     /**
-
      * @brief Set type of model variogram
-
      * @param type type of model variogram
-
+     * @note When using --vario MODEL, this flag becomes important
+     * For model fitting, use together with:
+     * - --nugget: Nugget value (optional)
+     * - --sill: Sill value (optional, not fully enabled)
+     * Available models: AUTO, SPHERICAL, GAUSSIAN, EXPONENTIAL, LINEAR, DEFAULT
+     * @example --vario MODEL --type SPHERICAL --nugget 0.1
      */
 
     ValueArg<std::string> setModel          ("", "type", "Set type of model variogram", false, "AUTO", &allowedValsMl, cmd);
 
     // Option: set model parameters
     /**
-
      * @brief Nugget
-
      * @param nugget Number of nugget
-
+     * @note Used with --vario MODEL and --type for model fitting
+     * Often used together with --sill for complete model specification
      */
 
     ValueArg<double> setNugget              ("", "nugget", "Nugget", false, 0.0, "double", cmd);
     /**
-
      * @brief Sill (NOT ENABLE)
-
      * @param sill sill (not enable)
-
+     * @note Used with --vario MODEL and --type for model fitting
+     * Often used together with --nugget for complete model specification
+     * WARNING: This parameter is not fully enabled in current version
      */
 
     ValueArg<double> setSill                ("", "sill", "Sill (NOT ENABLE)", false, 0.0, "double", cmd);

@@ -92,11 +92,20 @@ int main(int argc, char** argv)
 
     // Option 0. New project creation
     /**
-
      * @brief Creation of new geometry
-
      * @param geometry Flag to creation of new geometry
-
+     * @note When creating new geometry, requires:
+     * - Input data source (choose one):
+     *   - -V/--vector: Load vector file (.shp, .gpkg)
+     *   - -R/--raster: Load raster file (.ASCII)
+     *   - -P/--pcl: Load point cloud (.xyz, .dat, .txt)
+     * - Processing method (choose one):
+     *   - --tri: Triangulation for 2D meshing
+     *   - --grid: Grid for 2D meshing
+     * OPTIONAL:
+     * - --pdir: Project directory
+     * - --setEPSG: Set coordinate system
+     * @example muse_geometry -N --vector --tri --pdir /path/to/project
      */
 
     SwitchArg geometryCreation          ("N", "geometry", "Creation of new geometry", cmd, false); //booleano
@@ -125,11 +134,14 @@ int main(int argc, char** argv)
     // Option 1. Reading vector file (+ flag for triangulation)
     // Include: shape (.shp), geopackage (.gpkg)
     /**
-
      * @brief Load Vector file
-
      * @param vector Enable load vector file
-
+     * @note Mutually exclusive with -R/--raster and -P/--pcl
+     * Used with -N/--geometry for geometry creation
+     * Supports: .shp, .gpkg formats
+     * OPTIONAL modifiers:
+     * - --save: Save data content
+     * - --attribute: Save attribute table
      */
 
     SwitchArg loadVector                ("V", "vector", "Load Vector file", cmd, false); //booleano
@@ -156,11 +168,11 @@ int main(int argc, char** argv)
     // Option 2. Reading raster file (+ flag for triangulation)
     // Include: ASCIIGRID (.ASCII)
     /**
-
      * @brief Load Raster file
-
      * @param raster Enable load raster file
-
+     * @note Mutually exclusive with -V/--vector and -P/--pcl
+     * Used with -N/--geometry for geometry creation
+     * Supports: .ASCII format
      */
 
     SwitchArg loadRaster                ("R", "raster", "Load Raster file", cmd, false); //booleano
@@ -168,11 +180,14 @@ int main(int argc, char** argv)
     // Option 3. Reading xyz_file (point cloud)
     // Include: yxz, dat, txt
     /**
-
      * @brief Load point cloud
-
      * @param pcl Enable load point cloud
-
+     * @note Mutually exclusive with -V/--vector and -R/--raster
+     * Used with -N/--geometry for geometry creation
+     * Supports: .xyz, .dat, .txt formats
+     * Can be used with:
+     * - --points: Specify points geometry file
+     * - --polygon: Specify polygon geometry file
      */
 
     SwitchArg loadPointCloud            ("P", "pcl", "Load point cloud", cmd, false); //booleano
@@ -212,28 +227,22 @@ int main(int argc, char** argv)
 
 
     /**
-
-
-
      * @brief Set rotation axis
-
-
-
      * @param rotaxis rotation axis
-
-
-
+     * @note When using rotation, these flags work together:
+     * - --rotaxis: Rotation axis (X, Y, Z)
+     * - --rotangle: Rotation angle (required if rotaxis != NO)
+     * - --rotcx, --rotcy, --rotcz: Rotation center coordinates
+     * @example For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
 
 
 
     ValueArg<std::string> setRotAxis    ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
     /**
-
      * @brief Set clockwise rotation angle (in degree)
-
      * @param rotangle clockwise rotation angle (in degree)
-
+     * @note Used together with --rotaxis flag. Required when rotaxis != NO
      */
 
     ValueArg<double> setRotAngle        ("", "rotangle", "Set clockwise rotation angle (in degree)", false, 0.0, "double", cmd);
@@ -267,37 +276,33 @@ int main(int argc, char** argv)
 
 
     /**
-
-
-
      * @brief Set triangulation for 2D meshing
-
-
-
      * @param tri Enable set triangulation for 2d meshing
-
-
-
+     * @note Mutually exclusive with --grid meshing method
+     * Used with -N/--geometry for mesh creation
+     * Triangulation configuration (choose one):
+     * - --convex: Convex hull triangulation (mutually exclusive with --concave)
+     * - --concave: Concave hull triangulation (mutually exclusive with --convex)
+     * OPTIONAL:
+     * - --boundary: External boundary file
+     * - --opt: Optimization flags
+     * @example --tri --convex OR --tri --concave --boundary /path/to/boundary.shp
      */
 
 
 
     SwitchArg triFlag                   ("", "tri", "Set triangulation for 2D meshing", cmd, false); //booleano
     /**
-
      * @brief Set convex hull for points triangulation
-
      * @param convex Enable set convex hull for points triangulation
-
+     * @note Used with --tri flag. Mutually exclusive with --concave
      */
 
     SwitchArg convexFlag                ("", "convex", "Set convex hull for points triangulation", cmd, false); //booleano
     /**
-
      * @brief Set concave hull for points triangulation
-
      * @param concave Enable set concave hull for points triangulation
-
+     * @note Used with --tri flag. Mutually exclusive with --convex
      */
 
     SwitchArg concaveFlag               ("", "concave", "Set concave hull for points triangulation", cmd, false); //booleano
@@ -322,29 +327,32 @@ int main(int argc, char** argv)
 
     // Option 4. Set grid
     /**
-
      * @brief Set grid for 2D meshing
-
      * @param grid Enable set grid for 2d meshing
-
+     * @note Mutually exclusive with --tri triangulation method
+     * Used with -N/--geometry for mesh creation
+     * Grid configuration requires:
+     * - --resx: X resolution (mandatory)
+     * - --resy: Y resolution (mandatory)
+     * OPTIONAL:
+     * - --resz: Z resolution (for 3D grids)
+     * @example --grid --resx 10.0 --resy 10.0
      */
 
     SwitchArg gridFlag                  ("", "grid", "Set grid for 2D meshing", cmd, false); //booleano
     /**
-
      * @brief Set x resolution
-
      * @param resx x resolution
-
+     * @note Used with --grid flag. Required for grid meshing
+     * Must be used together with --resy
      */
 
     ValueArg<double> setResx            ("", "resx", "Set x resolution", false, 1.0, "double", cmd);
     /**
-
      * @brief Set y resolution
-
      * @param resy y resolution
-
+     * @note Used with --grid flag. Required for grid meshing
+     * Must be used together with --resx
      */
 
     ValueArg<double> setResy            ("", "resy", "Set y resolution", false, 1.0, "double", cmd);
