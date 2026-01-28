@@ -128,9 +128,9 @@ class MarkdownGenerator:
     def _read_header_file(self, header_file: str = None) -> str:
         """Read header content from external file"""
         if header_file is None:
-            # Default to muse_header.md in the docs directory
+            # Default to muse_header.md in the docs/md directory
             script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            header_file = os.path.join(script_dir, 'docs', 'muse_header.md')
+            header_file = os.path.join(script_dir, 'docs', 'md', 'muse_header.md')
         
         try:
             with open(header_file, 'r', encoding='utf-8') as f:
@@ -243,31 +243,7 @@ class MarkdownGenerator:
     
     def _generate_common_section(self) -> str:
         """Generate common section with tips and help info"""
-        md = "## Getting Help\n\n"
-        md += "All MUSE applications support the standard help flags:\n\n"
-        md += "```bash\n"
-        md += "# Display help for any tool\n"
-        md += "<tool> --help\n"
-        md += "<tool> -h\n"
-        md += "<tool> /?\n"
-        md += "```\n\n"
-        
-        md += "## Project Structure\n\n"
-        md += "When creating a project with `muse_project`, the directory structure will be:\n\n"
-        md += "```\n"
-        md += "MyProject/\n"
-        md += "├── in/           # Input data directory\n"
-        md += "└── out/          # Output results directory\n"
-        md += "    └── MyProject.json  # Project metadata and settings\n"
-        md += "```\n\n"
-        
-        md += "## Tips and Best Practices\n\n"
-        md += "1. Use `--help` flag to see all available options for any tool\n"
-        md += "2. Use absolute paths to avoid confusion with relative paths\n"
-        md += "3. Project names should not contain spaces; use underscores or hyphens instead\n"
-        md += "4. Keep projects organized with consistent naming conventions\n"
-        
-        return md
+        return ""
 
 
 def find_main_files(apps_dir: str) -> List[str]:
@@ -329,7 +305,7 @@ def main():
                 f.write(markdown_content)
             print(f"✓ Combined documentation generated: {output_path}")
         else:
-            # Generate separate files for each app
+            # Generate separate files for each app in the same directory
             os.makedirs(output_path, exist_ok=True)
             
             # Generate individual app files
@@ -340,13 +316,9 @@ def main():
                     f.write(app_content)
                 print(f"✓ Generated: {app_file}")
             
-            # Generate index file in docs directory
-            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            docs_dir = os.path.join(project_root, 'docs')
-            
+            # Generate index file in the same directory
             index_content = generator.generate_index(header_file)
-            index_file = os.path.join(docs_dir, "index.md")
-            os.makedirs(docs_dir, exist_ok=True)
+            index_file = os.path.join(output_path, "index.md")
             with open(index_file, 'w', encoding='utf-8') as f:
                 f.write(index_content)
             print(f"✓ Generated index: {index_file}")
