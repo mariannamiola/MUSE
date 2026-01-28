@@ -238,6 +238,9 @@ class MarkdownGenerator:
         """Generate documentation for a single option"""
         md = ""
         
+        # Add visual separator before flag
+        md += "---\n\n"
+        
         # Flag line with anchor
         flag_str = ""
         if opt.get('short_flag'):

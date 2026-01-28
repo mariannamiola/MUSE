@@ -45,6 +45,27 @@
         h3, h4 {
             color: #555;
         }
+        h4 {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 30px 0 20px 0;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-top: 1px solid #e1e4e8;
+        }
+        h4 code {
+            background: transparent;
+            color: #0366d6;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .flag-separator {
+            height: 2px;
+            background: linear-gradient(90deg, #0366d6 0%, #87ceeb 50%, transparent 100%);
+            margin: 25px 0;
+            border-radius: 1px;
+        }
         code {
             background: #f1f3f4;
             padding: 2px 6px;
@@ -156,6 +177,8 @@
 
 <h3>Options</h3>
 
+<div class="flag-separator"></div>
+
 <h4 id="compute"><code>-C</code>, <code>--compute</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable computation mode for MUSE
@@ -177,6 +200,8 @@ OPTIONAL but commonly used:
 
 <div class="example"><strong>Example:</strong> <code>muse_compute -C --var temperature --geom mesh_model --mode AUTO</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="mode"><code>--mode</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set computation mode
@@ -190,11 +215,15 @@ Available modes: AUTO, MANUAL
   <li>MANUAL: Manual parameter configuration required</div></li>
 </ul>
 
+<div class="flag-separator"></div>
+
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Specify project directory
 
 <p>Path to the project directory</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="var"><code>-v</code>, <code>--var</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -205,6 +234,8 @@ Available modes: AUTO, MANUAL
 <div class="dependencies"><strong>Dependencies:</strong> MANDATORY when using -C/<a href="#compute">--compute</a> flag
 The variable must exist in the project data</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="geom"><code>-m</code>, <code>--geom</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Specify geometry model name
@@ -214,11 +245,15 @@ The variable must exist in the project data</div>
 <div class="dependencies"><strong>Dependencies:</strong> MANDATORY when using -C/<a href="#compute">--compute</a> flag
 The geometry model must be available in the project</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="sub"><code>--sub</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Extract sub-dataset based on geometry
 
 <p>Path to sub-dataset extraction directory</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="rotaxis"><code>--rotaxis</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -235,6 +270,8 @@ The geometry model must be available in the project</div>
 
 <div class="example"><strong>Example:</strong> <code>--rotaxis Z --rotangle 45.0 --rotcx 0.0 --rotcy 0.0</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="rotangle"><code>--rotangle</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation angle in degrees (clockwise)
@@ -242,6 +279,8 @@ The geometry model must be available in the project</div>
 <p>Rotation angle in degrees</p>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO</div>
+
+<div class="flag-separator"></div>
 
 <h4 id="rotcx"><code>--rotcx</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -251,11 +290,15 @@ The geometry model must be available in the project</div>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> and <a href="#rotangle">--rotangle</a> for data rotation</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="rotcy"><code>--rotcy</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set Y coordinate of rotation center
 
 <p>Y coordinate of rotation center</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="rotcz"><code>--rotcz</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -263,17 +306,23 @@ The geometry model must be available in the project</div>
 
 <p>Z coordinate of rotation center</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="vario"><code>--vario</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set fixed variogram parameters
 
 <p>Path to variogram configuration file</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="dir"><code>--dir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set variogram direction type
 
 <p>Type of variogram direction (OMNI or DIR)</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="dim"><code>--dim</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -290,11 +339,15 @@ The geometry model must be available in the project</div>
 
 <div class="example"><strong>Example:</strong> <code>--dir OMNI --dim 3D --zrange 50.0</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="zrange"><code>--zrange</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set range in Z direction
 
 <p>Range value in Z direction</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="crit"><code>--crit</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -302,11 +355,15 @@ The geometry model must be available in the project</div>
 
 <p>Interpolation algorithm (SGS, IK, or SISIM)</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="bnscore"><code>--bnscore</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable back normal score transformation integrated into SGS
 
 <p>Flag to enable back normal score transformation</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="extr"><code>--extr</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -322,11 +379,15 @@ The geometry model must be available in the project</div>
 
 <div class="example"><strong>Example:</strong> <code>--extr linear --minextr 0.0 --maxextr 100.0</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="minextr"><code>--minextr</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set minimum value for extrapolation
 
 <p>Minimum extrapolation value</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="maxextr"><code>--maxextr</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -334,11 +395,15 @@ The geometry model must be available in the project</div>
 
 <p>Maximum extrapolation value</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="nsim"><code>--nsim</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of simulation iterations
 
 <p>Number of simulation iterations (default: 10)</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="csize"><code>--csize</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -354,11 +419,15 @@ The geometry model must be available in the project</div>
 
 <div class="example"><strong>Example:</strong> <code>--csize 10.0 --nstep 5</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="nstep"><code>--nstep</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of steps for 2D declustering grid translation
 
 <p>Number of steps for 2D declustering</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="stats"><code>-S</code>, <code>--stats</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -366,11 +435,15 @@ The geometry model must be available in the project</div>
 
 <p>Flag to compute statistical analysis</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="space"><code>--space</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set space type for analysis
 
 <p>Space type (NORMAL or VAR)</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="bns"><code>-B</code>, <code>--bns</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -378,11 +451,15 @@ The geometry model must be available in the project</div>
 
 <p>Flag to perform back normal score transformation</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="file"><code>-f</code>, <code>--file</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set input file path
 
 <p>Path to input file</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="db"><code>-D</code>, <code>--db</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -390,11 +467,15 @@ The geometry model must be available in the project</div>
 
 <p>Flag to create database from simulation results</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="input"><code>--input</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of input samples
 
 <p>Number of input samples to use (default: 4)</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="simulated"><code>--simulated</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -402,11 +483,15 @@ The geometry model must be available in the project</div>
 
 <p>Number of points to simulate (default: 3)</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="scaleradius"><code>--scaleradius</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set scale factor of search radius
 
 <p>Scale factor for search radius (default: 1.0)</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="octant"><code>--octant</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -414,11 +499,15 @@ The geometry model must be available in the project</div>
 
 <p>Flag to enable octant search</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="csv"><code>--csv</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable CSV format for output files
 
 <p>Flag to save files in CSV format</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="out"><code>--out</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -426,13 +515,15 @@ The geometry model must be available in the project</div>
 
 <p>Type of SGS output (MEAN or VECSIM)</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="format"><code>--format</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set data format encoding for output
 
 <p>Enable data format encoding (default: YES)</p>
 
-<p>---</p>
+<div class="flag-separator"></div>
 
 
         <div class="footer">

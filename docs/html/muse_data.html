@@ -45,6 +45,27 @@
         h3, h4 {
             color: #555;
         }
+        h4 {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 30px 0 20px 0;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-top: 1px solid #e1e4e8;
+        }
+        h4 code {
+            background: transparent;
+            color: #0366d6;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .flag-separator {
+            height: 2px;
+            background: linear-gradient(90deg, #0366d6 0%, #87ceeb 50%, transparent 100%);
+            margin: 25px 0;
+            border-radius: 1px;
+        }
         code {
             background: #f1f3f4;
             padding: 2px 6px;
@@ -156,11 +177,15 @@
 
 <h3>Options</h3>
 
+<div class="flag-separator"></div>
+
 <h4 id="new-project"><code>-N</code>, <code>--new_project</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Create a new project
 
 <p>Flag to create a new project</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -168,11 +193,15 @@
 
 <p>Path to the project directory (required)</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="setEPSG"><code>--setEPSG</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set project EPSG coordinate system
 
 <p>EPSG authority code (default: Unknown)</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="setIDXYZ"><code>-S</code>, <code>--setIDXYZ</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -190,11 +219,15 @@
 
 <div class="example"><strong>Example:</strong> <code>-S --setID 0 --setX 1 --setY 2 --setZ 3</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="setID"><code>--setID</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set ID column number
 
 <p>Column number for ID field</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="setX"><code>--setX</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -202,11 +235,15 @@
 
 <p>Column number for X coordinate</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="setY"><code>--setY</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set Y coordinate column number
 
 <p>Column number for Y coordinate</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="setZ"><code>--setZ</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -214,11 +251,15 @@
 
 <p>Column number for Z coordinate</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="setDel"><code>--setDel</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set CSV delimiter type
 
 <p>Type of CSV delimiter (DEFAULT or COMMA)</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="converter"><code>-C</code>, <code>--converter</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -236,17 +277,23 @@
 
 <div class="example"><strong>Example:</strong> <code>-C --pdir /project --setDel COMMA --inf 0.0 --sup 100.0</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="inf"><code>--inf</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set inferior limit for variable values
 
 <p>Inferior limit value</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="sup"><code>--sup</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set superior limit for variable values
 
 <p>Superior limit value</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="read"><code>-R</code>, <code>--read</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -264,17 +311,23 @@
 
 <div class="example"><strong>Example:</strong> <code>-R --pdir /project --var temperature --hist --nbin 20</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="var"><code>-v</code>, <code>--var</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Specify variable name to read
 
 <p>Variable name (default: ALL_INPUT)</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="nrealiz"><code>-n</code>, <code>--nrealiz</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of realization to process
 
 <p>Number of realization (default: 0)</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="hist"><code>--hist</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -291,11 +344,15 @@ Requires sufficient data points (>= nval threshold)</div>
 
 <div class="example"><strong>Example:</strong> <code>--hist --nval 50 --nbin 25</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="nval"><code>--nval</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set minimum number of values for histogram plotting
 
 <p>Minimum number of values (default: 20)</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="nbin"><code>--nbin</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -303,13 +360,15 @@ Requires sufficient data points (>= nval threshold)</div>
 
 <p>Number of bins for histogram (default: 1)</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="csv"><code>--csv</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable CSV format for output files
 
 <p>Flag to save files in CSV format</p>
 
-<p>---</p>
+<div class="flag-separator"></div>
 
 
         <div class="footer">

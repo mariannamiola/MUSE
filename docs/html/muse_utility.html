@@ -45,6 +45,27 @@
         h3, h4 {
             color: #555;
         }
+        h4 {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 30px 0 20px 0;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-top: 1px solid #e1e4e8;
+        }
+        h4 code {
+            background: transparent;
+            color: #0366d6;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .flag-separator {
+            height: 2px;
+            background: linear-gradient(90deg, #0366d6 0%, #87ceeb 50%, transparent 100%);
+            margin: 25px 0;
+            border-radius: 1px;
+        }
         code {
             background: #f1f3f4;
             padding: 2px 6px;
@@ -156,6 +177,8 @@
 
 <h3>Options</h3>
 
+<div class="flag-separator"></div>
+
 <h4 id="list"><code>-L</code>, <code>--list</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> File List
@@ -176,6 +199,8 @@ When using file listing:
 
 <div class="example"><strong>Example:</strong> <code>-L --pdir /project --type JSON</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Directory
@@ -184,6 +209,8 @@ When using file listing:
 
 <div class="dependencies"><strong>Dependencies:</strong> Used with -L/<a href="#list">--list</a> flag for file listing operations
 Specifies the directory to search for files</div>
+
+<div class="flag-separator"></div>
 
 <h4 id="type"><code>--type</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -194,6 +221,8 @@ Specifies the directory to search for files</div>
 <div class="dependencies"><strong>Dependencies:</strong> Used with -L/<a href="#list">--list</a> flag for file filtering
 Available types: JSON, MESH</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="query"><code>-Q</code>, <code>--query</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Query for creation path
@@ -202,6 +231,8 @@ Available types: JSON, MESH</div>
 
 <div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -L/<a href="#list">--list</a> and -H/<a href="#history">--history</a>
 Operation mode for path creation queries</div>
+
+<div class="flag-separator"></div>
 
 <h4 id="history"><code>-H</code>, <code>--history</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -223,6 +254,8 @@ OPTIONAL history navigation flags:
 
 <div class="example"><strong>Example:</strong> <code>-H --json /path/to/history.json --more</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="json"><code>--json</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set json file
@@ -231,6 +264,8 @@ OPTIONAL history navigation flags:
 
 <div class="dependencies"><strong>Dependencies:</strong> Required when using -H/<a href="#history">--history</a> flag
 Specifies the JSON file containing processing history</div>
+
+<div class="flag-separator"></div>
 
 <h4 id="back"><code>--back</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -241,6 +276,8 @@ Specifies the JSON file containing processing history</div>
 <div class="dependencies"><strong>Dependencies:</strong> Optional modifier for -H/<a href="#history">--history</a> operations
 Enables recursive backward navigation through history</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="forward"><code>--forward</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set JSON history (recursively - forward)
@@ -249,6 +286,8 @@ Enables recursive backward navigation through history</div>
 
 <div class="dependencies"><strong>Dependencies:</strong> Optional modifier for -H/<a href="#history">--history</a> operations
 Enables recursive forward navigation through history</div>
+
+<div class="flag-separator"></div>
 
 <h4 id="more"><code>--more</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -259,7 +298,7 @@ Enables recursive forward navigation through history</div>
 <div class="dependencies"><strong>Dependencies:</strong> Optional modifier for -H/<a href="#history">--history</a> operations
 Provides detailed forward navigation with command information</div>
 
-<p>---</p>
+<div class="flag-separator"></div>
 
 
         <div class="footer">

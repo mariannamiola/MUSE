@@ -10,6 +10,8 @@ muse_compute [OPTIONS]
 
 ### Options
 
+---
+
 #### `-C`, `--compute` {#compute}
 **Type:** Switch (flag)
 **Description:** Enable computation mode for MUSE
@@ -27,6 +29,8 @@ OPTIONAL but commonly used:
 
 **Example:** `muse_compute -C --var temperature --geom mesh_model --mode AUTO`
 
+---
+
 #### `--mode` {#mode}
 **Type:** Value (flag)
 **Description:** Set computation mode
@@ -38,11 +42,15 @@ Available modes: AUTO, MANUAL
 - AUTO: Automatic parameter selection
 - MANUAL: Manual parameter configuration required
 
+---
+
 #### `-p`, `--pdir` {#pdir}
 **Type:** Value (flag)
 **Description:** Specify project directory
 
 Path to the project directory
+
+---
 
 #### `-v`, `--var` {#var}
 **Type:** Value (flag)
@@ -53,6 +61,8 @@ Name of the variable to process
 **Dependencies:** MANDATORY when using -C/[--compute](#compute) flag
 The variable must exist in the project data
 
+---
+
 #### `-m`, `--geom` {#geom}
 **Type:** Value (flag)
 **Description:** Specify geometry model name
@@ -62,11 +72,15 @@ Name of the geometry model to use
 **Dependencies:** MANDATORY when using -C/[--compute](#compute) flag
 The geometry model must be available in the project
 
+---
+
 #### `--sub` {#sub}
 **Type:** Value (flag)
 **Description:** Extract sub-dataset based on geometry
 
 Path to sub-dataset extraction directory
+
+---
 
 #### `--rotaxis` {#rotaxis}
 **Type:** Value (flag)
@@ -81,6 +95,8 @@ Axis for rotation (default: NO)
 
 **Example:** `--rotaxis Z --rotangle 45.0 --rotcx 0.0 --rotcy 0.0`
 
+---
+
 #### `--rotangle` {#rotangle}
 **Type:** Value (flag)
 **Description:** Set rotation angle in degrees (clockwise)
@@ -88,6 +104,8 @@ Axis for rotation (default: NO)
 Rotation angle in degrees
 
 **Dependencies:** Used together with [--rotaxis](#rotaxis) flag. Required when rotaxis != NO
+
+---
 
 #### `--rotcx` {#rotcx}
 **Type:** Value (flag)
@@ -97,11 +115,15 @@ X coordinate of rotation center
 
 **Dependencies:** Used together with [--rotaxis](#rotaxis) and [--rotangle](#rotangle) for data rotation
 
+---
+
 #### `--rotcy` {#rotcy}
 **Type:** Value (flag)
 **Description:** Set Y coordinate of rotation center
 
 Y coordinate of rotation center
+
+---
 
 #### `--rotcz` {#rotcz}
 **Type:** Value (flag)
@@ -109,17 +131,23 @@ Y coordinate of rotation center
 
 Z coordinate of rotation center
 
+---
+
 #### `--vario` {#vario}
 **Type:** Value (flag)
 **Description:** Set fixed variogram parameters
 
 Path to variogram configuration file
 
+---
+
 #### `--dir` {#dir}
 **Type:** Value (flag)
 **Description:** Set variogram direction type
 
 Type of variogram direction (OMNI or DIR)
+
+---
 
 #### `--dim` {#dim}
 **Type:** Value (flag)
@@ -134,11 +162,15 @@ Type of variogram dimension (3D, 3Dxy, 3Dz, 2D, 1Dz, 1D)
 
 **Example:** `--dir OMNI --dim 3D --zrange 50.0`
 
+---
+
 #### `--zrange` {#zrange}
 **Type:** Value (flag)
 **Description:** Set range in Z direction
 
 Range value in Z direction
+
+---
 
 #### `--crit` {#crit}
 **Type:** Value (flag)
@@ -146,11 +178,15 @@ Range value in Z direction
 
 Interpolation algorithm (SGS, IK, or SISIM)
 
+---
+
 #### `--bnscore` {#bnscore}
 **Type:** Switch (flag)
 **Description:** Enable back normal score transformation integrated into SGS
 
 Flag to enable back normal score transformation
+
+---
 
 #### `--extr` {#extr}
 **Type:** Value (flag)
@@ -164,11 +200,15 @@ Type of extrapolation (default: none)
 
 **Example:** `--extr linear --minextr 0.0 --maxextr 100.0`
 
+---
+
 #### `--minextr` {#minextr}
 **Type:** Value (flag)
 **Description:** Set minimum value for extrapolation
 
 Minimum extrapolation value
+
+---
 
 #### `--maxextr` {#maxextr}
 **Type:** Value (flag)
@@ -176,11 +216,15 @@ Minimum extrapolation value
 
 Maximum extrapolation value
 
+---
+
 #### `--nsim` {#nsim}
 **Type:** Value (flag)
 **Description:** Set number of simulation iterations
 
 Number of simulation iterations (default: 10)
+
+---
 
 #### `--csize` {#csize}
 **Type:** Value (flag)
@@ -194,11 +238,15 @@ Cell size for 2D declustering
 
 **Example:** `--csize 10.0 --nstep 5`
 
+---
+
 #### `--nstep` {#nstep}
 **Type:** Value (flag)
 **Description:** Set number of steps for 2D declustering grid translation
 
 Number of steps for 2D declustering
+
+---
 
 #### `-S`, `--stats` {#stats}
 **Type:** Switch (flag)
@@ -206,11 +254,15 @@ Number of steps for 2D declustering
 
 Flag to compute statistical analysis
 
+---
+
 #### `--space` {#space}
 **Type:** Value (flag)
 **Description:** Set space type for analysis
 
 Space type (NORMAL or VAR)
+
+---
 
 #### `-B`, `--bns` {#bns}
 **Type:** Switch (flag)
@@ -218,11 +270,15 @@ Space type (NORMAL or VAR)
 
 Flag to perform back normal score transformation
 
+---
+
 #### `-f`, `--file` {#file}
 **Type:** Value (flag)
 **Description:** Set input file path
 
 Path to input file
+
+---
 
 #### `-D`, `--db` {#db}
 **Type:** Switch (flag)
@@ -230,11 +286,15 @@ Path to input file
 
 Flag to create database from simulation results
 
+---
+
 #### `--input` {#input}
 **Type:** Value (flag)
 **Description:** Set number of input samples
 
 Number of input samples to use (default: 4)
+
+---
 
 #### `--simulated` {#simulated}
 **Type:** Value (flag)
@@ -242,11 +302,15 @@ Number of input samples to use (default: 4)
 
 Number of points to simulate (default: 3)
 
+---
+
 #### `--scaleradius` {#scaleradius}
 **Type:** Value (flag)
 **Description:** Set scale factor of search radius
 
 Scale factor for search radius (default: 1.0)
+
+---
 
 #### `--octant` {#octant}
 **Type:** Switch (flag)
@@ -254,17 +318,23 @@ Scale factor for search radius (default: 1.0)
 
 Flag to enable octant search
 
+---
+
 #### `--csv` {#csv}
 **Type:** Switch (flag)
 **Description:** Enable CSV format for output files
 
 Flag to save files in CSV format
 
+---
+
 #### `--out` {#out}
 **Type:** Value (flag)
 **Description:** Set type of SGS output
 
 Type of SGS output (MEAN or VECSIM)
+
+---
 
 #### `--format` {#format}
 **Type:** Value (flag)

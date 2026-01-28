@@ -10,6 +10,8 @@ muse_utility [OPTIONS]
 
 ### Options
 
+---
+
 #### `-L`, `--list` {#list}
 **Type:** Switch (flag)
 **Description:** File List
@@ -26,6 +28,8 @@ When using file listing:
 
 **Example:** `-L --pdir /project --type JSON`
 
+---
+
 #### `-p`, `--pdir` {#pdir}
 **Type:** Value (flag)
 **Description:** Directory
@@ -34,6 +38,8 @@ Path to directory
 
 **Dependencies:** Used with -L/[--list](#list) flag for file listing operations
 Specifies the directory to search for files
+
+---
 
 #### `--type` {#type}
 **Type:** Value (flag)
@@ -44,6 +50,8 @@ Path to type of file
 **Dependencies:** Used with -L/[--list](#list) flag for file filtering
 Available types: JSON, MESH
 
+---
+
 #### `-Q`, `--query` {#query}
 **Type:** Switch (flag)
 **Description:** Query for creation path
@@ -52,6 +60,8 @@ Enable query for creation path
 
 **Dependencies:** Mutually exclusive with -L/[--list](#list) and -H/[--history](#history)
 Operation mode for path creation queries
+
+---
 
 #### `-H`, `--history` {#history}
 **Type:** Switch (flag)
@@ -69,6 +79,8 @@ OPTIONAL history navigation flags:
 
 **Example:** `-H --json /path/to/history.json --more`
 
+---
+
 #### `--json` {#json}
 **Type:** Value (flag)
 **Description:** Set json file
@@ -77,6 +89,8 @@ Path to set json file
 
 **Dependencies:** Required when using -H/[--history](#history) flag
 Specifies the JSON file containing processing history
+
+---
 
 #### `--back` {#back}
 **Type:** Switch (flag)
@@ -87,6 +101,8 @@ Enable set json history (recursively - back)
 **Dependencies:** Optional modifier for -H/[--history](#history) operations
 Enables recursive backward navigation through history
 
+---
+
 #### `--forward` {#forward}
 **Type:** Switch (flag)
 **Description:** Set JSON history (recursively - forward)
@@ -95,6 +111,8 @@ Enable set json history (recursively - forward)
 
 **Dependencies:** Optional modifier for -H/[--history](#history) operations
 Enables recursive forward navigation through history
+
+---
 
 #### `--more` {#more}
 **Type:** Switch (flag)

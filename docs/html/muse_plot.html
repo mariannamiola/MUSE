@@ -45,6 +45,27 @@
         h3, h4 {
             color: #555;
         }
+        h4 {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 30px 0 20px 0;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-top: 1px solid #e1e4e8;
+        }
+        h4 code {
+            background: transparent;
+            color: #0366d6;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .flag-separator {
+            height: 2px;
+            background: linear-gradient(90deg, #0366d6 0%, #87ceeb 50%, transparent 100%);
+            margin: 25px 0;
+            border-radius: 1px;
+        }
         code {
             background: #f1f3f4;
             padding: 2px 6px;
@@ -156,6 +177,8 @@
 
 <h3>Options</h3>
 
+<div class="flag-separator"></div>
+
 <h4 id="histogram"><code>-H</code>, <code>--histogram</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Creation histogram plot
@@ -177,11 +200,15 @@ When using histogram, configure with:
 
 <div class="example"><strong>Example:</strong> <code>-H --nval 50 --nbin 25</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Project directory
 
 <p>Path to project directory</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="val"><code>-v</code>, <code>--val</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -189,11 +216,15 @@ When using histogram, configure with:
 
 <p>values</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="nval"><code>--nval</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set min number of values, sufficient for histogram plot
 
 <p>Number of set min number of values, sufficient for histogram plot</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="nbin"><code>--nbin</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -203,6 +234,8 @@ When using histogram, configure with:
 
 <div class="dependencies"><strong>Dependencies:</strong> Used with -H/<a href="#histogram">--histogram</a> flag
 Controls histogram resolution and detail level</div>
+
+<div class="flag-separator"></div>
 
 <h4 id="x-variable"><code>-x</code>, <code>--x_variable</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -215,6 +248,8 @@ Controls histogram resolution and detail level</div>
   <li>-B/<a href="#bivariate-plot">--bivariate_plot</a>: X-axis variable (must use with <a href="#y-variable">--y_variable</a>)</li>
   <li>-T/<a href="#triangular-plot">--triangular_plot</a>: First variable (must use with <a href="#y-variable">--y_variable</a> and <a href="#z-variable">--z_variable</a>)</div></li>
 </ul>
+
+<div class="flag-separator"></div>
 
 <h4 id="bivariate-plot"><code>-B</code>, <code>--bivariate_plot</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -231,6 +266,8 @@ Requires both:
 
 <div class="example"><strong>Example:</strong> <code>-B --x_variable temperature --y_variable pressure</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="y-variable"><code>-y</code>, <code>--y_variable</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Name variable2
@@ -243,6 +280,8 @@ Requires both:
   <li>-T/<a href="#triangular-plot">--triangular_plot</a>: Second variable (must use with <a href="#x-variable">--x_variable</a> and <a href="#z-variable">--z_variable</a>)</div></li>
 </ul>
 
+<div class="flag-separator"></div>
+
 <h4 id="error-plot"><code>-E</code>, <code>--error_plot</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Creation error plot
@@ -250,6 +289,8 @@ Requires both:
 <p>Enable creation error plot</p>
 
 <div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -H/<a href="#histogram">--histogram</a>, -B/<a href="#bivariate-plot">--bivariate_plot</a>, -T/<a href="#triangular-plot">--triangular_plot</a></div>
+
+<div class="flag-separator"></div>
 
 <h4 id="triangular-plot"><code>-T</code>, <code>--triangular_plot</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -267,6 +308,8 @@ Requires all three variables:
 
 <div class="example"><strong>Example:</strong> <code>-T --x_variable var1 --y_variable var2 --z_variable var3</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="z-variable"><code>-z</code>, <code>--z_variable</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Name variable3
@@ -276,7 +319,7 @@ Requires all three variables:
 <div class="dependencies"><strong>Dependencies:</strong> Required for -T/<a href="#triangular-plot">--triangular_plot</a>
 Must be used together with <a href="#x-variable">--x_variable</a> and <a href="#y-variable">--y_variable</a></div>
 
-<p>---</p>
+<div class="flag-separator"></div>
 
 
         <div class="footer">

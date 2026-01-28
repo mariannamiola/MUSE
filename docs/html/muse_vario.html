@@ -45,6 +45,27 @@
         h3, h4 {
             color: #555;
         }
+        h4 {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 30px 0 20px 0;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-top: 1px solid #e1e4e8;
+        }
+        h4 code {
+            background: transparent;
+            color: #0366d6;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .flag-separator {
+            height: 2px;
+            background: linear-gradient(90deg, #0366d6 0%, #87ceeb 50%, transparent 100%);
+            margin: 25px 0;
+            border-radius: 1px;
+        }
         code {
             background: #f1f3f4;
             padding: 2px 6px;
@@ -156,6 +177,8 @@
 
 <h3>Options</h3>
 
+<div class="flag-separator"></div>
+
 <h4 id="variogram"><code>-V</code>, <code>--variogram</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Compute variogram
@@ -176,11 +199,15 @@ OPTIONAL but commonly used:
 
 <div class="example"><strong>Example:</strong> <code>muse_vario -V --pdir /path/to/project --var temperature --vario EXPERIMENTAL --dir OMNI --dim 3D</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Project directory
 
 <p>Path to project directory</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="var"><code>-v</code>, <code>--var</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -191,11 +218,15 @@ OPTIONAL but commonly used:
 <div class="dependencies"><strong>Dependencies:</strong> MANDATORY when using -V/<a href="#variogram">--variogram</a> flag
 The variable must exist in the project data</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="sub"><code>--sub</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set extracted sub-dataset referring to specified geometry domain
 
 <p>extracted sub-dataset referring to specified geometry domain</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="rotaxis"><code>--rotaxis</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -212,6 +243,8 @@ The variable must exist in the project data</div>
 
 <div class="example"><strong>Example:</strong> <code>For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="rotangle"><code>--rotangle</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation angle (clockwise)
@@ -220,11 +253,15 @@ The variable must exist in the project data</div>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="rotcx"><code>--rotcx</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation center x
 
 <p>rotation center x</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="rotcy"><code>--rotcy</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -232,17 +269,23 @@ The variable must exist in the project data</div>
 
 <p>rotation center y</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="rotcz"><code>--rotcz</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation center z
 
 <p>rotation center z</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="nscore"><code>--nscore</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set normal score transformation
 
 <p>Number of set normal score transformation</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="decl"><code>--decl</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -258,6 +301,8 @@ The variable must exist in the project data</div>
 
 <div class="example"><strong>Example:</strong> <code>--decl --csize 100 --nstep 5</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="csize"><code>--csize</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set cell size for 2D declustering
@@ -266,6 +311,8 @@ The variable must exist in the project data</div>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#decl">--decl</a> flag for 2D declustering</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="nstep"><code>--nstep</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set n steps for 2D declustering (grid translation)
@@ -273,6 +320,8 @@ The variable must exist in the project data</div>
 <p>Number of set n steps for 2d declustering (grid translation)</p>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#decl">--decl</a> flag for 2D declustering</div>
+
+<div class="flag-separator"></div>
 
 <h4 id="sttype"><code>--sttype</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -288,6 +337,8 @@ Available conditions: PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION</div>
 
 <div class="example"><strong>Example:</strong> <code>--sttype PROPORTIONAL --filestrat /path/to/strat_coords.dat</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="filestrat"><code>-f</code>, <code>--filestrat</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set filename of samples in stratigraphic coordinates
@@ -296,11 +347,15 @@ Available conditions: PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION</div>
 
 <div class="dependencies"><strong>Dependencies:</strong> Required when using <a href="#sttype">--sttype</a> flag for stratigraphic transformation</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="vario"><code>--vario</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> type of variogram
 
 <p>Name of type of variogram</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="dir"><code>--dir</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -319,11 +374,15 @@ Available conditions: PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION</div>
 
 <div class="example"><strong>Example:</strong> <code>--dir DIR --deg 30 --degtol 15 --zdegtol 10</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="dim"><code>--dim</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> type of variogram dimension
 
 <p>type of variogram dimension</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="lagspac"><code>--lagspac</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -331,11 +390,15 @@ Available conditions: PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION</div>
 
 <p>lag spacing type</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="spac"><code>--spac</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set spacing samples for vertical variogram
 
 <p>spacing samples for vertical variogram</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="deg"><code>--deg</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -346,6 +409,8 @@ Available conditions: PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION</div>
 <div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#dir">--dir</a> DIR for directional variogram computation
 Works together with <a href="#degtol">--degtol</a> and <a href="#zdegtol">--zdegtol</a></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="degtol"><code>--degtol</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set tolerance (in degree)
@@ -354,6 +419,8 @@ Works together with <a href="#degtol">--degtol</a> and <a href="#zdegtol">--zdeg
 
 <div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#dir">--dir</a> DIR for directional variogram computation
 Works together with <a href="#deg">--deg</a> and <a href="#zdegtol">--zdegtol</a> for direction tolerance</div>
+
+<div class="flag-separator"></div>
 
 <h4 id="zdegtol"><code>--zdegtol</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -364,11 +431,15 @@ Works together with <a href="#deg">--deg</a> and <a href="#zdegtol">--zdegtol</a
 <div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#dir">--dir</a> DIR for directional variogram computation
 Works together with <a href="#deg">--deg</a> and <a href="#degtol">--degtol</a> for vertical direction tolerance</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="dirs"><code>--dirs</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Load discrete directions (in degree)
 
 <p>Path to load discrete directions (in degree)</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="bandw"><code>--bandw</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -379,6 +450,8 @@ Works together with <a href="#deg">--deg</a> and <a href="#degtol">--degtol</a> 
 <div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#dir">--dir</a> DIR for directional variogram computation
 Often used together with <a href="#vertbandw">--vertbandw</a> for 3D directional analysis</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="vertbandw"><code>--vertbandw</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set vertical bandwidth
@@ -387,6 +460,8 @@ Often used together with <a href="#vertbandw">--vertbandw</a> for 3D directional
 
 <div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#dir">--dir</a> DIR for directional variogram computation
 Often used together with <a href="#bandw">--bandw</a> for 3D directional analysis</div>
+
+<div class="flag-separator"></div>
 
 <h4 id="type"><code>--type</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -404,6 +479,8 @@ Available models: AUTO, SPHERICAL, GAUSSIAN, EXPONENTIAL, LINEAR, DEFAULT</div>
 
 <div class="example"><strong>Example:</strong> <code>--vario MODEL --type SPHERICAL --nugget 0.1</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="nugget"><code>--nugget</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Nugget
@@ -412,6 +489,8 @@ Available models: AUTO, SPHERICAL, GAUSSIAN, EXPONENTIAL, LINEAR, DEFAULT</div>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#vario">--vario</a> MODEL and <a href="#type">--type</a> for model fitting
 Often used together with <a href="#sill">--sill</a> for complete model specification</div>
+
+<div class="flag-separator"></div>
 
 <h4 id="sill"><code>--sill</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -423,11 +502,15 @@ Often used together with <a href="#sill">--sill</a> for complete model specifica
 Often used together with <a href="#nugget">--nugget</a> for complete model specification
 WARNING: This parameter is not fully enabled in current version</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="npoints"><code>--npoints</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of experimental variogram points
 
 <p>Number of set number of experimental variogram points</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="vclean"><code>--vclean</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -435,11 +518,15 @@ WARNING: This parameter is not fully enabled in current version</div>
 
 <p>cleaning variogram points</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="rangestep"><code>--rangestep</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set range step
 
 <p>range step</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="nugstep"><code>--nugstep</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -447,11 +534,15 @@ WARNING: This parameter is not fully enabled in current version</div>
 
 <p>Number of set nugget step</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="maxdist"><code>--maxdist</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set maximum distance between points for computing experimental variogram
 
 <p>maximum distance between points for computing experimental variogram</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="tolfac"><code>--tolfac</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -459,11 +550,15 @@ WARNING: This parameter is not fully enabled in current version</div>
 
 <p>tolerance factor for computing experimental variogram</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="fac"><code>--fac</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set multiplier factor for computing variable lag spacing for experimental variogram
 
 <p>multiplier factor for computing variable lag spacing for experimental variogram</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="weight"><code>--weight</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -471,11 +566,15 @@ WARNING: This parameter is not fully enabled in current version</div>
 
 <p>Flag to set weight on nugget to compute directional variogram</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="expvario"><code>--expvario</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Load experimental variogram
 
 <p>Name of load experimental variogram</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="eps"><code>--eps</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -483,13 +582,15 @@ WARNING: This parameter is not fully enabled in current version</div>
 
 <p>eps for plot centering</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="epsy"><code>--epsy</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set eps_y for plot on y axis
 
 <p>eps_y for plot on y axis</p>
 
-<p>---</p>
+<div class="flag-separator"></div>
 
 
         <div class="footer">

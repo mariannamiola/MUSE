@@ -10,6 +10,8 @@ muse_project [OPTIONS]
 
 ### Options
 
+---
+
 #### `-N`, `--new_project` {#new-project}
 **Type:** Switch (flag)
 **Description:** Create a new project
@@ -23,6 +25,8 @@ Flag to enable new project creation
 
 **Example:** `muse_project -N --pdir /path/to/projects --name MyProject --setEPSG EPSG:4326`
 
+---
+
 #### `-p`, `--pdir` {#pdir}
 **Type:** Value (flag)
 **Description:** Specify project directory path
@@ -32,6 +36,8 @@ Path where the project will be created
 **Dependencies:** Required when using -N/[--new_project](#new-project) flag
 
 **Example:** `--pdir /home/user/projects`
+
+---
 
 #### `-n`, `--name` {#name}
 **Type:** Value (flag)
@@ -44,6 +50,8 @@ Project name to be created
 - JSON config file: {pdir}/{name}/out/{name}.json
 
 **Example:** `--name MyGeologyProject`
+
+---
 
 #### `--setEPSG` {#setEPSG}
 **Type:** Value (flag)

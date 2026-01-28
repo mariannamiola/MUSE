@@ -45,6 +45,27 @@
         h3, h4 {
             color: #555;
         }
+        h4 {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 30px 0 20px 0;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-top: 1px solid #e1e4e8;
+        }
+        h4 code {
+            background: transparent;
+            color: #0366d6;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .flag-separator {
+            height: 2px;
+            background: linear-gradient(90deg, #0366d6 0%, #87ceeb 50%, transparent 100%);
+            margin: 25px 0;
+            border-radius: 1px;
+        }
         code {
             background: #f1f3f4;
             padding: 2px 6px;
@@ -156,6 +177,8 @@
 
 <h3>Options</h3>
 
+<div class="flag-separator"></div>
+
 <h4 id="extract"><code>-E</code>, <code>--extract</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Extraction data
@@ -174,11 +197,15 @@ OPTIONAL:
 
 <div class="example"><strong>Example:</strong> <code>-E --geom mesh_model --zcoord elevation</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Project directory
 
 <p>Path to project directory</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="geom"><code>--geom</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -189,11 +216,15 @@ OPTIONAL:
 <div class="dependencies"><strong>Dependencies:</strong> Required when using -E/<a href="#extract">--extract</a> flag
 The geometry model must exist in the project</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="zcoord"><code>-z</code>, <code>--zcoord</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Coordinate Z
 
 <p>coordinate z</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="intextr"><code>-I</code>, <code>--intextr</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -210,6 +241,8 @@ The geometry model must exist in the project</div>
 
 <div class="example"><strong>Example:</strong> <code>-I --sup 100 --inf 0 --nvar temperature</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="sup"><code>--sup</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set sup interval
@@ -218,6 +251,8 @@ The geometry model must exist in the project</div>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
 Must be used together with <a href="#inf">--inf</a> and <a href="#nvar">--nvar</a></div>
+
+<div class="flag-separator"></div>
 
 <h4 id="inf"><code>--inf</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -228,6 +263,8 @@ Must be used together with <a href="#inf">--inf</a> and <a href="#nvar">--nvar</
 <div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
 Must be used together with <a href="#sup">--sup</a> and <a href="#nvar">--nvar</a></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="nvar"><code>--nvar</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set variable to check
@@ -237,11 +274,15 @@ Must be used together with <a href="#sup">--sup</a> and <a href="#nvar">--nvar</
 <div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
 Must be used together with <a href="#sup">--sup</a> and <a href="#inf">--inf</a></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="sub"><code>--sub</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Extraction sub dataset basing on geometry
 
 <p>extraction sub dataset basing on geometry</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="rotaxis"><code>--rotaxis</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -258,6 +299,8 @@ Must be used together with <a href="#sup">--sup</a> and <a href="#inf">--inf</a>
 
 <div class="example"><strong>Example:</strong> <code>For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0</code></div>
 
+<div class="flag-separator"></div>
+
 <h4 id="rotangle"><code>--rotangle</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation angle (clockwise)
@@ -266,11 +309,15 @@ Must be used together with <a href="#sup">--sup</a> and <a href="#inf">--inf</a>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="rotcx"><code>--rotcx</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation center x
 
 <p>rotation center x</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="rotcy"><code>--rotcy</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -278,11 +325,15 @@ Must be used together with <a href="#sup">--sup</a> and <a href="#inf">--inf</a>
 
 <p>rotation center y</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="rotcz"><code>--rotcz</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation center z
 
 <p>rotation center z</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="prsurf"><code>-P</code>, <code>--prsurf</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -298,6 +349,8 @@ Must be used together with <a href="#sup">--sup</a> and <a href="#inf">--inf</a>
 </ul>
 Choose only ONE projection mode per operation</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="prsect"><code>-S</code>, <code>--prsect</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Compute points projection on boundary (2D section case).
@@ -306,6 +359,8 @@ Choose only ONE projection mode per operation</div>
 
 <div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -P/<a href="#prsurf">--prsurf</a> and -R/<a href="#prqsect">--prqsect</a>
 Use for 2D section projection operations</div>
+
+<div class="flag-separator"></div>
 
 <h4 id="prqsect"><code>-R</code>, <code>--prqsect</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -316,11 +371,15 @@ Use for 2D section projection operations</div>
 <div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -P/<a href="#prsurf">--prsurf</a> and -S/<a href="#prsect">--prsect</a>
 Use for quad-based section projection operations</div>
 
+<div class="flag-separator"></div>
+
 <h4 id="prvol"><code>-V</code>, <code>--prvol</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Compute points projection on boundary (3D volumetric case).
 
 <p>Flag to compute points projection on boundary (3d volumetric case).</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="step"><code>--step</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -328,11 +387,15 @@ Use for quad-based section projection operations</div>
 
 <p>Number of set number of steps for geometry model</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="epsilon"><code>--epsilon</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set tolerance to enlarge bounding box
 
 <p>tolerance to enlarge bounding box</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="prdir"><code>--prdir</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -340,11 +403,15 @@ Use for quad-based section projection operations</div>
 
 <p>Path to set direction of projection</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="type"><code>--type</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set type
 
 <p>type</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="strat"><code>-T</code>, <code>--strat</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -352,11 +419,15 @@ Use for quad-based section projection operations</div>
 
 <p>Enable points projection on surfaces</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="name"><code>--name</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Name of geometry model
 
 <p>Name of name of geometry model</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="sttype"><code>--sttype</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -364,11 +435,15 @@ Use for quad-based section projection operations</div>
 
 <p>type of stratigraphic transformation</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="top"><code>--top</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Top geometry model
 
 <p>top geometry model</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="bot"><code>--bot</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -376,11 +451,15 @@ Use for quad-based section projection operations</div>
 
 <p>bottom geometry model</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="reggrow"><code>--reggrow</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set region growing
 
 <p>Enable set region growing</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="obj"><code>--obj</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -388,11 +467,15 @@ Use for quad-based section projection operations</div>
 
 <p>Enable saving trimesh in obj format</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="vtk"><code>--vtk</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Saving tetmesh in vtk format
 
 <p>Enable saving tetmesh in vtk format</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="save"><code>--save</code></h4>
 <strong>Type:</strong> Switch (flag)
@@ -400,11 +483,15 @@ Use for quad-based section projection operations</div>
 
 <p>Enable saving extraction as set of points</p>
 
+<div class="flag-separator"></div>
+
 <h4 id="var"><code>-v</code>, <code>--var</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Variable
 
 <p>Name of variable</p>
+
+<div class="flag-separator"></div>
 
 <h4 id="file"><code>--file</code></h4>
 <strong>Type:</strong> Value (flag)
@@ -412,7 +499,7 @@ Use for quad-based section projection operations</div>
 
 <p>Path to path file</p>
 
-<p>---</p>
+<div class="flag-separator"></div>
 
 
         <div class="footer">

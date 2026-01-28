@@ -14,6 +14,9 @@ def markdown_to_html(md_content: str) -> str:
     """Convert basic Markdown to HTML"""
     html = md_content
     
+    # Horizontal rules to visual separators
+    html = re.sub(r'^---$', '<div class="flag-separator"></div>', html, flags=re.MULTILINE)
+    
     # Headers with anchor support
     html = re.sub(r'^# (.*$)', r'<h1>\1</h1>', html, flags=re.MULTILINE)
     html = re.sub(r'^## (.*$)', r'<h2>\1</h2>', html, flags=re.MULTILINE)
@@ -129,6 +132,27 @@ def create_html_template(title: str, content: str, is_index: bool = False) -> st
         }}
         h3, h4 {{
             color: #555;
+        }}
+        h4 {{
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 30px 0 20px 0;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-top: 1px solid #e1e4e8;
+        }}
+        h4 code {{
+            background: transparent;
+            color: #0366d6;
+            font-weight: 600;
+            font-size: 1.1em;
+        }}
+        .flag-separator {{
+            height: 2px;
+            background: linear-gradient(90deg, #0366d6 0%, #87ceeb 50%, transparent 100%);
+            margin: 25px 0;
+            border-radius: 1px;
         }}
         code {{
             background: #f1f3f4;
