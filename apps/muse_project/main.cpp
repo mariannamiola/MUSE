@@ -33,47 +33,31 @@ int main(int argc, char** argv)
 
     /**
      * @brief Create a new project
-     * @param projectCreation Switch to enable new project creation
-     *        - Usage: muse_project -N --pdir /path/to/projects --name MyProject
+     * @param new_project Flag to enable new project creation
+     * @note When using -N/--new_project, the following flags are typically used together:
+     *       - --pdir (required): Specify project directory
+     *       - --name (required): Specify project name
+     *       - --setEPSG (optional): Set coordinate reference system
+     * @example muse_project -N --pdir /path/to/projects --name MyProject --setEPSG EPSG:4326
      */
-    /**
-
-     * @brief Creation new project
-
-     * @param new_project Flag to creation new project
-
-     */
-
     SwitchArg projectCreation           ("N", "new_project", "Creation new project", cmd, false); //booleano
     
     /**
-     * @brief Directory path for the new project
-     * @param projectFolder Path where the project will be created
-     *        - Usage: muse_project --pdir /path/to/projects
+     * @brief Specify project directory path
+     * @param pdir Path where the project will be created
+     * @note Required when using -N/--new_project flag
+     * @example --pdir /home/user/projects
      */
-    /**
-
-     * @brief Project directory
-
-     * @param pdir Path to project directory
-
-     */
-
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", false, "Directory", "path", cmd);
     
     /**
-     * @brief Name of the new project
-     * @param Name Project name to be created
-     *        - Usage: muse_project --name MyProject
+     * @brief Specify name of the new project
+     * @param name Project name to be created
+     * @note Required when using -N/--new_project flag. The project name will be used as:
+     *       - Directory name: {pdir}/{name}
+     *       - JSON config file: {pdir}/{name}/out/{name}.json
+     * @example --name MyGeologyProject
      */
-    /**
-
-     * @brief Name new project
-
-     * @param name Name of name new project
-
-     */
-
     ValueArg<std::string> Name          ("n", "name", "Name new project", false, "File path", "file", cmd);
 
     //SwitchArg overwriteName             ("o", "ovrwrite_name", "Overwrite", cmd, false); //booleano
@@ -83,20 +67,15 @@ int main(int argc, char** argv)
     // ADDITIONAL FUNCTIONALITIES:
 
     /**
-     * @brief Set project EPSG code (coordinate reference system authority)
-     * @param setEPSG EPSG code for the project coordinate system
-     *        - Format: EPSG:####
-     *        - Example: muse_project --setEPSG EPSG:4326
-     *        - Common codes: EPSG:4326 (WGS84), EPSG:3857 (Web Mercator)
+     * @brief Set project EPSG coordinate reference system
+     * @param setEPSG EPSG authority code for the project coordinate system
+     * @note Optional parameter, used with -N/--new_project flag
+     *       Common EPSG codes:
+     *       - EPSG:4326 (WGS84 Geographic)
+     *       - EPSG:3857 (Web Mercator)
+     *       - EPSG:32633 (UTM Zone 33N)
+     * @example --setEPSG EPSG:4326
      */
-    /**
-
-     * @brief Set project EPSG
-
-     * @param setEPSG project epsg
-
-     */
-
     ValueArg<std::string> setEPSG       ("", "setEPSG", "Set project EPSG", false, "Unknown", "EPSG:n", cmd);
 
 

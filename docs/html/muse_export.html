@@ -71,6 +71,22 @@
         }
         a {
             color: #0366d6;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: #0366d6;
+            font-weight: 500;
+            background: rgba(3, 102, 214, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: rgba(3, 102, 214, 0.2);
+            text-decoration: none;
         }
         .app-list {
             display: grid;
@@ -93,6 +109,28 @@
             height: 1px;
             background: #e1e4e8;
             margin: 30px 0;
+        }
+        .dependencies {
+            background: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: #0366d6;
+        }
+        .example {
+            background: #f1f3f4;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        .example strong {
+            color: #28a745;
         }
         .footer {
             margin-top: 40px;
@@ -118,61 +156,61 @@
 
 <h3>Options</h3>
 
-<h4><code>-m</code>, <code>--geom</code></h4>
+<h4 id="geom"><code>-m</code>, <code>--geom</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Geometry model
 
 <p>geometry model</p>
 
-<h4><code>-l</code>, <code>--label</code></h4>
+<h4 id="label"><code>-l</code>, <code>--label</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Label
 
 <p>label</p>
 
-<h4><code>-s</code>, <code>--sis</code></h4>
+<h4 id="sis"><code>-s</code>, <code>--sis</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Sis simulation
 
 <p>sis simulation</p>
 
-<h4><code>-r</code>, <code>--nrows</code></h4>
+<h4 id="nrows"><code>-r</code>, <code>--nrows</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Raster number of rows
 
 <p>Number of raster number of rows</p>
 
-<h4><code>-c</code>, <code>--ncols</code></h4>
+<h4 id="ncols"><code>-c</code>, <code>--ncols</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Raster number of cols
 
 <p>Number of raster number of cols</p>
 
-<h4><code>-x</code>, <code>--min_x</code></h4>
+<h4 id="min-x"><code>-x</code>, <code>--min_x</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Raster min x
 
 <p>raster min x</p>
 
-<h4><code>-y</code>, <code>--min_y</code></h4>
+<h4 id="min-y"><code>-y</code>, <code>--min_y</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Raster min y
 
 <p>raster min y</p>
 
-<h4><code>-X</code>, <code>--max_x</code></h4>
+<h4 id="max-x"><code>-X</code>, <code>--max_x</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Raster max x
 
 <p>raster max x</p>
 
-<h4><code>-Y</code>, <code>--max_y</code></h4>
+<h4 id="max-y"><code>-Y</code>, <code>--max_y</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Raster max y
 
 <p>raster max y</p>
 
-<h4><code>-o</code>, <code>--out</code></h4>
+<h4 id="out"><code>-o</code>, <code>--out</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Output file
 

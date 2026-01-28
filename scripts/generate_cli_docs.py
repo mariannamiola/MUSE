@@ -112,6 +112,23 @@ class TCLAPParser:
             details = re.sub(r'\n\s*\n', '\n', details)
             option['details'] = details.strip()
         
+        # Extract @note section for dependency information
+        note_match = re.search(r'@note\s+(.+?)(?:@\w+|\*\/)', doc, re.DOTALL)
+        if note_match:
+            note_text = note_match.group(1).strip()
+            # Clean up comment markers and extra whitespace
+            note_text = re.sub(r'\s*\*\s*', '\n', note_text)
+            note_text = re.sub(r'\n\s*\n', '\n', note_text)
+            option['note'] = note_text.strip()
+        
+        # Extract @example section for usage examples
+        example_match = re.search(r'@example\s+(.+?)(?:@\w+|\*\/)', doc, re.DOTALL)
+        if example_match:
+            example_text = example_match.group(1).strip()
+            # Clean up comment markers and extra whitespace
+            example_text = re.sub(r'\s*\*\s*', ' ', example_text)
+            option['example'] = example_text.strip()
+        
         return option if 'long_flag' in option else None
     
     def __str__(self) -> str:
@@ -221,13 +238,16 @@ class MarkdownGenerator:
         """Generate documentation for a single option"""
         md = ""
         
-        # Flag line
+        # Flag line with anchor
         flag_str = ""
         if opt.get('short_flag'):
             flag_str += f"`-{opt['short_flag']}`, "
         flag_str += f"`--{opt['long_flag']}`"
         
-        md += f"#### {flag_str}\n"
+        # Create anchor ID from long flag name
+        anchor_id = opt['long_flag'].replace('_', '-')
+        
+        md += f"#### {flag_str} {{#{anchor_id}}}\n"
         md += f"**Type:** {opt['type']} (flag)\n"
         
         if opt.get('brief'):
@@ -238,8 +258,37 @@ class MarkdownGenerator:
         if opt.get('details'):
             md += f"\n{opt['details']}\n"
         
+        # Add dependency information from @note with flag linking
+        if opt.get('note'):
+            linked_dependencies = self._convert_flag_references_to_links(opt['note'])
+            md += f"\n**Dependencies:** {linked_dependencies}\n"
+        
+        # Add usage examples from @example
+        if opt.get('example'):
+            md += f"\n**Example:** `{opt['example']}`\n"
+        
         md += "\n"
         return md
+    
+    def _convert_flag_references_to_links(self, text: str) -> str:
+        """Convert flag references like --flag to clickable links"""
+        import re
+        
+        # Pattern to match flag references like --flag-name or -X
+        pattern = r'(--[a-zA-Z0-9_-]+|(?<!-)\b-[a-zA-Z]\b)'
+        
+        def replace_flag(match):
+            flag = match.group(1)
+            # Convert --flag-name to anchor link
+            if flag.startswith('--'):
+                anchor_id = flag[2:].replace('_', '-')  # Remove -- and convert underscores
+                return f'[{flag}](#{anchor_id})'
+            else:
+                # For short flags like -X, we need to find the corresponding long flag
+                # For now, just return the original flag (could be enhanced later)
+                return flag
+        
+        return re.sub(pattern, replace_flag, text)
     
     def _generate_common_section(self) -> str:
         """Generate common section with tips and help info"""

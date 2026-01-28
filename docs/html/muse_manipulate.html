@@ -71,6 +71,22 @@
         }
         a {
             color: #0366d6;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: #0366d6;
+            font-weight: 500;
+            background: rgba(3, 102, 214, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: rgba(3, 102, 214, 0.2);
+            text-decoration: none;
         }
         .app-list {
             display: grid;
@@ -93,6 +109,28 @@
             height: 1px;
             background: #e1e4e8;
             margin: 30px 0;
+        }
+        .dependencies {
+            background: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: #0366d6;
+        }
+        .example {
+            background: #f1f3f4;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        .example strong {
+            color: #28a745;
         }
         .footer {
             margin-top: 40px;
@@ -118,199 +156,199 @@
 
 <h3>Options</h3>
 
-<h4><code>-E</code>, <code>--extract</code></h4>
+<h4 id="extract"><code>-E</code>, <code>--extract</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Extraction data
 
 <p>Enable extraction data</p>
 
-<h4><code>-p</code>, <code>--pdir</code></h4>
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Project directory
 
 <p>Path to project directory</p>
 
-<h4><code>--geom</code></h4>
+<h4 id="geom"><code>--geom</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Geometry model
 
 <p>geometry model</p>
 
-<h4><code>-z</code>, <code>--zcoord</code></h4>
+<h4 id="zcoord"><code>-z</code>, <code>--zcoord</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Coordinate Z
 
 <p>coordinate z</p>
 
-<h4><code>-I</code>, <code>--intextr</code></h4>
+<h4 id="intextr"><code>-I</code>, <code>--intextr</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Extraction data from interval
 
 <p>Enable extraction data from interval</p>
 
-<h4><code>--sup</code></h4>
+<h4 id="sup"><code>--sup</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set sup interval
 
 <p>sup interval</p>
 
-<h4><code>--inf</code></h4>
+<h4 id="inf"><code>--inf</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set inf interval
 
 <p>inf interval</p>
 
-<h4><code>--nvar</code></h4>
+<h4 id="nvar"><code>--nvar</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set variable to check
 
 <p>Name of set variable to check</p>
 
-<h4><code>--sub</code></h4>
+<h4 id="sub"><code>--sub</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Extraction sub dataset basing on geometry
 
 <p>extraction sub dataset basing on geometry</p>
 
-<h4><code>--rotaxis</code></h4>
+<h4 id="rotaxis"><code>--rotaxis</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation axis
 
 <p>rotation axis</p>
 
-<h4><code>--rotangle</code></h4>
+<h4 id="rotangle"><code>--rotangle</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation angle (clockwise)
 
 <p>rotation angle (clockwise)</p>
 
-<h4><code>--rotcx</code></h4>
+<h4 id="rotcx"><code>--rotcx</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation center x
 
 <p>rotation center x</p>
 
-<h4><code>--rotcy</code></h4>
+<h4 id="rotcy"><code>--rotcy</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation center y
 
 <p>rotation center y</p>
 
-<h4><code>--rotcz</code></h4>
+<h4 id="rotcz"><code>--rotcz</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation center z
 
 <p>rotation center z</p>
 
-<h4><code>-P</code>, <code>--prsurf</code></h4>
+<h4 id="prsurf"><code>-P</code>, <code>--prsurf</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Points projection on surfaces
 
 <p>Enable points projection on surfaces</p>
 
-<h4><code>-S</code>, <code>--prsect</code></h4>
+<h4 id="prsect"><code>-S</code>, <code>--prsect</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Compute points projection on boundary (2D section case).
 
 <p>Flag to compute points projection on boundary (2d section case).</p>
 
-<h4><code>-R</code>, <code>--prqsect</code></h4>
+<h4 id="prqsect"><code>-R</code>, <code>--prqsect</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Points projection on quads sections
 
 <p>Enable points projection on quads sections</p>
 
-<h4><code>-V</code>, <code>--prvol</code></h4>
+<h4 id="prvol"><code>-V</code>, <code>--prvol</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Compute points projection on boundary (3D volumetric case).
 
 <p>Flag to compute points projection on boundary (3d volumetric case).</p>
 
-<h4><code>--step</code></h4>
+<h4 id="step"><code>--step</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of steps for geometry model
 
 <p>Number of set number of steps for geometry model</p>
 
-<h4><code>--epsilon</code></h4>
+<h4 id="epsilon"><code>--epsilon</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set tolerance to enlarge bounding box
 
 <p>tolerance to enlarge bounding box</p>
 
-<h4><code>--prdir</code></h4>
+<h4 id="prdir"><code>--prdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set direction of projection
 
 <p>Path to set direction of projection</p>
 
-<h4><code>--type</code></h4>
+<h4 id="type"><code>--type</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set type
 
 <p>type</p>
 
-<h4><code>-T</code>, <code>--strat</code></h4>
+<h4 id="strat"><code>-T</code>, <code>--strat</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Points projection on surfaces
 
 <p>Enable points projection on surfaces</p>
 
-<h4><code>--name</code></h4>
+<h4 id="name"><code>--name</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Name of geometry model
 
 <p>Name of name of geometry model</p>
 
-<h4><code>--sttype</code></h4>
+<h4 id="sttype"><code>--sttype</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set type of stratigraphic transformation
 
 <p>type of stratigraphic transformation</p>
 
-<h4><code>--top</code></h4>
+<h4 id="top"><code>--top</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Top geometry model
 
 <p>top geometry model</p>
 
-<h4><code>--bot</code></h4>
+<h4 id="bot"><code>--bot</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Bottom geometry model
 
 <p>bottom geometry model</p>
 
-<h4><code>--reggrow</code></h4>
+<h4 id="reggrow"><code>--reggrow</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set region growing
 
 <p>Enable set region growing</p>
 
-<h4><code>--obj</code></h4>
+<h4 id="obj"><code>--obj</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Saving trimesh in obj format
 
 <p>Enable saving trimesh in obj format</p>
 
-<h4><code>--vtk</code></h4>
+<h4 id="vtk"><code>--vtk</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Saving tetmesh in vtk format
 
 <p>Enable saving tetmesh in vtk format</p>
 
-<h4><code>--save</code></h4>
+<h4 id="save"><code>--save</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Saving extraction as set of points
 
 <p>Enable saving extraction as set of points</p>
 
-<h4><code>-v</code>, <code>--var</code></h4>
+<h4 id="var"><code>-v</code>, <code>--var</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Variable
 
 <p>Name of variable</p>
 
-<h4><code>--file</code></h4>
+<h4 id="file"><code>--file</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Path file
 

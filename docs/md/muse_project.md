@@ -10,35 +10,54 @@ muse_project [OPTIONS]
 
 ### Options
 
-#### `-N`, `--new_project`
+#### `-N`, `--new_project` {#new-project}
 **Type:** Switch (flag)
 **Description:** Create a new project
 
-Switch to enable new project creation
-- Usage: muse_project -N --pdir /path/to/projects --name MyProject
+Flag to enable new project creation
 
-#### `-p`, `--pdir`
+**Dependencies:** When using -N/[--new_project](#new-project), the following flags are typically used together:
+- [--pdir](#pdir) (required): Specify project directory
+- [--name](#name) (required): Specify project name
+- [--setEPSG](#setEPSG) (optional): Set coordinate reference system
+
+**Example:** `muse_project -N --pdir /path/to/projects --name MyProject --setEPSG EPSG:4326`
+
+#### `-p`, `--pdir` {#pdir}
 **Type:** Value (flag)
-**Description:** Directory path for the new project
+**Description:** Specify project directory path
 
 Path where the project will be created
-- Usage: muse_project --pdir /path/to/projects
 
-#### `-n`, `--name`
+**Dependencies:** Required when using -N/[--new_project](#new-project) flag
+
+**Example:** `--pdir /home/user/projects`
+
+#### `-n`, `--name` {#name}
 **Type:** Value (flag)
-**Description:** Name of the new project
+**Description:** Specify name of the new project
 
 Project name to be created
-- Usage: muse_project --name MyProject
 
-#### `--setEPSG`
+**Dependencies:** Required when using -N/[--new_project](#new-project) flag. The project name will be used as:
+- Directory name: {pdir}/{name}
+- JSON config file: {pdir}/{name}/out/{name}.json
+
+**Example:** `--name MyGeologyProject`
+
+#### `--setEPSG` {#setEPSG}
 **Type:** Value (flag)
-**Description:** Set project EPSG code (coordinate reference system authority)
+**Description:** Set project EPSG coordinate reference system
 
-EPSG code for the project coordinate system
-- Format: EPSG:####
-- Example: muse_project --setEPSG EPSG:4326
-- Common codes: EPSG:4326 (WGS84), EPSG:3857 (Web Mercator)
+EPSG authority code for the project coordinate system
+
+**Dependencies:** Optional parameter, used with -N/[--new_project](#new-project) flag
+Common EPSG codes:
+- EPSG:4326 (WGS84 Geographic)
+- EPSG:3857 (Web Mercator)
+- EPSG:32633 (UTM Zone 33N)
+
+**Example:** `--setEPSG EPSG:4326`
 
 ---
 

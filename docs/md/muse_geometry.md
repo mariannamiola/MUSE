@@ -10,409 +10,409 @@ muse_geometry [OPTIONS]
 
 ### Options
 
-#### `-N`, `--geometry`
+#### `-N`, `--geometry` {#geometry}
 **Type:** Switch (flag)
 **Description:** Creation of new geometry
 
 Flag to creation of new geometry
 
-#### `-p`, `--pdir`
+#### `-p`, `--pdir` {#pdir}
 **Type:** Value (flag)
 **Description:** Project directory
 
 Path to project directory
 
-#### `--setEPSG`
+#### `--setEPSG` {#setEPSG}
 **Type:** Value (flag)
 **Description:** Set project EPSG
 
 project epsg
 
-#### `-V`, `--vector`
+#### `-V`, `--vector` {#vector}
 **Type:** Switch (flag)
 **Description:** Load Vector file
 
 Enable load vector file
 
-#### `--save`
+#### `--save` {#save}
 **Type:** Switch (flag)
 **Description:** Saving data content of geospatial files
 
 Enable saving data content of geospatial files
 
-#### `--attribute`
+#### `--attribute` {#attribute}
 **Type:** Switch (flag)
 **Description:** Save attribute table from geospatial file
 
 Enable save attribute table from geospatial file
 
-#### `-R`, `--raster`
+#### `-R`, `--raster` {#raster}
 **Type:** Switch (flag)
 **Description:** Load Raster file
 
 Enable load raster file
 
-#### `-P`, `--pcl`
+#### `-P`, `--pcl` {#pcl}
 **Type:** Switch (flag)
 **Description:** Load point cloud
 
 Enable load point cloud
 
-#### `--points`
+#### `--points` {#points}
 **Type:** Value (flag)
 **Description:** Load filename as POINTS geometry type
 
 Path to load filename as points geometry type
 
-#### `--polygon`
+#### `--polygon` {#polygon}
 **Type:** Value (flag)
 **Description:** Load filename as POLYGON geometry type
 
 Path to load filename as polygon geometry type
 
-#### `-G`, `--gridata`
+#### `-G`, `--gridata` {#gridata}
 **Type:** Switch (flag)
 **Description:** Grid data - test
 
 Enable grid data - test
 
-#### `--rotaxis`
+#### `--rotaxis` {#rotaxis}
 **Type:** Value (flag)
 **Description:** Set rotation axis
 
 rotation axis
 
-#### `--rotangle`
+#### `--rotangle` {#rotangle}
 **Type:** Value (flag)
 **Description:** Set clockwise rotation angle (in degree)
 
 clockwise rotation angle (in degree)
 
-#### `--rotcx`
+#### `--rotcx` {#rotcx}
 **Type:** Value (flag)
 **Description:** Set coordinte X of rotation center
 
 coordinte x of rotation center
 
-#### `--rotcy`
+#### `--rotcy` {#rotcy}
 **Type:** Value (flag)
 **Description:** Set coordinte Y of rotation center
 
 coordinte y of rotation center
 
-#### `--rotcz`
+#### `--rotcz` {#rotcz}
 **Type:** Value (flag)
 **Description:** Set coordinte Z of rotation center
 
 coordinte z of rotation center
 
-#### `--tri`
+#### `--tri` {#tri}
 **Type:** Switch (flag)
 **Description:** Set triangulation for 2D meshing
 
 Enable set triangulation for 2d meshing
 
-#### `--convex`
+#### `--convex` {#convex}
 **Type:** Switch (flag)
 **Description:** Set convex hull for points triangulation
 
 Enable set convex hull for points triangulation
 
-#### `--concave`
+#### `--concave` {#concave}
 **Type:** Switch (flag)
 **Description:** Set concave hull for points triangulation
 
 Enable set concave hull for points triangulation
 
-#### `--boundary`
+#### `--boundary` {#boundary}
 **Type:** Value (flag)
 **Description:** Set external boundary for points triangulation
 
 external boundary for points triangulation
 
-#### `--opt`
+#### `--opt` {#opt}
 **Type:** Value (flag)
 **Description:** Set optimization flags
 
 optimization flags
 
-#### `--grid`
+#### `--grid` {#grid}
 **Type:** Switch (flag)
 **Description:** Set grid for 2D meshing
 
 Enable set grid for 2d meshing
 
-#### `--resx`
+#### `--resx` {#resx}
 **Type:** Value (flag)
 **Description:** Set x resolution
 
 x resolution
 
-#### `--resy`
+#### `--resy` {#resy}
 **Type:** Value (flag)
 **Description:** Set y resolution
 
 y resolution
 
-#### `--resz`
+#### `--resz` {#resz}
 **Type:** Value (flag)
 **Description:** Set z resolution
 
 z resolution
 
-#### `--poly`
+#### `--poly` {#poly}
 **Type:** Switch (flag)
 **Description:** Set generic polygon mesh for 2D meshing
 
 Enable set generic polygon mesh for 2d meshing
 
-#### `--subset`
+#### `--subset` {#subset}
 **Type:** Value (flag)
 **Description:** Set (random) subset of points
 
 (random) subset of points
 
-#### `--meth`
+#### `--meth` {#meth}
 **Type:** Value (flag)
 **Description:** Set method for z values
 
 method for z values
 
-#### `--setz`
+#### `--setz` {#setz}
 **Type:** Value (flag)
 **Description:** Set const z values for new points
 
 const z values for new points
 
-#### `-O`, `--offset`
+#### `-O`, `--offset` {#offset}
 **Type:** Switch (flag)
 **Description:** Load polygon mesh and apply offset
 
 Enable load polygon mesh and apply offset
 
-#### `--delta`
+#### `--delta` {#delta}
 **Type:** Switch (flag)
 **Description:** Set DELTA offset
 
 Enable set delta offset
 
-#### `--abs`
+#### `--abs` {#abs}
 **Type:** Switch (flag)
 **Description:** Set ABSOLUTE ELEVATION offset
 
 Enable set absolute elevation offset
 
-#### `-z`, `--zoffset`
+#### `-z`, `--zoffset` {#zoffset}
 **Type:** Value (flag)
 **Description:** Set offset in Z direction
 
 offset in z direction
 
-#### `-A`, `--append`
+#### `-A`, `--append` {#append}
 **Type:** Switch (flag)
 **Description:** Append meshes
 
 Enable append meshes
 
-#### `-T`, `--triobj`
+#### `-T`, `--triobj` {#triobj}
 **Type:** Switch (flag)
 **Description:** Load trimeshes and create an object closed by surface meshes
 
 Flag to load trimeshes and create an object closed by surface meshes
 
-#### `-Q`, `--quadobj`
+#### `-Q`, `--quadobj` {#quadobj}
 **Type:** Switch (flag)
 **Description:** Load quadmeshes and create an object closed by surface meshes
 
 Flag to load quadmeshes and create an object closed by surface meshes
 
-#### `--clean`
+#### `--clean` {#clean}
 **Type:** Switch (flag)
 **Description:** Clean quadrilateral mesh from isolated polys
 
 Enable clean quadrilateral mesh from isolated polys
 
-#### `-M`, `--volmesh`
+#### `-M`, `--volmesh` {#volmesh}
 **Type:** Switch (flag)
 **Description:** Load polygonal mesh and create polyedral mesh
 
 Flag to load polygonal mesh and create polyedral mesh
 
-#### `--tet`
+#### `--tet` {#tet}
 **Type:** Switch (flag)
 **Description:** Set tetrahedralization
 
 Enable set tetrahedralization
 
-#### `--vox`
+#### `--vox` {#vox}
 **Type:** Switch (flag)
 **Description:** Set voxel as polyedralmesh
 
 Enable set voxel as polyedralmesh
 
-#### `--hex`
+#### `--hex` {#hex}
 **Type:** Switch (flag)
 **Description:** Set hexmesh as polyedral
 
 Enable set hexmesh as polyedral
 
-#### `--nmaxvox`
+#### `--nmaxvox` {#nmaxvox}
 **Type:** Value (flag)
 **Description:** Set n max voxel per side
 
 Number of set n max voxel per side
 
-#### `-L`, `--trimesh`
+#### `-L`, `--trimesh` {#trimesh}
 **Type:** Switch (flag)
 **Description:** Load trimesh file
 
 Enable load trimesh file
 
-#### `--splmet`
+#### `--splmet` {#splmet}
 **Type:** Value (flag)
 **Description:** Set polys split method
 
 polys split method
 
-#### `--remesh`
+#### `--remesh` {#remesh}
 **Type:** Switch (flag)
 **Description:** Set remeshing
 
 Enable set remeshing
 
-#### `--mark`
+#### `--mark` {#mark}
 **Type:** Switch (flag)
 **Description:** Set marked boundary edges for remeshing
 
 Enable set marked boundary edges for remeshing
 
-#### `--collapse`
+#### `--collapse` {#collapse}
 **Type:** Switch (flag)
 **Description:** Set collapse on edge to simplify mesh boundary
 
 Enable set collapse on edge to simplify mesh boundary
 
-#### `--extractbp`
+#### `--extractbp` {#extractbp}
 **Type:** Switch (flag)
 **Description:** Set extract boundary points
 
 Enable set extract boundary points
 
-#### `--it`
+#### `--it` {#it}
 **Type:** Value (flag)
 **Description:** Set number of iterations
 
 Number of set number of iterations
 
-#### `--scale`
+#### `--scale` {#scale}
 **Type:** Switch (flag)
 **Description:** Set scale mesh
 
 Enable set scale mesh
 
-#### `--sx`
+#### `--sx` {#sx}
 **Type:** Value (flag)
 **Description:** Set scale factor in X direction
 
 scale factor in x direction
 
-#### `--sy`
+#### `--sy` {#sy}
 **Type:** Value (flag)
 **Description:** Set scale factor in Y direction
 
 scale factor in y direction
 
-#### `--sz`
+#### `--sz` {#sz}
 **Type:** Value (flag)
 **Description:** Set scale factor in Z direction
 
 scale factor in z direction
 
-#### `-Z`, `--tetmesh`
+#### `-Z`, `--tetmesh` {#tetmesh}
 **Type:** Switch (flag)
 **Description:** Load tetmesh file
 
 Enable load tetmesh file
 
-#### `--surf`
+#### `--surf` {#surf}
 **Type:** Switch (flag)
 **Description:** Extract surface from volume
 
 Enable extract surface from volume
 
-#### `--obj`
+#### `--obj` {#obj}
 **Type:** Switch (flag)
 **Description:** Saving mesh in obj format
 
 Enable saving mesh in obj format
 
-#### `--vtk`
+#### `--vtk` {#vtk}
 **Type:** Switch (flag)
 **Description:** Saving mesh in vtk format
 
 Enable saving mesh in vtk format
 
-#### `-U`, `--merge`
+#### `-U`, `--merge` {#merge}
 **Type:** Switch (flag)
 **Description:** Merge two trimesh
 
 Enable merge two trimesh
 
-#### `--proxthresh`
+#### `--proxthresh` {#proxthresh}
 **Type:** Value (flag)
 **Description:** Set proximaty threshold
 
 proximaty threshold
 
-#### `-S`, `--split`
+#### `-S`, `--split` {#split}
 **Type:** Switch (flag)
 **Description:** Split two trimesh
 
 Enable split two trimesh
 
-#### `-F`, `--cscalar`
+#### `-F`, `--cscalar` {#cscalar}
 **Type:** Switch (flag)
 **Description:** Create scalar field from centroids configuration and real samples
 
 Flag to create scalar field from centroids configuration and real samples
 
-#### `--smesh`
+#### `--smesh` {#smesh}
 **Type:** Value (flag)
 **Description:** Set samples mesh associated to (real) values
 
 samples mesh associated to (real) values
 
-#### `--sval`
+#### `--sval` {#sval}
 **Type:** Value (flag)
 **Description:** Set samples values associated to each vertex of samples mesh
 
 samples values associated to each vertex of samples mesh
 
-#### `--rscalar`
+#### `--rscalar` {#rscalar}
 **Type:** Switch (flag)
 **Description:** Restore scalar field from centroids configuration and real samples
 
 Enable restore scalar field from centroids configuration and real samples
 
-#### `-D`, `--res`
+#### `-D`, `--res` {#res}
 **Type:** Switch (flag)
 **Description:** Set multiresolution
 
 Enable set multiresolution
 
-#### `-f`, `--file`
+#### `-f`, `--file` {#file}
 **Type:** Value (flag)
 **Description:** Set scalar field file
 
 Path to set scalar field file
 
-#### `--refmod`
+#### `--refmod` {#refmod}
 **Type:** Value (flag)
 **Description:** Geometry model
 
 geometry model
 
-#### `--outf`
+#### `--outf` {#outf}
 **Type:** Value (flag)
 **Description:** Set folder to save outputs
 

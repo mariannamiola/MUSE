@@ -71,6 +71,22 @@
         }
         a {
             color: #0366d6;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: #0366d6;
+            font-weight: 500;
+            background: rgba(3, 102, 214, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: rgba(3, 102, 214, 0.2);
+            text-decoration: none;
         }
         .app-list {
             display: grid;
@@ -93,6 +109,28 @@
             height: 1px;
             background: #e1e4e8;
             margin: 30px 0;
+        }
+        .dependencies {
+            background: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: #0366d6;
+        }
+        .example {
+            background: #f1f3f4;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        .example strong {
+            color: #28a745;
         }
         .footer {
             margin-top: 40px;
@@ -118,115 +156,154 @@
 
 <h3>Options</h3>
 
-<h4><code>-N</code>, <code>--new_project</code></h4>
+<h4 id="new-project"><code>-N</code>, <code>--new_project</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Create a new project
 
 <p>Flag to create a new project</p>
 
-<h4><code>-p</code>, <code>--pdir</code></h4>
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Specify project directory
 
 <p>Path to the project directory (required)</p>
 
-<h4><code>--setEPSG</code></h4>
+<h4 id="setEPSG"><code>--setEPSG</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set project EPSG coordinate system
 
 <p>EPSG authority code (default: Unknown)</p>
 
-<h4><code>-S</code>, <code>--setIDXYZ</code></h4>
+<h4 id="setIDXYZ"><code>-S</code>, <code>--setIDXYZ</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable manual setting of coordinate column numbers
 
 <p>Flag to set coordinate column numbers</p>
 
-<h4><code>--setID</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> When using -S/<a href="#setIDXYZ">--setIDXYZ</a>, these column flags work together:
+<ul>
+  <li><a href="#setID">--setID</a>: ID column number</li>
+  <li><a href="#setX">--setX</a>: X coordinate column number</li>
+  <li><a href="#setY">--setY</a>: Y coordinate column number</li>
+  <li><a href="#setZ">--setZ</a>: Z coordinate column number (optional)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-S --setID 0 --setX 1 --setY 2 --setZ 3</code></div>
+
+<h4 id="setID"><code>--setID</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set ID column number
 
 <p>Column number for ID field</p>
 
-<h4><code>--setX</code></h4>
+<h4 id="setX"><code>--setX</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set X coordinate column number
 
 <p>Column number for X coordinate</p>
 
-<h4><code>--setY</code></h4>
+<h4 id="setY"><code>--setY</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set Y coordinate column number
 
 <p>Column number for Y coordinate</p>
 
-<h4><code>--setZ</code></h4>
+<h4 id="setZ"><code>--setZ</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set Z coordinate column number
 
 <p>Column number for Z coordinate</p>
 
-<h4><code>--setDel</code></h4>
+<h4 id="setDel"><code>--setDel</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set CSV delimiter type
 
 <p>Type of CSV delimiter (DEFAULT or COMMA)</p>
 
-<h4><code>-C</code>, <code>--converter</code></h4>
+<h4 id="converter"><code>-C</code>, <code>--converter</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Convert CSV format data into MUSE format
 
 <p>Flag to enable data conversion</p>
 
-<h4><code>--inf</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> When using -C/<a href="#converter">--converter</a>, these flags are commonly used:
+<ul>
+  <li><a href="#pdir">--pdir</a>: Project directory (REQUIRED)</li>
+  <li><a href="#setDel">--setDel</a>: CSV delimiter type (optional)</li>
+  <li><a href="#inf">--inf</a>, <a href="#sup">--sup</a>: Value limits (optional)</li>
+  <li>-S/<a href="#setIDXYZ">--setIDXYZ</a>: Manual column mapping (optional)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-C --pdir /project --setDel COMMA --inf 0.0 --sup 100.0</code></div>
+
+<h4 id="inf"><code>--inf</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set inferior limit for variable values
 
 <p>Inferior limit value</p>
 
-<h4><code>--sup</code></h4>
+<h4 id="sup"><code>--sup</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set superior limit for variable values
 
 <p>Superior limit value</p>
 
-<h4><code>-R</code>, <code>--read</code></h4>
+<h4 id="read"><code>-R</code>, <code>--read</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable reading of MUSE format files
 
 <p>Flag to enable MUSE format reading</p>
 
-<h4><code>-v</code>, <code>--var</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> When using -R/<a href="#read">--read</a>, these flags work together:
+<ul>
+  <li><a href="#pdir">--pdir</a>: Project directory (REQUIRED)</li>
+  <li><a href="#var">--var</a>: Variable name (default: ALL_INPUT)</li>
+  <li><a href="#nrealiz">--nrealiz</a>: Number of realizations (optional)</li>
+  <li><a href="#hist">--hist</a>: Enable histogram plotting (optional)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-R --pdir /project --var temperature --hist --nbin 20</code></div>
+
+<h4 id="var"><code>-v</code>, <code>--var</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Specify variable name to read
 
 <p>Variable name (default: ALL_INPUT)</p>
 
-<h4><code>-n</code>, <code>--nrealiz</code></h4>
+<h4 id="nrealiz"><code>-n</code>, <code>--nrealiz</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of realization to process
 
 <p>Number of realization (default: 0)</p>
 
-<h4><code>--hist</code></h4>
+<h4 id="hist"><code>--hist</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable histogram computation and plotting
 
 <p>Flag to compute histogram plots</p>
 
-<h4><code>--nval</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> When using <a href="#hist">--hist</a>, these flags work together:
+<ul>
+  <li><a href="#nval">--nval</a>: Minimum number of values for plotting (default: 20)</li>
+  <li><a href="#nbin">--nbin</a>: Number of histogram bins (default: 1)</li>
+</ul>
+Requires sufficient data points (>= nval threshold)</div>
+
+<div class="example"><strong>Example:</strong> <code>--hist --nval 50 --nbin 25</code></div>
+
+<h4 id="nval"><code>--nval</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set minimum number of values for histogram plotting
 
 <p>Minimum number of values (default: 20)</p>
 
-<h4><code>--nbin</code></h4>
+<h4 id="nbin"><code>--nbin</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of bins for histogram plot
 
 <p>Number of bins for histogram (default: 1)</p>
 
-<h4><code>--csv</code></h4>
+<h4 id="csv"><code>--csv</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable CSV format for output files
 

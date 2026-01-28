@@ -10,199 +10,199 @@ muse_manipulate [OPTIONS]
 
 ### Options
 
-#### `-E`, `--extract`
+#### `-E`, `--extract` {#extract}
 **Type:** Switch (flag)
 **Description:** Extraction data
 
 Enable extraction data
 
-#### `-p`, `--pdir`
+#### `-p`, `--pdir` {#pdir}
 **Type:** Value (flag)
 **Description:** Project directory
 
 Path to project directory
 
-#### `--geom`
+#### `--geom` {#geom}
 **Type:** Value (flag)
 **Description:** Geometry model
 
 geometry model
 
-#### `-z`, `--zcoord`
+#### `-z`, `--zcoord` {#zcoord}
 **Type:** Value (flag)
 **Description:** Coordinate Z
 
 coordinate z
 
-#### `-I`, `--intextr`
+#### `-I`, `--intextr` {#intextr}
 **Type:** Switch (flag)
 **Description:** Extraction data from interval
 
 Enable extraction data from interval
 
-#### `--sup`
+#### `--sup` {#sup}
 **Type:** Value (flag)
 **Description:** Set sup interval
 
 sup interval
 
-#### `--inf`
+#### `--inf` {#inf}
 **Type:** Value (flag)
 **Description:** Set inf interval
 
 inf interval
 
-#### `--nvar`
+#### `--nvar` {#nvar}
 **Type:** Value (flag)
 **Description:** Set variable to check
 
 Name of set variable to check
 
-#### `--sub`
+#### `--sub` {#sub}
 **Type:** Value (flag)
 **Description:** Extraction sub dataset basing on geometry
 
 extraction sub dataset basing on geometry
 
-#### `--rotaxis`
+#### `--rotaxis` {#rotaxis}
 **Type:** Value (flag)
 **Description:** Set rotation axis
 
 rotation axis
 
-#### `--rotangle`
+#### `--rotangle` {#rotangle}
 **Type:** Value (flag)
 **Description:** Set rotation angle (clockwise)
 
 rotation angle (clockwise)
 
-#### `--rotcx`
+#### `--rotcx` {#rotcx}
 **Type:** Value (flag)
 **Description:** Set rotation center x
 
 rotation center x
 
-#### `--rotcy`
+#### `--rotcy` {#rotcy}
 **Type:** Value (flag)
 **Description:** Set rotation center y
 
 rotation center y
 
-#### `--rotcz`
+#### `--rotcz` {#rotcz}
 **Type:** Value (flag)
 **Description:** Set rotation center z
 
 rotation center z
 
-#### `-P`, `--prsurf`
+#### `-P`, `--prsurf` {#prsurf}
 **Type:** Switch (flag)
 **Description:** Points projection on surfaces
 
 Enable points projection on surfaces
 
-#### `-S`, `--prsect`
+#### `-S`, `--prsect` {#prsect}
 **Type:** Switch (flag)
 **Description:** Compute points projection on boundary (2D section case).
 
 Flag to compute points projection on boundary (2d section case).
 
-#### `-R`, `--prqsect`
+#### `-R`, `--prqsect` {#prqsect}
 **Type:** Switch (flag)
 **Description:** Points projection on quads sections
 
 Enable points projection on quads sections
 
-#### `-V`, `--prvol`
+#### `-V`, `--prvol` {#prvol}
 **Type:** Switch (flag)
 **Description:** Compute points projection on boundary (3D volumetric case).
 
 Flag to compute points projection on boundary (3d volumetric case).
 
-#### `--step`
+#### `--step` {#step}
 **Type:** Value (flag)
 **Description:** Set number of steps for geometry model
 
 Number of set number of steps for geometry model
 
-#### `--epsilon`
+#### `--epsilon` {#epsilon}
 **Type:** Value (flag)
 **Description:** Set tolerance to enlarge bounding box
 
 tolerance to enlarge bounding box
 
-#### `--prdir`
+#### `--prdir` {#prdir}
 **Type:** Value (flag)
 **Description:** Set direction of projection
 
 Path to set direction of projection
 
-#### `--type`
+#### `--type` {#type}
 **Type:** Value (flag)
 **Description:** Set type
 
 type
 
-#### `-T`, `--strat`
+#### `-T`, `--strat` {#strat}
 **Type:** Switch (flag)
 **Description:** Points projection on surfaces
 
 Enable points projection on surfaces
 
-#### `--name`
+#### `--name` {#name}
 **Type:** Value (flag)
 **Description:** Name of geometry model
 
 Name of name of geometry model
 
-#### `--sttype`
+#### `--sttype` {#sttype}
 **Type:** Value (flag)
 **Description:** Set type of stratigraphic transformation
 
 type of stratigraphic transformation
 
-#### `--top`
+#### `--top` {#top}
 **Type:** Value (flag)
 **Description:** Top geometry model
 
 top geometry model
 
-#### `--bot`
+#### `--bot` {#bot}
 **Type:** Value (flag)
 **Description:** Bottom geometry model
 
 bottom geometry model
 
-#### `--reggrow`
+#### `--reggrow` {#reggrow}
 **Type:** Switch (flag)
 **Description:** Set region growing
 
 Enable set region growing
 
-#### `--obj`
+#### `--obj` {#obj}
 **Type:** Switch (flag)
 **Description:** Saving trimesh in obj format
 
 Enable saving trimesh in obj format
 
-#### `--vtk`
+#### `--vtk` {#vtk}
 **Type:** Switch (flag)
 **Description:** Saving tetmesh in vtk format
 
 Enable saving tetmesh in vtk format
 
-#### `--save`
+#### `--save` {#save}
 **Type:** Switch (flag)
 **Description:** Saving extraction as set of points
 
 Enable saving extraction as set of points
 
-#### `-v`, `--var`
+#### `-v`, `--var` {#var}
 **Type:** Value (flag)
 **Description:** Variable
 
 Name of variable
 
-#### `--file`
+#### `--file` {#file}
 **Type:** Value (flag)
 **Description:** Path file
 

@@ -71,6 +71,22 @@
         }
         a {
             color: #0366d6;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: #0366d6;
+            font-weight: 500;
+            background: rgba(3, 102, 214, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: rgba(3, 102, 214, 0.2);
+            text-decoration: none;
         }
         .app-list {
             display: grid;
@@ -93,6 +109,28 @@
             height: 1px;
             background: #e1e4e8;
             margin: 30px 0;
+        }
+        .dependencies {
+            background: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: #0366d6;
+        }
+        .example {
+            background: #f1f3f4;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        .example strong {
+            color: #28a745;
         }
         .footer {
             margin-top: 40px;
@@ -118,241 +156,241 @@
 
 <h3>Options</h3>
 
-<h4><code>-V</code>, <code>--variogram</code></h4>
+<h4 id="variogram"><code>-V</code>, <code>--variogram</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Compute variogram
 
 <p>Flag to compute variogram</p>
 
-<h4><code>-p</code>, <code>--pdir</code></h4>
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Project directory
 
 <p>Path to project directory</p>
 
-<h4><code>-v</code>, <code>--var</code></h4>
+<h4 id="var"><code>-v</code>, <code>--var</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Variable
 
 <p>Name of variable</p>
 
-<h4><code>--sub</code></h4>
+<h4 id="sub"><code>--sub</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set extracted sub-dataset referring to specified geometry domain
 
 <p>extracted sub-dataset referring to specified geometry domain</p>
 
-<h4><code>--rotaxis</code></h4>
+<h4 id="rotaxis"><code>--rotaxis</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation axis
 
 <p>rotation axis</p>
 
-<h4><code>--rotangle</code></h4>
+<h4 id="rotangle"><code>--rotangle</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation angle (clockwise)
 
 <p>rotation angle (clockwise)</p>
 
-<h4><code>--rotcx</code></h4>
+<h4 id="rotcx"><code>--rotcx</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation center x
 
 <p>rotation center x</p>
 
-<h4><code>--rotcy</code></h4>
+<h4 id="rotcy"><code>--rotcy</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation center y
 
 <p>rotation center y</p>
 
-<h4><code>--rotcz</code></h4>
+<h4 id="rotcz"><code>--rotcz</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation center z
 
 <p>rotation center z</p>
 
-<h4><code>--nscore</code></h4>
+<h4 id="nscore"><code>--nscore</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set normal score transformation
 
 <p>Number of set normal score transformation</p>
 
-<h4><code>--decl</code></h4>
+<h4 id="decl"><code>--decl</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set 2D declustering
 
 <p>Enable set 2d declustering</p>
 
-<h4><code>--csize</code></h4>
+<h4 id="csize"><code>--csize</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set cell size for 2D declustering
 
 <p>cell size for 2d declustering</p>
 
-<h4><code>--nstep</code></h4>
+<h4 id="nstep"><code>--nstep</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set n steps for 2D declustering (grid translation)
 
 <p>Number of set n steps for 2d declustering (grid translation)</p>
 
-<h4><code>--sttype</code></h4>
+<h4 id="sttype"><code>--sttype</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set stratigraphic condition for coordinate transformation
 
 <p>stratigraphic condition for coordinate transformation</p>
 
-<h4><code>-f</code>, <code>--filestrat</code></h4>
+<h4 id="filestrat"><code>-f</code>, <code>--filestrat</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set filename of samples in stratigraphic coordinates
 
 <p>Path to set filename of samples in stratigraphic coordinates</p>
 
-<h4><code>--vario</code></h4>
+<h4 id="vario"><code>--vario</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> type of variogram
 
 <p>Name of type of variogram</p>
 
-<h4><code>--dir</code></h4>
+<h4 id="dir"><code>--dir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> type of variogram direction
 
 <p>Path to type of variogram direction</p>
 
-<h4><code>--dim</code></h4>
+<h4 id="dim"><code>--dim</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> type of variogram dimension
 
 <p>type of variogram dimension</p>
 
-<h4><code>--lagspac</code></h4>
+<h4 id="lagspac"><code>--lagspac</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set lag spacing type
 
 <p>lag spacing type</p>
 
-<h4><code>--spac</code></h4>
+<h4 id="spac"><code>--spac</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set spacing samples for vertical variogram
 
 <p>spacing samples for vertical variogram</p>
 
-<h4><code>--deg</code></h4>
+<h4 id="deg"><code>--deg</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set degree step (in degree)
 
 <p>degree step (in degree)</p>
 
-<h4><code>--degtol</code></h4>
+<h4 id="degtol"><code>--degtol</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set tolerance (in degree)
 
 <p>tolerance (in degree)</p>
 
-<h4><code>--zdegtol</code></h4>
+<h4 id="zdegtol"><code>--zdegtol</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set vertical tolerance (in degree)
 
 <p>vertical tolerance (in degree)</p>
 
-<h4><code>--dirs</code></h4>
+<h4 id="dirs"><code>--dirs</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Load discrete directions (in degree)
 
 <p>Path to load discrete directions (in degree)</p>
 
-<h4><code>--bandw</code></h4>
+<h4 id="bandw"><code>--bandw</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set bandwidth
 
 <p>bandwidth</p>
 
-<h4><code>--vertbandw</code></h4>
+<h4 id="vertbandw"><code>--vertbandw</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set vertical bandwidth
 
 <p>vertical bandwidth</p>
 
-<h4><code>--type</code></h4>
+<h4 id="type"><code>--type</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set type of model variogram
 
 <p>type of model variogram</p>
 
-<h4><code>--nugget</code></h4>
+<h4 id="nugget"><code>--nugget</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Nugget
 
 <p>Number of nugget</p>
 
-<h4><code>--sill</code></h4>
+<h4 id="sill"><code>--sill</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Sill (NOT ENABLE)
 
 <p>sill (not enable)</p>
 
-<h4><code>--npoints</code></h4>
+<h4 id="npoints"><code>--npoints</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of experimental variogram points
 
 <p>Number of set number of experimental variogram points</p>
 
-<h4><code>--vclean</code></h4>
+<h4 id="vclean"><code>--vclean</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set cleaning variogram points
 
 <p>cleaning variogram points</p>
 
-<h4><code>--rangestep</code></h4>
+<h4 id="rangestep"><code>--rangestep</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set range step
 
 <p>range step</p>
 
-<h4><code>--nugstep</code></h4>
+<h4 id="nugstep"><code>--nugstep</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set nugget step
 
 <p>Number of set nugget step</p>
 
-<h4><code>--maxdist</code></h4>
+<h4 id="maxdist"><code>--maxdist</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set maximum distance between points for computing experimental variogram
 
 <p>maximum distance between points for computing experimental variogram</p>
 
-<h4><code>--tolfac</code></h4>
+<h4 id="tolfac"><code>--tolfac</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set tolerance factor for computing experimental variogram
 
 <p>tolerance factor for computing experimental variogram</p>
 
-<h4><code>--fac</code></h4>
+<h4 id="fac"><code>--fac</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set multiplier factor for computing variable lag spacing for experimental variogram
 
 <p>multiplier factor for computing variable lag spacing for experimental variogram</p>
 
-<h4><code>--weight</code></h4>
+<h4 id="weight"><code>--weight</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set weight on nugget to compute directional variogram
 
 <p>Flag to set weight on nugget to compute directional variogram</p>
 
-<h4><code>--expvario</code></h4>
+<h4 id="expvario"><code>--expvario</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Load experimental variogram
 
 <p>Name of load experimental variogram</p>
 
-<h4><code>--eps</code></h4>
+<h4 id="eps"><code>--eps</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set eps for plot centering
 
 <p>eps for plot centering</p>
 
-<h4><code>--epsy</code></h4>
+<h4 id="epsy"><code>--epsy</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set eps_y for plot on y axis
 

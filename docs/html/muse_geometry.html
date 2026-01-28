@@ -71,6 +71,22 @@
         }
         a {
             color: #0366d6;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: #0366d6;
+            font-weight: 500;
+            background: rgba(3, 102, 214, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: rgba(3, 102, 214, 0.2);
+            text-decoration: none;
         }
         .app-list {
             display: grid;
@@ -93,6 +109,28 @@
             height: 1px;
             background: #e1e4e8;
             margin: 30px 0;
+        }
+        .dependencies {
+            background: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: #0366d6;
+        }
+        .example {
+            background: #f1f3f4;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        .example strong {
+            color: #28a745;
         }
         .footer {
             margin-top: 40px;
@@ -118,409 +156,409 @@
 
 <h3>Options</h3>
 
-<h4><code>-N</code>, <code>--geometry</code></h4>
+<h4 id="geometry"><code>-N</code>, <code>--geometry</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Creation of new geometry
 
 <p>Flag to creation of new geometry</p>
 
-<h4><code>-p</code>, <code>--pdir</code></h4>
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Project directory
 
 <p>Path to project directory</p>
 
-<h4><code>--setEPSG</code></h4>
+<h4 id="setEPSG"><code>--setEPSG</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set project EPSG
 
 <p>project epsg</p>
 
-<h4><code>-V</code>, <code>--vector</code></h4>
+<h4 id="vector"><code>-V</code>, <code>--vector</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Load Vector file
 
 <p>Enable load vector file</p>
 
-<h4><code>--save</code></h4>
+<h4 id="save"><code>--save</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Saving data content of geospatial files
 
 <p>Enable saving data content of geospatial files</p>
 
-<h4><code>--attribute</code></h4>
+<h4 id="attribute"><code>--attribute</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Save attribute table from geospatial file
 
 <p>Enable save attribute table from geospatial file</p>
 
-<h4><code>-R</code>, <code>--raster</code></h4>
+<h4 id="raster"><code>-R</code>, <code>--raster</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Load Raster file
 
 <p>Enable load raster file</p>
 
-<h4><code>-P</code>, <code>--pcl</code></h4>
+<h4 id="pcl"><code>-P</code>, <code>--pcl</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Load point cloud
 
 <p>Enable load point cloud</p>
 
-<h4><code>--points</code></h4>
+<h4 id="points"><code>--points</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Load filename as POINTS geometry type
 
 <p>Path to load filename as points geometry type</p>
 
-<h4><code>--polygon</code></h4>
+<h4 id="polygon"><code>--polygon</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Load filename as POLYGON geometry type
 
 <p>Path to load filename as polygon geometry type</p>
 
-<h4><code>-G</code>, <code>--gridata</code></h4>
+<h4 id="gridata"><code>-G</code>, <code>--gridata</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Grid data - test
 
 <p>Enable grid data - test</p>
 
-<h4><code>--rotaxis</code></h4>
+<h4 id="rotaxis"><code>--rotaxis</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation axis
 
 <p>rotation axis</p>
 
-<h4><code>--rotangle</code></h4>
+<h4 id="rotangle"><code>--rotangle</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set clockwise rotation angle (in degree)
 
 <p>clockwise rotation angle (in degree)</p>
 
-<h4><code>--rotcx</code></h4>
+<h4 id="rotcx"><code>--rotcx</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set coordinte X of rotation center
 
 <p>coordinte x of rotation center</p>
 
-<h4><code>--rotcy</code></h4>
+<h4 id="rotcy"><code>--rotcy</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set coordinte Y of rotation center
 
 <p>coordinte y of rotation center</p>
 
-<h4><code>--rotcz</code></h4>
+<h4 id="rotcz"><code>--rotcz</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set coordinte Z of rotation center
 
 <p>coordinte z of rotation center</p>
 
-<h4><code>--tri</code></h4>
+<h4 id="tri"><code>--tri</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set triangulation for 2D meshing
 
 <p>Enable set triangulation for 2d meshing</p>
 
-<h4><code>--convex</code></h4>
+<h4 id="convex"><code>--convex</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set convex hull for points triangulation
 
 <p>Enable set convex hull for points triangulation</p>
 
-<h4><code>--concave</code></h4>
+<h4 id="concave"><code>--concave</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set concave hull for points triangulation
 
 <p>Enable set concave hull for points triangulation</p>
 
-<h4><code>--boundary</code></h4>
+<h4 id="boundary"><code>--boundary</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set external boundary for points triangulation
 
 <p>external boundary for points triangulation</p>
 
-<h4><code>--opt</code></h4>
+<h4 id="opt"><code>--opt</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set optimization flags
 
 <p>optimization flags</p>
 
-<h4><code>--grid</code></h4>
+<h4 id="grid"><code>--grid</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set grid for 2D meshing
 
 <p>Enable set grid for 2d meshing</p>
 
-<h4><code>--resx</code></h4>
+<h4 id="resx"><code>--resx</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set x resolution
 
 <p>x resolution</p>
 
-<h4><code>--resy</code></h4>
+<h4 id="resy"><code>--resy</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set y resolution
 
 <p>y resolution</p>
 
-<h4><code>--resz</code></h4>
+<h4 id="resz"><code>--resz</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set z resolution
 
 <p>z resolution</p>
 
-<h4><code>--poly</code></h4>
+<h4 id="poly"><code>--poly</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set generic polygon mesh for 2D meshing
 
 <p>Enable set generic polygon mesh for 2d meshing</p>
 
-<h4><code>--subset</code></h4>
+<h4 id="subset"><code>--subset</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set (random) subset of points
 
 <p>(random) subset of points</p>
 
-<h4><code>--meth</code></h4>
+<h4 id="meth"><code>--meth</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set method for z values
 
 <p>method for z values</p>
 
-<h4><code>--setz</code></h4>
+<h4 id="setz"><code>--setz</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set const z values for new points
 
 <p>const z values for new points</p>
 
-<h4><code>-O</code>, <code>--offset</code></h4>
+<h4 id="offset"><code>-O</code>, <code>--offset</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Load polygon mesh and apply offset
 
 <p>Enable load polygon mesh and apply offset</p>
 
-<h4><code>--delta</code></h4>
+<h4 id="delta"><code>--delta</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set DELTA offset
 
 <p>Enable set delta offset</p>
 
-<h4><code>--abs</code></h4>
+<h4 id="abs"><code>--abs</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set ABSOLUTE ELEVATION offset
 
 <p>Enable set absolute elevation offset</p>
 
-<h4><code>-z</code>, <code>--zoffset</code></h4>
+<h4 id="zoffset"><code>-z</code>, <code>--zoffset</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set offset in Z direction
 
 <p>offset in z direction</p>
 
-<h4><code>-A</code>, <code>--append</code></h4>
+<h4 id="append"><code>-A</code>, <code>--append</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Append meshes
 
 <p>Enable append meshes</p>
 
-<h4><code>-T</code>, <code>--triobj</code></h4>
+<h4 id="triobj"><code>-T</code>, <code>--triobj</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Load trimeshes and create an object closed by surface meshes
 
 <p>Flag to load trimeshes and create an object closed by surface meshes</p>
 
-<h4><code>-Q</code>, <code>--quadobj</code></h4>
+<h4 id="quadobj"><code>-Q</code>, <code>--quadobj</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Load quadmeshes and create an object closed by surface meshes
 
 <p>Flag to load quadmeshes and create an object closed by surface meshes</p>
 
-<h4><code>--clean</code></h4>
+<h4 id="clean"><code>--clean</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Clean quadrilateral mesh from isolated polys
 
 <p>Enable clean quadrilateral mesh from isolated polys</p>
 
-<h4><code>-M</code>, <code>--volmesh</code></h4>
+<h4 id="volmesh"><code>-M</code>, <code>--volmesh</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Load polygonal mesh and create polyedral mesh
 
 <p>Flag to load polygonal mesh and create polyedral mesh</p>
 
-<h4><code>--tet</code></h4>
+<h4 id="tet"><code>--tet</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set tetrahedralization
 
 <p>Enable set tetrahedralization</p>
 
-<h4><code>--vox</code></h4>
+<h4 id="vox"><code>--vox</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set voxel as polyedralmesh
 
 <p>Enable set voxel as polyedralmesh</p>
 
-<h4><code>--hex</code></h4>
+<h4 id="hex"><code>--hex</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set hexmesh as polyedral
 
 <p>Enable set hexmesh as polyedral</p>
 
-<h4><code>--nmaxvox</code></h4>
+<h4 id="nmaxvox"><code>--nmaxvox</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set n max voxel per side
 
 <p>Number of set n max voxel per side</p>
 
-<h4><code>-L</code>, <code>--trimesh</code></h4>
+<h4 id="trimesh"><code>-L</code>, <code>--trimesh</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Load trimesh file
 
 <p>Enable load trimesh file</p>
 
-<h4><code>--splmet</code></h4>
+<h4 id="splmet"><code>--splmet</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set polys split method
 
 <p>polys split method</p>
 
-<h4><code>--remesh</code></h4>
+<h4 id="remesh"><code>--remesh</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set remeshing
 
 <p>Enable set remeshing</p>
 
-<h4><code>--mark</code></h4>
+<h4 id="mark"><code>--mark</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set marked boundary edges for remeshing
 
 <p>Enable set marked boundary edges for remeshing</p>
 
-<h4><code>--collapse</code></h4>
+<h4 id="collapse"><code>--collapse</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set collapse on edge to simplify mesh boundary
 
 <p>Enable set collapse on edge to simplify mesh boundary</p>
 
-<h4><code>--extractbp</code></h4>
+<h4 id="extractbp"><code>--extractbp</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set extract boundary points
 
 <p>Enable set extract boundary points</p>
 
-<h4><code>--it</code></h4>
+<h4 id="it"><code>--it</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of iterations
 
 <p>Number of set number of iterations</p>
 
-<h4><code>--scale</code></h4>
+<h4 id="scale"><code>--scale</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set scale mesh
 
 <p>Enable set scale mesh</p>
 
-<h4><code>--sx</code></h4>
+<h4 id="sx"><code>--sx</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set scale factor in X direction
 
 <p>scale factor in x direction</p>
 
-<h4><code>--sy</code></h4>
+<h4 id="sy"><code>--sy</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set scale factor in Y direction
 
 <p>scale factor in y direction</p>
 
-<h4><code>--sz</code></h4>
+<h4 id="sz"><code>--sz</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set scale factor in Z direction
 
 <p>scale factor in z direction</p>
 
-<h4><code>-Z</code>, <code>--tetmesh</code></h4>
+<h4 id="tetmesh"><code>-Z</code>, <code>--tetmesh</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Load tetmesh file
 
 <p>Enable load tetmesh file</p>
 
-<h4><code>--surf</code></h4>
+<h4 id="surf"><code>--surf</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Extract surface from volume
 
 <p>Enable extract surface from volume</p>
 
-<h4><code>--obj</code></h4>
+<h4 id="obj"><code>--obj</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Saving mesh in obj format
 
 <p>Enable saving mesh in obj format</p>
 
-<h4><code>--vtk</code></h4>
+<h4 id="vtk"><code>--vtk</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Saving mesh in vtk format
 
 <p>Enable saving mesh in vtk format</p>
 
-<h4><code>-U</code>, <code>--merge</code></h4>
+<h4 id="merge"><code>-U</code>, <code>--merge</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Merge two trimesh
 
 <p>Enable merge two trimesh</p>
 
-<h4><code>--proxthresh</code></h4>
+<h4 id="proxthresh"><code>--proxthresh</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set proximaty threshold
 
 <p>proximaty threshold</p>
 
-<h4><code>-S</code>, <code>--split</code></h4>
+<h4 id="split"><code>-S</code>, <code>--split</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Split two trimesh
 
 <p>Enable split two trimesh</p>
 
-<h4><code>-F</code>, <code>--cscalar</code></h4>
+<h4 id="cscalar"><code>-F</code>, <code>--cscalar</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Create scalar field from centroids configuration and real samples
 
 <p>Flag to create scalar field from centroids configuration and real samples</p>
 
-<h4><code>--smesh</code></h4>
+<h4 id="smesh"><code>--smesh</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set samples mesh associated to (real) values
 
 <p>samples mesh associated to (real) values</p>
 
-<h4><code>--sval</code></h4>
+<h4 id="sval"><code>--sval</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set samples values associated to each vertex of samples mesh
 
 <p>samples values associated to each vertex of samples mesh</p>
 
-<h4><code>--rscalar</code></h4>
+<h4 id="rscalar"><code>--rscalar</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Restore scalar field from centroids configuration and real samples
 
 <p>Enable restore scalar field from centroids configuration and real samples</p>
 
-<h4><code>-D</code>, <code>--res</code></h4>
+<h4 id="res"><code>-D</code>, <code>--res</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set multiresolution
 
 <p>Enable set multiresolution</p>
 
-<h4><code>-f</code>, <code>--file</code></h4>
+<h4 id="file"><code>-f</code>, <code>--file</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set scalar field file
 
 <p>Path to set scalar field file</p>
 
-<h4><code>--refmod</code></h4>
+<h4 id="refmod"><code>--refmod</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Geometry model
 
 <p>geometry model</p>
 
-<h4><code>--outf</code></h4>
+<h4 id="outf"><code>--outf</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set folder to save outputs
 

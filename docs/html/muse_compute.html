@@ -71,6 +71,22 @@
         }
         a {
             color: #0366d6;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: #0366d6;
+            font-weight: 500;
+            background: rgba(3, 102, 214, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: rgba(3, 102, 214, 0.2);
+            text-decoration: none;
         }
         .app-list {
             display: grid;
@@ -93,6 +109,28 @@
             height: 1px;
             background: #e1e4e8;
             margin: 30px 0;
+        }
+        .dependencies {
+            background: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: #0366d6;
+        }
+        .example {
+            background: #f1f3f4;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        .example strong {
+            color: #28a745;
         }
         .footer {
             margin-top: 40px;
@@ -118,211 +156,277 @@
 
 <h3>Options</h3>
 
-<h4><code>-C</code>, <code>--compute</code></h4>
+<h4 id="compute"><code>-C</code>, <code>--compute</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable computation mode for MUSE
 
 <p>Flag to enable computation mode</p>
 
-<h4><code>--mode</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> When using -C/<a href="#compute">--compute</a>, these flags work together:
+REQUIRED flags:
+<ul>
+  <li><a href="#var">--var</a>: Variable name is mandatory</li>
+  <li><a href="#geom">--geom</a>: Geometry model is mandatory</li>
+</ul>
+OPTIONAL but commonly used:
+<ul>
+  <li><a href="#mode">--mode</a>: Computation mode (AUTO, MANUAL)</li>
+  <li><a href="#pdir">--pdir</a>: Project directory</li>
+  <li><a href="#sub">--sub</a>: Sub-dataset extraction</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>muse_compute -C --var temperature --geom mesh_model --mode AUTO</code></div>
+
+<h4 id="mode"><code>--mode</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set computation mode
 
 <p>Computation mode setting (default: AUTO)</p>
 
-<h4><code>-p</code>, <code>--pdir</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> Used in combination with -C/<a href="#compute">--compute</a> flag
+Available modes: AUTO, MANUAL
+<ul>
+  <li>AUTO: Automatic parameter selection</li>
+  <li>MANUAL: Manual parameter configuration required</div></li>
+</ul>
+
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Specify project directory
 
 <p>Path to the project directory</p>
 
-<h4><code>-v</code>, <code>--var</code></h4>
+<h4 id="var"><code>-v</code>, <code>--var</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Specify variable name to analyze
 
 <p>Name of the variable to process</p>
 
-<h4><code>-m</code>, <code>--geom</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> MANDATORY when using -C/<a href="#compute">--compute</a> flag
+The variable must exist in the project data</div>
+
+<h4 id="geom"><code>-m</code>, <code>--geom</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Specify geometry model name
 
 <p>Name of the geometry model to use</p>
 
-<h4><code>--sub</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> MANDATORY when using -C/<a href="#compute">--compute</a> flag
+The geometry model must be available in the project</div>
+
+<h4 id="sub"><code>--sub</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Extract sub-dataset based on geometry
 
 <p>Path to sub-dataset extraction directory</p>
 
-<h4><code>--rotaxis</code></h4>
+<h4 id="rotaxis"><code>--rotaxis</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation axis for data transformation
 
 <p>Axis for rotation (default: NO)</p>
 
-<h4><code>--rotangle</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> When using rotation, these flags work together:
+<ul>
+  <li><a href="#rotaxis">--rotaxis</a>: Rotation axis (X, Y, Z)</li>
+  <li><a href="#rotangle">--rotangle</a>: Rotation angle (required if rotaxis != NO)</li>
+  <li><a href="#rotcx">--rotcx</a>, <a href="#rotcy">--rotcy</a>, <a href="#rotcz">--rotcz</a>: Rotation center coordinates</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>--rotaxis Z --rotangle 45.0 --rotcx 0.0 --rotcy 0.0</code></div>
+
+<h4 id="rotangle"><code>--rotangle</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set rotation angle in degrees (clockwise)
 
 <p>Rotation angle in degrees</p>
 
-<h4><code>--rotcx</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO</div>
+
+<h4 id="rotcx"><code>--rotcx</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set X coordinate of rotation center
 
 <p>X coordinate of rotation center</p>
 
-<h4><code>--rotcy</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> and <a href="#rotangle">--rotangle</a> for data rotation</div>
+
+<h4 id="rotcy"><code>--rotcy</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set Y coordinate of rotation center
 
 <p>Y coordinate of rotation center</p>
 
-<h4><code>--rotcz</code></h4>
+<h4 id="rotcz"><code>--rotcz</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set Z coordinate of rotation center
 
 <p>Z coordinate of rotation center</p>
 
-<h4><code>--vario</code></h4>
+<h4 id="vario"><code>--vario</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set fixed variogram parameters
 
 <p>Path to variogram configuration file</p>
 
-<h4><code>--dir</code></h4>
+<h4 id="dir"><code>--dir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set variogram direction type
 
 <p>Type of variogram direction (OMNI or DIR)</p>
 
-<h4><code>--dim</code></h4>
+<h4 id="dim"><code>--dim</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set variogram dimension type
 
 <p>Type of variogram dimension (3D, 3Dxy, 3Dz, 2D, 1Dz, 1D)</p>
 
-<h4><code>--zrange</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> Variogram configuration flags work together:
+<ul>
+  <li><a href="#dir">--dir</a>: Direction type (OMNI, DIR)</li>
+  <li><a href="#dim">--dim</a>: Dimension type</li>
+  <li><a href="#zrange">--zrange</a>: Z direction range (used with 3D dimensions)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>--dir OMNI --dim 3D --zrange 50.0</code></div>
+
+<h4 id="zrange"><code>--zrange</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set range in Z direction
 
 <p>Range value in Z direction</p>
 
-<h4><code>--crit</code></h4>
+<h4 id="crit"><code>--crit</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set interpolation algorithm
 
 <p>Interpolation algorithm (SGS, IK, or SISIM)</p>
 
-<h4><code>--bnscore</code></h4>
+<h4 id="bnscore"><code>--bnscore</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable back normal score transformation integrated into SGS
 
 <p>Flag to enable back normal score transformation</p>
 
-<h4><code>--extr</code></h4>
+<h4 id="extr"><code>--extr</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set extrapolation type
 
 <p>Type of extrapolation (default: none)</p>
 
-<h4><code>--minextr</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> When using extrapolation (extr != "none"), these flags work together:
+<ul>
+  <li><a href="#minextr">--minextr</a>: Minimum extrapolation value</li>
+  <li><a href="#maxextr">--maxextr</a>: Maximum extrapolation value</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>--extr linear --minextr 0.0 --maxextr 100.0</code></div>
+
+<h4 id="minextr"><code>--minextr</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set minimum value for extrapolation
 
 <p>Minimum extrapolation value</p>
 
-<h4><code>--maxextr</code></h4>
+<h4 id="maxextr"><code>--maxextr</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set maximum value for extrapolation
 
 <p>Maximum extrapolation value</p>
 
-<h4><code>--nsim</code></h4>
+<h4 id="nsim"><code>--nsim</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of simulation iterations
 
 <p>Number of simulation iterations (default: 10)</p>
 
-<h4><code>--csize</code></h4>
+<h4 id="csize"><code>--csize</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set cell size for 2D declustering
 
 <p>Cell size for 2D declustering</p>
 
-<h4><code>--nstep</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> When using 2D declustering, these flags work together:
+<ul>
+  <li><a href="#csize">--csize</a>: Cell size (required for declustering)</li>
+  <li><a href="#nstep">--nstep</a>: Number of steps for grid translation</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>--csize 10.0 --nstep 5</code></div>
+
+<h4 id="nstep"><code>--nstep</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of steps for 2D declustering grid translation
 
 <p>Number of steps for 2D declustering</p>
 
-<h4><code>-S</code>, <code>--stats</code></h4>
+<h4 id="stats"><code>-S</code>, <code>--stats</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable statistical analysis on simulation results
 
 <p>Flag to compute statistical analysis</p>
 
-<h4><code>--space</code></h4>
+<h4 id="space"><code>--space</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set space type for analysis
 
 <p>Space type (NORMAL or VAR)</p>
 
-<h4><code>-B</code>, <code>--bns</code></h4>
+<h4 id="bns"><code>-B</code>, <code>--bns</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable back normal score transformation
 
 <p>Flag to perform back normal score transformation</p>
 
-<h4><code>-f</code>, <code>--file</code></h4>
+<h4 id="file"><code>-f</code>, <code>--file</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set input file path
 
 <p>Path to input file</p>
 
-<h4><code>-D</code>, <code>--db</code></h4>
+<h4 id="db"><code>-D</code>, <code>--db</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable database creation from simulations
 
 <p>Flag to create database from simulation results</p>
 
-<h4><code>--input</code></h4>
+<h4 id="input"><code>--input</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of input samples
 
 <p>Number of input samples to use (default: 4)</p>
 
-<h4><code>--simulated</code></h4>
+<h4 id="simulated"><code>--simulated</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of simulated points
 
 <p>Number of points to simulate (default: 3)</p>
 
-<h4><code>--scaleradius</code></h4>
+<h4 id="scaleradius"><code>--scaleradius</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set scale factor of search radius
 
 <p>Scale factor for search radius (default: 1.0)</p>
 
-<h4><code>--octant</code></h4>
+<h4 id="octant"><code>--octant</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable octant search in SGS algorithm
 
 <p>Flag to enable octant search</p>
 
-<h4><code>--csv</code></h4>
+<h4 id="csv"><code>--csv</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Enable CSV format for output files
 
 <p>Flag to save files in CSV format</p>
 
-<h4><code>--out</code></h4>
+<h4 id="out"><code>--out</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set type of SGS output
 
 <p>Type of SGS output (MEAN or VECSIM)</p>
 
-<h4><code>--format</code></h4>
+<h4 id="format"><code>--format</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set data format encoding for output
 

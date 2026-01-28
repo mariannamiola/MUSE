@@ -71,6 +71,22 @@
         }
         a {
             color: #0366d6;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: #0366d6;
+            font-weight: 500;
+            background: rgba(3, 102, 214, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: rgba(3, 102, 214, 0.2);
+            text-decoration: none;
         }
         .app-list {
             display: grid;
@@ -93,6 +109,28 @@
             height: 1px;
             background: #e1e4e8;
             margin: 30px 0;
+        }
+        .dependencies {
+            background: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: #0366d6;
+        }
+        .example {
+            background: #f1f3f4;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        .example strong {
+            color: #28a745;
         }
         .footer {
             margin-top: 40px;
@@ -118,67 +156,67 @@
 
 <h3>Options</h3>
 
-<h4><code>-H</code>, <code>--histogram</code></h4>
+<h4 id="histogram"><code>-H</code>, <code>--histogram</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Creation histogram plot
 
 <p>Enable creation histogram plot</p>
 
-<h4><code>-p</code>, <code>--pdir</code></h4>
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Project directory
 
 <p>Path to project directory</p>
 
-<h4><code>-v</code>, <code>--val</code></h4>
+<h4 id="val"><code>-v</code>, <code>--val</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set values
 
 <p>values</p>
 
-<h4><code>--nval</code></h4>
+<h4 id="nval"><code>--nval</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set min number of values, sufficient for histogram plot
 
 <p>Number of set min number of values, sufficient for histogram plot</p>
 
-<h4><code>--nbin</code></h4>
+<h4 id="nbin"><code>--nbin</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set number of bins for histogram plot
 
 <p>Number of set number of bins for histogram plot</p>
 
-<h4><code>-x</code>, <code>--x_variable</code></h4>
+<h4 id="x-variable"><code>-x</code>, <code>--x_variable</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Name variable1
 
 <p>Name of name variable1</p>
 
-<h4><code>-B</code>, <code>--bivariate_plot</code></h4>
+<h4 id="bivariate-plot"><code>-B</code>, <code>--bivariate_plot</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Creation bivariate plot
 
 <p>Enable creation bivariate plot</p>
 
-<h4><code>-y</code>, <code>--y_variable</code></h4>
+<h4 id="y-variable"><code>-y</code>, <code>--y_variable</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Name variable2
 
 <p>Name of name variable2</p>
 
-<h4><code>-E</code>, <code>--error_plot</code></h4>
+<h4 id="error-plot"><code>-E</code>, <code>--error_plot</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Creation error plot
 
 <p>Enable creation error plot</p>
 
-<h4><code>-T</code>, <code>--triangular_plot</code></h4>
+<h4 id="triangular-plot"><code>-T</code>, <code>--triangular_plot</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Creation triangular plot
 
 <p>Enable creation triangular plot</p>
 
-<h4><code>-z</code>, <code>--z_variable</code></h4>
+<h4 id="z-variable"><code>-z</code>, <code>--z_variable</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Name variable3
 

@@ -71,6 +71,22 @@
         }
         a {
             color: #0366d6;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: #0366d6;
+            font-weight: 500;
+            background: rgba(3, 102, 214, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: rgba(3, 102, 214, 0.2);
+            text-decoration: none;
         }
         .app-list {
             display: grid;
@@ -93,6 +109,28 @@
             height: 1px;
             background: #e1e4e8;
             margin: 30px 0;
+        }
+        .dependencies {
+            background: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: #0366d6;
+        }
+        .example {
+            background: #f1f3f4;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        .example strong {
+            color: #28a745;
         }
         .footer {
             margin-top: 40px;
@@ -118,43 +156,60 @@
 
 <h3>Options</h3>
 
-<h4><code>-N</code>, <code>--new_project</code></h4>
+<h4 id="new-project"><code>-N</code>, <code>--new_project</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Create a new project
 
-<p>Switch to enable new project creation
-<ul>
-  <li>Usage: muse_project -N --pdir /path/to/projects --name MyProject</li>
-</ul></p>
+<p>Flag to enable new project creation</p>
 
-<h4><code>-p</code>, <code>--pdir</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> When using -N/<a href="#new-project">--new_project</a>, the following flags are typically used together:
+<ul>
+  <li><a href="#pdir">--pdir</a> (required): Specify project directory</li>
+  <li><a href="#name">--name</a> (required): Specify project name</li>
+  <li><a href="#setEPSG">--setEPSG</a> (optional): Set coordinate reference system</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>muse_project -N --pdir /path/to/projects --name MyProject --setEPSG EPSG:4326</code></div>
+
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
-<strong>Description:</strong> Directory path for the new project
+<strong>Description:</strong> Specify project directory path
 
-<p>Path where the project will be created
-<ul>
-  <li>Usage: muse_project --pdir /path/to/projects</li>
-</ul></p>
+<p>Path where the project will be created</p>
 
-<h4><code>-n</code>, <code>--name</code></h4>
+<div class="dependencies"><strong>Dependencies:</strong> Required when using -N/<a href="#new-project">--new_project</a> flag</div>
+
+<div class="example"><strong>Example:</strong> <code>--pdir /home/user/projects</code></div>
+
+<h4 id="name"><code>-n</code>, <code>--name</code></h4>
 <strong>Type:</strong> Value (flag)
-<strong>Description:</strong> Name of the new project
+<strong>Description:</strong> Specify name of the new project
 
-<p>Project name to be created
+<p>Project name to be created</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required when using -N/<a href="#new-project">--new_project</a> flag. The project name will be used as:
 <ul>
-  <li>Usage: muse_project --name MyProject</li>
-</ul></p>
+  <li>Directory name: {pdir}/{name}</li>
+  <li>JSON config file: {pdir}/{name}/out/{name}.json</div></li>
+</ul>
 
-<h4><code>--setEPSG</code></h4>
+<div class="example"><strong>Example:</strong> <code>--name MyGeologyProject</code></div>
+
+<h4 id="setEPSG"><code>--setEPSG</code></h4>
 <strong>Type:</strong> Value (flag)
-<strong>Description:</strong> Set project EPSG code (coordinate reference system authority)
+<strong>Description:</strong> Set project EPSG coordinate reference system
 
-<p>EPSG code for the project coordinate system
+<p>EPSG authority code for the project coordinate system</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional parameter, used with -N/<a href="#new-project">--new_project</a> flag
+Common EPSG codes:
 <ul>
-  <li>Format: EPSG:####</li>
-  <li>Example: muse_project --setEPSG EPSG:4326</li>
-  <li>Common codes: EPSG:4326 (WGS84), EPSG:3857 (Web Mercator)</li>
-</ul></p>
+  <li>EPSG:4326 (WGS84 Geographic)</li>
+  <li>EPSG:3857 (Web Mercator)</li>
+  <li>EPSG:32633 (UTM Zone 33N)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>--setEPSG EPSG:4326</code></div>
 
 <p>---</p>
 

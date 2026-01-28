@@ -14,15 +14,23 @@ def markdown_to_html(md_content: str) -> str:
     """Convert basic Markdown to HTML"""
     html = md_content
     
-    # Headers
+    # Headers with anchor support
     html = re.sub(r'^# (.*$)', r'<h1>\1</h1>', html, flags=re.MULTILINE)
     html = re.sub(r'^## (.*$)', r'<h2>\1</h2>', html, flags=re.MULTILINE)
     html = re.sub(r'^### (.*$)', r'<h3>\1</h3>', html, flags=re.MULTILINE)
+    # Handle h4 headers with anchor IDs like: #### `--flag` {#anchor-id}
+    html = re.sub(r'^#### (.+?)\s*\{#([^}]+)\}\s*$', r'<h4 id="\2">\1</h4>', html, flags=re.MULTILINE)
     html = re.sub(r'^#### (.*$)', r'<h4>\1</h4>', html, flags=re.MULTILINE)
     
     # Bold and italic
     html = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', html)
     html = re.sub(r'\*(.*?)\*', r'<em>\1</em>', html)
+    
+    # Special formatting for Dependencies and Examples
+    html = re.sub(r'<strong>Dependencies:</strong>\s*(.+?)(?=\n\n|\n<strong>|\n$)', 
+                  r'<div class="dependencies"><strong>Dependencies:</strong> \1</div>', html, flags=re.DOTALL)
+    html = re.sub(r'<strong>Example:</strong>\s*`(.+?)`', 
+                  r'<div class="example"><strong>Example:</strong> <code>\1</code></div>', html)
     
     # Code blocks
     html = re.sub(r'```(\w*)\n(.*?)```', r'<pre><code class="\1">\2</code></pre>', html, flags=re.DOTALL)
@@ -148,6 +156,22 @@ def create_html_template(title: str, content: str, is_index: bool = False) -> st
         }}
         a {{
             color: #0366d6;
+            text-decoration: none;
+        }}
+        a:hover {{
+            text-decoration: underline;
+        }}
+        .dependencies a {{
+            color: #0366d6;
+            font-weight: 500;
+            background: rgba(3, 102, 214, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }}
+        .dependencies a:hover {{
+            background: rgba(3, 102, 214, 0.2);
+            text-decoration: none;
         }}
         .app-list {{
             display: grid;
@@ -170,6 +194,28 @@ def create_html_template(title: str, content: str, is_index: bool = False) -> st
             height: 1px;
             background: #e1e4e8;
             margin: 30px 0;
+        }}
+        .dependencies {{
+            background: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }}
+        .dependencies strong {{
+            color: #0366d6;
+        }}
+        .example {{
+            background: #f1f3f4;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }}
+        .example strong {{
+            color: #28a745;
         }}
         .footer {{
             margin-top: 40px;

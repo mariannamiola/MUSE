@@ -79,12 +79,25 @@ int main(int argc, char** argv)
     /**
      * @brief Enable computation mode for MUSE
      * @param compute Flag to enable computation mode
+     * @note When using -C/--compute, these flags work together:
+     *       REQUIRED flags:
+     *       - --var: Variable name is mandatory
+     *       - --geom: Geometry model is mandatory
+     *       OPTIONAL but commonly used:
+     *       - --mode: Computation mode (AUTO, MANUAL)
+     *       - --pdir: Project directory
+     *       - --sub: Sub-dataset extraction
+     * @example muse_compute -C --var temperature --geom mesh_model --mode AUTO
      */
     SwitchArg interpolationCompute      ("C", "compute", "Creation new project", cmd, false); //booleano
     
     /**
      * @brief Set computation mode
      * @param mode Computation mode setting (default: AUTO)
+     * @note Used in combination with -C/--compute flag
+     *       Available modes: AUTO, MANUAL
+     *       - AUTO: Automatic parameter selection
+     *       - MANUAL: Manual parameter configuration required
      */
     ValueArg<std::string> modeCompute   ("", "mode", "Set mode for compute", false, "string", "AUTO", cmd);
     
@@ -97,12 +110,16 @@ int main(int argc, char** argv)
     /**
      * @brief Specify variable name to analyze
      * @param var Name of the variable to process
+     * @note MANDATORY when using -C/--compute flag
+     *       The variable must exist in the project data
      */
     ValueArg<std::string> Variable      ("v", "var", "Variable", false, "name_var", "string", cmd);
     
     /**
      * @brief Specify geometry model name
      * @param geom Name of the geometry model to use
+     * @note MANDATORY when using -C/--compute flag
+     *       The geometry model must be available in the project
      */
     ValueArg<std::string> geomModel     ("m", "geom", "Geometry model", false, "name_geometry", "string", cmd);
 
@@ -116,18 +133,25 @@ int main(int argc, char** argv)
     /**
      * @brief Set rotation axis for data transformation
      * @param rotaxis Axis for rotation (default: NO)
+     * @note When using rotation, these flags work together:
+     *       - --rotaxis: Rotation axis (X, Y, Z)
+     *       - --rotangle: Rotation angle (required if rotaxis != NO)
+     *       - --rotcx, --rotcy, --rotcz: Rotation center coordinates
+     * @example --rotaxis Z --rotangle 45.0 --rotcx 0.0 --rotcy 0.0
      */
     ValueArg<std::string> setRotAxis    ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
     
     /**
      * @brief Set rotation angle in degrees (clockwise)
      * @param rotangle Rotation angle in degrees
+     * @note Used together with --rotaxis flag. Required when rotaxis != NO
      */
     ValueArg<double> setRotAngle        ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
     
     /**
      * @brief Set X coordinate of rotation center
      * @param rotcx X coordinate of rotation center
+     * @note Used together with --rotaxis and --rotangle for data rotation
      */
     ValueArg<double> setRotCenterX      ("", "rotcx", "Set rotation center x", false, 0.0, "double", cmd);
     
@@ -170,6 +194,11 @@ int main(int argc, char** argv)
     /**
      * @brief Set variogram dimension type
      * @param dim Type of variogram dimension (3D, 3Dxy, 3Dz, 2D, 1Dz, 1D)
+     * @note Variogram configuration flags work together:
+     *       - --dir: Direction type (OMNI, DIR)
+     *       - --dim: Dimension type
+     *       - --zrange: Z direction range (used with 3D dimensions)
+     * @example --dir OMNI --dim 3D --zrange 50.0
      */
     ValueArg<std::string> varioDimension ("", "dim", "type of variogram dimension", false, "3D", &allowedValsVDm, cmd);
     
@@ -199,6 +228,10 @@ int main(int argc, char** argv)
     /**
      * @brief Set extrapolation type
      * @param extr Type of extrapolation (default: none)
+     * @note When using extrapolation (extr != "none"), these flags work together:
+     *       - --minextr: Minimum extrapolation value
+     *       - --maxextr: Maximum extrapolation value
+     * @example --extr linear --minextr 0.0 --maxextr 100.0
      */
     ValueArg<std::string> setExtrType   ("", "extr", "Set extrapolation type", false, "none", "string", cmd); //di default settata su "none"
     
@@ -224,6 +257,10 @@ int main(int argc, char** argv)
     /**
      * @brief Set cell size for 2D declustering
      * @param csize Cell size for 2D declustering
+     * @note When using 2D declustering, these flags work together:
+     *       - --csize: Cell size (required for declustering)
+     *       - --nstep: Number of steps for grid translation
+     * @example --csize 10.0 --nstep 5
      */
     ValueArg<double> setCellSize            ("", "csize", "Set cell size for 2D declustering", false, 0.0, "double", cmd);
     

@@ -71,6 +71,22 @@
         }
         a {
             color: #0366d6;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: #0366d6;
+            font-weight: 500;
+            background: rgba(3, 102, 214, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: rgba(3, 102, 214, 0.2);
+            text-decoration: none;
         }
         .app-list {
             display: grid;
@@ -93,6 +109,28 @@
             height: 1px;
             background: #e1e4e8;
             margin: 30px 0;
+        }
+        .dependencies {
+            background: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: #0366d6;
+        }
+        .example {
+            background: #f1f3f4;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        .example strong {
+            color: #28a745;
         }
         .footer {
             margin-top: 40px;
@@ -118,55 +156,55 @@
 
 <h3>Options</h3>
 
-<h4><code>-L</code>, <code>--list</code></h4>
+<h4 id="list"><code>-L</code>, <code>--list</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> File List
 
 <p>Enable file list</p>
 
-<h4><code>-p</code>, <code>--pdir</code></h4>
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Directory
 
 <p>Path to directory</p>
 
-<h4><code>--type</code></h4>
+<h4 id="type"><code>--type</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Type of file
 
 <p>Path to type of file</p>
 
-<h4><code>-Q</code>, <code>--query</code></h4>
+<h4 id="query"><code>-Q</code>, <code>--query</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Query for creation path
 
 <p>Enable query for creation path</p>
 
-<h4><code>-H</code>, <code>--history</code></h4>
+<h4 id="history"><code>-H</code>, <code>--history</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set JSON history
 
 <p>Enable set json history</p>
 
-<h4><code>--json</code></h4>
+<h4 id="json"><code>--json</code></h4>
 <strong>Type:</strong> Value (flag)
 <strong>Description:</strong> Set json file
 
 <p>Path to set json file</p>
 
-<h4><code>--back</code></h4>
+<h4 id="back"><code>--back</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set JSON history (recursively - back)
 
 <p>Enable set json history (recursively - back)</p>
 
-<h4><code>--forward</code></h4>
+<h4 id="forward"><code>--forward</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set JSON history (recursively - forward)
 
 <p>Enable set json history (recursively - forward)</p>
 
-<h4><code>--more</code></h4>
+<h4 id="more"><code>--more</code></h4>
 <strong>Type:</strong> Switch (flag)
 <strong>Description:</strong> Set JSON history (recursively - forward) and commands
 

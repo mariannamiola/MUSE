@@ -10,55 +10,55 @@ muse_utility [OPTIONS]
 
 ### Options
 
-#### `-L`, `--list`
+#### `-L`, `--list` {#list}
 **Type:** Switch (flag)
 **Description:** File List
 
 Enable file list
 
-#### `-p`, `--pdir`
+#### `-p`, `--pdir` {#pdir}
 **Type:** Value (flag)
 **Description:** Directory
 
 Path to directory
 
-#### `--type`
+#### `--type` {#type}
 **Type:** Value (flag)
 **Description:** Type of file
 
 Path to type of file
 
-#### `-Q`, `--query`
+#### `-Q`, `--query` {#query}
 **Type:** Switch (flag)
 **Description:** Query for creation path
 
 Enable query for creation path
 
-#### `-H`, `--history`
+#### `-H`, `--history` {#history}
 **Type:** Switch (flag)
 **Description:** Set JSON history
 
 Enable set json history
 
-#### `--json`
+#### `--json` {#json}
 **Type:** Value (flag)
 **Description:** Set json file
 
 Path to set json file
 
-#### `--back`
+#### `--back` {#back}
 **Type:** Switch (flag)
 **Description:** Set JSON history (recursively - back)
 
 Enable set json history (recursively - back)
 
-#### `--forward`
+#### `--forward` {#forward}
 **Type:** Switch (flag)
 **Description:** Set JSON history (recursively - forward)
 
 Enable set json history (recursively - forward)
 
-#### `--more`
+#### `--more` {#more}
 **Type:** Switch (flag)
 **Description:** Set JSON history (recursively - forward) and commands
 

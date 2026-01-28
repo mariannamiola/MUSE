@@ -71,6 +71,22 @@
         }
         a {
             color: #0366d6;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: #0366d6;
+            font-weight: 500;
+            background: rgba(3, 102, 214, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: rgba(3, 102, 214, 0.2);
+            text-decoration: none;
         }
         .app-list {
             display: grid;
@@ -94,6 +110,28 @@
             background: #e1e4e8;
             margin: 30px 0;
         }
+        .dependencies {
+            background: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: #0366d6;
+        }
+        .example {
+            background: #f1f3f4;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        .example strong {
+            color: #28a745;
+        }
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -109,20 +147,7 @@
         <div class="nav"></div>
         <h1>MUSE Command-Line Options Documentation</h1>
 
-<strong>Auto-generated from source code - Do NOT edit manually</strong>
-
-<p>This document is automatically generated from the application source code.
-When options are modified in the source files, rebuild the project to update this documentation.</p>
-
-
-
-<p>Muse is....
-Muse does...
-Muse copyright Miola & et al.</p>
-
-<p>....</p>
-
-<p>links...</p>
+<strong>Auto-generated from source code</strong>
 
 <h2>Available Applications</h2>
 

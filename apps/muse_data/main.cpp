@@ -86,6 +86,12 @@ int main(int argc, char** argv)
     /**
      * @brief Enable manual setting of coordinate column numbers
      * @param setIDXYZ Flag to set coordinate column numbers
+     * @note When using -S/--setIDXYZ, these column flags work together:
+     *       - --setID: ID column number
+     *       - --setX: X coordinate column number
+     *       - --setY: Y coordinate column number
+     *       - --setZ: Z coordinate column number (optional)
+     * @example -S --setID 0 --setX 1 --setY 2 --setZ 3
      */
     SwitchArg setIDXYZ                  ("S", "setIDXYZ", "Set n. column coordinate", cmd, false); //booleano
     
@@ -128,6 +134,12 @@ int main(int argc, char** argv)
     /**
      * @brief Convert CSV format data into MUSE format
      * @param converter Flag to enable data conversion
+     * @note When using -C/--converter, these flags are commonly used:
+     *       - --pdir: Project directory (REQUIRED)
+     *       - --setDel: CSV delimiter type (optional)
+     *       - --inf, --sup: Value limits (optional)
+     *       - -S/--setIDXYZ: Manual column mapping (optional)
+     * @example -C --pdir /project --setDel COMMA --inf 0.0 --sup 100.0
      */
     SwitchArg converterFunction         ("C", "converter", "Converter data (csv format) into MUSE format", cmd, false); //booleano
     //UnlabeledValueArg<int> n_rowsHeader ("n_rows_header", "Number of header rows", false, 6, "int", cmd);
@@ -155,6 +167,12 @@ int main(int argc, char** argv)
     /**
      * @brief Enable reading of MUSE format files
      * @param read Flag to enable MUSE format reading
+     * @note When using -R/--read, these flags work together:
+     *       - --pdir: Project directory (REQUIRED)
+     *       - --var: Variable name (default: ALL_INPUT)
+     *       - --nrealiz: Number of realizations (optional)
+     *       - --hist: Enable histogram plotting (optional)
+     * @example -R --pdir /project --var temperature --hist --nbin 20
      */
     SwitchArg readFunction              ("R", "read", "Reading MUSE format", cmd, false); //booleano
     
@@ -175,6 +193,11 @@ int main(int argc, char** argv)
     /**
      * @brief Enable histogram computation and plotting
      * @param hist Flag to compute histogram plots
+     * @note When using --hist, these flags work together:
+     *       - --nval: Minimum number of values for plotting (default: 20)
+     *       - --nbin: Number of histogram bins (default: 1)
+     *       Requires sufficient data points (>= nval threshold)
+     * @example --hist --nval 50 --nbin 25
      */
     SwitchArg getHistogram              ("", "hist", "Compute plot - hitogram", cmd, false); //booleano
     
