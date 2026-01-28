@@ -119,27 +119,29 @@
             background: var(--bg-quaternary);
             transform: translateY(-1px);
         }
+        .github-button {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        .github-button:hover {
+            background: var(--bg-quaternary);
+            transform: translateY(-1px);
+        }
         .nav-buttons {
             display: flex;
             align-items: center;
             gap: 12px;
-        }
-        .muse-logo {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            width: 200px;
-            z-index: 1000;
-        }
-        .muse-logo img {
-            width: 100%;
-            height: auto;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px var(--shadow-light);
-            transition: transform 0.3s ease;
-        }
-        .muse-logo img:hover {
-            transform: scale(1.05);
         }        h1 {
             color: var(--text-primary);
             border-bottom: 2px solid var(--accent-color);
@@ -299,13 +301,13 @@
     </script>
 </head>
 <body>
-    <div class="muse-logo">
-        <img src="img/muse_logo.svg" alt="MUSE - Modelling of Uncertainty as a Support of Environment" />
-    </div>
     <div class="container">
         <div class="nav">
             <div><a href="index.html">← Back to Index</a></div>
             <div class="nav-buttons">
+                <a href="https://github.com/mariannaMiola/MUSE" class="github-button" title="View on GitHub" target="_blank">
+                    🐈 GitHub
+                </a>
                 <a href="mailto:marianna.miola@cnr.it" class="contact-button" title="Contact support">
                     ✉️ Contact
                 </a>
