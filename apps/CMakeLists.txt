@@ -235,6 +235,25 @@ include_directories(BEFORE "../external/ellipse-fitting")
 include_directories(BEFORE "../external/muse_database/include")
 
 
+#####
+# CLI Documentation Generation
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_FOUND)
+    set(CLI_DOCS_SCRIPT "${CMAKE_SOURCE_DIR}/../scripts/generate_cli_docs.py")
+    set(CLI_DOCS_OUTPUT "${CMAKE_SOURCE_DIR}/../docs/CLI-OPTIONS.md")
+    
+    add_custom_target(cli-docs ALL
+        COMMAND ${Python3_EXECUTABLE} ${CLI_DOCS_SCRIPT} ${CMAKE_SOURCE_DIR} ${CLI_DOCS_OUTPUT}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/..
+        COMMENT "Generating CLI documentation from source code..."
+        VERBATIM
+    )
+    
+    message(STATUS "CLI documentation generation enabled")
+    message(STATUS "Documentation output: ${CLI_DOCS_OUTPUT}")
+else()
+    message(WARNING "Python3 not found - CLI documentation generation disabled")
+endif()
 
 
 add_subdirectory(muse_project)

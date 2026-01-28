@@ -31,9 +31,25 @@ int main(int argc, char** argv)
     // ---------------------------------------------------------------------------------------------------------
     // MAIN FUNCTIONALITIES:
 
-    // Option 0. New project creation
+    /**
+     * @brief Create a new project
+     * @param projectCreation Switch to enable new project creation
+     *        - Usage: muse_project -N --pdir /path/to/projects --name MyProject
+     */
     SwitchArg projectCreation           ("N", "new_project", "Creation new project", cmd, false); //booleano
+    
+    /**
+     * @brief Directory path for the new project
+     * @param projectFolder Path where the project will be created
+     *        - Usage: muse_project --pdir /path/to/projects
+     */
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", false, "Directory", "path", cmd);
+    
+    /**
+     * @brief Name of the new project
+     * @param Name Project name to be created
+     *        - Usage: muse_project --name MyProject
+     */
     ValueArg<std::string> Name          ("n", "name", "Name new project", false, "File path", "file", cmd);
 
     //SwitchArg overwriteName             ("o", "ovrwrite_name", "Overwrite", cmd, false); //booleano
@@ -42,7 +58,13 @@ int main(int argc, char** argv)
     // ---------------------------------------------------------------------------------------------------------
     // ADDITIONAL FUNCTIONALITIES:
 
-    // Option 0a. Project creation - optional: setting project EPSG
+    /**
+     * @brief Set project EPSG code (coordinate reference system authority)
+     * @param setEPSG EPSG code for the project coordinate system
+     *        - Format: EPSG:####
+     *        - Example: muse_project --setEPSG EPSG:4326
+     *        - Common codes: EPSG:4326 (WGS84), EPSG:3857 (Web Mercator)
+     */
     ValueArg<std::string> setEPSG       ("", "setEPSG", "Set project EPSG", false, "Unknown", "EPSG:n", cmd);
 
 
