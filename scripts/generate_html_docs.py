@@ -192,7 +192,47 @@ def create_html_template(title: str, content: str, is_index: bool = False) -> st
         .theme-toggle:hover {{
             background: var(--bg-quaternary);
         }}
-        h1 {{
+        .contact-button {{
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }}
+        .contact-button:hover {{
+            background: var(--bg-quaternary);
+            transform: translateY(-1px);
+        }}
+        .nav-buttons {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }}
+        .muse-logo {{
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 200px;
+            z-index: 1000;
+        }}
+        .muse-logo img {{
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px var(--shadow-light);
+            transition: transform 0.3s ease;
+        }}
+        .muse-logo img:hover {{
+            transform: scale(1.05);
+        }}        h1 {{
             color: var(--text-primary);
             border-bottom: 2px solid var(--accent-color);
             padding-bottom: 10px;
@@ -351,12 +391,20 @@ def create_html_template(title: str, content: str, is_index: bool = False) -> st
     </script>
 </head>
 <body>
+    <div class="muse-logo">
+        <img src="img/muse_logo.svg" alt="MUSE - Modelling of Uncertainty as a Support of Environment" />
+    </div>
     <div class="container">
         <div class="nav">
             <div>{nav_links}</div>
-            <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
-                🌙 Dark
-            </button>
+            <div class="nav-buttons">
+                <a href="mailto:marianna.miola@cnr.it" class="contact-button" title="Contact support">
+                    ✉️ Contact
+                </a>
+                <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                    🌙 Dark
+                </button>
+            </div>
         </div>
         {content}
         <div class="footer">
@@ -368,7 +416,19 @@ def create_html_template(title: str, content: str, is_index: bool = False) -> st
 
 def convert_md_to_html(input_dir: str, output_dir: str):
     """Convert all MD files in input_dir to HTML in output_dir"""
+    import shutil
+    
     os.makedirs(output_dir, exist_ok=True)
+    
+    # Copy images directory if it exists
+    img_src = Path(input_dir).parent / 'img'
+    img_dst = Path(output_dir) / 'img'
+    
+    if img_src.exists():
+        if img_dst.exists():
+            shutil.rmtree(img_dst)
+        shutil.copytree(img_src, img_dst)
+        print(f"✓ Copied images from {img_src} to {img_dst}")
     
     md_files = list(Path(input_dir).glob('*.md'))
     

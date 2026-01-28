@@ -1,0 +1,21 @@
+<svg width="300" height="100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3498db;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2c3e50;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background rectangle with subtle border -->
+  <rect width="300" height="100" rx="12" ry="12" fill="#f8f9fa" stroke="#e1e4e8" stroke-width="1"/>
+  
+  <!-- MUSE title -->
+  <text x="150" y="40" font-family="Arial, sans-serif" font-size="32" font-weight="bold" 
+        text-anchor="middle" fill="url(#grad)" letter-spacing="2px">MUSE</text>
+  
+  <!-- Subtitle -->
+  <text x="150" y="65" font-family="Arial, sans-serif" font-size="12" 
+        text-anchor="middle" fill="#666666" font-style="italic">
+    Modelling of Uncertainty as a Support of Environment
+  </text>
+</svg>
