@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse_manipulate - MUSE Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fafafa;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nav {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .nav a {
+            color: #0366d6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        h3, h4 {
+            color: #555;
+        }
+        code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #f8f8f8;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        a {
+            color: #0366d6;
+        }
+        .app-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .app-card {
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 16px;
+            background: #f8f9fa;
+        }
+        .app-card h3 {
+            margin-top: 0;
+            color: #0366d6;
+        }
+        hr {
+            border: none;
+            height: 1px;
+            background: #e1e4e8;
+            margin: 30px 0;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav"><a href="index.html">← Back to Index</a></div>
+        <h2>muse_manipulate</h2>
+
+<strong>Description:</strong> MUSE = Modelling of Uncertainty as a Support of Environment; Manipulate tool
+
+<h3>Usage</h3>
+
+<pre><code class="bash">muse_manipulate [OPTIONS]
+</code></pre>
+
+<h3>Options</h3>
+
+<h4><code>-E</code>, <code>--extract</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Extraction data
+
+<p>Enable extraction data</p>
+
+<h4><code>-p</code>, <code>--pdir</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Project directory
+
+<p>Path to project directory</p>
+
+<h4><code>--geom</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Geometry model
+
+<p>geometry model</p>
+
+<h4><code>-z</code>, <code>--zcoord</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Coordinate Z
+
+<p>coordinate z</p>
+
+<h4><code>-I</code>, <code>--intextr</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Extraction data from interval
+
+<p>Enable extraction data from interval</p>
+
+<h4><code>--sup</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set sup interval
+
+<p>sup interval</p>
+
+<h4><code>--inf</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set inf interval
+
+<p>inf interval</p>
+
+<h4><code>--nvar</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set variable to check
+
+<p>Name of set variable to check</p>
+
+<h4><code>--sub</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Extraction sub dataset basing on geometry
+
+<p>extraction sub dataset basing on geometry</p>
+
+<h4><code>--rotaxis</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set rotation axis
+
+<p>rotation axis</p>
+
+<h4><code>--rotangle</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set rotation angle (clockwise)
+
+<p>rotation angle (clockwise)</p>
+
+<h4><code>--rotcx</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set rotation center x
+
+<p>rotation center x</p>
+
+<h4><code>--rotcy</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set rotation center y
+
+<p>rotation center y</p>
+
+<h4><code>--rotcz</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set rotation center z
+
+<p>rotation center z</p>
+
+<h4><code>-P</code>, <code>--prsurf</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Points projection on surfaces
+
+<p>Enable points projection on surfaces</p>
+
+<h4><code>-S</code>, <code>--prsect</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Compute points projection on boundary (2D section case).
+
+<p>Flag to compute points projection on boundary (2d section case).</p>
+
+<h4><code>-R</code>, <code>--prqsect</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Points projection on quads sections
+
+<p>Enable points projection on quads sections</p>
+
+<h4><code>-V</code>, <code>--prvol</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Compute points projection on boundary (3D volumetric case).
+
+<p>Flag to compute points projection on boundary (3d volumetric case).</p>
+
+<h4><code>--step</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set number of steps for geometry model
+
+<p>Number of set number of steps for geometry model</p>
+
+<h4><code>--epsilon</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set tolerance to enlarge bounding box
+
+<p>tolerance to enlarge bounding box</p>
+
+<h4><code>--prdir</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set direction of projection
+
+<p>Path to set direction of projection</p>
+
+<h4><code>--type</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set type
+
+<p>type</p>
+
+<h4><code>-T</code>, <code>--strat</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Points projection on surfaces
+
+<p>Enable points projection on surfaces</p>
+
+<h4><code>--name</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Name of geometry model
+
+<p>Name of name of geometry model</p>
+
+<h4><code>--sttype</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set type of stratigraphic transformation
+
+<p>type of stratigraphic transformation</p>
+
+<h4><code>--top</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Top geometry model
+
+<p>top geometry model</p>
+
+<h4><code>--bot</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Bottom geometry model
+
+<p>bottom geometry model</p>
+
+<h4><code>--reggrow</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Set region growing
+
+<p>Enable set region growing</p>
+
+<h4><code>--obj</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Saving trimesh in obj format
+
+<p>Enable saving trimesh in obj format</p>
+
+<h4><code>--vtk</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Saving tetmesh in vtk format
+
+<p>Enable saving tetmesh in vtk format</p>
+
+<h4><code>--save</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Saving extraction as set of points
+
+<p>Enable saving extraction as set of points</p>
+
+<h4><code>-v</code>, <code>--var</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Variable
+
+<p>Name of variable</p>
+
+<h4><code>--file</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Path file
+
+<p>Path to path file</p>
+
+<p>---</p>
+
+
+        <div class="footer">
+            <p>Generated from MUSE source code documentation</p>
+        </div>
+    </div>
+</body>
+</html>

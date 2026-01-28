@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse_data - MUSE Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fafafa;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nav {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .nav a {
+            color: #0366d6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        h3, h4 {
+            color: #555;
+        }
+        code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #f8f8f8;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        a {
+            color: #0366d6;
+        }
+        .app-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .app-card {
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 16px;
+            background: #f8f9fa;
+        }
+        .app-card h3 {
+            margin-top: 0;
+            color: #0366d6;
+        }
+        hr {
+            border: none;
+            height: 1px;
+            background: #e1e4e8;
+            margin: 30px 0;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav"><a href="index.html">← Back to Index</a></div>
+        <h2>muse_data</h2>
+
+<strong>Description:</strong> MUSE = Modelling of Uncertainty as a Support of Environment; Data tool
+
+<h3>Usage</h3>
+
+<pre><code class="bash">muse_data [OPTIONS]
+</code></pre>
+
+<h3>Options</h3>
+
+<h4><code>-N</code>, <code>--new_project</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Create a new project
+
+<p>Flag to create a new project</p>
+
+<h4><code>-p</code>, <code>--pdir</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Specify project directory
+
+<p>Path to the project directory (required)</p>
+
+<h4><code>--setEPSG</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set project EPSG coordinate system
+
+<p>EPSG authority code (default: Unknown)</p>
+
+<h4><code>-S</code>, <code>--setIDXYZ</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Enable manual setting of coordinate column numbers
+
+<p>Flag to set coordinate column numbers</p>
+
+<h4><code>--setID</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set ID column number
+
+<p>Column number for ID field</p>
+
+<h4><code>--setX</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set X coordinate column number
+
+<p>Column number for X coordinate</p>
+
+<h4><code>--setY</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set Y coordinate column number
+
+<p>Column number for Y coordinate</p>
+
+<h4><code>--setZ</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set Z coordinate column number
+
+<p>Column number for Z coordinate</p>
+
+<h4><code>--setDel</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set CSV delimiter type
+
+<p>Type of CSV delimiter (DEFAULT or COMMA)</p>
+
+<h4><code>-C</code>, <code>--converter</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Convert CSV format data into MUSE format
+
+<p>Flag to enable data conversion</p>
+
+<h4><code>--inf</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set inferior limit for variable values
+
+<p>Inferior limit value</p>
+
+<h4><code>--sup</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set superior limit for variable values
+
+<p>Superior limit value</p>
+
+<h4><code>-R</code>, <code>--read</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Enable reading of MUSE format files
+
+<p>Flag to enable MUSE format reading</p>
+
+<h4><code>-v</code>, <code>--var</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Specify variable name to read
+
+<p>Variable name (default: ALL_INPUT)</p>
+
+<h4><code>-n</code>, <code>--nrealiz</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set number of realization to process
+
+<p>Number of realization (default: 0)</p>
+
+<h4><code>--hist</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Enable histogram computation and plotting
+
+<p>Flag to compute histogram plots</p>
+
+<h4><code>--nval</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set minimum number of values for histogram plotting
+
+<p>Minimum number of values (default: 20)</p>
+
+<h4><code>--nbin</code></h4>
+<strong>Type:</strong> Value (flag)
+<strong>Description:</strong> Set number of bins for histogram plot
+
+<p>Number of bins for histogram (default: 1)</p>
+
+<h4><code>--csv</code></h4>
+<strong>Type:</strong> Switch (flag)
+<strong>Description:</strong> Enable CSV format for output files
+
+<p>Flag to save files in CSV format</p>
+
+<p>---</p>
+
+
+        <div class="footer">
+            <p>Generated from MUSE source code documentation</p>
+        </div>
+    </div>
+</body>
+</html>
