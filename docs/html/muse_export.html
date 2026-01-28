@@ -5,77 +5,145 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>muse_export - MUSE Documentation</title>
     <style>
+        :root {
+            /* Light theme variables */
+            --bg-primary: #fafafa;
+            --bg-secondary: white;
+            --bg-tertiary: #f8f9fa;
+            --bg-quaternary: #f1f3f4;
+            --text-primary: #333;
+            --text-secondary: #555;
+            --text-tertiary: #666;
+            --border-color: #e1e4e8;
+            --border-light: #eee;
+            --shadow-color: rgba(0,0,0,0.1);
+            --shadow-light: rgba(0,0,0,0.05);
+            --code-bg: #f1f3f4;
+            --pre-bg: #f8f8f8;
+            --link-color: #0366d6;
+            --accent-color: #3498db;
+            --success-color: #28a745;
+            --danger-color: #d73a49;
+            --gradient-start: #f8f9fa;
+            --gradient-end: #e9ecef;
+        }
+        
+        [data-theme="dark"] {
+            /* Dark theme variables */
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --bg-quaternary: #30363d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #c9d1d9;
+            --text-tertiary: #8b949e;
+            --border-color: #30363d;
+            --border-light: #21262d;
+            --shadow-color: rgba(0,0,0,0.3);
+            --shadow-light: rgba(0,0,0,0.2);
+            --code-bg: #161b22;
+            --pre-bg: #0d1117;
+            --link-color: #58a6ff;
+            --accent-color: #58a6ff;
+            --success-color: #3fb950;
+            --danger-color: #f85149;
+            --gradient-start: #21262d;
+            --gradient-end: #30363d;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: var(--text-primary);
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #fafafa;
+            background-color: var(--bg-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .container {
-            background: white;
+            background: var(--bg-secondary);
             padding: 40px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px var(--shadow-color);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
         .nav {
             margin-bottom: 20px;
             padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .nav a {
-            color: #0366d6;
+            color: var(--link-color);
             text-decoration: none;
             font-weight: 500;
         }
         .nav a:hover {
             text-decoration: underline;
         }
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .theme-toggle:hover {
+            background: var(--bg-quaternary);
+        }
         h1 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--accent-color);
             padding-bottom: 10px;
         }
         h2 {
-            color: #34495e;
+            color: var(--text-primary);
             margin-top: 30px;
         }
         h3, h4 {
-            color: #555;
+            color: var(--text-secondary);
         }
         h4 {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-left: 4px solid #0366d6;
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            border-left: 4px solid var(--link-color);
             padding: 12px 16px;
             margin: 30px 0 20px 0;
             border-radius: 0 6px 6px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border-top: 1px solid #e1e4e8;
+            box-shadow: 0 2px 4px var(--shadow-light);
+            border-top: 1px solid var(--border-color);
         }
         h4 code {
             background: transparent;
-            color: #0366d6;
+            color: var(--link-color);
             font-weight: 600;
             font-size: 1.1em;
         }
         .flag-separator {
             height: 2px;
-            background: linear-gradient(90deg, #0366d6 0%, #87ceeb 50%, transparent 100%);
+            background: linear-gradient(90deg, var(--link-color) 0%, var(--accent-color) 50%, transparent 100%);
             margin: 25px 0;
             border-radius: 1px;
         }
         code {
-            background: #f1f3f4;
+            background: var(--code-bg);
             padding: 2px 6px;
             border-radius: 3px;
             font-family: 'Monaco', 'Menlo', monospace;
             font-size: 0.9em;
+            color: var(--text-primary);
         }
         pre {
-            background: #f8f8f8;
-            border: 1px solid #e1e4e8;
+            background: var(--pre-bg);
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 16px;
             overflow-x: auto;
@@ -91,22 +159,22 @@
             margin: 8px 0;
         }
         a {
-            color: #0366d6;
+            color: var(--link-color);
             text-decoration: none;
         }
         a:hover {
             text-decoration: underline;
         }
         .dependencies a {
-            color: #0366d6;
+            color: var(--link-color);
             font-weight: 500;
-            background: rgba(3, 102, 214, 0.1);
+            background: var(--bg-tertiary);
             padding: 2px 4px;
             border-radius: 3px;
             text-decoration: none;
         }
         .dependencies a:hover {
-            background: rgba(3, 102, 214, 0.2);
+            background: var(--bg-quaternary);
             text-decoration: none;
         }
         .app-list {
@@ -116,56 +184,88 @@
             margin: 20px 0;
         }
         .app-card {
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 16px;
-            background: #f8f9fa;
+            background: var(--bg-tertiary);
         }
         .app-card h3 {
             margin-top: 0;
-            color: #0366d6;
+            color: var(--link-color);
         }
         hr {
             border: none;
             height: 1px;
-            background: #e1e4e8;
+            background: var(--border-color);
             margin: 30px 0;
         }
         .dependencies {
-            background: #f8f9fa;
-            border-left: 4px solid #0366d6;
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--link-color);
             padding: 12px 16px;
             margin: 12px 0;
             border-radius: 0 4px 4px 0;
         }
         .dependencies strong {
-            color: #0366d6;
+            color: var(--link-color);
         }
         .example {
-            background: #f1f3f4;
-            border-left: 4px solid #28a745;
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--success-color);
             padding: 12px 16px;
             margin: 12px 0;
             border-radius: 0 4px 4px 0;
-            font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 0.9em;
         }
         .example strong {
-            color: #28a745;
+            color: var(--success-color);
         }
         .footer {
             margin-top: 40px;
             text-align: center;
-            color: #666;
+            color: var(--text-tertiary);
             font-size: 0.9em;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--border-light);
             padding-top: 20px;
         }
     </style>
+    <script>
+        // Theme switching functionality
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+        
+        function updateThemeIcon(theme) {
+            const themeButton = document.getElementById('theme-toggle');
+            if (themeButton) {
+                themeButton.innerHTML = theme === 'light' ? 
+                    '🌙 Dark' : 
+                    '☀️ Light';
+            }
+        }
+        
+        // Initialize theme when DOM loads
+        document.addEventListener('DOMContentLoaded', initTheme);
+    </script>
 </head>
 <body>
     <div class="container">
-        <div class="nav"><a href="index.html">← Back to Index</a></div>
+        <div class="nav">
+            <div><a href="index.html">← Back to Index</a></div>
+            <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                🌙 Dark
+            </button>
+        </div>
         <h2>muse_export</h2>
 
 <strong>Description:</strong> MUSE = Modelling of Uncertainty as a Support of Environment; Export tool
