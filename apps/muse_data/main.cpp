@@ -57,7 +57,7 @@ int main(int argc, char** argv)
     std::string app_name = "data"; //app name
 
     try {
-    CmdLine cmd("MUSE = Modelling of Uncertainty as a Support of Environment; Data tool", ' ', "version 0.0");
+    CmdLine cmd("MUSE - Modelling Uncertainty as a Support for Environment. muse-data application", ' ', "version 0.0");
 
     // ---------------------------------------------------------------------------------------------------------
     // MAIN FUNCTIONALITIES:

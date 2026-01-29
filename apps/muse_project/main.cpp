@@ -26,7 +26,7 @@ int main(int argc, char** argv)
     //std::string app_name = "project";      //app name
 
     try {
-    CmdLine cmd("MUSE = Modelling of Uncertainty as a Support of Environment; Muse Project tool", ' ', "version 0.0");
+    CmdLine cmd("MUSE - Modelling Uncertainty as a Support of Environment. MUSE-project application", ' ', "version 0.0");
 
     // ---------------------------------------------------------------------------------------------------------
     // MAIN FUNCTIONALITIES:
@@ -34,33 +34,31 @@ int main(int argc, char** argv)
     /**
      * @brief Create a new project
      * @param new_project Flag to enable new project creation
-     * @note When using -N/--new_project, the following flags are typically used together:
+     * @note When using --new_project, the following flags are typically used together:
      *       - --pdir (required): Specify project directory
      *       - --name (required): Specify project name
      *       - --setEPSG (optional): Set coordinate reference system
-     * @example muse_project -N --pdir /path/to/projects --name MyProject --setEPSG EPSG:4326
+     * @example muse_project -N -p /path/to/project/dir --name 00_test --setEPSG EPSG:4326
      */
-    SwitchArg projectCreation           ("N", "new_project", "Creation new project", cmd, false); //booleano
+    SwitchArg projectCreation           ("N", "new_project", "New project creation", cmd, false); //booleano
     
     /**
      * @brief Specify project directory path
      * @param pdir Path where the project will be created
      * @note Required when using -N/--new_project flag
-     * @example --pdir /home/user/projects
+     * @example -p /path/to/project/dir
      */
-    ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", false, "Directory", "path", cmd);
+    ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "/path/to/project/dir", "string", cmd);
     
     /**
      * @brief Specify name of the new project
      * @param name Project name to be created
-     * @note Required when using -N/--new_project flag. The project name will be used as:
+     * @note Required when using --new_project flag. The project name will be used as:
      *       - Directory name: {pdir}/{name}
      *       - JSON config file: {pdir}/{name}/out/{name}.json
-     * @example --name MyGeologyProject
+     * @example --name 00_test
      */
-    ValueArg<std::string> Name          ("n", "name", "Name new project", false, "File path", "file", cmd);
-
-    //SwitchArg overwriteName             ("o", "ovrwrite_name", "Overwrite", cmd, false); //booleano
+    ValueArg<std::string> Name          ("n", "name", "Set project name", false, "name", "string", cmd);
 
 
     // ---------------------------------------------------------------------------------------------------------
@@ -69,14 +67,14 @@ int main(int argc, char** argv)
     /**
      * @brief Set project EPSG coordinate reference system
      * @param setEPSG EPSG authority code for the project coordinate system
-     * @note Optional parameter, used with -N/--new_project flag
+     * @note Optional parameter, used with --new_project flag
      *       Common EPSG codes:
      *       - EPSG:4326 (WGS84 Geographic)
      *       - EPSG:3857 (Web Mercator)
      *       - EPSG:32633 (UTM Zone 33N)
      * @example --setEPSG EPSG:4326
      */
-    ValueArg<std::string> setEPSG       ("", "setEPSG", "Set project EPSG", false, "Unknown", "EPSG:n", cmd);
+    ValueArg<std::string> setEPSG       ("", "setEPSG", "Set project EPSG", false, "unknown", "EPSG:n", cmd);
 
 
     // ---------------------------------------------------------------------------------------------------------
@@ -144,16 +142,7 @@ int main(int argc, char** argv)
 
         bool equal_name = check_folder_name(Project.name, Project.folder);
         if(equal_name == true)
-        {
             std::cout << "\033[0;31m" << Project.name << " already exists.\033[0m" << std::endl;
-
-//            if(!overwriteName.isSet())
-//                Project.name = Project.name + "_01";
-//            else
-//                std::cout << "\033[0;32mOverwrited folder.\033[0m" << std::endl;
-        }
-
-        // cancella tutti gli output??
 
         // Output folder
         Project.folder = Project.folder + "/" + Project.name;
@@ -181,16 +170,10 @@ int main(int argc, char** argv)
         if(setEPSG.isSet())
             Project.setAuthority(setEPSG.getValue());
 
-        //save_json(out_dir + "/"+ Project.name, project_metadata); //sovrascrivi il json aggiornato
         Project.write(out_dir + "/"+ Project.name + ".json");
 
         std::cout << "\033[0;32mCreation of Project JSON into " << out_dir << " ... COMPLETED.\033[0m" << std::endl;
     }
-
-    //CHANGE DIR (nel caso di trasferimento progetto da pc a pc)
-    //SALVO NEL JSON
-
-
 
     } catch (ArgException &e)  // catch exceptions
     { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; }
