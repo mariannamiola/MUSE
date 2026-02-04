@@ -1,6 +1,4 @@
 #include <iostream>
-#include <fstream>
-#include <algorithm>
 #include <cmath>
 #include <string.h>
 #include <filesystem>
@@ -50,14 +48,16 @@ using namespace TCLAP;
 
 int main(int argc, char** argv)
 {
-    std::cout << std::endl;
-    std::cout << "########### STARTING MUSE-DATA ..." << std::endl;
-    std::cout << std::endl;
-
     std::string app_name = "data"; //app name
 
     try {
     CmdLine cmd("MUSE - Modelling Uncertainty as a Support for Environment. muse-data application", ' ', "version 0.0");
+
+    std::cout << std::endl;
+    std::cout << "============================================================" << std::endl;
+    std::cout << "================== STARTING MUSE-DATA ======================" << std::endl;
+    std::cout << "============================================================" << std::endl;
+    std::cout << std::endl;
 
     // ---------------------------------------------------------------------------------------------------------
     // MAIN FUNCTIONALITIES:
@@ -70,10 +70,18 @@ int main(int argc, char** argv)
     SwitchArg projectCreation           ("N", "new_project", "Creation new project", cmd, false); //booleano
     
     /**
-     * @brief Specify project directory
-     * @param pdir Path to the project directory (required)
+     * @brief Specify the directory path where the project is created
+     * @param pdir Path where the project is created (mandatory)
+     * @note Required when using --new_project flag
+     * @example -p /path/to/project/dir
      */
-    ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
+    ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "/path/to/project/dir", "string", cmd);
+
+    /**
+     * @brief setInput
+     */
+    MultiArg<std::string> setInput ("i", "input", "Copy input files in the project directory (in/data/)", false, "string", cmd );
+
 
     // Option 0a. Project creation - optional: setting project EPSG
     /**
@@ -243,12 +251,8 @@ int main(int argc, char** argv)
     Project.setName(Project.folder.substr(Project.folder.find_last_of("/")+1, Project.folder.length()));
 
     // 0) Commands
-    std::cout << FCYN("###### Execution command ...") << std::endl;
     std::string command;
-    std::cout << "Number of command arguments: " << argc << std::endl;
-
     filesystem::path abspath = argv[3];
-    std::cout << "Absolute path: " << abspath << std::endl;
 
     for(int i=1; i< argc; i++)
     {
@@ -273,8 +277,9 @@ int main(int argc, char** argv)
             command += " ";
         }
     }
-    std::cout << command << std::endl;
-    std::cout << FCYN("###### ###### ###### ######") << std::endl;
+    std::cout << "=== Command line: " << command << std::endl;
+    std::cout << "=== Number of command arguments: " << argc << std::endl;
+    std::cout << "=== Absolute path: " << abspath << std::endl;
     std::cout << std::endl;
 
     // 0) Set folder (in/out)
@@ -293,14 +298,21 @@ int main(int argc, char** argv)
     // Option 0. Project creation and settings
     if(projectCreation.isSet())
     {
-        // MUSE::DataMeta datameta;
-        // datameta.setProject(Project);
-
         if(!filesystem::exists(in_folder))
             filesystem::create_directory(in_folder); //l'utente inserirà all'interno di questa cartella i dati di input
 
         if(!filesystem::exists(out_folder))
             filesystem::create_directory(out_folder);
+
+        if(setInput.isSet())
+        {
+
+        }
+        else
+        {
+            std::cout << "WARNING. No input file is set and copied in project_dir/in/data/" << std::endl;
+            std::cout << "Use --input flag to import data or manually copy input files in project_dir/in/data/" << std::endl;
+        }
 
 
         // if(setEPSG.isSet())
