@@ -463,26 +463,21 @@ int main(int argc, char** argv)
     ValueArg<double> setNuggetStep          ("", "nugstep", "Set nugget step", false, 100.0, "double", cmd);
 
     /**
-
-
-     * @brief Set maximum distance between points for computing experimental variogram
-
-
-     * @param maxdist maximum distance between points for computing experimental variogram
-
-
+     * @brief Set maximum points distance to flexibly manage the variogram coverage (dc). When compute experimental variogram, a maximum value of coverage is set to half of maximum distance between pairs of sampled points, as the reference distance at which the variogram can be considered meaningful (dc=dmax/2).
+     * @param maxdist maximum coverage distance for computing experimental variogram (default: -DBL_MAX)
+     * @note Optional parameter used for experimental variogram computation.
+     * If --maxdist is set on &lt;value&gt;, dc=&lt;value&gt;; otherwise dc=dmax/2, where dmax is computed in bacth mode.
+     * @example --maxdist 10
      */
-
-
     ValueArg<double> setMaxDistance         ("", "maxdist", "Set maximum distance between points for computing experimental variogram", false, -DBL_MAX, "double", cmd);
+
     /**
-
-     * @brief Set tolerance factor for computing experimental variogram
-
+     * @brief Set tolerance factor for lag tolerance to compute experimental variogram.
      * @param tolfac tolerance factor for computing experimental variogram
-
+     * @note Optional parameter. Default: tolfac=2.0.
+     * If --tolfac is set on &lt;value&gt;, tol=lag spacing/&lt;value&gt;
+     * @example --tolfac 1.5
      */
-
     ValueArg<double> setToleranceFactor     ("", "tolfac", "Set tolerance factor for computing experimental variogram", false, 2.0, "double", cmd);
 
     /**
