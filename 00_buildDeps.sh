@@ -1,39 +1,112 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-(
-set -e	#exit if an error occours
+# ==========================
+# CONFIG
+# ==========================
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+EXTERNAL_DIR="${SCRIPT_DIR}/external"
+BUILD_TYPE=Release
+NPROC=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 
-#### Directiory (full path) where this scripts lies
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# Detect OS
+OS="$(uname)"
+if [[ "$OS" == "Darwin" ]]; then
+    LIB_EXT="dylib"
+else
+    LIB_EXT="so"
+fi
 
-### MATPLOTPLUSPLUS
-export MATPLOT=${SCRIPT_DIR}/external/matplotplusplus
-cd ${MATPLOT}
-mkdir -p build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O2"
-cmake --build . --parallel 20 --config Release
-sudo cmake --install .
+# ==========================
+# GENERIC BUILD FUNCTION
+# ==========================
+build_lib() {
+    local NAME=$1
+    shift
 
+    echo "========================="
+    echo "Building $NAME"
+    echo "========================="
 
-### PROJ
-export PROJ=${SCRIPT_DIR}/external/PROJ
-cd ${PROJ}
-mkdir -p build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=${PROJ}/installed -DBUILD_APPS=OFF -DENABLE_CURL=OFF -DCMAKE_BUILD_TYPE=Debug
-cmake --build . --parallel 16
-cmake --install .
+    cd "${EXTERNAL_DIR}/${NAME}"
+    mkdir -p build
+    cd build
 
+    cmake .. "$@"
+    cmake --build . --parallel ${NPROC}
+    cmake --install .
+}
 
-### GDAL
-export GDAL=${SCRIPT_DIR}/external/gdal
-cd ${GDAL}
-mkdir -p build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=${GDAL}/installed -DGDAL_BUILD_OPTIONAL_DRIVERS=OFF -DOGR_BUILD_OPTIONAL_DRIVERS=OFF -DOGR_ENABLE_DRIVER_GPKG=ON -DPROJ_INCLUDE_DIR=${PROJ}/installed/include -DPROJ_LIBRARY_RELEASE=${PROJ}/installed/lib/libproj.so -DBUILD_PYTHON_BINDINGS=OFF -DCMAKE_BUILD_TYPE=Release
-cmake --build . --parallel 16
-cmake --install .
+# ==========================
+# LIBRARIES
+# ==========================
 
+build_matplot() {
+    build_lib "matplotplusplus" \
+        -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+}
 
-)
+build_proj() {
+    build_lib "PROJ" \
+        -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}/PROJ/installed \
+        -DBUILD_APPS=OFF \
+        -DENABLE_CURL=OFF \
+        -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+}
+
+build_gdal() {
+    build_lib "gdal" \
+        -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}/gdal/installed \
+        -DGDAL_BUILD_OPTIONAL_DRIVERS=OFF \
+        -DOGR_BUILD_OPTIONAL_DRIVERS=OFF \
+        -DOGR_ENABLE_DRIVER_GPKG=ON \
+        -DCMAKE_PREFIX_PATH=${EXTERNAL_DIR}/PROJ/installed \
+        -DBUILD_PYTHON_BINDINGS=OFF \
+        -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+}
+
+build_vtk() {
+    build_lib "VTK-9.6.0" \
+        -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}/VTK-9.6.0/installed \
+        -DVTK_BUILD_TESTING=OFF \
+        -DVTK_GROUP_ENABLE_Qt=NO \
+        -DBUILD_SHARED_LIBS=ON \
+        -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+}
+
+# ==========================
+# ARGUMENT PARSER
+# ==========================
+
+if [[ $# -eq 0 ]]; then
+    echo "Usage: ./00_buildDeps.sh [all|proj|gdal|vtk|matplot]"
+    exit 1
+fi
+
+for arg in "$@"; do
+    case $arg in
+        all)
+            build_matplot
+            build_proj
+            build_gdal
+            build_vtk
+            ;;
+        matplot)
+            build_matplot
+            ;;
+        proj)
+            build_proj
+            ;;
+        gdal)
+            build_gdal
+            ;;
+        vtk)
+            build_vtk
+            ;;
+        *)
+            echo "Unknown option: $arg"
+            exit 1
+            ;;
+    esac
+done
+
