@@ -48,7 +48,11 @@ include_directories(BEFORE "../muse/external/cinolib/include")
 add_executable(muse_export main.cpp)
 add_executable(muse_export_raster main_raster.cpp)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${GDAL_LIBRARY})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${GDAL_LIBRARY} VTK::CommonCore
+    VTK::CommonDataModel
+    VTK::IOXML
+    VTK::IOLegacy
+)
 
 find_package(OpenMP)
 target_link_libraries(muse_export_raster PUBLIC OpenMP::OpenMP_CXX)

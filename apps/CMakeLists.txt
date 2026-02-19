@@ -141,6 +141,26 @@ find_package(cinolib REQUIRED)
 link_libraries(cinolib)
 
 
+#####
+# VTK (fix for MacOS_MM)
+set(VTK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../VTK/installed/lib/cmake/vtk-9.5")
+message("${VTK_DIR}")
+
+find_package(VTK CONFIG REQUIRED
+    COMPONENTS
+        CommonCore
+        CommonDataModel
+        IOXML
+        IOLegacy
+    PATHS ${VTK_DIR}
+    NO_DEFAULT_PATH
+)
+
+if(VTK_FOUND)
+    message(STATUS "VTK found: ${VTK_VERSION}")
+endif()
+
+
 
 #####
 # OpenGL
@@ -176,26 +196,53 @@ set (tetgen_lib_file "${TETGEN_DIR}/build/libtetgen.a")
 
 
 
+# #####
+# # OpenMP
+# #find_package(OpenMP)
+# find_package(OpenMP REQUIRED)
+# if(APPLE)
+#     message("\nConfiguring OPENMP compiler variables\n")
+#     if (OPENMP_FOUND)
+
+#        #set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+#        #set (OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp /usr/local/lib/libomp.dylib -I /usr/local/include/")
+#        #set (OpenMP_CXX_LIB_NAMES "libomp")
+#        #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+#         set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+#     endif()
+#     message("${CMAKE_CXX_FLAGS}\n")
+#     message("${CMAKE_EXE_LINKER_FLAGS}\n")
+# else()
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+# endif()
+
+
 #####
-# OpenMP
-#find_package(OpenMP)
-find_package(OpenMP REQUIRED)
+# OpenMP (macOS_MM fix)
 if(APPLE)
-    message("\nConfiguring OPENMP compiler variables\n")
-    if (OPENMP_FOUND)
+    message(STATUS "Configuring OpenMP for macOS")
 
-       #set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-       #set (OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp /usr/local/lib/libomp.dylib -I /usr/local/include/")
-       #set (OpenMP_CXX_LIB_NAMES "libomp")
-       #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    # Percorsi libomp
+    set(LIBOMP_INCLUDE_DIR "/opt/homebrew/opt/libomp/include")
+    set(LIBOMP_LIB_DIR "/opt/homebrew/opt/libomp/lib")
 
-        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-    endif()
-    message("${CMAKE_CXX_FLAGS}\n")
-    message("${CMAKE_EXE_LINKER_FLAGS}\n")
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+    find_library(OMP_LIBRARY omp
+        PATHS ${LIBOMP_LIB_DIR} /usr/local/opt/libomp/lib
+        REQUIRED
+    )
+
+    # Flag per Apple Clang
+    set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${LIBOMP_INCLUDE_DIR}")
+    set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${LIBOMP_INCLUDE_DIR}")
+    set(OpenMP_C_LIB_NAMES "omp")
+    set(OpenMP_CXX_LIB_NAMES "omp")
+    set(OpenMP_omp_LIBRARY "${OMP_LIBRARY}")
+
 endif()
+
+# Cerca OpenMP con CMake
+find_package(OpenMP REQUIRED)
 
 
 #####

@@ -1,17 +1,17 @@
 project(muse_geometry LANGUAGES CXX)
 
-#####`
-# VTK
-find_package(VTK COMPONENTS
-    CommonCore
-    CommonDataModel
-    IOXML
-    IOLegacy)
-if(VTK_FOUND)
-    include_directories(SYSTEM ${VTK_INCLUDE_DIRS})
-endif()
+# #####`
+# # VTK
+# find_package(VTK COMPONENTS
+#     CommonCore
+#     CommonDataModel
+#     IOXML
+#     IOLegacy)
+# if(VTK_FOUND)
+#     include_directories(SYSTEM ${VTK_INCLUDE_DIRS})
+# endif()
 
-message("VTK found @ " VTK\n)
+# message("VTK found @ " VTK\n)
 
 #####
 # gdal
@@ -66,7 +66,12 @@ add_executable(${PROJECT_NAME}
   #${PROJ_LIB}
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${triangle_lib_file} ${tetgen_lib_file} ${VTK_LIBRARIES} ${GDAL_LIBRARY} PROJ::proj)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${triangle_lib_file} ${tetgen_lib_file} ${GDAL_LIBRARY} PROJ::proj
+  VTK::CommonCore
+  VTK::CommonDataModel
+  VTK::IOXML
+  VTK::IOLegacy
+)
 
 #####
 
@@ -78,6 +83,11 @@ add_executable(${TETGEN_GENERATOR}
   ${TETGEN_DIR}/build/libtetgen.a
 )
 
-target_link_libraries(${TETGEN_GENERATOR} PUBLIC ${triangle_lib_file} ${tetgen_lib_file} ${VTK_LIBRARIES} )
+target_link_libraries(${TETGEN_GENERATOR} PUBLIC ${triangle_lib_file} ${tetgen_lib_file}
+  VTK::CommonCore
+  VTK::CommonDataModel
+  VTK::IOXML
+  VTK::IOLegacy
+)
 
 
