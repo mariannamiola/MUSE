@@ -31,7 +31,7 @@ MUSE code has some mandatory dependences (included as a submodule in _${ROOT}/ex
 - to metadata the computational process (cereal);
 - to geostatistics and stochastic computation (geostatslib);
 - to manage geospatial data (GDAL, PROJ);
-- to process polygonal/polyhedral meshes and offers geometric processing tools (cinolib, libigl, Triangle, Tetgen, fTetWild).
+- to process polygonal/polyhedral meshes and offers geometric processing tools (cinolib, libigl, Triangle, Tetgen).
 
 MUSE employs _Paraview_ python scripting and graphical interaface to visualize results.
 Please, download it to use additional functionalities of results visualization and customization.
@@ -125,4 +125,4 @@ abstract = {Scientific workflows are essential in modern geoscientific research,
 ```
 
 ## Acknowledgment
-This work is supported by PON "Ricerca e Innovazione" 2014-2020, Asse IV "Istruzione e ricerca per il recupero", Azione IV.5 "Dottorati su tematiche green" DM 1061/2021.
+The work is developed under the Ph.D. Research Project in Science and Technologies for Earth and Environment, supported by the Italian Ministry of University and Research under the National Operational Programme NOP “Research and Innovation” 2014-2020, “Education and research for recovery – REACT-EU”, Axis IV - Action IV.5 “PhD programmes on green topics” Ministerial Decree no. 1061, 10 August 2021.
