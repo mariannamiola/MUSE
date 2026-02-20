@@ -66,8 +66,8 @@ build_gdal() {
 }
 
 build_vtk() {
-    build_lib "VTK-9.6.0" \
-        -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}/VTK-9.6.0/VTK-9.6.0/installed \
+    build_lib "VTK" \
+        -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}/VTK/installed \
         -DVTK_BUILD_TESTING=OFF \
         -DVTK_GROUP_ENABLE_Qt=NO \
         -DBUILD_SHARED_LIBS=ON \
