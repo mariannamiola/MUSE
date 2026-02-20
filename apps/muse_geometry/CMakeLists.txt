@@ -29,10 +29,10 @@ project(muse_geometry LANGUAGES CXX)
 #     set (GDAL_LIBRARY ${GDAL_LIBRARY_DIR}/libgdal.dylib)
 # endif()
 
-include_directories(${GDAL_INCLUDE_DIR})
+#include_directories(${GDAL_INCLUDE_DIR})
 
-message ("${GDAL_INCLUDE_DIR}")
-message ("${GDAL_LIBRARY}")
+#message ("${GDAL_INCLUDE_DIR}")
+#message ("${GDAL_LIBRARY}")
 
 #####
 # cinolib
@@ -66,7 +66,7 @@ add_executable(${PROJECT_NAME}
   #${PROJ_LIB}
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${triangle_lib_file} ${tetgen_lib_file} ${GDAL_LIBRARY} PROJ::proj
+target_link_libraries(${PROJECT_NAME} PUBLIC ${triangle_lib_file} ${tetgen_lib_file} PROJ::proj GDAL::GDAL
   VTK::CommonCore
   VTK::CommonDataModel
   VTK::IOXML

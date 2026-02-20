@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #####
 # find GDAL library
 add_definitions(-DMUSE_USES_GDAL)
-include_directories(${GDAL_INCLUDE_DIR})
+#include_directories(${GDAL_INCLUDE_DIR})
 
 include_directories(BEFORE "../muse/include")
 include_directories(BEFORE "../muse/external/geostatslib/include")
@@ -18,7 +18,7 @@ include_directories(BEFORE "../muse/external/cinolib/include")
 add_executable(muse_export main.cpp)
 add_executable(muse_export_raster main_raster.cpp)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${GDAL_LIBRARY} VTK::CommonCore
+target_link_libraries(${PROJECT_NAME} PUBLIC GDAL::GDAL VTK::CommonCore
     VTK::CommonDataModel
     VTK::IOXML
     VTK::IOLegacy

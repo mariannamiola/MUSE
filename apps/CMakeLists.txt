@@ -60,6 +60,7 @@ endif()
 #####
 # GDAL (prefer external installed copy to avoid system conflicts)
 # Set the external install prefix (adjust path if your install uses a different folder name)
+add_definitions(-DMUSE_USES_GDAL)
 set(GDAL_EXTERNAL_PREFIX "${CMAKE_SOURCE_DIR}/../external/gdal/installed" CACHE PATH "External GDAL install prefix")
 if(EXISTS "${GDAL_EXTERNAL_PREFIX}")
     list(APPEND CMAKE_PREFIX_PATH "${GDAL_EXTERNAL_PREFIX}")
@@ -67,22 +68,12 @@ endif()
 
 # Try to find GDAL from the external install first (CONFIG mode), otherwise fall back to the system package
 find_package(GDAL CONFIG QUIET PATHS "${GDAL_EXTERNAL_PREFIX}/lib/cmake/gdal" NO_DEFAULT_PATH)
-if(NOT GDAL_FOUND)
-    find_package(GDAL REQUIRED)
+message(STATUS "GDAL_FOUND = ${GDAL_FOUND}")
+if(GDAL_FOUND)
+    message("Using GDAL version at path: ${GDAL_EXTERNAL_PREFIX}/lib/cmake/gdal")
+    message("Using GDAL imported target: GDAL::GDAL")
 endif()
 
-add_definitions(-DMUSE_USES_GDAL)
-# Prefer using an imported target if provided; otherwise add include directories from the find module
-if(TARGET GDAL::GDAL)
-    message(STATUS "Using GDAL imported target: GDAL::GDAL")
-else()
-    if(DEFINED GDAL_INCLUDE_DIRS)
-        include_directories(${GDAL_INCLUDE_DIRS})
-    elseif(DEFINED GDAL_INCLUDE_DIR)
-        include_directories(${GDAL_INCLUDE_DIR})
-    endif()
-endif()
-# find_package(GDAL CONFIG REQUIRED PATHS ${CMAKE_SOURCE_DIR}/../external/gdal/installed/lib/cmake/gdal NO_DEFAULT_PATH)
  
 
 
@@ -136,9 +127,7 @@ find_package(VTK CONFIG REQUIRED
         CommonDataModel
         IOXML
         IOLegacy)
-if(VTK_FOUND)
-    message(STATUS "VTK found: ${VTK_VERSION}")
-endif()
+message(STATUS "VTK found: ${VTK_FOUND}")
 
 
 
