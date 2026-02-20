@@ -38,11 +38,31 @@ build_lib() {
 }
 
 # ==========================
+# SPECIFIC BUILD FUNCTION (MATPLOT)
+# ==========================
+build_mplib() {
+    local NAME=$1
+    shift
+
+    echo "========================="
+    echo "Building $NAME"
+    echo "========================="
+
+    cd "${EXTERNAL_DIR}/${NAME}"
+    mkdir -p build
+    cd build
+
+    cmake .. "$@" -DCMAKE_CXX_FLAGS="-O2"
+    cmake --build . --parallel ${NPROC} --config Release
+    sudo cmake --install .
+}
+
+# ==========================
 # LIBRARIES
 # ==========================
 
 build_matplot() {
-    build_lib "matplotplusplus" \
+    build_mplib "matplotplusplus" \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 }
 
