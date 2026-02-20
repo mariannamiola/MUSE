@@ -89,5 +89,3 @@ target_link_libraries(${TETGEN_GENERATOR} PUBLIC ${triangle_lib_file} ${tetgen_l
   VTK::IOXML
   VTK::IOLegacy
 )
-
-

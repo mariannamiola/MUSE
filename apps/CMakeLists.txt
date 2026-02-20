@@ -57,51 +57,33 @@ endif()
 
 
 #####
-# GDAL
-find_package(GDAL REQUIRED)
+#####
+# GDAL (prefer external installed copy to avoid system conflicts)
+# Set the external install prefix (adjust path if your install uses a different folder name)
+set(GDAL_EXTERNAL_PREFIX "${CMAKE_SOURCE_DIR}/../external/gdal/installed" CACHE PATH "External GDAL install prefix")
+if(EXISTS "${GDAL_EXTERNAL_PREFIX}")
+    list(APPEND CMAKE_PREFIX_PATH "${GDAL_EXTERNAL_PREFIX}")
+endif()
+
+# Try to find GDAL from the external install first (CONFIG mode), otherwise fall back to the system package
+find_package(GDAL CONFIG QUIET PATHS "${GDAL_EXTERNAL_PREFIX}/lib/cmake/gdal" NO_DEFAULT_PATH)
+if(NOT GDAL_FOUND)
+    find_package(GDAL REQUIRED)
+endif()
+
 add_definitions(-DMUSE_USES_GDAL)
-INCLUDE_DIRECTORIES(${GDAL_INCLUDE_DIR})
- # find_package(GDAL CONFIG REQUIRED PATHS ${CMAKE_SOURCE_DIR}/../external/gdal/installed/lib/cmake/gdal NO_DEFAULT_PATH)
- # if(GDAL_FOUND)
- # set (GDAL_DIR ${CMAKE_SOURCE_DIR}/external/gdal)
- #     set(GDAL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/../external/gdal/installed/include)
- #        set(GDAL_LIBRARY_DIR ${CMAKE_SOURCE_DIR}/../external/gdal/installed/lib)
- #        if (UNIX AND NOT APPLE)
- #            set (GDAL_LIB ${GDAL_LIBRARY_DIR}/libgdal.so)
- #        elseif (MSVC)
- #            set (GDAL_LIB ${GDAL_LIBRARY_DIR}/gdal.lib)
- #        else() ###macos
- #            set (GDAL_LIB ${GDAL_LIBRARY_DIR}/libgdal.dylib)
- #            set (GDAL_LIBRARY ${GDAL_LIB})
- #        endif()
- #     INCLUDE_DIRECTORIES(${GDAL_INCLUDE_DIR})
- #     MESSAGE(STATUS "GDAL found: ${GDAL_INCLUDE_DIRS}")
- #     # Extract GDAL version from gdal_version.h
- #     SET(GDAL_VERSION_FILE ${GDAL_INCLUDE_DIRS}/gdal_version.h)
- #     IF (NOT EXISTS ${GDAL_VERSION_FILE})
- #       message(
- #           "Could not find file: ${GDAL_VERSION_FILE} "
- #           "containing version information in GDAL install located at: "
- #           "${GDAL_INCLUDE_DIRS}.")
- #     ELSE (NOT EXISTS ${GDAL_VERSION_FILE})
- #     FILE(READ ${GDAL_VERSION_FILE} GDAL_VERSION_FILE_CONTENTS)
- #        STRING(REGEX MATCH "define GDAL_VERSION_MAJOR +[0-9]+"
- #           GDAL_VERSION_MAJOR "${GDAL_VERSION_FILE_CONTENTS}")
- #         STRING(REGEX REPLACE "define GDAL_VERSION_MAJOR +([0-9]+)" "\\1"
- #           GDAL_VERSION_MAJOR "${GDAL_VERSION_MAJOR}")
- #         STRING(REGEX MATCH "define GDAL_VERSION_MINOR +[0-9]+"
- #           GDAL_VERSION_MINOR "${GDAL_VERSION_FILE_CONTENTS}")
- #         STRING(REGEX REPLACE "define GDAL_VERSION_MINOR +([0-9]+)" "\\1"
- #           GDAL_VERSION_MINOR "${GDAL_VERSION_MINOR}")
- #         STRING(REGEX MATCH "define GDAL_VERSION_REV +[0-9]+"
- #           GDAL_VERSION_REV "${GDAL_VERSION_FILE_CONTENTS}")
- #         STRING(REGEX REPLACE "define GDAL_VERSION_REV +([0-9]+)" "\\1"
- #           GDAL_VERSION_REV "${GDAL_VERSION_REV}")
- #         SET(GDAL_VERSION "${GDAL_VERSION_MAJOR}.${GDAL_VERSION_MINOR}.${GDAL_VERSION_REV}")
- #     ENDIF(NOT EXISTS ${GDAL_VERSION_FILE})
- #     MESSAGE(STATUS "GDAL version: ${GDAL_VERSION}")
- #     ADD_DEFINITIONS( -DGDALVER=${GDAL_VERSION_MAJOR} )
- # ENDIF()
+# Prefer using an imported target if provided; otherwise add include directories from the find module
+if(TARGET GDAL::GDAL)
+    message(STATUS "Using GDAL imported target: GDAL::GDAL")
+else()
+    if(DEFINED GDAL_INCLUDE_DIRS)
+        include_directories(${GDAL_INCLUDE_DIRS})
+    elseif(DEFINED GDAL_INCLUDE_DIR)
+        include_directories(${GDAL_INCLUDE_DIR})
+    endif()
+endif()
+# find_package(GDAL CONFIG REQUIRED PATHS ${CMAKE_SOURCE_DIR}/../external/gdal/installed/lib/cmake/gdal NO_DEFAULT_PATH)
+ 
 
 
 #####
@@ -142,20 +124,18 @@ link_libraries(cinolib)
 
 
 #####
-# VTK (fix for MacOS_MM)
-set(VTK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../VTK/installed/lib/cmake/vtk-9.5")
-message("${VTK_DIR}")
-
+# VTK
+set(VTK_EXTERNAL_PREFIX "${CMAKE_SOURCE_DIR}/../external/VTK-9.6.0/VTK-9.6.0/installed/lib/cmake/vtk-9.6.0")
+message("${VTK_EXTERNAL_PREFIX}")
+if(EXISTS "${VTK_EXTERNAL_PREFIX}")
+  list(APPEND CMAKE_PREFIX_PATH "${VTK_EXTERNAL_PREFIX}")
+endif()
 find_package(VTK CONFIG REQUIRED
     COMPONENTS
         CommonCore
         CommonDataModel
         IOXML
-        IOLegacy
-    PATHS ${VTK_DIR}
-    NO_DEFAULT_PATH
-)
-
+        IOLegacy)
 if(VTK_FOUND)
     message(STATUS "VTK found: ${VTK_VERSION}")
 endif()
@@ -247,10 +227,8 @@ find_package(OpenMP REQUIRED)
 
 #####
 # Flann
-#include_directories ("/Users/mariannamiola/Downloads/flann/1.9.1/interfaces/flann")
-#include_directories ("/Users/mariannamiola/Downloads/flann/1.9.1/interfaces/flann")
-#link_directories ("/Users/mariannamiola/Downloads/flann/1.9.1")
-#set (FLANN_DIR ${CMAKE_SOURCE_DIR}/../flann)
+#find_package(FLANN REQUIRED)
+#include_directories(${FLANN_INCLUDE_DIR})
 
 #####
 # Armadillo
