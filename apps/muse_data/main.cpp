@@ -4,7 +4,6 @@
 #include <filesystem>
 
 #include <tclap/CmdLine.h>
-//#include <json.hpp>
 #include <matplot/matplot.h>
 #include <geostatslib/statistics/stats.h>
 
@@ -78,7 +77,10 @@ int main(int argc, char** argv)
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "/path/to/project/dir", "string", cmd);
 
     /**
-     * @brief setInput
+     * @brief Copy input file(s) in the data project directory (path/project/in/data) to replace manual data copy
+     * @param input File path of the input(s) to copy in the data folder project
+     * @note To be used with -N swith flag, when create a new data environment in the project
+     * @example --input user/path1/filename.csv
      */
     MultiArg<std::string> setInput ("i", "input", "Copy input files in the project directory (in/data/)", false, "string", cmd );
 
@@ -306,12 +308,28 @@ int main(int argc, char** argv)
 
         if(setInput.isSet())
         {
+            std::cout << "=== Copy input file in project_dir/in/data/ ..." << std::endl;
+            if(setInput.getValue().empty())
+                std::cerr << "ERROR: list of files is empty." << std::endl;
 
+            for (const std::string file : setInput.getValue())
+            {
+                std::string filename = get_filename(file);
+                try {
+                    filesystem::copy(file, in_folder + "/" + filename,
+                             filesystem::copy_options::overwrite_existing);
+
+                    std::cout << "Copied file: " << file << " in the data project directory ... " << in_folder + "/" + filename << std::endl;
+                } catch (filesystem::filesystem_error& e) {
+                    std::cerr << "ERROR: " << e.what() << std::endl;
+                }
+            }
         }
         else
         {
             std::cout << "WARNING. No input file is set and copied in project_dir/in/data/" << std::endl;
-            std::cout << "Use --input flag to import data or manually copy input files in project_dir/in/data/" << std::endl;
+            std::cout << "Use --input (multiple) flag to currently import data ..." << std::endl;
+            std::cout << "... or manually copy input files in project_dir/in/data/" << std::endl;
         }
 
 

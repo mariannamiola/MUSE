@@ -2069,7 +2069,8 @@ int main(int argc, char** argv)
                 if(setCRIT.getValue().compare("IK") == 0)
                 {
                     indicator_kriging(nodes, input, categ, variograms, setInputSamples.getValue(), doOctantSearch.getValue() ,setScaleRadius.getValue());
-                    app_folder += "/kriging";
+                    //app_folder += "/kriging";
+                    //filesystem::create_directory(app_folder);
 
                     std::cout << FGRN("Indicator Kriging ... COMPLETED.") << std::endl;
                 }
