@@ -193,7 +193,7 @@ muse_project -N -p ${WORK} --name ${PROJ}
 ##########  DATA  ###########
 muse_data -N -p ${WP}
 cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
-muse_data -S -p ${WP}  --setX 1 --setY 2 --setZ 3
+muse_data -S -p ${WP} --setX 1 --setY 2 --setZ 3
 muse_data -C -p ${WP}
 
 #geometry:

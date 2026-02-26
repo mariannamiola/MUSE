@@ -32,7 +32,7 @@ project_folder=work_folder +'/'+project_name
 geom_folder=project_folder+'/out/geometry/surf'
 compute_folder=project_folder+'/out/compute'
 
-sim_name='kriging'
+sim_name=var_name+'_best'
 
 csv_file=script_dir+'/../../'+compute_folder+'/'+compute_sim+'/'+sim_name+'.csv'
 obj_file=script_dir+'/../../'+geom_folder+'/'+geom_name+'_rot.obj'
@@ -42,7 +42,7 @@ print(csv_file)
 print(obj_file)
 
 # create a new 'CSV Reader'
-krigingcsv = CSVReader(registrationName='kriging.csv', FileName=[csv_file])
+krigingcsv = CSVReader(registrationName=sim_name+'.csv', FileName=[csv_file])
 krigingcsv.HaveHeaders = 0
 krigingcsv.FieldDelimiterCharacters = ''
 krigingcsv.AddTabFieldDelimiter = 1
