@@ -61,12 +61,10 @@ compute_folder=os.path.join(project_folder, "out", "compute")
 print(geom_folder)
 print(compute_folder)
 
-where=config["compute"].get("where", "") ##cartella stats; se vuota, indica che sto prendendo le singole simulazioni
-## check if where is empty
-if not where:
-    space=config["compute"]["space"]
-else:
-    space=os.path.join(config["compute"]["space"], where)
+space = os.path.join(
+    config["compute"].get("space", ""),
+    config["compute"].get("where", "")
+).strip(os.sep)
 print(space)
 
 sim_name=var_name + '_'+ config["compute"]["var"]
@@ -155,6 +153,17 @@ appendAttributes1Display = Show(appendAttributes1, renderView1, 'GeometryReprese
 
 # get color transfer function/color map for 'Field0'
 field0LUT = GetColorTransferFunction(config["columns"]["scalarfield"]["value"])
+if config["columns"]["scalarfield"]["cat"]:
+    field0LUT.InterpretValuesAsCategories=1
+    field0LUT.AnnotationsInitialized=1
+    field0LUT.ScalarRangeInitialized=1.0
+        
+    num_classes = int(config["columns"]["scalarfield"]["n_cat"])
+    field0LUT.NumberOfTableValues = num_classes
+    
+    values = [str(i) for i in range(1, num_classes + 1)]
+    field0LUT.Annotations = [item for v in values for item in (v, v)]
+    field0LUT.ActiveAnnotatedValues = values 
 
 appendAttributes1Display.Representation = 'Surface'
 appendAttributes1Display.ColorArrayName = ['CELLS', config["columns"]["scalarfield"]["value"]]
@@ -175,6 +184,17 @@ tableToPoints1Display = Show(tableToPoints1, renderView1, 'GeometryRepresentatio
 # set separate color map
 tableToPoints1Display.UseSeparateColorMap = True
 p_cLUT = GetColorTransferFunction( config["columns"]["samples"]["value"], tableToPoints1Display, separate=True)
+if config["columns"]["samples"]["cat"]:
+    p_cLUT.InterpretValuesAsCategories=1
+    p_cLUT.AnnotationsInitialized=1
+    p_cLUT.ScalarRangeInitialized=1.0
+        
+    num_classes = int(config["columns"]["samples"]["n_cat"])
+    p_cLUT.NumberOfTableValues = num_classes
+    
+    values = [str(i) for i in range(1, num_classes + 1)]
+    p_cLUT.Annotations = [item for v in values for item in (v, v)]
+    p_cLUT.ActiveAnnotatedValues = values
 
 #p_cLUT.RGBPoints = [6.85, 0.231373, 0.298039, 0.752941, 100.425, 0.865003, 0.865003, 0.865003, 194.0, 0.705882, 0.0156863, 0.14902]
 #p_cLUT.ScalarRangeInitialized = 1.0
@@ -189,7 +209,8 @@ tableToPoints1Display.PointSize = 5.0
 ##tableToPoints1Display.SetScalarBarVisibility(renderView1, True)
 
 # rescale the color map for points
-p_cLUT.RescaleTransferFunctionToDataRange()
+if not config["columns"]["samples"]["cat"]:
+    p_cLUT.RescaleTransferFunctionToDataRange()
 
 # get color legend/bar for p_cLUT in view renderView1
 p_cLUTColorBar = GetScalarBar(p_cLUT, renderView1)

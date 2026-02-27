@@ -1,14 +1,14 @@
 {
   "work_folder": "MUSE_test",
-  "project_name": "06_sec_2D_4000_tri",
+  "project_name": "14_sec_2D_4000_tri_ind",
 
   "samples": "samples.csv",
   "varname": "phi",
   "units": "-",
 
   "geometry": {
-    "name": "sec_xz_rot",
-    "sub": "",
+    "name": "sec_rot",
+    "sub": "sec",
     "ext": "obj"
   },
 
@@ -18,11 +18,11 @@
   },
 
   "compute": {
-    "space": "_varspace",
+    "space": "",
     "where": "_stats",
-    "var": "mean",
+    "var": "best",
     "units": "-",
-    "geom": "sec_xz"
+    "geom": "sec"
   },
 
   "columns": {
@@ -30,14 +30,18 @@
       "x": "X",
       "y": "Y",
       "z": "Z",
-      "value": "phi"
+      "value": "phi",
+      "cat": true,
+      "n_cat": 8
     },
 
     "scalarfield": {
       "x": "Field 0",
       "y": "Field 0",
       "z": "Field 0",
-      "value": "Field 0"
+      "value": "Field 0",
+      "cat": true,
+      "n_cat": 8
     }
   },
 
