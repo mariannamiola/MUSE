@@ -55,30 +55,37 @@ variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, con
                 for(size_t i=0; i<ev.h.size(); i++)
                     out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_types.at(m));
 
-                double last_mse_j = mse;
+                //double last_mse_j = mse;
                 mse = 0.0;
                 int count = 0;
 
-                int countGT1 = 0;
+                //int countGT1 = 0;
 
                 for(unsigned int i=0; i<out.size(); i++)
                 {
-                    if(ev.gamma.at(i) <= variance && countGT1<3)
+                    //if(ev.gamma.at(i) <= variance && countGT1<3)
+                    if(ev.gamma.at(i) <= variance && ev.h.at(i) > 0)
                     {
                         count++;
                         mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
                     }
-                    else
-                        countGT1++;
+                    // else
+                    //     countGT1++;
                 }
+
+                // FIX: normalizzazione per count
+                if(count > 0)
+                    mse /= count;
+                else
+                    continue;
 
                 if(mse < best_mse_range)
                 {
                     best_mse_range = mse;
                     best_r = r;    
                 }
-                else
-                    mse = last_mse_j;
+                // else
+                //     mse = last_mse_j;
             }
 
             // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -94,12 +101,8 @@ variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, con
             }
         }
 
-        // if(best_mse_nug < best_mse_model)
-        // {
-        //     best_mse_model = best_mse_nug;
-        //     fitvario = fitvario_on_nug;
-        // }
-
+        // FIX: logica Gaussian corretta - aggiorna fitvario sempre se MSE migliore,
+        // salta solo se Gaussian con nugget > 5%
         if(best_mse_nug < best_mse_model)
         {
             if(fitvario_on_nug.type.compare("Gau") == 0)
@@ -112,11 +115,11 @@ variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, con
                     continue;
                 }
             }
-            else
-            {
-                best_mse_model = best_mse_nug;
-                fitvario = fitvario_on_nug;
-            }
+            // else
+            // {
+            best_mse_model = best_mse_nug;
+            fitvario = fitvario_on_nug;
+            //}
         }
     }
 
@@ -172,30 +175,36 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_types.at(m));
 
-            double last_mse_j = mse;
+            //double last_mse_j = mse;
             mse = 0.0;
             int count = 0;
 
-            int countGT1 = 0;
+            //int countGT1 = 0;
 
             for(unsigned int i=0; i<out.size(); i++)
             {
-                if(ev.gamma.at(i) <= variance && countGT1<3)
+                if(ev.gamma.at(i) <= variance && ev.h.at(i) > 0) //&& countGT1<3)
                 {
                     count++;
                     mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
                 }
-                else
-                    countGT1++;
+                // else
+                //     countGT1++;
             }
+
+            // FIX: normalizzazione per count
+            if(count > 0)
+                mse /= count;
+            else
+                continue;
 
             if(mse < best_mse_range)
             {
                 best_mse_range = mse;
                 best_r = r;
             }
-            else
-                mse = last_mse_j;
+            // else
+            //     mse = last_mse_j;
         }
 
         // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -204,11 +213,6 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
         fitvario_on_range.range = best_r;
         fitvario_on_range.nugget = c0;
 
-        // if(best_mse_range < best_mse_model)
-        // {
-        //     best_mse_model = best_mse_range;
-        //     fitvario = fitvario_on_range;
-        // }
 
         if(best_mse_range < best_mse_model)
         {
@@ -222,11 +226,11 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
                     continue;
                 }
             }
-            else
-            {
-                best_mse_model = best_mse_range;
-                fitvario = fitvario_on_range;
-            }
+            // else
+            // {
+            best_mse_model = best_mse_range;
+            fitvario = fitvario_on_range;
+            //}
         }
     }
 
@@ -281,32 +285,38 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-            double last_mse_j = mse;
+            //double last_mse_j = mse;
             mse = 0.0;
             int count = 0;
 
-            int countGT1 = 0;
+            //int countGT1 = 0;
 
             for(unsigned int i=0; i<out.size(); i++)
             {
-                if(ev.gamma.at(i)<= variance && countGT1<3)
+                if(ev.gamma.at(i)<= variance && ev.h.at(i) > 0) //&& countGT1<3)
                 {
                     count++;
                     mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
                 }
-                else
-                    countGT1++;
+                // else
+                //     countGT1++;
             }
 
             //mse = mse;
+
+            // FIX: normalizzazione per count
+            if(count > 0)
+                mse /= count;
+            else
+                continue;
 
             if(mse < best_mse_range)
             {
                 best_mse_range = mse;
                 best_r = r;
             }
-            else
-                mse = last_mse_j;
+            // else
+            //     mse = last_mse_j;
         }
 
         // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -362,24 +372,30 @@ variogram fit_ind_variogram_2par (const exp_variog &ev, const double &range_step
         for(size_t i=0; i<ev.h.size(); i++)
             out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-        double last_mse_j = mse;
+        //double last_mse_j = mse;
         mse = 0;
         int count = 0;
 
-        int countGT1 = 0;
+        //int countGT1 = 0;
 
         for(unsigned int i=0; i<out.size(); i++)
         {
-            if(ev.gamma.at(i)<= variance && countGT1<3)
+            if(ev.gamma.at(i)<= variance && ev.h.at(i) > 0) //&& countGT1<3)
             {
                 count++;
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
             }
-            else
-                countGT1++;
+            // else
+            //     countGT1++;
         }
 
-        mse = mse;
+        // FIX: normalizzazione per count
+        if(count > 0)
+            mse /= count;
+        else
+            continue;
+
+        //mse = mse;
 
         if(mse < best_mse_range)
         {
@@ -387,8 +403,8 @@ variogram fit_ind_variogram_2par (const exp_variog &ev, const double &range_step
             best_r = r;
             convert_to_str(best_type, model_type);
         }
-        else
-            mse = last_mse_j;
+        // else
+        //     mse = last_mse_j;
     }
 
     // Soluzione per un valore di nugget
@@ -456,24 +472,30 @@ MUSE::VarioError fit_ind_variogram_1par_mse (const exp_variog &ev, const double 
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-            double last_mse_j = mse;
+            //double last_mse_j = mse;
             mse = 0;
             int count = 0;
 
-            int countGT1 = 0;
+            //int countGT1 = 0;
 
             for(unsigned int i=0; i<out.size(); i++)
             {
-                if(ev.gamma.at(i)<=variance && countGT1<3)
+                if(ev.gamma.at(i)<=variance && ev.h.at(i) > 0) //&& countGT1<3)
                 {
                     count++;
                     mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
                 }
-                else
-                    countGT1++;
+                // else
+                //     countGT1++;
             }
 
             //mse = mse;
+
+            // FIX: normalizzazione per count
+            if(count > 0)
+                mse /= count;
+            else
+                continue;
 
             if(mse < best_mse_range)
             {
@@ -481,8 +503,8 @@ MUSE::VarioError fit_ind_variogram_1par_mse (const exp_variog &ev, const double 
                 best_r = r;
                 convert_to_str(best_type, model_type);
             }
-            else
-                mse = last_mse_j;
+            // else
+            //     mse = last_mse_j;
         }
 
         // Soluzione per un valore di nugget
@@ -558,24 +580,30 @@ MUSE::VarioError fit_ind_variogram_2par_mse (const exp_variog &ev, const double 
         for(size_t i=0; i<ev.h.size(); i++)
             out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-        double last_mse_j = mse;
+        //double last_mse_j = mse;
         mse = 0;
         int count = 0;
 
-        int countGT1 = 0;
+        //int countGT1 = 0;
 
         for(unsigned int i=0; i<out.size(); i++)
         {
-            if(ev.gamma.at(i)<= variance && countGT1<3)
+            if(ev.gamma.at(i)<= variance && ev.h.at(i) > 0) //&& countGT1<3)
             {
                 count++;
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
             }
-            else
-                countGT1++;
+            // else
+            //     countGT1++;
         }
 
         //mse = mse;
+
+        // FIX: normalizzazione per count
+        if(count > 0)
+            mse /= count;
+        else
+            continue;
 
         if(mse < best_mse_range)
         {
@@ -583,8 +611,8 @@ MUSE::VarioError fit_ind_variogram_2par_mse (const exp_variog &ev, const double 
             best_r = r;
             convert_to_str(best_type, model_type);
         }
-        else
-            mse = last_mse_j;
+        // else
+        //     mse = last_mse_j;
     }
 
     // Soluzione per un valore di nugget
@@ -665,13 +693,15 @@ vector<variogram> fit_ind_dir_variogram (const std::vector<exp_variog> &dev,cons
 
 
     // 4) Media del nugget per il modello ad errore minimo (min_index)
+    double sum_weights = 0.0;
     double avg_nugget = 0.0;
     for(size_t i=0; i<dir_vario.at(min_index).size(); i++)
     {
         std::cout << FMAG("### Nugget: ") << dir_vario.at(min_index).at(i).vario.nugget << FMAG("; assigned weight: ") << weigth.at(i) << std::endl;
         avg_nugget += dir_vario.at(min_index).at(i).vario.nugget * weigth.at(i);
+        sum_weights += weigth.at(i);
     }
-    avg_nugget = avg_nugget/(directions.size());
+    avg_nugget = avg_nugget/sum_weights; //(directions.size());
 
 
     if(types.at(min_index) == variogram_type::GAUSSIAN)
@@ -694,14 +724,18 @@ vector<variogram> fit_ind_dir_variogram (const std::vector<exp_variog> &dev,cons
             }
             min_index = min_index_tmp;
             min_mse = min_mse_tmp;
+
+            //ricalcolo
+            sum_weights = 0.0;
+            avg_nugget = 0.0;
+            for(size_t i=0; i<dir_vario.at(min_index).size(); i++)
+            {
+                std::cout << FMAG("### Nugget: ") << dir_vario.at(min_index).at(i).vario.nugget << FMAG("; assigned weight: ") << weigth.at(i) << std::endl;
+                avg_nugget += dir_vario.at(min_index).at(i).vario.nugget * weigth.at(i);
+                sum_weights += weigth.at(i);
+            }
+            avg_nugget = avg_nugget/sum_weights; //(directions.size());
         }
-        avg_nugget = 0.0;
-        for(size_t i=0; i<dir_vario.at(min_index).size(); i++)
-        {
-            std::cout << FMAG("### Nugget: ") << dir_vario.at(min_index).at(i).vario.nugget << FMAG("; assigned weight: ") << weigth.at(i) << std::endl;
-            avg_nugget += dir_vario.at(min_index).at(i).vario.nugget * weigth.at(i);
-        }
-        avg_nugget = avg_nugget/(directions.size());
     }
 
 

@@ -167,7 +167,7 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
             // Inizializzazione di out a 1 (asintoto variogramma: max valore)
             vector<double> out (ev.gamma.size(), 1);
 
-            double mse = 0.0;
+            ///double mse = 0.0;
 
             //ciclo sui range
             for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -175,18 +175,20 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
                 for(size_t i=0; i<ev.h.size(); i++)
                     out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_types.at(m));
 
-                double last_mse_j = mse;
-                mse = 0.0;
+                ///double last_mse_j = mse;
+                double mse = 0.0;
                 int count = 0;
-
                 int countGT1 = 0;
 
                 for(unsigned int i=0; i<out.size(); i++)
                 {
-                    if(ev.gamma.at(i)<=1 && countGT1<3)
+                    if(ev.gamma.at(i)<=1) // && countGT1<3)
                     {
-                        count++;
-                        mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                        if (ev.h.at(i) > 0)
+                        {
+                            count++;
+                            mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                        }
                     }
                     else
                         countGT1++;
@@ -194,14 +196,20 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
 
                 //mse = mse;
 
+                // FIX 1: normalizzo l'MSE per il numero di punti usati
+                if (count > 0)
+                    mse /= count;
+                else
+                    continue; // nessun punto valido, salto questo range
+
                 if(mse < best_mse_range)
                 {
                     best_mse_range = mse;
                     best_r = r;
                     convert_to_str(best_type, model_types.at(m));
                 }
-                else
-                    mse = last_mse_j;
+                // else
+                //     mse = last_mse_j;
             }
 
             // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -255,28 +263,6 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
         }
     }
 
-    // if(fitvario_on_model.at(min_index_model).vario.type.compare("Gau") == 0)
-    // {
-    //     std::cout << "### Variogram model is Gaussian. Check on nugget value ..." << std::endl;
-    //     if(fitvario_on_model.at(min_index_model).vario.nugget > 0.05 * fitvario_on_model.at(min_index_model).vario.sill)
-    //     {
-    //         std::cout << "WARNING: Nugget is major than 5% of total sill" << std::endl;
-
-    //         int min_index_model_tmp;
-    //         double min_mse_model_tmp = DBL_MAX;
-    //         for(size_t i=0; i< fitvario_on_model.size(); i++)
-    //         {
-    //             if((fitvario_on_model.at(i).mse < min_mse_model_tmp) && (i != min_index_model))
-    //             {
-    //                 min_mse_model_tmp = fitvario_on_model.at(i).mse;
-    //                 min_index_model_tmp = i;
-    //             }
-    //         }
-    //         min_index_model = min_index_model_tmp;
-    //         min_mse_model = min_mse_model_tmp;
-    //     }
-    // }
-
     fitvario.range = fitvario_on_model.at(min_index_model).vario.range;
     fitvario.nugget = fitvario_on_model.at(min_index_model).vario.nugget;
     fitvario.sill = fitvario_on_model.at(min_index_model).vario.sill;
@@ -327,7 +313,7 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
         // Inizializzazione di out a 1 (asintoto variogramma: max valore)
         vector<double> out (ev.gamma.size(), 1);
 
-        double mse = 0.0;
+        ///double mse = 0.0;
 
         //ciclo sui range
         for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -335,22 +321,30 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-            double last_mse_j = mse;
-            mse = 0.0;
+            ///double last_mse_j = mse;
+            double mse = 0.0;
             int count = 0;
-
             int countGT1 = 0;
 
             for(unsigned int i=0; i<out.size(); i++)
             {
-                if(ev.gamma.at(i)<=1 && countGT1<3)
+                if(ev.gamma.at(i)<=1) // && countGT1<3)
                 {
-                    count++;
-                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                    if (ev.h.at(i) > 0)
+                    {
+                        count++;
+                        mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                    }
                 }
                 else
                     countGT1++;
             }
+
+            // FIX 1: normalizzo l'MSE per il numero di punti usati
+            if (count > 0)
+                mse /= count;
+            else
+                continue; // nessun punto valido, salto questo range
 
             //mse = mse;
 
@@ -360,8 +354,8 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
                 best_r = r;
                 convert_to_str(best_type, model_type);
             }
-            else
-                mse = last_mse_j;
+            // else
+            //     mse = last_mse_j;
         }
 
         // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -385,19 +379,6 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
             min_index = i;
         }
     }
-
-//    fitvario_on_model.push_back(fitvario_on_nug.at(min_index));
-
-//    int min_index_model;
-//    double min_mse_model = DBL_MAX;
-//    for(size_t i=0; i< fitvario_on_model.size(); i++)
-//    {
-//        if(fitvario_on_model.at(i).mse < min_mse_model)
-//        {
-//            min_mse_model = fitvario_on_model.at(i).mse;
-//            min_index_model = i;
-//        }
-//    }
 
     fitvario = fitvario_on_nug.at(min_index).vario;
 
@@ -446,7 +427,7 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
         // Inizializzazione di out a 1 (asintoto variogramma: max valore)
         vector<double> out (ev.gamma.size(), 1);
 
-        double mse = 0.0;
+        //double mse = 0.0;
 
         //ciclo sui range
         for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -454,18 +435,20 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_types.at(m));
 
-            double last_mse_j = mse;
-            mse = 0.0;
+            //double last_mse_j = mse;
+            double mse = 0.0;
             int count = 0;
-
             int countGT1 = 0;
 
             for(unsigned int i=0; i<out.size(); i++)
             {
-                if(ev.gamma.at(i)<=1 && countGT1<3)
+                if(ev.gamma.at(i)<=1) // && countGT1<3)
                 {
-                    count++;
-                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                    if (ev.h.at(i) > 0)
+                    {
+                        count++;
+                        mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                    }
                 }
                 else
                     countGT1++;
@@ -473,14 +456,20 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
 
             //mse = mse;
 
+            // FIX 1: normalizzo l'MSE per il numero di punti usati
+            if (count > 0)
+                mse /= count;
+            else
+                continue; // nessun punto valido, salto questo range
+
             if(mse < best_mse_range)
             {
                 best_mse_range = mse;
                 best_r = r;
                 convert_to_str(best_type, model_types.at(m));
             }
-            else
-                mse = last_mse_j;
+            // else
+            //     mse = last_mse_j;
         }
 
         // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -496,14 +485,7 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
 
     int min_index_model;
     double min_mse_model = DBL_MAX;
-    // for(size_t i=0; i< fitvario_on_model.size(); i++)
-    // {
-    //     if(fitvario_on_model.at(i).mse < min_mse_model)
-    //     {
-    //         min_mse_model = fitvario_on_model.at(i).mse;
-    //         min_index_model = i;
-    //     }
-    // }
+
 
     for(size_t i=0; i< fitvario_on_model.size(); i++)
     {
@@ -570,7 +552,7 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, va
     // Inizializzazione di out a 1 (asintoto variogramma: max valore)
     vector<double> out (ev.gamma.size(), 1);
 
-    double mse = 0.0;
+    //double mse = 0.0;
 
     //ciclo sui range
     for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -578,24 +560,32 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, va
         for(size_t i=0; i<ev.h.size(); i++)
             out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-        double last_mse_j = mse;
-        mse = 0;
+        //double last_mse_j = mse;
+        double mse = 0.0;
         int count = 0;
-
         int countGT1 = 0;
 
         for(unsigned int i=0; i<out.size(); i++)
         {
-            if(ev.gamma.at(i)<=1 && countGT1<3)
+            if(ev.gamma.at(i)<=1) // && countGT1<3)
             {
-                count++;
-                mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                if (ev.h.at(i) > 0)
+                {
+                    count++;
+                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                }
             }
             else
                 countGT1++;
         }
 
-        mse = mse;
+        // FIX 1: normalizzo l'MSE per il numero di punti usati
+        if (count > 0)
+            mse /= count;
+        else
+            continue; // nessun punto valido, salto questo range
+
+        //mse = mse;
 
         if(mse < best_mse_range)
         {
@@ -603,8 +593,8 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, va
             best_r = r;
             convert_to_str(best_type, model_type);
         }
-        else
-            mse = last_mse_j;
+        // else
+        //     mse = last_mse_j;
     }
 
     // Soluzione per un valore di nugget
@@ -665,7 +655,7 @@ MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_pr
         // Inizializzazione di out a 1 (asintoto variogramma: max valore)
         vector<double> out (ev.gamma.size(), 1);
 
-        double mse = 0.0;
+        ///double mse = 0.0;
 
         //ciclo sui range
         for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -673,22 +663,32 @@ MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_pr
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-            double last_mse_j = mse;
-            mse = 0;
+            ///double last_mse_j = mse;
+            double mse = 0.0;
+            ///mse = 0;
             int count = 0;
-
             int countGT1 = 0;
 
             for(unsigned int i=0; i<out.size(); i++)
             {
-                if(ev.gamma.at(i)<=1 && countGT1<3)
+                // FIX 3: se gamma > 1 lo salto sempre, senza il limite arbitrario di 3
+                if(ev.gamma.at(i)<=1 ) //&& countGT1<3)
                 {
-                    count++;
-                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                    if (ev.h.at(i) > 0)
+                    {
+                        count++;
+                        mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                    }
                 }
                 else
                     countGT1++;
             }
+
+            // FIX 1: normalizzo l'MSE per il numero di punti usati
+            if (count > 0)
+                mse /= count;
+            else
+                continue; // nessun punto valido, salto questo range
 
             //mse = mse;
 
@@ -698,8 +698,8 @@ MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_pr
                 best_r = r;
                 convert_to_str(best_type, model_type);
             }
-            else
-                mse = last_mse_j;
+            // else
+            //     mse = last_mse_j;
         }
 
         // Soluzione per un valore di nugget
@@ -768,7 +768,7 @@ MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &ran
     // Inizializzazione di out a 1 (asintoto variogramma: max valore)
     vector<double> out (ev.gamma.size(), 1);
 
-    double mse = 0.0;
+    //double mse = 0.0;
 
     //ciclo sui range
     for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -776,22 +776,31 @@ MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &ran
         for(size_t i=0; i<ev.h.size(); i++)
             out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-        double last_mse_j = mse;
-        mse = 0;
+        //double last_mse_j = mse;
+        double mse = 0.0;
         int count = 0;
 
         int countGT1 = 0;
 
         for(unsigned int i=0; i<out.size(); i++)
         {
-            if(ev.gamma.at(i)<=1 && countGT1<3)
+            if(ev.gamma.at(i)<=1 ) // && countGT1<3)
             {
-                count++;
-                mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                if (ev.h.at(i) > 0)
+                {
+                    count++;
+                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                }
             }
             else
                 countGT1++;
         }
+
+        // FIX 1: normalizzo l'MSE per il numero di punti usati
+        if (count > 0)
+            mse /= count;
+        else
+            continue; // nessun punto valido, salto questo range
 
         //mse = mse;
 
@@ -801,8 +810,8 @@ MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &ran
             best_r = r;
             convert_to_str(best_type, model_type);
         }
-        else
-            mse = last_mse_j;
+        // else
+        //     mse = last_mse_j;
     }
 
     // Soluzione per un valore di nugget
@@ -811,26 +820,6 @@ MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &ran
     fitvario.vario.range = best_r;
     fitvario.vario.nugget = c0;
     fitvario.mse = best_mse_range;
-
-//    fitvario_on_nug.push_back(fitvario_on_range);
-
-
-//    int min_index;
-//    double min_mse = DBL_MAX;
-//    for(size_t i=0; i< fitvario_on_nug.size(); i++)
-//    {
-//        if(fitvario_on_nug.at(i).mse < min_mse)
-//        {
-//            min_mse = fitvario_on_nug.at(i).mse;
-//            min_index = i;
-//        }
-//    }
-
-//    fitvario.vario.range = fitvario_on_nug.at(min_index).vario.range;
-//    fitvario.vario.nugget = fitvario_on_nug.at(min_index).vario.nugget;
-//    fitvario.vario.sill = fitvario_on_nug.at(min_index).vario.sill;
-//    fitvario.vario.type = fitvario_on_nug.at(min_index).vario.type;
-//    fitvario.mse = fitvario_on_nug.at(min_index).mse;
 
     if(is_print == true)
     {
@@ -1006,12 +995,14 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const do
 
     // Media del nugget per il modello ad errore minimo (min_index)
     double avg_nugget = 0.0;
+    double sum_weights = 0.0;
     for(size_t i=0; i<dir_vario.at(min_index).size(); i++)
     {
-        std::cout << "### Nugget: " << dir_vario.at(min_index).at(i).vario.nugget << "; assigned weight: " << weigth.at(i) << std::endl;
+        std::cout << "### DIR: " << i << "; nugget: " << dir_vario.at(min_index).at(i).vario.nugget << "; assigned weight: " << weigth.at(i) << std::endl;
         avg_nugget += dir_vario.at(min_index).at(i).vario.nugget * weigth.at(i);
+        sum_weights += weigth.at(i);
     }
-    avg_nugget = avg_nugget/(180/degree_step);
+    avg_nugget = avg_nugget/sum_weights; //(180/degree_step);
 
     //MEDIA PESATA SUL NUGGET IN BASE AGLI ZERI!!
 
@@ -1036,14 +1027,18 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const do
             }
             min_index = min_index_tmp;
             min_mse = min_mse_tmp;
+
+            //ricalcolo
+            sum_weights = 0.0;
+            avg_nugget = 0.0;
+            for(size_t i=0; i<dir_vario.at(min_index).size(); i++)
+            {
+                std::cout << "### (UPDATE) Nugget: " << dir_vario.at(min_index).at(i).vario.nugget << "; assigned weight: " << weigth.at(i) << std::endl;
+                avg_nugget += dir_vario.at(min_index).at(i).vario.nugget * weigth.at(i);
+                sum_weights += weigth.at(i);
+            }
+            avg_nugget = avg_nugget/sum_weights; //(180/degree_step);
         }
-        avg_nugget = 0.0;
-        for(size_t i=0; i<dir_vario.at(min_index).size(); i++)
-        {
-            std::cout << "### Nugget: " << dir_vario.at(min_index).at(i).vario.nugget << "; assigned weight: " << weigth.at(i) << std::endl;
-            avg_nugget += dir_vario.at(min_index).at(i).vario.nugget * weigth.at(i);
-        }
-        avg_nugget = avg_nugget/(180/degree_step);
     }
 
 
@@ -1134,18 +1129,20 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
 
     // Media del nugget per il modello ad errore minimo (min_index)
     double avg_nugget = 0.0;
+    double sum_weights = 0.0;
     for(size_t i=0; i<dir_vario.at(min_index).size(); i++)
     {
-        std::cout << FMAG("### Nugget: ") << dir_vario.at(min_index).at(i).vario.nugget << FMAG("; assigned weight: ") << weigth.at(i) << std::endl;
+        std::cout << FMAG("### DIR: ") << i << FMAG("; nugget: ") << dir_vario.at(min_index).at(i).vario.nugget << FMAG("; assigned weight: ") << weigth.at(i) << std::endl;
         avg_nugget += dir_vario.at(min_index).at(i).vario.nugget * weigth.at(i);
-
+        sum_weights += weigth.at(i);
     }
-    avg_nugget = avg_nugget/(directions.size());
+    avg_nugget = avg_nugget/sum_weights; //(directions.size());
+    std::cout << std::endl;
 
 
     if(types.at(min_index) == variogram_type::GAUSSIAN)
     {
-        std::cout << "### Variogram model is Gaussian. Check on nugget value ..." << std::endl;
+        std::cout << "### Variogram model is Gaussian! Check on nugget value ..." << std::endl;
         if(avg_nugget > 0.05 * 1.0) //sill=1.0
         {
             std::cout << "WARNING: Nugget is major than 5% of total sill" << std::endl;
@@ -1163,15 +1160,18 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
             }
             min_index = min_index_tmp;
             min_mse = min_mse_tmp;
-        }
-        avg_nugget = 0.0;
-        for(size_t i=0; i<dir_vario.at(min_index).size(); i++)
-        {
-            std::cout << FMAG("### Nugget: ") << dir_vario.at(min_index).at(i).vario.nugget << FMAG("; assigned weight: ") << weigth.at(i) << std::endl;
-            avg_nugget += dir_vario.at(min_index).at(i).vario.nugget * weigth.at(i);
 
+            //ricalcolo avg_nugget per il nuovo modello successivo al gaussian
+            sum_weights = 0.0;
+            avg_nugget = 0.0;
+            for(size_t i=0; i<dir_vario.at(min_index).size(); i++)
+            {
+                std::cout << FMAG("### (UPDATE) Nugget: ") << dir_vario.at(min_index).at(i).vario.nugget << FMAG("; assigned weight: ") << weigth.at(i) << std::endl;
+                avg_nugget += dir_vario.at(min_index).at(i).vario.nugget * weigth.at(i);
+                sum_weights += weigth.at(i);
+            }
+            avg_nugget = avg_nugget/sum_weights; //(directions.size());
         }
-        avg_nugget = avg_nugget/(directions.size());
     }
 
 
