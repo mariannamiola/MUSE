@@ -1,0 +1,53 @@
+{
+  "work_folder": "MUSE_test",
+  "project_name": "14_sec_2D_4000_tri_ind",
+
+  "samples": "samples.csv",
+  "varname": "phi",
+  "units": "-",
+
+  "geometry": {
+    "name": "sec_rot",
+    "sub": "sec",
+    "ext": "obj"
+  },
+
+  "vario": {
+    "dir": "DIR",
+    "dim": "2D"
+  },
+
+  "compute": {
+    "space": "",
+    "where": "",
+    "var": "5_pdf",
+    "units": "-",
+    "geom": "sec"
+  },
+
+  "columns": {
+    "samples": {
+      "x": "X",
+      "y": "Y",
+      "z": "Z",
+      "value": "phi",
+      "cat": true,
+      "n_cat": 8
+    },
+
+    "scalarfield": {
+      "x": "Field 0",
+      "y": "Field 0",
+      "z": "Field 0",
+      "value": "Field 0",
+      "cat": false,
+      "n_cat": 8
+    }
+  },
+
+  "output": {
+    "save": true,
+    "dir": "_fig",
+    "format": "png"
+  }
+}
