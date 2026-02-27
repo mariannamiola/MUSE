@@ -223,7 +223,7 @@ export PDF_NAME=pdf_cat_
 export NCAT=8
 for ((i=1; i<=${NCAT}; i++))
 do
-    cp ${SCRIPT_DIR}/${PDF_NAME}${i}.txt ${OUTCOMP}/${PDF_NAME}${i}.csv
+    cp ${SCRIPT_DIR}/${PDF_NAME}${i}.txt ${OUTCOMP}/${VAR0}_${i}_pdf.csv
     rm ${SCRIPT_DIR}/${PDF_NAME}${i}.txt
 done 
 
