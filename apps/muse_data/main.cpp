@@ -63,26 +63,29 @@ int main(int argc, char** argv)
 
     // Option 0. New project creation
     /**
-     * @brief Create a new project
-     * @param new_project Flag to create a new project
+     * @brief Initialize a new project directory structure for storing (source point) data
+     * @param new_project If set, creates `in/data` and `out/data` subdirectories under the path specified by `-pdir`
+     * @note Boolean flag, default: false. Requires `--pdir` to be set and `--input` to optionally copy data file(s)
+     * @example muse_data -N -p /path/to/project/dir --input user/path/filename.csv
      */
-    SwitchArg projectCreation           ("N", "new_project", "Creation new project", cmd, false); //booleano
+    SwitchArg projectCreation           ("N", "new_project", "Initialize a new project directory structure for storing (source point) data", cmd, false); //booleano
     
     /**
      * @brief Specify the directory path where the project is created
-     * @param pdir Path where the project is created (mandatory)
+     * @param pdir Absolute path to the project root directory (mandatory)
      * @note Required when using --new_project flag
      * @example -p /path/to/project/dir
      */
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "/path/to/project/dir", "string", cmd);
 
     /**
-     * @brief Copy input file(s) in the data project directory (path/project/in/data) to replace manual data copy
-     * @param input File path of the input(s) to copy in the data folder project
-     * @note To be used with -N swith flag, when create a new data environment in the project
-     * @example --input user/path1/filename.csv
+     * @brief Copy input file(s) in the input data project directory (path/project/in/data) to replace manual data copy
+     * @param input One or more file paths to copy into `data/in/` of the project root.
+     * Multiple files can be specified by repeating the flag.
+     * @note Optional. Recommended with `-N` to populate the input directory without manual file copying.
+     * @example --input user/path1/file1.csv --input user/path2/file2.csv
      */
-    MultiArg<std::string> setInput ("i", "input", "Copy input files in the project directory (in/data/)", false, "string", cmd );
+    MultiArg<std::string> setInput ("i", "input", "Copy input file(s) in the project directory (in/data/)", false, "string", cmd );
 
 
     // Option 0a. Project creation - optional: setting project EPSG
