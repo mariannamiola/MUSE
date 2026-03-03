@@ -129,11 +129,15 @@ double get_gamma (const double &h, const double &a, const double &c0, const doub
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
-
 //FITTING - OMNIDIRECTIONAL
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-variogram fit_variogram (const exp_variog &ev, const double &range_precision, const double &nugget_precision)
+/// @brief fitting experimental variogram: solution with minimum error varying on range, nugget and model type
+/// @param ev experimental variogram
+/// @param range_precision range precision (number of range values to test between min and max range)
+/// @param nugget_precision nugget precision (number of nugget values to test between min and max nugget)
+/// @param w_type weights type to use for fitting (Cressie, Cressie weighted, Cressie weighted modified)
+/// @return 
+variogram fit_variogram (const exp_variog &ev, const double &range_precision, const double &nugget_precision, weightsType w_type)
 {
     variogram fitvario; //risultato finale
 
@@ -155,19 +159,17 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
             MUSE::VarioError fitvario_on_range; //fit vario on range -> variogramma modello al variare dei range
 
             double c0 = nugget;
-            double c = 1-c0;
+            double c = 1.0 - c0;
 
             double max_range = ev.h.at(ev.h.size()-1);
             double min_range = ev.h.at(0);
 
             double best_mse_range = DBL_MAX;
-            double best_r = 0;
+            double best_r = 0.0;
             std::string best_type;
 
             // Inizializzazione di out a 1 (asintoto variogramma: max valore)
-            vector<double> out (ev.gamma.size(), 1);
-
-            ///double mse = 0.0;
+            vector<double> out (ev.gamma.size(), 1.0);
 
             //ciclo sui range
             for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -175,32 +177,30 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
                 for(size_t i=0; i<ev.h.size(); i++)
                     out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_types.at(m));
 
-                ///double last_mse_j = mse;
                 double mse = 0.0;
-                int count = 0;
-                int countGT1 = 0;
-
                 for(unsigned int i=0; i<out.size(); i++)
                 {
-                    if(ev.gamma.at(i)<=1) // && countGT1<3)
+                    if (ev.h.at(i) > 0)
                     {
-                        if (ev.h.at(i) > 0)
+                        double weight_coefficient = 0.0;
+                        switch (w_type)
                         {
-                            count++;
-                            mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                        case weightsType::CRESSIE:
+                            weight_coefficient = ev.N.at(i);
+                            break;
+                        case weightsType::CRESSIE_WEIGHTED:
+                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
+                            break;
+                        case weightsType::CRESSIE_WEIGHTED_MODIFIED:
+                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
+                            break;
+                        default:
+                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
+                            break;
                         }
+                        mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                     }
-                    else
-                        countGT1++;
                 }
-
-                //mse = mse;
-
-                // FIX 1: normalizzo l'MSE per il numero di punti usati
-                if (count > 0)
-                    mse /= count;
-                else
-                    continue; // nessun punto valido, salto questo range
 
                 if(mse < best_mse_range)
                 {
@@ -208,8 +208,6 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
                     best_r = r;
                     convert_to_str(best_type, model_types.at(m));
                 }
-                // else
-                //     mse = last_mse_j;
             }
 
             // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -258,8 +256,6 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
                 min_mse_model = fitvario_on_model.at(i).mse;
                 min_index_model = i;
             }
-            // min_mse_model = fitvario_on_model.at(i).mse;
-            // min_index_model = i;
         }
     }
 
@@ -285,7 +281,14 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
 }
 
 
-variogram fit_variogram (const exp_variog &ev, const double &range_precision, const double &nugget_precision, variogram_type model_type)
+/// @brief fitting experimental variogram: solution with minimum error varying on range and nugget - model type fixed
+/// @param ev experimental variogram
+/// @param range_precision range precision (number of range values to test between min and max range)
+/// @param nugget_precision nugget precision (number of nugget values to test between min and max nugget)
+/// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
+/// @param w_type weights type to use for fitting (Cressie, Cressie weighted, Cressie weighted modified)
+/// @return 
+variogram fit_variogram (const exp_variog &ev, const double &range_precision, const double &nugget_precision, variogram_type model_type, weightsType w_type)
 {
     variogram fitvario; //risultato finale
 
@@ -301,19 +304,17 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
         MUSE::VarioError fitvario_on_range; //fit vario on range -> variogramma modello al variare dei range
 
         double c0 = nugget;
-        double c = 1-c0;
+        double c = 1.0 - c0;
 
         double max_range = ev.h.at(ev.h.size()-1);
         double min_range = ev.h.at(0);
 
         double best_mse_range = DBL_MAX;
-        double best_r = 0;
-        std::string best_type;
+        double best_r = 0.0;
+        std::string best_type ="";
 
         // Inizializzazione di out a 1 (asintoto variogramma: max valore)
-        vector<double> out (ev.gamma.size(), 1);
-
-        ///double mse = 0.0;
+        vector<double> out (ev.gamma.size(), 1.0);
 
         //ciclo sui range
         for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -321,32 +322,30 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-            ///double last_mse_j = mse;
             double mse = 0.0;
-            int count = 0;
-            int countGT1 = 0;
-
             for(unsigned int i=0; i<out.size(); i++)
             {
-                if(ev.gamma.at(i)<=1) // && countGT1<3)
+                if (ev.h.at(i) > 0)
                 {
-                    if (ev.h.at(i) > 0)
-                    {
-                        count++;
-                        mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
-                    }
+                    double weight_coefficient = 0.0;
+                        switch (w_type)
+                        {
+                        case weightsType::CRESSIE:
+                            weight_coefficient = ev.N.at(i);
+                            break;
+                        case weightsType::CRESSIE_WEIGHTED:
+                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
+                            break;
+                        case weightsType::CRESSIE_WEIGHTED_MODIFIED:
+                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
+                            break;
+                        default:
+                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
+                            break;
+                        }
+                        mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                 }
-                else
-                    countGT1++;
             }
-
-            // FIX 1: normalizzo l'MSE per il numero di punti usati
-            if (count > 0)
-                mse /= count;
-            else
-                continue; // nessun punto valido, salto questo range
-
-            //mse = mse;
 
             if(mse < best_mse_range)
             {
@@ -354,8 +353,6 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
                 best_r = r;
                 convert_to_str(best_type, model_type);
             }
-            // else
-            //     mse = last_mse_j;
         }
 
         // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -398,11 +395,14 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
 }
 
 
-// //////////////////////////////////////////
-// //////////////////////////////////////////
-// fit variogram: soluzione a scarto minimo tenendo conto di variabilità su range/modello - nugget fissato
-// //////////////////////////////////////////
-variogram fit_variogram_1par (const exp_variog &ev, const double &range_precision, const double &nugget)
+
+/// @brief fitting experimental variogram: solution with minimum error varying on range and model type - nugget fixed
+/// @param ev experimental variogram
+/// @param range_precision range precision (number of range values to test between min and max range)
+/// @param nugget nugget value to fix for fitting
+/// @param w_type weights type to use for fitting (Cressie, Cressie weighted, Cressie weighted modified)
+/// @return 
+variogram fit_variogram_1par (const exp_variog &ev, const double &range_precision, const double &nugget, weightsType w_type)
 {
     variogram fitvario; //risultato finale
 
@@ -415,19 +415,17 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
         MUSE::VarioError fitvario_on_range; //fit vario on range -> variogramma modello al variare dei range
 
         double c0 = nugget;
-        double c = 1-c0;
+        double c = 1.0 - c0;
 
         double max_range = ev.h.at(ev.h.size()-1);
         double min_range = ev.h.at(0);
 
         double best_mse_range = DBL_MAX;
-        double best_r = 0;
-        std::string best_type;
+        double best_r = 0.0;
+        std::string best_type = "";
 
         // Inizializzazione di out a 1 (asintoto variogramma: max valore)
-        vector<double> out (ev.gamma.size(), 1);
-
-        //double mse = 0.0;
+        vector<double> out (ev.gamma.size(), 1.0);
 
         //ciclo sui range
         for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -435,32 +433,30 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_types.at(m));
 
-            //double last_mse_j = mse;
             double mse = 0.0;
-            int count = 0;
-            int countGT1 = 0;
-
             for(unsigned int i=0; i<out.size(); i++)
             {
-                if(ev.gamma.at(i)<=1) // && countGT1<3)
+                if (ev.h.at(i) > 0)
                 {
-                    if (ev.h.at(i) > 0)
+                    double weight_coefficient = 0.0;
+                    switch (w_type)
                     {
-                        count++;
-                        mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                    case weightsType::CRESSIE:
+                        weight_coefficient = ev.N.at(i);
+                        break;
+                    case weightsType::CRESSIE_WEIGHTED:
+                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
+                        break;
+                    case weightsType::CRESSIE_WEIGHTED_MODIFIED:
+                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
+                        break;
+                    default:
+                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
+                        break;
                     }
+                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                 }
-                else
-                    countGT1++;
             }
-
-            //mse = mse;
-
-            // FIX 1: normalizzo l'MSE per il numero di punti usati
-            if (count > 0)
-                mse /= count;
-            else
-                continue; // nessun punto valido, salto questo range
 
             if(mse < best_mse_range)
             {
@@ -468,8 +464,6 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
                 best_r = r;
                 convert_to_str(best_type, model_types.at(m));
             }
-            // else
-            //     mse = last_mse_j;
         }
 
         // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -485,8 +479,6 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
 
     int min_index_model;
     double min_mse_model = DBL_MAX;
-
-
     for(size_t i=0; i< fitvario_on_model.size(); i++)
     {
         if(fitvario_on_model.at(i).mse < min_mse_model)
@@ -531,28 +523,30 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
 }
 
 
-// //////////////////////////////////////////
-// //////////////////////////////////////////
-// fit variogram: soluzione a scarto minimo dato modello e nugget
-// //////////////////////////////////////////
-variogram fit_variogram (const exp_variog &ev, const double &range_precision, variogram_type model_type, const double &nugget, bool is_print)
+/// @brief fitting experimental variogram: solution with minimum error varying on range - nugget and model type fixed
+/// @param ev experimental variogram
+/// @param range_precision range precision (number of range values to test between min and max range)
+/// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
+/// @param nugget nugget value to fix for fitting
+/// @param is_print boolean to print or not the fitted variogram parameters
+/// @param w_type weights type to use for fitting (Cressie, Cressie weighted, Cressie weighted modified)
+/// @return 
+variogram fit_variogram (const exp_variog &ev, const double &range_precision, variogram_type model_type, const double &nugget, bool is_print, weightsType w_type)
 {
     variogram fitvario; //risultato finale
 
     double c0 = nugget;
-    double c = 1-c0;
+    double c = 1.0 - c0;
 
     double max_range = ev.h.at(ev.h.size()-1);
     double min_range = ev.h.at(0);
 
     double best_mse_range = DBL_MAX;
-    double best_r = 0;
-    std::string best_type;
+    double best_r = 0.0;
+    std::string best_type = "";
 
     // Inizializzazione di out a 1 (asintoto variogramma: max valore)
-    vector<double> out (ev.gamma.size(), 1);
-
-    //double mse = 0.0;
+    vector<double> out (ev.gamma.size(), 1.0);
 
     //ciclo sui range
     for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -560,32 +554,30 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, va
         for(size_t i=0; i<ev.h.size(); i++)
             out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-        //double last_mse_j = mse;
         double mse = 0.0;
-        int count = 0;
-        int countGT1 = 0;
-
         for(unsigned int i=0; i<out.size(); i++)
         {
-            if(ev.gamma.at(i)<=1) // && countGT1<3)
+            if (ev.h.at(i) > 0)
             {
-                if (ev.h.at(i) > 0)
+                double weight_coefficient = 0.0;
+                switch (w_type)
                 {
-                    count++;
-                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                case weightsType::CRESSIE:
+                    weight_coefficient = ev.N.at(i);
+                    break;
+                case weightsType::CRESSIE_WEIGHTED:
+                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
+                    break;
+                case weightsType::CRESSIE_WEIGHTED_MODIFIED:
+                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
+                    break;
+                default:
+                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
+                    break;
                 }
+                mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
-            else
-                countGT1++;
         }
-
-        // FIX 1: normalizzo l'MSE per il numero di punti usati
-        if (count > 0)
-            mse /= count;
-        else
-            continue; // nessun punto valido, salto questo range
-
-        //mse = mse;
 
         if(mse < best_mse_range)
         {
@@ -593,8 +585,6 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, va
             best_r = r;
             convert_to_str(best_type, model_type);
         }
-        // else
-        //     mse = last_mse_j;
     }
 
     // Soluzione per un valore di nugget
@@ -623,16 +613,20 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, va
 }
 
 
-// //////////////////////////////////////////
-// //////////////////////////////////////////
-// fit variogram: soluzione a scarto minimo dato modello - mse in output
-// //////////////////////////////////////////
-MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_precision, const double &nugget_precision, variogram_type model_type, bool is_print)
+/// @brief fitting experimental variogram: solution with minimum error varying on range and nugget - model type fixed - output with error (mse)
+/// @param ev experimental variogram
+/// @param range_precision range precision (number of range values to test between min and max range)
+/// @param nugget_precision nugget precision (number of nugget values to test between min and max nugget)
+/// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
+/// @param is_print boolean to print or not the fitted variogram parameters
+/// @param w_type weights type to use for fitting (Cressie, Cressie weighted, Cressie weighted modified)
+/// @return 
+MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_precision, const double &nugget_precision, variogram_type model_type, bool is_print, weightsType w_type)
 {
     MUSE::VarioError fitvario; //risultato finale
 
-    double min_nugget = 0;
-    double max_nugget = 1;
+    double min_nugget = 0.0;
+    double max_nugget = 1.0;
 
     std::vector<MUSE::VarioError> fitvario_on_nug; //fit vario on nugget -> variogramma modello al variare del nugget
     fitvario_on_nug.clear();
@@ -643,19 +637,17 @@ MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_pr
         MUSE::VarioError fitvario_on_range; //fit vario: f(r, fixed nugget)
 
         double c0 = nugget;
-        double c = 1-c0;
+        double c = 1.0-c0;
 
         double max_range = ev.h.at(ev.h.size()-1);
         double min_range = ev.h.at(0);
 
         double best_mse_range = DBL_MAX;
-        double best_r = 0;
-        std::string best_type;
+        double best_r = 0.0;
+        std::string best_type ="";
 
         // Inizializzazione di out a 1 (asintoto variogramma: max valore)
-        vector<double> out (ev.gamma.size(), 1);
-
-        ///double mse = 0.0;
+        vector<double> out (ev.gamma.size(), 1.0);
 
         //ciclo sui range
         for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -663,34 +655,31 @@ MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_pr
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-            ///double last_mse_j = mse;
             double mse = 0.0;
-            ///mse = 0;
-            int count = 0;
-            int countGT1 = 0;
 
             for(unsigned int i=0; i<out.size(); i++)
             {
-                // FIX 3: se gamma > 1 lo salto sempre, senza il limite arbitrario di 3
-                if(ev.gamma.at(i)<=1 ) //&& countGT1<3)
+                if (ev.h.at(i) > 0)
                 {
-                    if (ev.h.at(i) > 0)
+                    double weight_coefficient = 0.0;
+                    switch (w_type)
                     {
-                        count++;
-                        mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                    case weightsType::CRESSIE:
+                        weight_coefficient = ev.N.at(i);
+                        break;
+                    case weightsType::CRESSIE_WEIGHTED:
+                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
+                        break;
+                    case weightsType::CRESSIE_WEIGHTED_MODIFIED:
+                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
+                        break;
+                    default:
+                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
+                        break;
                     }
+                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                 }
-                else
-                    countGT1++;
             }
-
-            // FIX 1: normalizzo l'MSE per il numero di punti usati
-            if (count > 0)
-                mse /= count;
-            else
-                continue; // nessun punto valido, salto questo range
-
-            //mse = mse;
 
             if(mse < best_mse_range)
             {
@@ -698,8 +687,6 @@ MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_pr
                 best_r = r;
                 convert_to_str(best_type, model_type);
             }
-            // else
-            //     mse = last_mse_j;
         }
 
         // Soluzione per un valore di nugget
@@ -748,7 +735,16 @@ MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_pr
     return fitvario;
 }
 
-MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &range_precision, const double &nugget, variogram_type model_type, bool is_print)
+
+/// @brief fitting experimental variogram: solution with minimum error varying on range - nugget and model type fixed - output with error (mse)
+/// @param ev experimental variogram
+/// @param range_precision range precision (number of range values to test between min and max range)
+/// @param nugget nugget value to fix for fitting
+/// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
+/// @param is_print boolean to print or not the fitted variogram parameters
+/// @param w_type weights type to use for fitting (Cressie, Cressie weighted, Cressie weighted modified)
+/// @return 
+MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &range_precision, const double &nugget, variogram_type model_type, bool is_print, weightsType w_type)
 {
     MUSE::VarioError fitvario; //risultato finale
 
@@ -756,19 +752,17 @@ MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &ran
     //MUSE::VarioError fitvario_on_range; //fit vario: f(r, fixed nugget)
 
     double c0 = nugget;
-    double c = 1-c0;
+    double c = 1.0 - c0;
 
     double max_range = ev.h.at(ev.h.size()-1);
     double min_range = ev.h.at(0);
 
     double best_mse_range = DBL_MAX;
-    double best_r = 0;
+    double best_r = 0.0;
     std::string best_type;
 
     // Inizializzazione di out a 1 (asintoto variogramma: max valore)
-    vector<double> out (ev.gamma.size(), 1);
-
-    //double mse = 0.0;
+    vector<double> out (ev.gamma.size(), 1.0);
 
     //ciclo sui range
     for(double r = min_range; r<max_range; r = r + max_range/range_precision)
@@ -776,33 +770,30 @@ MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &ran
         for(size_t i=0; i<ev.h.size(); i++)
             out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-        //double last_mse_j = mse;
         double mse = 0.0;
-        int count = 0;
-
-        int countGT1 = 0;
-
         for(unsigned int i=0; i<out.size(); i++)
         {
-            if(ev.gamma.at(i)<=1 ) // && countGT1<3)
+            if (ev.h.at(i) > 0)
             {
-                if (ev.h.at(i) > 0)
+                double weight_coefficient = 0.0;
+                switch (w_type)
                 {
-                    count++;
-                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
+                case weightsType::CRESSIE:
+                    weight_coefficient = ev.N.at(i);
+                    break;
+                case weightsType::CRESSIE_WEIGHTED:
+                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
+                    break;
+                case weightsType::CRESSIE_WEIGHTED_MODIFIED:
+                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
+                    break;
+                default:
+                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
+                    break;
                 }
+                mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
-            else
-                countGT1++;
         }
-
-        // FIX 1: normalizzo l'MSE per il numero di punti usati
-        if (count > 0)
-            mse /= count;
-        else
-            continue; // nessun punto valido, salto questo range
-
-        //mse = mse;
 
         if(mse < best_mse_range)
         {
@@ -810,8 +801,6 @@ MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &ran
             best_r = r;
             convert_to_str(best_type, model_type);
         }
-        // else
-        //     mse = last_mse_j;
     }
 
     // Soluzione per un valore di nugget
@@ -841,10 +830,14 @@ MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &ran
 }
 
 
-// //////////////////////////////////////////
-// //////////////////////////////////////////
-// fit_directional_variogram with fixed model - mse in output
-// //////////////////////////////////////////
+/// @brief loop on directions for fitting variograms with minimum error varying on range and nugget - model type fixed - output with error (mse) for each direction
+/// @param dev vector of experimental variogram for each direction
+/// @param degree_step step in degree to define the directions (e.g., 22.5° for 8 directions)
+/// @param degree_tolerance tolerance in degree to assign pairs to a direction (e.g., 22.5°/2 for 8 directions)
+/// @param range_precision range precision (number of range values to test between min and max range)
+/// @param nugget_precision nugget precision (number of nugget values to test between min and max nugget)
+/// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
+/// @return 
 vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, const double &degree_step, const double &degree_tolerance, const double &range_precision, const double &nugget_precision, variogram_type &model_type)
 {
     // Funzione che richiama il fit_variogram (a modello fissato) e cicla per ogni direzione: funzione di supporto sulle direzioni
@@ -869,7 +862,13 @@ vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, 
     return res_k;
 }
 
-//DIREZIONI
+/// @brief loop on directions for fitting variograms with minimum error varying on range and nugget - model type fixed - output with error (mse) for each direction
+/// @param dev vector of experimental variogram for each direction
+/// @param seq directions sequence (e.g., 0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5 for 8 directions)
+/// @param range_precision range precision (number of range values to test between min and max range)
+/// @param nugget_precision nugget precision (number of nugget values to test between min and max nugget)
+/// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
+/// @return 
 vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, const double &nugget_precision, variogram_type &model_type)
 {
     // Funzione che richiama il fit_variogram (a modello fissato) e cicla per ogni direzione: funzione di supporto sulle direzioni
@@ -888,7 +887,14 @@ vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, 
     return res_k;
 }
 
-
+/// @brief loop on directions for fitting variograms with minimum error varying on range - nugget and model type fixed - output with error (mse) for each direction
+/// @param dev vector of experimental variogram for each direction
+/// @param seq directions sequence (e.g., 0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5 for 8 directions)
+/// @param range_precision range precision (number of range values to test between min and max range)
+/// @param nugget nugget value to fix for fitting
+/// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
+/// @param is_print boolean to print or not the fitted variogram parameters for each direction
+/// @return 
 vector<MUSE::VarioError> fit_dir_variogram_1par (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, const double &nugget, variogram_type &model_type, bool is_print)
 {
     // Funzione che richiama il fit_variogram (a modello fissato) e cicla per ogni direzione: funzione di supporto sulle direzioni
@@ -908,10 +914,14 @@ vector<MUSE::VarioError> fit_dir_variogram_1par (const std::vector<exp_variog> &
 }
 
 
-// //////////////////////////////////////////
-// //////////////////////////////////////////
-// fit_directional_variogram with fixed model & nugget
-// //////////////////////////////////////////
+/// @brief loop on directions for fitting variograms with minimum error varying on range - nugget and model type fixed - with automatic selection of directions
+/// @param dev vector of experimental variogram for each direction
+/// @param degree_step step between directions (in degrees)
+/// @param degree_tolerance tolerance for direction matching (in degrees)
+/// @param range_precision range precision (number of range values to test between min and max range)
+/// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
+/// @param nugget nugget value to fix for fitting
+/// @return vector of fitted variograms for each direction
 vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const double & degree_step, const double & degree_tolerance, const double &range_precision, variogram_type &model_type, double &nugget)
 {
     vector<variogram> res_k (dev.size());
@@ -933,16 +943,15 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const d
     return res_k;
 }
 
-//DIRECTIONS
-///
-/// \brief fit_dir_variogram with fixed model and fixed nugget
-/// \param dev
-/// \param seq
-/// \param range_precision
-/// \param nugget_precision
-/// \param model_type
-/// \param nugget
-/// \return
+
+/// \brief loop on directions for fitting variograms with minimum error varying on range - nugget and model type fixed - with discrete directions
+/// \param dev vector of experimental variogram for each direction
+/// \param seq directions sequence (e.g., 0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5 for 8 directions)
+/// \param range_precision range precision (number of range values to test between min and max range)
+/// \param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
+/// \param nugget nugget value to fix for fitting
+/// \param is_print boolean to print or not the fitted variogram parameters for each direction
+/// \return vector of fitted variograms for each direction
 ///
 vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, variogram_type &model_type, const double &nugget, bool is_print)
 {
@@ -955,10 +964,15 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const s
 }
 
 
-// //////////////////////////////////////////
-// //////////////////////////////////////////
-// fit_directional_variogram with Model and Nugget Fixed
-// //////////////////////////////////////////
+/// @brief fitting variogram for each direction with minimum error varying on range, nugget and model type - with automatic selection of directions - with selection of best model based on MSE on all directions and weighted average of nugget values for best model
+/// @param dev directional experimental variogram (vector of experimental variogram for each direction)
+/// @param degree_step degree step to define the directions (e.g., 22.5° for 8 directions)
+/// @param degree_tolerance tolerance in degree to assign pairs to a direction (e.g., 22.5°/2 for 8 directions)
+/// @param range_precision range precision (number of range values to test between min and max range)
+/// @param nugget_precision nugget precision (number of nugget values to test between min and max nugget)
+/// @param weigth weights for each direction on nugget averaging
+/// @param is_print boolean to print or not the fitted variogram parameters for each direction
+/// @return vector of fitted variograms for each direction
 vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const double & degree_step, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::vector<double> &weigth, bool is_print)
 {
     // 0) Definisco il vettore dei modelli
@@ -1074,16 +1088,14 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const do
 
 
 
-//CON DIREZIONE FISSATA
-///
-/// \brief fit_dir_variogram AUTOMATIC FITTING
-/// \param dev
-/// \param directions
-/// \param degree_tolerance
-/// \param range_precision
-/// \param nugget_precision
-/// \param weigth
-/// \param is_print
+/// \brief fit_dir_variogram ranging on models and nugget - with directions and final average nugget
+/// \param dev vector of experimental variogram for each direction
+/// \param directions vector of directions (in degree) for each variogram in dev
+/// \param degree_tolerance tolerance for the direction (in degree)
+/// \param range_precision range precision for the fitting
+/// \param nugget_precision nugget precision for the fitting
+/// \param weigth weight assigned to each direction for the average nugget calculation
+/// \param is_print boolean to print or not the fitted variogram for each direction
 /// \return
 ///
 vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::vector<double> &weigth, bool is_print)
@@ -1093,13 +1105,9 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
     std::vector<std::vector<MUSE::VarioError>> dir_vario (types.size());
 
 
-
-
     // 1) Ciclo sui modelli e calcolo il fit (a modello fissato) dei variogrammi direzionali
     for(size_t i=0; i<types.size(); i++)
         dir_vario.at(i) = fit_dir_variogram (dev, directions, range_precision, nugget_precision, types.at(i));
-
-
 
 
     // 2) Inizializza l'errore somma per ogni modello
@@ -1174,10 +1182,6 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
         }
     }
 
-
-
-
-
     // 5) Ricalcolo il fitting a modello e nugget (medio sulle direzioni per il modello prescelto) fissato
     vector<variogram> vv = fit_dir_variogram (dev, directions, range_precision, types.at(min_index), avg_nugget);
 
@@ -1208,6 +1212,14 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
 }
 
 
+/// @brief Fit directional variogram with ranging on models and fixed nugget
+/// @param dev vector of directional experimental variograms
+/// @param directions vector of directions (in degree) for the directional variogram
+/// @param degree_tolerance degree tolerance for the directional variogram (e.g., +/- 22.5 for 8 directions)
+/// @param range_precision range precision for the variogram fitting (e.g., 100 for 100 steps between min and max range)
+/// @param nugget nugget value for the variogram fitting (e.g., 0.2)
+/// @param is_print boolean flag to print the fitted variogram parameters for each direction
+/// @return vector of fitted variogram models for each direction
 vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget, bool is_print)
 {
     // 0) Definisco il vettore dei modelli
@@ -1383,6 +1395,16 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
 }
 
 
+/// @brief fitting variogram for each direction with minimum error varying on range, nugget and model type - with selection of best model based on MSE on all directions and weighted average of nugget values for best model - with discrete directions
+/// @param dev 
+/// @param directions 
+/// @param degree_tolerance 
+/// @param range_precision 
+/// @param nugget_precision 
+/// @param type 
+/// @param weight 
+/// @param is_print 
+/// @return 
 vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::string &type, const std::vector<double> &weight, bool is_print)
 {
     if(type.compare("AUTO") != 0)
@@ -1400,6 +1422,13 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
     }
 }
 
+
+///
+/// \brief fit_anisotropy_ellipse fits the anisotropy ellipse parameters (center, angle, width, height) given the coordinates of the points on the ellipse
+/// \param x is the vector of x coordinates of the points on the ellipse
+/// \param y is the vector of y coordinates of the points on the ellipse
+/// \param ellipse_par is the structure that contains the parameters of the ellipse (center_x, center_y, phi_rad, max_dir, min_dir, max_semiaxis, min_semiaxis)
+///
 void fit_anisotropy_ellipse (const std::vector<double> &x, const std::vector<double> &y, MUSE::EllipseParameter &ellipse_par)
 {
     size_t n = x.size();
@@ -1441,305 +1470,6 @@ void fit_anisotropy_ellipse (const std::vector<double> &x, const std::vector<dou
 
 
 
-
-
-
-
-
-
-/*variogram fit_variogram3(const exp_variog &ev, const double &range_precision, const variogram_type &model_type, double &nugget) //OK
-{
-    variogram res;   // questa è la struttura che viene restituita da questa funzione
-                     // è composta da 3 double: sill,range,nugget
-                     //               1 string: modello
-
-    //double nugget = ev.gamma.at(0);
-    double sill = 1 - nugget;     //oppure c=1 e quindi sill=1-nugget (da rivedere)
-    double c=sill;
-    double c0=nugget;
-
-    double max_range=ev.h.at(ev.h.size()-1);
-    double min_range=ev.h.at(1);
-    double best_mse = DBL_MAX;
-    double best_r = 0;
-
-    vector<double> out(ev.gamma.size()-1);
-    for(unsigned int i=0; i<out.size(); i++)
-        out.at(i)=1;    // c corrisponde all'asintoto del variogramma, quindi inizializzo out con quello e poi eventualmente per i valori di h minori di range lo cambio
-
-    double mse = 0;
-
-    switch (model_type)
-    {
-    case variogram_type::SPHERIC:
-    {
-        for(double r = min_range; r<max_range; r = r + max_range/range_precision)
-        {
-           for(unsigned int i=1; i<ev.gamma.size(); i++)
-           {
-               if(ev.h.at(i)<=r && ev.h.at(i)>0)
-                   out.at(i-1) = c * ( (3 * ev.h.at(i)) / (2 * r) - 0.5 * pow(ev.h.at(i) / r , 3) ) + c0;     //out[h <= range] <- c * ((3 * h[h <= range]) / (2 * range) - 1 / 2 * (h[h <= range] / range)^3)
-               else
-                   out.at(i-1) =  c + c0;
-           }
-           double last_mse_j = mse;
-           mse = 0;
-           int count = 0;
-
-           int countGT1 = 0;
-
-           for(unsigned int i=0; i<out.size(); i++)
-           {
-               if(ev.gamma.at(i+1)<=1 && countGT1<3)
-               {
-                   count++;
-                   mse += pow((out.at(i) - ev.gamma.at(i+1)),2) * (ev.N.at(i+1) / pow((ev.h.at(i+1)),1));
-               }
-               else
-                   countGT1++;
-           }
-
-           mse = mse;
-
-           if(best_mse > mse)
-           {
-               best_mse=mse;
-               best_r = r;
-           }
-           else
-               mse = last_mse_j;
-        }
-        res.type = "Sph"; //model type
-
-        break;
-    }
-    case variogram_type::GAUSSIAN:
-    {
-        for(double r = min_range; r<max_range; r = r + max_range/range_precision)
-        {
-           for(unsigned int i=1; i<ev.gamma.size(); i++)
-           {
-               if(ev.h.at(i)<=r && ev.h.at(i)>0)
-                   out.at(i-1) = c * ( 1 - exp(-1*(pow(ev.h.at(i),2)/pow(r,2)))) + c0;
-               else
-                   out.at(i-1) =  c +c0 ;
-           }
-           double last_mse_j = mse;
-           mse = 0;
-           int count = 0;
-
-           int countGT1 = 0;
-
-           for(unsigned int i=0; i<out.size(); i++)
-           {
-               // PESIAMO rispetto alla distanza il mse in modo che sia più importante fittare meglio
-               // la funzione per coppie di punti più vicine rispetto a quelle più lontane
-               // inoltre il peso dipende anche dal numero di coppie di punti che hanno contribuito al calcolo di gamma
-
-               // https://stats.stackexchange.com/questions/99944/weights-in-the-fit-variogram-method-of-gstat
-               // dove PEBESMA dice:
-               // "The intuition behind it is that estimates with more point pairs (= more data) get more weight,
-               // and that estimates at smaller lags get more weight (focus on behavior near origin)."
-               // ed anche:
-               // "The default method uses weights Nh/h2 with Nh the number of point pairs and h the distance.
-               // This criterion is not supported by theory, but by practice. "
-
-               if(ev.gamma.at(i+1)<=1 && countGT1<3)
-               {
-                   count++;
-                   mse += pow((out.at(i) - ev.gamma.at(i+1)),2) * (ev.N.at(i+1) / pow((ev.h.at(i+1)),1));
-               }
-               else
-                   countGT1++;
-           }
-
-           mse=mse;
-
-           if(best_mse > mse)
-           {
-               best_mse=mse;
-               best_r = r;
-           }
-           else
-               mse = last_mse_j;
-        }
-        res.type = "Gau"; //model type
-
-        break;
-    }
-    case variogram_type::EXPONENTIAL:
-    {
-        for(double r = min_range; r<max_range; r = r + max_range/range_precision)
-        {
-            for(unsigned int i=1; i<ev.gamma.size(); i++)
-           {
-               if(ev.h.at(i)<=r && ev.h.at(i)>0)
-                   out.at(i-1) =  c * ( 1 - exp(-(ev.h.at(i)/r))) + c0;
-               else
-                   out.at(i-1) =  c+c0;
-           }
-           double last_mse_j = mse;
-           mse = 0;
-           int count = 0;
-
-           int countGT1 = 0;
-
-           for(unsigned int i=0; i<out.size(); i++)
-           {
-               // PESIAMO rispetto alla distanza il mse in modo che sia più importante fittare meglio
-               // la funzione per coppie di punti più vicine rispetto a quelle più lontane
-               // inoltre il peso dipende anche dal numero di coppie di punti che hanno contribuito al calcolo di gamma
-
-               // https://stats.stackexchange.com/questions/99944/weights-in-the-fit-variogram-method-of-gstat
-               // dove PEBESMA dice:
-               // "The intuition behind it is that estimates with more point pairs (= more data) get more weight,
-               // and that estimates at smaller lags get more weight (focus on behavior near origin)."
-               // ed anche:
-               // "The default method uses weights Nh/h2 with Nh the number of point pairs and h the distance.
-               // This criterion is not supported by theory, but by practice. "
-
-               if(ev.gamma.at(i+1)<=1 && countGT1<3)
-               {
-                   count++;
-                   mse += pow((out.at(i) - ev.gamma.at(i+1)),2) * (ev.N.at(i+1) / pow((ev.h.at(i+1)),1));
-                   //cout<<" j "<<j<< " mse: "<<mse[j]<<" out: "<<out[i]<<" gamma: "<<ev.gamma[i+1]<<" n: "<<ev.N[i+1]<<" h: "<<ev.h[i+1]<<endl;
-               }
-               else
-                   countGT1++;
-           }
-
-           //mse.at(j)=mse.at(j)/count;
-           //mse.at(j)=mse.at(j);
-
-           //cout<<"prima dell'if..."<<best_mse<<"..."<<mse.at(j)<<"..."<<count<<endl;
-           if(best_mse > mse)
-           {
-               best_mse=mse;
-               //cout<<"ESPONENZIALE...BEST MSE for "<<j<<"..."<<best_mse<<"... con range = "<<r<<endl;
-               best_r = r;
-           }
-           else
-               mse = last_mse_j;
-        }
-        res.type = "Exp"; //model type
-
-        break;
-    }
-    case variogram_type::LINEAR:
-    {
-        // modello lineare
-        break;
-    }
-    case variogram_type::DEFAULT:
-    {
-        // modello default
-        break;
-    }
-    }
-
-    res.sill = sill;
-    res.range = best_r;
-    res.nugget = nugget;
-
-    cout<<endl;
-    cout<<"####################################"<<endl;
-    cout<<"###### FITTED VARIOGRAM MODEL ######"<<endl;
-    cout<<"####################################"<<endl;
-    cout<<"Model Type: "<<res.type<<endl;
-    cout<<"Sill: "<<res.sill<<endl;
-    cout<<"Nugget: "<<res.nugget<<endl;
-    cout<<"Range: "<<res.range<<endl;
-    cout<<"####################################"<<endl;
-    cout<<"####################################"<<endl;
-    cout<<endl;
-
-    return res;
-}
-
-//ciclo questa funzione per ogni modello*/
-
-
-
-
-
-
-/*vector<variogram> fit_directional_variogram(const dir_exp_variog &dev,const double & degree_step, const double & degree_tolerance, const double &range_precision, const variogram_type &model_type, double &nugget)
-{
-    vector<variogram> res_k (dev.N.size());
-
-    // per ogni variogramma sperimentale direzionale bisogna fittare una funzione
-
-    uint n_directions = dev.N.size();
-
-    uint is_n_direction=0;    // parametro da modificare nel caso si voglia usare n_directions (=1) oppure degree_step e degree_tolerance (=0)
-    vector<double> seq;
-
-    if(is_n_direction==1)
-    {
-        seq.resize(n_directions+1);
-        seq[0]=0;
-        seq[n_directions]=180;
-         for (uint i=1;i<seq.size()-1;i++)
-         {
-             seq[i] = seq[i-1] + 180 / n_directions ;
-         }
-    }
-
-    else
-    {
-        n_directions = 180/degree_step;
-        seq.resize(n_directions+1);
-
-        seq[0]=0;
-        for(uint i=1; i<seq.size();i++)
-        {
-            seq[i]= seq[i-1]+degree_step;
-        }
-    }
-
-    for(uint k = 0; k< n_directions; k++)
-    {
-        if(dev.N.at(k).at(0)== 9999)
-        {
-            cout<<"NO FITTING is available for direction..."<<k<<endl;
-
-            res_k.at(k).sill = 9999;
-            res_k.at(k).range = 9999;
-            res_k.at(k).nugget = 9999;
-            res_k.at(k).type = "none";
-            //cout<<"Variogram of direction "<<k<<": SILL..."<<res_k.at(k).sill<< " RANGE..."<<res_k.at(k).range<<" NUGGET..."<<res_k.at(k).nugget<<" MODEL..."<<res_k.at(k).type<<endl;
-        }
-
-        else
-        {
-            exp_variog ev_k;
-            ev_k.N = dev.N.at(k);
-            ev_k.h = dev.h.at(k);
-            ev_k.gamma = dev.gamma.at(k);
-
-            cout<<endl;
-            if(is_n_direction==1)
-                cout<<"########### Direction: "<<seq[k]<<" - "<<seq[k+1]<<" ##########"<<endl;
-            else
-                cout<<"###### Direction: "<<seq[k]<<" +/- "<<degree_tolerance<<" ######"<<endl;
-
-            for(uint l=0; l<ev_k.N.size();l++)
-                cout<<" N : "<<ev_k.N.at(l)<<"  h : "<<ev_k.h.at(l)<<"  gam :  "<<ev_k.gamma.at(l)<<endl;
-
-            res_k.at(k) = fit_variogram3(ev_k, range_precision, model_type, nugget);
-            res_k.at(k).set_azimuth(seq[k]); //imposta l'azimuth prendendo in input l'angolo in gradi e lo salva come radianti
-
-            cout<<"Variogram of direction "<<k<<": SILL..."<<res_k.at(k).sill<< "RANGE..."<<res_k.at(k).range<<"NUGGET..."<<res_k.at(k).nugget<<"MODEL..."<<res_k.at(k).type<<endl;
-            cout<<"####################################"<<endl;
-            cout<<endl;
-        }
-    }
-
-    //ora che sono stati stimati i singoli valori di range sill e nugget, la funzione ritorna questi
-    //valori pronti per essere elaborati da un'altra funzione che si occuperà di disegnare l'ellisse
-
-    return res_k;
-}*/
 
 
 
@@ -2057,44 +1787,3 @@ MUSE::VarioError fit_variogram_mse(const exp_variog &ev, const double &range_pre
 
 
 
-//fit_directional_variogram with Model and Nugget Fixed
-/*vector<variogram> fit_directional_variogram_mnf (const dir_exp_variog &dev,const double & degree_step, const double & degree_tolerance, const double &range_precision, const double &nugget_precision)
-{
-    std::vector<variogram_type> types = {variogram_type::SPHERIC, variogram_type::GAUSSIAN, variogram_type::EXPONENTIAL};
-    std::vector<std::vector<MUSE::VarioError>> dir_vario (types.size());
-
-    for(size_t i=0; i<types.size(); i++)
-        dir_vario.at(i) = fit_directional_variogram_mse(dev, degree_step, degree_tolerance, range_precision, nugget_precision, types.at(i));
-
-    // Inizializza l'errore somma
-    std::vector<double> sum_mse (types.size(), 0);
-    for(size_t i=0; i<types.size(); i++)
-    {
-        for(size_t j=0; j<dir_vario.at(i).size(); j++)
-            sum_mse.at(i) += dir_vario.at(i).at(j).mse;
-    }
-
-    // Trova minimo errore e l'indice corrispondente
-    double min_mse = DBL_MAX;
-    int min_index = INT_MAX;
-    for(size_t i=0; i< sum_mse.size(); i++)
-    {
-        if(sum_mse.at(i) < min_mse)
-        {
-            min_mse = sum_mse.at(i);
-            min_index = i;
-        }
-    }
-    std::cout << "Fitted directional variogram model on all directions: "<< types.at(min_index) << "; Mean Squared Error: "<< sum_mse.at(min_index) << std::endl;
-
-    double avg_nugget = 0;
-    for(size_t i=0; i<dir_vario.at(min_index).size(); i++)
-        avg_nugget += dir_vario.at(min_index).at(i).vario.nugget;
-
-    avg_nugget = avg_nugget/(180/degree_step);
-
-    vector<variogram> vv = fit_directional_variogram(dev, degree_step, degree_tolerance, range_precision, types.at(min_index), avg_nugget);
-
-    return vv;
-
-}*/
