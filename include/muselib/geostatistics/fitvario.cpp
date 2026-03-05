@@ -128,6 +128,60 @@ double get_gamma (const double &h, const double &a, const double &c0, const doub
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+// helper for fitting weights
+static double compute_weight(const exp_variog &ev, size_t idx, weightsType w_type)
+{
+    double h = ev.h.at(idx);
+    double N = ev.N.at(idx);
+    double gamma = ev.gamma.at(idx);
+
+    // Soglie per evitare divisioni per zero / pesi esplosivi
+    //constexpr double H_MIN     = 1.0;    // distanza minima "sicura" (stessa unità di h)
+    //const double GAMMA_MIN = 1e-6;   // variogramma minimo "sicuro"
+    const double THRESH = 1e-6;    // soglia per evitare divisioni per zero o pesi troppo grandi
+
+    double w = 0.0;
+    switch(w_type)
+    {
+        // -------------------------------------------------------------------
+        // Cressie (1985) WLS standard: w_i = N_i / γ(h_i)²
+        // Downweights i lag con variogramma alto (molto variabile)
+        // -------------------------------------------------------------------
+        case weightsType::CRESSIE:
+        {
+            const double gamma = std::max(gamma, THRESH);
+            w = N / (gamma * gamma);
+            break;
+        }
+        
+        // -------------------------------------------------------------------
+        // Cressie pesato per distanza: w_i = N_i / h_i²
+        // Utile quando si vuole privilegiare i lag vicini.
+        // -------------------------------------------------------------------
+        case weightsType::CRESSIE_WEIGHTED:
+        {
+            w = N / (h * h + THRESH);
+            break;
+        }
+
+        // -------------------------------------------------------------------
+        // Variante lineare in h: w_i = N_i / h_i
+        // Meno aggressiva di CRESSIE_WEIGHTED nel penalizzare i lag lontani.
+        // -------------------------------------------------------------------
+        case weightsType::CRESSIE_WEIGHTED_MODIFIED:
+        {
+            w = N / (h + THRESH);
+            break;
+        }
+        default:
+            w = 1.0; // peso uniforme
+            break;
+    }
+    return w;
+}
+
+
+
 
 //FITTING - OMNIDIRECTIONAL
 
@@ -182,22 +236,7 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
                 {
                     if (ev.h.at(i) > 0)
                     {
-                        double weight_coefficient = 0.0;
-                        switch (w_type)
-                        {
-                        case weightsType::CRESSIE:
-                            weight_coefficient = ev.N.at(i);
-                            break;
-                        case weightsType::CRESSIE_WEIGHTED:
-                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
-                            break;
-                        case weightsType::CRESSIE_WEIGHTED_MODIFIED:
-                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
-                            break;
-                        default:
-                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
-                            break;
-                        }
+                        double weight_coefficient = compute_weight(ev, i, w_type);
                         mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                     }
                 }

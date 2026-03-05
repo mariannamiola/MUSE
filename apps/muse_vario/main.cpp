@@ -63,6 +63,18 @@ using namespace MUSE;
 using namespace TCLAP;
 
 
+///////////////////////////////////////////////////
+// Function to convert string to weightsType enum
+weightsType stringToWeightsType(const std::string& criterion) {
+    if (criterion == "CRESSIE") return CRESSIE;
+    if (criterion == "CRESSIE_WEIGHTED") return CRESSIE_WEIGHTED;
+    if (criterion == "CRESSIE_WEIGHTED_MODIFIED") return CRESSIE_WEIGHTED_MODIFIED;
+    if (criterion == "DEFAULT") return CRESSIE_WEIGHTED_MODIFIED;
+    // Default fallback
+    return CRESSIE_WEIGHTED_MODIFIED;
+}
+
+
 int main(int argc, char** argv)
 {
     std::cout << std::endl;
@@ -91,27 +103,22 @@ int main(int argc, char** argv)
      * - --vario: Variogram type (EXPERIMENTAL, MODEL)
      * - --dir: Direction type (OMNI, DIR)
      * - --dim: Dimension (3D, 2D, 1Dz, etc.)
-     * @example muse_vario -V --pdir /path/to/project --var temperature --vario EXPERIMENTAL --dir OMNI --dim 3D
+     * @example muse_vario -V --pdir /path/to/project --var T --vario MODEL --dir OMNI --dim 3D
      */
 
     SwitchArg varioCompute                  ("V", "variogram", "Compute variogram", cmd, false); //booleano
     /**
-
-     * @brief Project directory
-
+     * @brief Project directory 
      * @param pdir Path to project directory
-
      */
-
     ValueArg<std::string> projectFolder     ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
-    //ValueArg<std::string> subFolder         ("", "subdir", "Project subdirectory", false, "Directory", "path", cmd);
-    /**
-     * @brief Variable
-     * @param var Name of variable
-     * @note MANDATORY when using -V/--variogram flag
-     * The variable must exist in the project data
-     */
 
+    /**
+     * @brief Set variable to analyse variography
+     * @param var variable name to analyse variography
+     * @note Mandatory when computing variograms. The variable must exist in the project data. Use --var to specify the variable name for variogram analysis. The specified variable must be present in the project data for successful variogram computation.
+     * @example --var T
+     */
     ValueArg<std::string> Variable          ("v", "var", "Variable", true, "variable to analyse", "name", cmd);
 
     // Option: set third coordinate (z), if necessary
@@ -119,13 +126,9 @@ int main(int argc, char** argv)
 
     // Option: use subdataset (related to a specified domain)
     /**
-
      * @brief Set extracted sub-dataset referring to specified geometry domain
-
      * @param sub extracted sub-dataset referring to specified geometry domain
-
      */
-
     ValueArg<std::string> subDataset        ("", "sub", "Set extracted sub-dataset referring to specified geometry domain", false, "Directory", "path", cmd);
 
     // Option: set data rotation
@@ -399,6 +402,17 @@ int main(int argc, char** argv)
     //MultiArg<std::string> setIndSill        ("", "isill", "Set sull for indicators", false, "0.0|ncat", cmd);
 
 
+    /**
+     * @brief Set criterion for fitting variogram models for mse computation (active only for continuous variables)
+     * @param mse criterion for fitting variogram models for mse computation (active only for continuous variables)
+     * @note When using --vario MODEL for continuous variables, this flag becomes important
+     * Available criteria: CRESSIE, CRESSIE_WEIGHTED, CRESSIE_WEIGHTED_MODIFIED, UNIFORM
+     * @example --vario MODEL --mse CRESSIE
+     */
+    // Option: different criteria for fitting variogram models for mse computation (active only for continuous variables)
+    std::vector<std::string> allowedMSEcrit = {"CRESSIE","CRESSIE_WEIGHTED","CRESSIE_WEIGHTED_MODIFIED","DEFAULT"};
+    ValuesConstraint<std::string> allowedValsMSE(allowedMSEcrit);
+    ValueArg<std::string> setMSEcriterion ("", "mse", "Set mse criterion for fitting variogram. (Active only for continuos variables).", false, "CRESSIE_WEIGHTED_MODIFIED", &allowedValsMSE, cmd);
 
 
     allowedStratigraphicCondition.clear();
@@ -407,6 +421,7 @@ int main(int argc, char** argv)
     allowedVarioDim.clear();
     allowedLag.clear();
     allowedModel.clear();
+    allowedMSEcrit.clear();
 
 
     // ---------------------------------------------------------------------------------------------------------

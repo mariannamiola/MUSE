@@ -30,8 +30,15 @@ enum add_variogram_type{
 
 enum weightsType
 {
+    // original Cressie weights: N(h) / [gamma_exp(h)]^2, reduces influence of
+    // highly variable experimental lags (Cressie 1985, p. 90)
     CRESSIE,
+    
+    // variant used by Pebesma/gstat: N(h) / h^2 (number of pairs over squared lag);
+    // emphasizes small lags by distance rather than semivariance
     CRESSIE_WEIGHTED,
+    
+    // modified version: N(h) / h  (less aggressive distance weighting)
     CRESSIE_WEIGHTED_MODIFIED
 };
 
