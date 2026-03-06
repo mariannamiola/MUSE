@@ -151,46 +151,32 @@ int main(int argc, char** argv)
 
     ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
     /**
-
      * @brief Set rotation center x
-
      * @param rotcx rotation center x
-
      */
-
     ValueArg<double> setRotCenterX          ("", "rotcx", "Set rotation center x", false, 0.0, "double", cmd);
+    
     /**
-
      * @brief Set rotation center y
-
      * @param rotcy rotation center y
-
      */
-
     ValueArg<double> setRotCenterY          ("", "rotcy", "Set rotation center y", false, 0.0, "double", cmd);
+    
     /**
-
      * @brief Set rotation center z
-
      * @param rotcz rotation center z
-
      */
-
     ValueArg<double> setRotCenterZ          ("", "rotcz", "Set rotation center z", false, 0.0, "double", cmd);
 
-    // Option: compute normal score transformation on variable
     /**
-
-     * @brief Set normal score transformation
-
-     * @param nscore Number of set normal score transformation
-
+     * @brief Set performing normal score transformation on continuous variables
+     * @param nscore Performing normal score transformation on continuous variables
+     * @note Default is NO. When using normal score transformation, requires:
+     * - --var: Variable name (mandatory)
+     * @example --var T --nscore YES
      */
-
     ValueArg<std::string> setNormalScore    ("", "nscore", "Set normal score transformation", false, "NO", "string", cmd);
 
-    // Option: set 2D declustering on data
-    //ValueArg<std::string> setDeclustering2d ("", "decl", "Set 2D declustering", false, "NO", "string", cmd);
     /**
      * @brief Set 2D declustering
      * @param decl Enable set 2d declustering
@@ -199,21 +185,20 @@ int main(int argc, char** argv)
      * - --nstep: Number of grid translation steps (mandatory)
      * @example --decl --csize 100 --nstep 5
      */
-
     SwitchArg setDeclustering2d             ("", "decl", "Set 2D declustering", cmd, false); //booleano
+
     /**
      * @brief Set cell size for 2D declustering
      * @param csize cell size for 2d declustering
      * @note Used together with --decl flag for 2D declustering
      */
-
     ValueArg<double> setCellSize            ("", "csize", "Set cell size for 2D declustering", false, 0.0, "double", cmd);
+
     /**
      * @brief Set n steps for 2D declustering (grid translation)
      * @param nstep Number of set n steps for 2d declustering (grid translation)
      * @note Used together with --decl flag for 2D declustering
      */
-
     ValueArg<int> setNStep                  ("", "nstep", "Set n steps for 2D declustering (grid translation)", false, 0, "int", cmd);
 
 
@@ -429,52 +414,32 @@ int main(int argc, char** argv)
 
     // Option: set parameters
     /**
-
      * @brief Set number of experimental variogram points
-
-     * @param npoints Number of set number of experimental variogram points
-
+     * @param npoints number of experimental variogram points
+     * @note Optional parameter used for experimental variogram computation. Default value is 15. This parameter sets the number of points used for discretizing the experimental variogram, which can help to manage the trade-off between detail and noise in the variogram estimation. A higher number of points can provide a more detailed variogram but may also introduce more noise, while a lower number of points can result in a smoother variogram but may miss important features. 
+     * Adjusting this parameter can help to achieve a more robust variogram estimation based on the specific characteristics of the data.
+     * @example --npoints 20
      */
-
     ValueArg<uint> setPointsVario           ("", "npoints", "Set number of experimental variogram points", false, 15, "int", cmd); //n. di punti per la discretizzazione del variogramma sperimentale = 15 di default
-    //ValueArg<uint> setStartPointsVario      ("", "nstartpoints", "Number of discretized experimental variogram in coverage/2 extended zone (TO REMOVE)", false, 10, "int", cmd); //n. di punti per la discretizzazione del variogramma sperimentale = 15 di default
-    //ValueArg<double> setPointStep           ("", "pstep", "Set points step (TO REMOVE)", false, 0.8, "double", cmd);
 
     /**
-
-
-     * @brief Set cleaning variogram points
-
-
-     * @param vclean cleaning variogram points
-
-
+     * @brief Set number of variogram points pairs to compute variogram experimental points avoiding noisy variogram points
+     * @param vclean Number of set number of variogram points pairs to compute variogram experimental points avoiding noisy variogram points  
+     * @note When computing experimental variogram, this parameter can be used to set a minimum number of point pairs for each variogram point. This can help to avoid noisy variogram points that are computed with a very low number of point pairs, which can lead to more robust variogram estimation. The default value is 0, which means that all variogram points will be computed regardless of the number of point pairs.
+     * @example --vclean 10
      */
-
-
-    ValueArg<uint> setVarioCleanPoints      ("", "vclean", "Set cleaning variogram points", false, 0, "int", cmd); //n. di punti minimo (clean variogram) = 10 di default
+    ValueArg<uint> setVarioCleanPoints      ("", "vclean", "Set number of variogram points pairs to compute variogram experimental points avoiding noisy variogram points", false, 0, "int", cmd); //n. di punti minimo (clean variogram) = 10 di default
 
     /**
-
-
      * @brief Set range step
-
-
      * @param rangestep range step
-
-
      */
-
-
     ValueArg<double> setRangeStep           ("", "rangestep", "Set range step", false, 100.0, "double", cmd);
     /**
 
      * @brief Set nugget step
-
      * @param nugstep Number of set nugget step
-
      */
-
     ValueArg<double> setNuggetStep          ("", "nugstep", "Set nugget step", false, 100.0, "double", cmd);
 
     /**
@@ -496,67 +461,43 @@ int main(int argc, char** argv)
     ValueArg<double> setToleranceFactor     ("", "tolfac", "Set tolerance factor for computing experimental variogram", false, 2.0, "double", cmd);
 
     /**
-
-
      * @brief Set multiplier factor for computing variable lag spacing for experimental variogram
-
-
      * @param fac multiplier factor for computing variable lag spacing for experimental variogram
-
-
      */
-
-
     ValueArg<double> setFactor              ("", "fac", "Set multiplier factor for computing variable lag spacing for experimental variogram", false, 1.0, "double", cmd);
 
     /**
-
-
      * @brief Set weight on nugget to compute directional variogram
-
-
      * @param weight Flag to set weight on nugget to compute directional variogram
-
-
      */
-
-
     SwitchArg setWeight                     ("", "weight", "Set weight on nugget to compute directional variogram", cmd, false); //booleano
 
     /**
-
-
      * @brief Load experimental variogram
-
-
      * @param expvario Name of load experimental variogram
-
-
      */
-
-
     ValueArg<std::string> loadExpVario      ("", "expvario", "Load experimental variogram", false, "filename", "string", cmd);
-
 
     //  Option: plotting tools
     /**
-
      * @brief Set eps for plot centering
-
      * @param eps eps for plot centering
-
      */
-
     ValueArg<double> setEps                 ("", "eps", "Set eps for plot centering", false, 0.0, "double", cmd);
+
     /**
-
      * @brief Set eps_y for plot on y axis
-
      * @param epsy eps_y for plot on y axis
-
      */
-
     ValueArg<double> setEps_y               ("", "epsy", "Set eps_y for plot on y axis", false, 0.05, "double", cmd);
+
+    
+    /**
+     * @brief Set flag to compute variogram diagnostics
+     * @param diagnose Flag to compute variogram diagnostics
+     * @note When set, this flag enables the computation of variogram diagnostics, which can include various analyses to assess the quality and characteristics of the computed variogram.
+     */
+    SwitchArg setVarioDiagnose ("", "diagnose", "Compute variogram diagnostics", cmd, false); //booleano
 
 
     // ---------------------------------------------------------------------------------------------------------

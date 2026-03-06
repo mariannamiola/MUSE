@@ -111,6 +111,9 @@ double      get_gamma                           (const double &h, const double &
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
+// helper for fitting weights
+static double compute_weight(const exp_variog &ev, size_t idx, weightsType w_type);
+
 
 //FITTING - OMNIDIRECTIONAL
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
