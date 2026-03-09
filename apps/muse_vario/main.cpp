@@ -78,7 +78,9 @@ weightsType stringToWeightsType(const std::string& criterion) {
 int main(int argc, char** argv)
 {
     std::cout << std::endl;
-    std::cout << "########### STARTING MUSE-VARIO ..." << std::endl;
+    std::cout << "============================================================" << std::endl;
+    std::cout << "================== STARTING MUSE-VARIO ===================" << std::endl;
+    std::cout << "============================================================" << std::endl;
     std::cout << std::endl;
 
     std::string app_name = "vario"; //app name
@@ -86,7 +88,7 @@ int main(int argc, char** argv)
     std::string app_manipulate = "manipulate";
 
     try {
-    CmdLine cmd("MUSE = Modelling of Uncertainty as a Support of Environment; Vario tool", ' ', "version 0.0");
+    CmdLine cmd("MUSE - Modelling Uncertainty as a Support of Environment. MUSE-vario application", ' ', "version 0.0");
 
 
     // ---------------------------------------------------------------------------------------------------------
@@ -514,7 +516,7 @@ int main(int argc, char** argv)
      * Used with diagnose flag, this can help to perform variogram diagnostics based on the original variable data, which can provide insights into the quality and characteristics of the variogram estimation.
      * @example --setVariableFile /path/to/variable_input.dat
      */
-    ValueArg<std::string> setVariableFile ("f", "file", "Set variable input file", true, "variable to analyse", "name", cmd);
+    ValueArg<std::string> setVariableFile ("", "file", "Set variable input file", false, "variable to analyse", "name", cmd);
 
 
     // ---------------------------------------------------------------------------------------------------------
