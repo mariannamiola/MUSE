@@ -5,7 +5,6 @@
 #include <set>
 
 #include <tclap/CmdLine.h>
-//#include <json.hpp>
 
 #include <cinolib/triangle_wrap.h>
 #include <cinolib/meshes/drawable_trimesh.h>
@@ -59,6 +58,8 @@
 
 #include "muselib/reference_system/coordinate_systems.h"
 
+#include "muselib/geometry/well_creation.h"
+
 
 
 //for filesystem
@@ -78,13 +79,15 @@ using namespace TCLAP;
 int main(int argc, char** argv)
 {
     std::cout << std::endl;
-    std::cout << "########### STARTING MUSE-GEOMETRY ..." << std::endl;
+    std::cout << "============================================================" << std::endl;
+    std::cout << "================== STARTING MUSE-GEOMETRY ===================" << std::endl;
+    std::cout << "============================================================" << std::endl;
     std::cout << std::endl;
 
     std::string app_name = "geometry"; //app name
 
     try {
-    CmdLine cmd("MUSE = Modelling of Uncertainty as a Support of Environment; Geometry tool", ' ', "version 0.0");
+    CmdLine cmd("MUSE - Modelling Uncertainty as a Support of Environment. MUSE-geometry application", ' ', "version 0.0");
 
 
     // ---------------------------------------------------------------------------------------------------------
@@ -105,29 +108,21 @@ int main(int argc, char** argv)
      * OPTIONAL:
      * - --pdir: Project directory
      * - --setEPSG: Set coordinate system
-     * @example muse_geometry -N --vector --tri --pdir /path/to/project
+     * @example muse_geometry -N -p /path/to/project 
      */
-
     SwitchArg geometryCreation          ("N", "geometry", "Creation of new geometry", cmd, false); //booleano
+
     /**
-
      * @brief Project directory
-
      * @param pdir Path to project directory
-
      */
-
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", false, "Directory", "path", cmd);
 
     // Option 0a. Project creation - optional: setting project EPSG
     /**
-
      * @brief Set project EPSG
-
      * @param setEPSG project epsg
-
      */
-
     ValueArg<std::string> setEPSG        ("", "setEPSG", "Set project EPSG", false, "Unknown", "authority", cmd);
 
 
@@ -145,23 +140,17 @@ int main(int argc, char** argv)
      */
 
     SwitchArg loadVector                ("V", "vector", "Load Vector file", cmd, false); //booleano
+    
     /**
-
      * @brief Saving data content of geospatial files
-
      * @param save Enable saving data content of geospatial files
-
      */
-
     SwitchArg setSave                   ("", "save", "Saving data content of geospatial files", cmd, false); //booleano
+    
     /**
-
      * @brief Save attribute table from geospatial file
-
      * @param attribute Enable save attribute table from geospatial file
-
      */
-
     SwitchArg setSaveAttributesTable    ("", "attribute", "Save attribute table from geospatial file", cmd, false); //booleano
 
 
@@ -315,15 +304,15 @@ int main(int argc, char** argv)
      */
 
     ValueArg<std::string> setBoundary   ("", "boundary", "Set external boundary for points triangulation", false, "", "filename", cmd);
+    
     /**
-
-     * @brief Set optimization flags
-
-     * @param opt optimization flags
-
+     * @brief Set optimization flags to optimize triangulation (e.g., "pq20" for preserve+quality 20) or tetrahedralization (e.g., "pq20" for preserve+quality 20 in TetGen)
+     * @param opt optimization flags to optimize triangulation or tetrahedralization
+     * @note Used with --tri flag for triangulation optimization and with --tet flag for tetrahedralization optimization. 
+     * Refer to Triangle and TetGen documentation for available flags and options.
+     * @example For Triangle: --tri --opt "pq20" OR For TetGen: --tet --opt "pq20"
      */
-
-    ValueArg<std::string> optFlag       ("", "opt", "Set optimization flags", false, "", "flag", cmd);
+    ValueArg<std::string> optFlag       ("", "opt", "Set optimization flags enabled for triangulation or tetrahedralization", false, "", "string", cmd);
 
     // Option 4. Set grid
     /**
@@ -430,50 +419,29 @@ int main(int argc, char** argv)
 
     SwitchArg setOffset                 ("O", "offset", "Load polygon mesh and apply offset", cmd, false); //booleano
     /**
-
      * @brief Set DELTA offset
-
      * @param delta Enable set delta offset
-
      */
 
     SwitchArg deltazExtrusion           ("", "delta", "Set DELTA offset", cmd, false); //booleano
     /**
-
      * @brief Set ABSOLUTE ELEVATION offset
-
      * @param abs Enable set absolute elevation offset
-
      */
 
     SwitchArg abszExtrusion             ("", "abs", "Set ABSOLUTE ELEVATION offset", cmd, false); //booleano
     /**
-
      * @brief Set offset in Z direction
-
      * @param zoffset offset in z direction
-
      */
 
     ValueArg<double> zOffset            ("z", "zoffset", "Set offset in Z direction", false, 0.0, "double" , cmd);
 
 
     /**
-
-
-
      * @brief Append meshes
-
-
-
      * @param append Enable append meshes
-
-
-
      */
-
-
-
     SwitchArg appendMeshes              ("A", "append", "Append meshes", cmd, false); //booleano
 
 
@@ -512,68 +480,78 @@ int main(int argc, char** argv)
 
     SwitchArg cleanPoly                 ("", "clean", "Clean quadrilateral mesh from isolated polys", cmd, false); //booleano
 
+
     // Option 7. Creating volumetric object
     /**
-
      * @brief Load polygonal mesh and create polyedral mesh
-
      * @param volmesh Flag to load polygonal mesh and create polyedral mesh
-
      */
-
     SwitchArg createVolObject           ("M", "volmesh", "Load polygonal mesh and create polyedral mesh", cmd, false); //booleano
-    /**
 
+    /**
      * @brief Set tetrahedralization
-
      * @param tet Enable set tetrahedralization
-
      */
+    SwitchArg tetFlag                   ("", "tet", "Set tetrahedralization (using TetGen C++ library)", cmd, false); //booleano
 
-    SwitchArg tetFlag                   ("", "tet", "Set tetrahedralization", cmd, false); //booleano
     /**
-
      * @brief Set voxel as polyedralmesh
-
      * @param vox Enable set voxel as polyedralmesh
-
      */
-
     SwitchArg voxFlag                   ("", "vox", "Set voxel as polyedralmesh", cmd, false); //booleano
+    
     /**
-
      * @brief Set hexmesh as polyedral
-
      * @param hex Enable set hexmesh as polyedral
-
      */
-
     SwitchArg hexFlag                   ("", "hex", "Set hexmesh as polyedral", cmd, false); //booleano
 
     /**
-
-
      * @brief Set n max voxel per side
-
-
      * @param nmaxvox Number of set n max voxel per side
-
-
      */
-
-
     ValueArg<int> setMaxVoxelperSide    ("", "nmaxvox", "Set n max voxel per side", false, 1, "int", cmd);
+
+    /**
+     * @brief Load (closed) polygonal mesh and create a tetrahedral mesh constrained to specific well(s)
+     * @param vmwells Flag to load (closed) polygonal mesh and create a tetrahedral mesh constrained to specific well(s)
+     * @note When using this option, these flags work together:
+     * - -W/--vmwells: Load (closed) polygonal mesh and create a tetrahedral mesh constrained to specific well(s)
+     * - --well: Specify well(s) file(s) (can be used multiple times for multiple wells)
+     * @example muse_geometry -M --tet --vmwells --well /path/to/well1.shp --well /path/to/well2.shp
+     */
+    SwitchArg createVolObjectwithWells ("W", "vmwells", "Load (closed) polygonal mesh and create a tetrahedral mesh constrained to well(s)", cmd, false); //booleano
+
+    // Well creation configuration
+    ValueArg<std::string> generate_box_arg("", "generate-box", "Generate box with dimensions: width,height,depth (e.g., \"10,5,8\")", false, "", "string", cmd);
+
+    ValueArg<std::string> output_mesh_arg("o", "output", "Output triangle mesh file (.off format)", true, "", "string", cmd);
+
+    MultiArg<std::string> wells_arg("w", "well", "Well specification: x,y,z,height,radius[,z_sub1,z_sub2,...] (can be used multiple times)", true, "string", cmd);
+
+    ValueArg<double> edge_length_arg("e", "edge-length", "Target edge length for remeshing (default: auto from input mesh)", false, -1.0, "double", cmd);
+
+    SwitchArg refine_cylinders_arg("", "refine-cylinders", "Refine cylinder mesh by halving the target edge length", cmd, false);
+
+    ValueArg<double> cylinder_edge_scale_arg("", "cylinder-edge-scale", "Scale factor for cylinder edge length (e.g., 0.5 for finer, 2.0 for coarser)", false, 1.0, "double", cmd);
+
+    SwitchArg verbose_arg("v", "verbose", "Enable verbose output", cmd, false);
+
+    ValueArg<double> max_tet_volume_arg("", "max-tet-volume", "Maximum tetrahedron volume for TetGen (default: auto)", false, -1.0, "double", cmd);
+
+    SwitchArg save_no_wells_arg("", "save-no-wells", "Save tetrahedral mesh without wells (removes tets inside wells, suffix: _no_wells.mesh)", cmd, false);
+
+    SwitchArg save_only_wells_arg("", "save-only-wells", "Save tetrahedral mesh with only wells (removes tets outside wells, label -1, suffix: _only_wells.mesh)", cmd, false);
+
+
 
     // Option 8. Loading surface mesh
     /**
-
      * @brief Load trimesh file
-
      * @param trimesh Enable load trimesh file
-
      */
-
     SwitchArg loadSurface               ("L", "trimesh", "Load trimesh file", cmd, false); //booleano
+
     /**
 
      * @brief Set polys split method
@@ -5463,6 +5441,45 @@ int main(int argc, char** argv)
             std::cout << FRED("Error: mesh format not supported!") << std::endl;
             exit(1);
         }
+    }
+
+
+    //This switch allows to create a volume mesh starting from a surface mesh and a set of wells (defined as strings) with the command -createVolObjectwithWells. 
+    //The output is a tetmesh with the wells as cylindrical holes (if generate_tet is set to true) or as cylinders (if generate_tet is set to false). 
+    //The command accepts several parameters for the generation of the volume mesh, such as the target edge length, the maximum tet volume, the option to refine the cylindrical holes, etc. 
+    //For more details on the parameters, please refer to the documentation of the command -createVolObjectwithWells.
+    if(createVolObjectwithWells.isSet() && meshFiles.isSet())
+    {
+        std::cout << "=== Creating volume mesh with wells ... " << std::endl;
+        if(meshFiles.getValue().size() > 1)
+        {
+            std::cerr << "ERROR: For volume object, one mesh file is accepted by command -m!" << std::endl;
+            exit(1);
+        }
+
+        CreateWellsConfig config;
+        config.input_file = meshFiles.getValue().at(0); //input_mesh_arg.getValue();
+        config.generate_box = generate_box_arg.getValue();
+        config.output_file = output_mesh_arg.getValue();
+        config.well_strings = wells_arg.getValue();
+        config.target_edge_length = edge_length_arg.getValue();
+        config.verbose = verbose_arg.getValue();
+        config.generate_tet = tetFlag.getValue(); //generate_tet_arg.getValue();
+        config.max_tet_volume = max_tet_volume_arg.getValue();
+        config.save_no_wells = save_no_wells_arg.getValue();
+        config.save_only_wells = save_only_wells_arg.getValue();
+        config.tetgen_flags = optFlag.getValue(); //tetgen_flags_arg.getValue();
+        config.refine_cylinders = refine_cylinders_arg.getValue();
+        config.cylinder_edge_scale = cylinder_edge_scale_arg.getValue();
+
+        return create_tetmesh_with_wells(config);
+
+        // std::string out_mesh = out_volume + "/" + get_basename(get_filename(meshFiles.getValue().at(0)));
+        // geometa.setMeshSummary(vol);
+        // geometa.write(out_mesh + ".json");
+
+        std::cout << "=== Creating volume mesh with wells ... COMPLETED." << std::endl;
+        std::cout << "=== Saving JSON ... TO DO!" << std::endl;
     }
 
 

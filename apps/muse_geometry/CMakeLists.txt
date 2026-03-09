@@ -39,6 +39,13 @@ project(muse_geometry LANGUAGES CXX)
 add_definitions(-DCINOLIB_USES_VTK)
 #set(CINOLIB_USES_VTK    ON )
 
+#####
+# VolumeMesher
+if (WIN32)
+	set(VOLUME_MESHER_EXECUTABLE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../external/VolumeMesher/build/Release/mesh_generator.exe")
+else()
+	set(VOLUME_MESHER_EXECUTABLE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../external/VolumeMesher/build/mesh_generator")
+endif()
 
 #####
 # triangle/tetgen
@@ -73,6 +80,10 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${triangle_lib_file} ${tetgen_lib_f
   VTK::IOLegacy
 )
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+	VOLUME_MESHER_EXECUTABLE="${VOLUME_MESHER_EXECUTABLE_PATH}"
+)
+
 #####
 
 set(TETGEN_GENERATOR ${PROJECT_NAME}_tetmesh-generator)
@@ -89,3 +100,4 @@ target_link_libraries(${TETGEN_GENERATOR} PUBLIC ${triangle_lib_file} ${tetgen_l
   VTK::IOXML
   VTK::IOLegacy
 )
+
