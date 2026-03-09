@@ -220,7 +220,7 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
 
             double best_mse_range = DBL_MAX;
             double best_r = 0.0;
-            std::string best_type;
+            std::string best_type = "";
 
             // Inizializzazione di out a 1 (asintoto variogramma: max valore)
             vector<double> out (ev.gamma.size(), 1.0);
@@ -366,23 +366,8 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
             {
                 if (ev.h.at(i) > 0)
                 {
-                    double weight_coefficient = 0.0;
-                        switch (w_type)
-                        {
-                        case weightsType::CRESSIE:
-                            weight_coefficient = ev.N.at(i);
-                            break;
-                        case weightsType::CRESSIE_WEIGHTED:
-                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
-                            break;
-                        case weightsType::CRESSIE_WEIGHTED_MODIFIED:
-                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
-                            break;
-                        default:
-                            weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
-                            break;
-                        }
-                        mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
+                    double weight_coefficient = compute_weight(ev, i, w_type);
+                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                 }
             }
 
@@ -477,22 +462,7 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
             {
                 if (ev.h.at(i) > 0)
                 {
-                    double weight_coefficient = 0.0;
-                    switch (w_type)
-                    {
-                    case weightsType::CRESSIE:
-                        weight_coefficient = ev.N.at(i);
-                        break;
-                    case weightsType::CRESSIE_WEIGHTED:
-                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
-                        break;
-                    case weightsType::CRESSIE_WEIGHTED_MODIFIED:
-                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
-                        break;
-                    default:
-                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
-                        break;
-                    }
+                    double weight_coefficient = compute_weight(ev, i, w_type);
                     mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                 }
             }
@@ -598,22 +568,7 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, va
         {
             if (ev.h.at(i) > 0)
             {
-                double weight_coefficient = 0.0;
-                switch (w_type)
-                {
-                case weightsType::CRESSIE:
-                    weight_coefficient = ev.N.at(i);
-                    break;
-                case weightsType::CRESSIE_WEIGHTED:
-                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
-                    break;
-                case weightsType::CRESSIE_WEIGHTED_MODIFIED:
-                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
-                    break;
-                default:
-                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
-                    break;
-                }
+                double weight_coefficient = compute_weight(ev, i, w_type);
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
         }
@@ -700,22 +655,7 @@ MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_pr
             {
                 if (ev.h.at(i) > 0)
                 {
-                    double weight_coefficient = 0.0;
-                    switch (w_type)
-                    {
-                    case weightsType::CRESSIE:
-                        weight_coefficient = ev.N.at(i);
-                        break;
-                    case weightsType::CRESSIE_WEIGHTED:
-                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
-                        break;
-                    case weightsType::CRESSIE_WEIGHTED_MODIFIED:
-                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
-                        break;
-                    default:
-                        weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
-                        break;
-                    }
+                    double weight_coefficient = compute_weight(ev, i, w_type);
                     mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                 }
             }
@@ -814,22 +754,7 @@ MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &ran
         {
             if (ev.h.at(i) > 0)
             {
-                double weight_coefficient = 0.0;
-                switch (w_type)
-                {
-                case weightsType::CRESSIE:
-                    weight_coefficient = ev.N.at(i);
-                    break;
-                case weightsType::CRESSIE_WEIGHTED:
-                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),2));
-                    break;
-                case weightsType::CRESSIE_WEIGHTED_MODIFIED:
-                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1));
-                    break;
-                default:
-                    weight_coefficient = (ev.N.at(i) / pow((ev.h.at(i)),1)); //equal to CRESSIE_WEIGHTED_MODIFIED
-                    break;
-                }
+                double weight_coefficient = compute_weight(ev, i, w_type);
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
         }
@@ -877,7 +802,7 @@ MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &ran
 /// @param nugget_precision nugget precision (number of nugget values to test between min and max nugget)
 /// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
 /// @return 
-vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, const double &degree_step, const double &degree_tolerance, const double &range_precision, const double &nugget_precision, variogram_type &model_type)
+vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, const double &degree_step, const double &degree_tolerance, const double &range_precision, const double &nugget_precision, variogram_type &model_type, weightsType w_type)
 {
     // Funzione che richiama il fit_variogram (a modello fissato) e cicla per ogni direzione: funzione di supporto sulle direzioni
 
@@ -895,7 +820,7 @@ vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, 
     for(uint k = 0; k< n_directions; k++)
     {
         //TO DO: AGGIUNGERE CHECK SUL NUMERO DI COPPIE
-        res_k.at(k) = fit_variogram_mse (dev.at(k), range_precision, nugget_precision, model_type);
+        res_k.at(k) = fit_variogram_mse (dev.at(k), range_precision, nugget_precision, model_type, false, w_type);
     }
 
     return res_k;
@@ -908,7 +833,7 @@ vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, 
 /// @param nugget_precision nugget precision (number of nugget values to test between min and max nugget)
 /// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
 /// @return 
-vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, const double &nugget_precision, variogram_type &model_type)
+vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, const double &nugget_precision, variogram_type &model_type, weightsType w_type)
 {
     // Funzione che richiama il fit_variogram (a modello fissato) e cicla per ogni direzione: funzione di supporto sulle direzioni
 
@@ -920,7 +845,7 @@ vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, 
     for(uint k = 0; k< n_directions; k++)
     {
         //TO DO: AGGIUNGERE CHECK SUL NUMERO DI COPPIE
-        res_k.at(k) = fit_variogram_mse (dev.at(k), range_precision, nugget_precision, model_type);
+        res_k.at(k) = fit_variogram_mse (dev.at(k), range_precision, nugget_precision, model_type, false, w_type);
     }
 
     return res_k;
@@ -934,7 +859,7 @@ vector<MUSE::VarioError> fit_dir_variogram (const std::vector<exp_variog> &dev, 
 /// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
 /// @param is_print boolean to print or not the fitted variogram parameters for each direction
 /// @return 
-vector<MUSE::VarioError> fit_dir_variogram_1par (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, const double &nugget, variogram_type &model_type, bool is_print)
+vector<MUSE::VarioError> fit_dir_variogram_1par (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, const double &nugget, variogram_type &model_type, bool is_print, weightsType w_type)
 {
     // Funzione che richiama il fit_variogram (a modello fissato) e cicla per ogni direzione: funzione di supporto sulle direzioni
 
@@ -946,7 +871,7 @@ vector<MUSE::VarioError> fit_dir_variogram_1par (const std::vector<exp_variog> &
     for(uint k = 0; k< n_directions; k++)
     {
         //TO DO: AGGIUNGERE CHECK SUL NUMERO DI COPPIE
-        res_k.at(k) = fit_variogram_mse_1par (dev.at(k), range_precision, nugget, model_type, is_print);
+        res_k.at(k) = fit_variogram_mse_1par (dev.at(k), range_precision, nugget, model_type, is_print, w_type);
     }
 
     return res_k;
@@ -961,7 +886,7 @@ vector<MUSE::VarioError> fit_dir_variogram_1par (const std::vector<exp_variog> &
 /// @param model_type model type to use for fitting (Spherical, Gaussian, Exponential, Linear)
 /// @param nugget nugget value to fix for fitting
 /// @return vector of fitted variograms for each direction
-vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const double & degree_step, const double & degree_tolerance, const double &range_precision, variogram_type &model_type, double &nugget)
+vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const double & degree_step, const double & degree_tolerance, const double &range_precision, variogram_type &model_type, double &nugget, weightsType w_type)
 {
     vector<variogram> res_k (dev.size());
 
@@ -976,7 +901,7 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const d
     for(uint k = 0; k< n_directions; k++)
     {
         //TO DO: AGGIUNGERE CHECK SUL NUMERO DI COPPIE
-        res_k.at(k) = fit_variogram (dev.at(k), range_precision, model_type, nugget);
+        res_k.at(k) = fit_variogram (dev.at(k), range_precision, model_type, nugget, false, w_type);
     }
 
     return res_k;
@@ -992,12 +917,12 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const d
 /// \param is_print boolean to print or not the fitted variogram parameters for each direction
 /// \return vector of fitted variograms for each direction
 ///
-vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, variogram_type &model_type, const double &nugget, bool is_print)
+vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, variogram_type &model_type, const double &nugget, bool is_print, weightsType w_type)
 {
     vector<variogram> res_k (dev.size());
 
     for(uint k = 0; k< seq.size(); k++)
-        res_k.at(k) = fit_variogram (dev.at(k), range_precision, model_type, nugget, is_print);
+        res_k.at(k) = fit_variogram (dev.at(k), range_precision, model_type, nugget, is_print, w_type);
 
     return res_k;
 }
@@ -1012,7 +937,7 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const s
 /// @param weigth weights for each direction on nugget averaging
 /// @param is_print boolean to print or not the fitted variogram parameters for each direction
 /// @return vector of fitted variograms for each direction
-vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const double & degree_step, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::vector<double> &weigth, bool is_print)
+vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const double & degree_step, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::vector<double> &weigth, bool is_print, weightsType w_type)
 {
     // 0) Definisco il vettore dei modelli
     std::vector<variogram_type> types = {variogram_type::SPHERIC, variogram_type::GAUSSIAN, variogram_type::EXPONENTIAL};
@@ -1020,7 +945,7 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const do
 
     // 1) Ciclo sui modelli e calcolo il fit (a modello fissato) dei variogrammi direzionali
     for(size_t i=0; i<types.size(); i++)
-        dir_vario.at(i) = fit_dir_variogram (dev, degree_step, degree_tolerance, range_precision, nugget_precision, types.at(i));
+        dir_vario.at(i) = fit_dir_variogram (dev, degree_step, degree_tolerance, range_precision, nugget_precision, types.at(i), w_type);
 
     // 2) Inizializza l'errore somma per ogni modello
     std::vector<double> sum_mse (types.size(), 0.0);
@@ -1097,7 +1022,7 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const do
 
 
     // 5) Ricalcolo il fitting a modello e nugget (medio sulle direzioni per il modello prescelto) fissato
-    vector<variogram> vv = fit_dir_variogram (dev, degree_step, degree_tolerance, range_precision, types.at(min_index), avg_nugget);
+    vector<variogram> vv = fit_dir_variogram (dev, degree_step, degree_tolerance, range_precision, types.at(min_index), avg_nugget, w_type);
 
     if(is_print == true)
     {
@@ -1137,7 +1062,7 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const do
 /// \param is_print boolean to print or not the fitted variogram for each direction
 /// \return
 ///
-vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::vector<double> &weigth, bool is_print)
+vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::vector<double> &weigth, bool is_print, weightsType w_type)
 {
     // 0) Definisco il vettore dei modelli
     std::vector<variogram_type> types = {variogram_type::SPHERIC, variogram_type::GAUSSIAN, variogram_type::EXPONENTIAL};
@@ -1146,7 +1071,7 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
 
     // 1) Ciclo sui modelli e calcolo il fit (a modello fissato) dei variogrammi direzionali
     for(size_t i=0; i<types.size(); i++)
-        dir_vario.at(i) = fit_dir_variogram (dev, directions, range_precision, nugget_precision, types.at(i));
+        dir_vario.at(i) = fit_dir_variogram (dev, directions, range_precision, nugget_precision, types.at(i), w_type);
 
 
     // 2) Inizializza l'errore somma per ogni modello
@@ -1222,7 +1147,7 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
     }
 
     // 5) Ricalcolo il fitting a modello e nugget (medio sulle direzioni per il modello prescelto) fissato
-    vector<variogram> vv = fit_dir_variogram (dev, directions, range_precision, types.at(min_index), avg_nugget);
+    vector<variogram> vv = fit_dir_variogram (dev, directions, range_precision, types.at(min_index), avg_nugget, false, w_type);
 
     if(is_print == true)
     {
@@ -1259,7 +1184,7 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
 /// @param nugget nugget value for the variogram fitting (e.g., 0.2)
 /// @param is_print boolean flag to print the fitted variogram parameters for each direction
 /// @return vector of fitted variogram models for each direction
-vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget, bool is_print)
+vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget, bool is_print, weightsType w_type)
 {
     // 0) Definisco il vettore dei modelli
     std::vector<variogram_type> types = {variogram_type::SPHERIC, variogram_type::GAUSSIAN, variogram_type::EXPONENTIAL};
@@ -1267,7 +1192,7 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
 
     // 1) Ciclo sui modelli e calcolo il fit (a modello fissato) dei variogrammi direzionali
     for(size_t i=0; i<types.size(); i++)
-        dir_vario.at(i) = fit_dir_variogram_1par (dev, directions, range_precision, nugget, types.at(i));
+        dir_vario.at(i) = fit_dir_variogram_1par (dev, directions, range_precision, nugget, types.at(i), false, w_type);
 
 
     // 2) Inizializza l'errore somma per ogni modello
@@ -1378,10 +1303,10 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
 /// \param is_print
 /// \return fitted variogram vector
 ///
-vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, variogram_type &type, const std::vector<double> &weigth, bool is_print)
+vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, variogram_type &type, const std::vector<double> &weigth, bool is_print, weightsType w_type)
 {
     // 0) Calcolo fit a modello fissato dei variogrammi direzionali
-    std::vector<MUSE::VarioError> dir_vario = fit_dir_variogram (dev, directions, range_precision, nugget_precision, type);
+    std::vector<MUSE::VarioError> dir_vario = fit_dir_variogram (dev, directions, range_precision, nugget_precision, type, w_type);
 
     // 1) Inizializza l'errore somma per ogni modello
     double sum_mse = 0.0;
@@ -1405,7 +1330,7 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
 
 
     // 5) Ricalcolo il fitting a modello e nugget (medio sulle direzioni per il modello prescelto) fissato
-    vector<variogram> vv = fit_dir_variogram (dev, directions, range_precision, type, avg_nugget);
+    vector<variogram> vv = fit_dir_variogram (dev, directions, range_precision, type, avg_nugget, false, w_type);
 
     if(is_print == true)
     {
@@ -1444,7 +1369,7 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
 /// @param weight 
 /// @param is_print 
 /// @return 
-vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::string &type, const std::vector<double> &weight, bool is_print)
+vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::string &type, const std::vector<double> &weight, bool is_print, weightsType w_type)
 {
     if(type.compare("AUTO") != 0)
     {
@@ -1452,12 +1377,12 @@ vector<variogram> fit_dir_variogram (const std::vector<exp_variog> &dev,const st
         variogram_type model_type;
         convert_from_str(type, model_type);
 
-        return fit_dir_variogram (dev, directions, degree_tolerance, range_precision, nugget_precision, model_type, weight, is_print);
+        return fit_dir_variogram (dev, directions, degree_tolerance, range_precision, nugget_precision, model_type, weight, is_print, w_type);
     }
     else
     {
         std::cout << "Fitting of directional variograms is set on: " << type << std::endl;
-        return fit_dir_variogram (dev, directions, degree_tolerance, range_precision, nugget_precision, weight, is_print);
+        return fit_dir_variogram (dev, directions, degree_tolerance, range_precision, nugget_precision, weight, is_print, w_type);
     }
 }
 

@@ -240,6 +240,13 @@ void load_exp_variogram (const std::string filename, exp_variog variogram)
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+/// @brief exp_variogram: OMNIDIRECTIONAL 1D EXPERIMENTAL VARIOGRAM - VARIABLE LAG SPACING
+/// @param values (normal score) sampled values
+/// @param coord_z z coordinates of the sampled points
+/// @param n_points number of points of the experimental variogram
+/// @param limit_dist limit distance for the experimental variogram
+/// @param tol_factor factor for the lag tolerance definition
+/// @return exp_variog struct containing the experimental variogram
 exp_variog exp_variogram (const std::vector<double> &values, const vector<double> &coord_z,
                           const int &n_points,
                           const double &limit_dist,
@@ -667,21 +674,17 @@ exp_variog exp_variogram_varlag (const vector<double> & values, const vector<dou
 }
 
 
-///
-/// \brief exp_variogram: OMNIDIRECTIONAL 3D EXPERIMENTAL VARIOGRAM
-/// \param values
-/// \param coord_x
-/// \param coord_y
-/// \param coord_z
-/// \param lagspac_type
-/// \param step
-/// \param n_points
-/// \param n_points_start
-/// \param limit_dist
-/// \param tol_factor
-/// \param percent
-/// \return
-///
+/// \brief exp_variogram: OMNIDIRECTIONAL 3D EXPERIMENTAL VARIOGRAM - LAG SPACING DEFINED IN INPUT
+/// \param values (normal) values of the sampled variable
+/// \param coord_x x coordinates of the sampled points
+/// \param coord_y y coordinates of the sampled points
+/// \param coord_z z coordinates of the sampled points
+/// \param lagspac_type type of lag spacing (VARIABLE or CONSTANT)
+/// \param step step for the variable lag spacing (if lagspac_type = VARIABLE)
+/// \param n_points number of points of the experimental variogram (for both variable and constant lag spacing)
+/// \param limit_dist limit distance for the experimental variogram (if != -DBL_MAX)
+/// \param tol_factor factor for the tolerance definition (tolerance = lag_spacing/tol_factor)
+/// \return exp_variog struct containing the experimental variogram (h, gamma, N)
 exp_variog exp_variogram (const vector<double> & values, const vector<double> & coord_x, const vector<double> & coord_y, const vector<double> & coord_z,
                             const std::string &lagspac_type,
                             const double &step,
@@ -2535,4 +2538,104 @@ exp_variog clean_exp_variogram (const exp_variog &ev, const uint min_npoints, in
     cout<<endl;
 
     return clean_ev;
+}
+
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+/// \brief Diagnose experimental variogram - check for anomalies, outliers, and potential issues
+/// \param ev experimental variogram
+/// \param values data values used to compute the variogram
+void diagnose_exp_variogram (const exp_variog &ev, const std::vector<double> &values)
+{
+    using namespace std;
+    cout << endl;
+    cout << "################################### VARIOGRAM DIAGNOSTICS ###################################" << endl;
+    
+    // Statistics on gamma values
+    double min_gamma = DBL_MAX;
+    double max_gamma = -DBL_MAX;
+    double sum_gamma = 0.0;
+    int count_gamma = 0;
+    
+    for(size_t i = 0; i < ev.gamma.size(); i++)
+    {
+        if(ev.N[i] > 0)  // Only count lags with data
+        {
+            min_gamma = min(min_gamma, ev.gamma[i]);
+            max_gamma = max(max_gamma, ev.gamma[i]);
+            sum_gamma += ev.gamma[i];
+            count_gamma++;
+        }
+    }
+    
+    double avg_gamma = (count_gamma > 0) ? sum_gamma / count_gamma : 0.0;
+    
+    // Standard deviation
+    double sum_var = 0.0;
+    for(size_t i = 0; i < ev.gamma.size(); i++)
+    {
+        if(ev.N[i] > 0)
+        {
+            sum_var += pow(ev.gamma[i] - avg_gamma, 2);
+        }
+    }
+    double std_gamma = (count_gamma > 0) ? sqrt(sum_var / count_gamma) : 0.0;
+    
+    cout << "\n=== GAMMA STATISTICS ===" << endl;
+    cout << "Min gamma: " << min_gamma << endl;
+    cout << "Max gamma: " << max_gamma << endl;
+    cout << "Mean gamma: " << avg_gamma << endl;
+    cout << "Std Dev gamma: " << std_gamma << endl;
+    cout << "Lags with data: " << count_gamma << " / " << ev.gamma.size() << endl;
+    
+    // Data value statistics
+    double min_val = *min_element(values.begin(), values.end());
+    double max_val = *max_element(values.begin(), values.end());
+    double sum_val = accumulate(values.begin(), values.end(), 0.0);
+    double avg_val = sum_val / values.size();
+    
+    double variance_data = 0.0;
+    for(double v : values)
+    {
+        variance_data += pow(v - avg_val, 2);
+    }
+    variance_data /= values.size();
+    
+    cout << "\n=== DATA STATISTICS ===" << endl;
+    cout << "Min value: " << min_val << endl;
+    cout << "Max value: " << max_val << endl;
+    cout << "Mean value: " << avg_val << endl;
+    cout << "Data variance: " << variance_data << endl;
+    cout << "Data range: " << (max_val - min_val) << endl;
+    cout << "Max diff^2/2: " << pow(max_val - min_val, 2) / 2 << " (theoretical max gamma)" << endl;
+    
+    // Check for anomalies
+    cout << "\n=== ANOMALY DETECTION ===" << endl;
+    
+    double threshold_lpc = avg_gamma + 2.0 * std_gamma;  // 2 sigma rule
+    bool has_anomalies = false;
+    
+    for(size_t i = 0; i < ev.gamma.size(); i++)
+    {
+        if(ev.N[i] > 0 && ev.gamma[i] > threshold_lpc)
+        {
+            cout << "WARNING: Lag #" << i << " (h=" << ev.h[i] << ") has high gamma=" << ev.gamma[i] 
+                 << " (N=" << ev.N[i] << " pairs)" << endl;
+            has_anomalies = true;
+        }
+    }
+    
+    // Check sill consistency
+    if(max_gamma > 1.2 && fabs(variance_data - 1.0) < 0.1)  // Should be ~1 for normal score
+    {
+        cout << "\nWARNING: Data appears to be normal score (variance=" << variance_data 
+             << "), but gamma reaches " << max_gamma << "." << endl;
+        cout << "Possible causes:" << endl;
+        cout << "  1. Incomplete normal score transformation" << endl;
+        cout << "  2. Directional anisotropy in this direction" << endl;
+        cout << "  3. Outliers in the data after NS transformation" << endl;
+    }
+    
+    cout << "\n#############################################################################################################" << endl;
+    cout << endl;
 }

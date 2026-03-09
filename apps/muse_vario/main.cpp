@@ -105,8 +105,8 @@ int main(int argc, char** argv)
      * - --dim: Dimension (3D, 2D, 1Dz, etc.)
      * @example muse_vario -V --pdir /path/to/project --var T --vario MODEL --dir OMNI --dim 3D
      */
-
     SwitchArg varioCompute                  ("V", "variogram", "Compute variogram", cmd, false); //booleano
+
     /**
      * @brief Project directory 
      * @param pdir Path to project directory
@@ -435,8 +435,8 @@ int main(int argc, char** argv)
      * @param rangestep range step
      */
     ValueArg<double> setRangeStep           ("", "rangestep", "Set range step", false, 100.0, "double", cmd);
-    /**
 
+    /**
      * @brief Set nugget step
      * @param nugstep Number of set nugget step
      */
@@ -472,12 +472,6 @@ int main(int argc, char** argv)
      */
     SwitchArg setWeight                     ("", "weight", "Set weight on nugget to compute directional variogram", cmd, false); //booleano
 
-    /**
-     * @brief Load experimental variogram
-     * @param expvario Name of load experimental variogram
-     */
-    ValueArg<std::string> loadExpVario      ("", "expvario", "Load experimental variogram", false, "filename", "string", cmd);
-
     //  Option: plotting tools
     /**
      * @brief Set eps for plot centering
@@ -493,11 +487,34 @@ int main(int argc, char** argv)
 
     
     /**
-     * @brief Set flag to compute variogram diagnostics
+     * @brief Set flag to compute variogram diagnostics. When set, this flag enables the computation of variogram diagnostics, which can include various analyses to assess the quality and characteristics of the computed variogram.
+     * The diagnostics can help to evaluate the robustness of the variogram estimation and identify potential issues or insights based on the original variable data.
      * @param diagnose Flag to compute variogram diagnostics
-     * @note When set, this flag enables the computation of variogram diagnostics, which can include various analyses to assess the quality and characteristics of the computed variogram.
+     * @note Using this flag requires --load flag to load experimental variogram points to be checked and --setVariableFile flag to specify the input file for the original value.
+     * - --load: Experimental variogram points (mandatory)
+     * - --file: Original values (mandatory)
+     * @example -D --load /path/to/experimental/variogram/points.txt --setVariableFile /path/to/variable_input.dat
      */
-    SwitchArg setVarioDiagnose ("", "diagnose", "Compute variogram diagnostics", cmd, false); //booleano
+    SwitchArg setVarioDiagnose ("D", "diagnose", "Compute variogram diagnostics (TO BE TESTED!)", cmd, false); //booleano
+
+    /**
+     * @brief Load experimental variogram by txt file to set internal experimental variogram data structure and store it in json file.
+     * @param expvario path to txt file to load experimental variogram
+     * @note This flag allows to load an experimental variogram from a txt file, which can be useful to set the internal experimental variogram data structure without the need to recompute the experimental points.
+     * This is used for fitting a model variogram to an already computed experimental variogram, or for plotting the experimental variogram without recomputing it.
+     * @example --load /path/to/experimental/variogram/points.txt
+     */
+    ValueArg<std::string> loadExpVario ("", "load", "Load experimental variogram by txt file to set internal experimental variogram data structure and store a json file", false, "filename", "string", cmd);
+
+    /**
+     * @brief Set variable input file
+     * @param setVariableFile Path to variable input file
+     * @note This flag allows to specify an input file for the variable to be analyzed in the variogram computation. 
+     * The input file should contain the necessary data for the specified variable (an unique column of sampled values). 
+     * Used with diagnose flag, this can help to perform variogram diagnostics based on the original variable data, which can provide insights into the quality and characteristics of the variogram estimation.
+     * @example --setVariableFile /path/to/variable_input.dat
+     */
+    ValueArg<std::string> setVariableFile ("f", "file", "Set variable input file", true, "variable to analyse", "name", cmd);
 
 
     // ---------------------------------------------------------------------------------------------------------
@@ -1755,25 +1772,31 @@ int main(int argc, char** argv)
             else
             {
                 // VARIO - VARIABILE CONTINUA
-
-                if(setNormalScore.getValue().compare("YES") == 0)
+                if(!setNormalScore.isSet() || (setNormalScore.isSet() && setNormalScore.getValue().compare("YES") != 0))
                 {
-                    normalscore normal_values;
+                    std::cout << FRED("=== ERROR: Normal Score Transformation is not set!") << std::endl;
+                    std::cout << FRED("=== Set --normalscore YES to enable normal score transformation on values.") << std::endl;
+                    exit(1);
+                }
 
-                    //if(setDeclustering2d.getValue().compare("YES") == 0)
+//                if(setNormalScore.getValue().compare("YES") == 0)
+//                {
+                    normalscore normal_values;
+                    std::cout << "=== Set normal score trasformation from geostatslib (MUSE-submodule) ..." << std::endl;
                     if(setDeclustering2d.isSet())
                     {
-                        std::cout << "2D declustering ..." << std::endl;
-                        std::cout << "### Cell size for declustering is set on " << setCellSize.getValue() << std::endl;
-                        std::cout << "### Number of step for declustering (grid translation) is set on " << setNStep.getValue() << std::endl;
+                        std::cout << "=== Set 2D declustering ..." << std::endl;
+                        std::cout << "=== Cell size for declustering is set on " << setCellSize.getValue() << std::endl;
+                        std::cout << "=== Number of step for declustering (grid translation) is set on " << setNStep.getValue() << std::endl;
                         std::vector<double> decl_weight = decluster2d(corr_x, corr_y, setCellSize.getValue(), setNStep.getValue());
-                        std::cout << "2D declustering ... COMPLETED." << std::endl;
+                        std::cout << "=== 2D declustering ... COMPLETED." << std::endl;
 
                         normal_values = normal_score(conv_values, decl_weight); //RICORDA!! c'è un terzo parametro da considerare nella normal score, settato di default su false
                         export1d_xyz(app_folder + "/" + Variable.getValue() + "_weight.dat", decl_weight);
                     }
                     else
                     {
+                        #ifdef DEBUG
                         std::cout << BOLD(FMAG("#################################")) << std::endl;
                         std::cout << BOLD(FMAG("UTILIZZO NORMAL SCORE (GEOSTATLIB)")) << std::endl;
                         std::cout << FMAG("Implementazione analoga a GSLIB, eccetto per la funzione di NORMALCDFINVERSE (espressa con altri coefficienti).") << std::endl;
@@ -1789,26 +1812,18 @@ int main(int argc, char** argv)
                         std::cout << FMAG("La correlazione quindi viene rispettata.") << std::endl;
                         std::cout << BOLD(FMAG("#################################")) << std::endl;
                         std::cout << std::endl;
+                        #endif
 
                         normal_values = normal_score(conv_values);
-                        //normal_values = normal_score2(conv_values);
-                        //normal_values = normal_score3(conv_values);
                     }
-
                     export1d_xyz(app_folder + "/" + Variable.getValue() + "_convval.dat", conv_values);
                     export3d_xyz(app_folder + "/" + Variable.getValue() + "_nscore.dat", normal_values.values, normal_values.x, normal_values.nsco);
 
-                    // infovar.mean_zscore = mean(normal_values.values);
-                    // infovar.var_zscore = variance(normal_values.values);
                     stats.mean_zscore = mean(normal_values.values);
                     stats.var_zscore = variance(normal_values.values);
                     vario_frame.setStatisticsInfo(stats);
 
                     metavario.setProcessing(infovar);
-
-                    std::cout << "\033[0;33mWARNING: Normal Score Transformation has been computed on values.\033[0m" << std::endl;
-                    std::cout << std::endl;
-
 
                     VarioType option;
                     convert_from_str(varioType.getValue(), option);
@@ -1816,35 +1831,31 @@ int main(int argc, char** argv)
                     VarioDirection dir;
                     convert_from_str(varioDirection.getValue(), dir);
 
+                    std::cout << std::endl;
+                    std::cout << "=== Starting variogram computation ..." << std::endl;
                     switch (option)
                     {
                     case VarioType::EXPERIMENTAL: //solo variogramma sperimentale: può essere omnidirezionale/direzionale
                     {
+                        std::cout << "=== Experimental points computation ..." << std::endl;
                         switch (dir)
                         {
                         case VarioDirection::OMNI:
                         {
-                            //exp_variog exp_var = experimental_variogram_memory_optimization(normal_values.values, corr_x, corr_y, corr_z, setPointsVario.getValue());
-
-                            //std::cout << "VARIO LAG VARIABILE - ORIGINALE" << std::endl;
-                            //exp_variog exp_var = experimental_variogram_with_variable_lag(normal_values.values, corr_x, corr_y, corr_z);
-                            //exp_variog exp_var = experimental_variogram_with_variable_lag_opt2(normal_values.values, corr_x, corr_y, corr_z, setPointsVario.getValue());
-                            //exp_variog exp_var = experimental_variogram_varlag_opt (normal_values.values, corr_x, corr_y, corr_z, setPointsVario.getValue(), setMaxDistance.getValue());
-                            //exit(1);
-
+                            std::cout << "=== Omnidirectional analysis ..." << std::endl;
+                            std::cout << "=== Lag type is set on: " << setLagType.getValue() << std::endl;
+                            
                             // Compute the experimenatal variogram - OMNIDIRECTIONAL
                             exp_variog exp_var;
 
-                            std::cout << "Variogram dimension is set on: " << varioDimension.getValue() << std::endl;
+                            std::cout << "=== Variogram dimension is set on: " << varioDimension.getValue() << std::endl;
                             if(varioDimension.getValue().compare("3D") == 0)
                             {
                                 exp_var = exp_variogram(normal_values.values, corr_x, corr_y, corr_z, setLagType.getValue(), setFactor.getValue(), setPointsVario.getValue(), setMaxDistance.getValue(), setToleranceFactor.getValue());
-                                //exp_var = exp_variogram (normal_values.values, corr_x, corr_y, corr_z, setPointsVario.getValue(), setMaxDistance.getValue(), setToleranceFactor.getValue());
-                                std::cout << "Computing 3D experimental variogram ... COMPLETED." << std::endl;
+                                std::cout << "=== Computing 3D experimental variogram ... COMPLETED." << std::endl;
                             }
                             else if(varioDimension.getValue().compare("2D") == 0)
                             {
-                                //std::cout << "Computing 2D experimental variogram ... COMPLETED." << std::endl;
                                 std::cout << FRED("ERROR: NO 2D experimental variogram implementation... ") << std::endl;
                                 exit(1);
                             }
@@ -1869,13 +1880,15 @@ int main(int argc, char** argv)
 
                             if(setVarioCleanPoints.isSet())
                             {
-                                std::cout << "Clean experimental variogram ..." << std::endl;
+                                std::cout << "=== Clean experimental variogram ..." << std::endl;
+                                std::cout << "=== Min pair of points for clean: " << setVarioCleanPoints.getValue() << std::endl;
                                 exp_var = clean_exp_variogram (exp_var, setVarioCleanPoints.getValue());
-                                std::cout << "Clean experimental variogram ... COMPLETED." << std::endl;
+                                std::cout << "=== Clean experimental variogram ... COMPLETED." << std::endl;
                             }
 
 
                             // Plotting experimental variogram
+                            std::cout << "=== Plotting experimental variogram ..." << std::endl;
                             PlotStruct gamma_h;
                             for(size_t i=0; i < exp_var.gamma.size(); i++)
                             {
@@ -1892,6 +1905,9 @@ int main(int argc, char** argv)
 
                         case VarioDirection::DIR:
                         {
+                            std::cout << "=== Directional analysis ..." << std::endl;
+                            std::cout << "=== Lag type is set on: " << setLagType.getValue() << std::endl;
+
                             VarioMeta::InfoVariogram info_vario;
                             info_vario.dimension = varioDimension.getValue();
                             info_vario.direction = varioDirection.getValue();
@@ -1900,6 +1916,7 @@ int main(int argc, char** argv)
                             std::vector<double> directions(1,0);
                             if(!loadDirs.isSet())
                             {
+                                std::cout << "=== Automatic directions are computed ..." << std::endl;
                                 info_vario.n_directions = 180/setDegree.getValue();
                                 info_vario.degree_step = setDegree.getValue();
                                 info_vario.degree_tolerance = setTol.getValue();
@@ -1909,6 +1926,7 @@ int main(int argc, char** argv)
                             }
                             else
                             {
+                                std::cout << "=== Discrete directions are set ..." << std::endl;
                                 info_vario.set_directions = loadDirs.getValue();
                                 std::vector<std::string> direc = split_string(loadDirs.getValue(), ',');
 
@@ -1931,13 +1949,12 @@ int main(int argc, char** argv)
                             {
                                 dir_ex_var = dir3DH_exp_variogram (normal_values.values, corr_x, corr_y, corr_z, setLagType.getValue(), directions, setTol.getValue(), setVertTol.getValue(), setBandwidth.getValue(), setVertBandwidth.getValue(), setFactor.getValue(), setPointsVario.getValue(), setMaxDistance.getValue(), setToleranceFactor.getValue());
                                 std::cout << "Computing 3D HORIZONTAL directional experimental variogram... COMPLETED." << std::endl;
-
                             }
                             else if(varioDimension.getValue().compare("3Dz") == 0)
                             {
                                 directions.clear();
                                 directions.push_back(0.0);
-                                std::cout << "### Calculation direction is fixed on 0 degree from Z axis." << std::endl;
+                                std::cout << "=== Calculation direction is fixed on 0 degree from Z axis." << std::endl;
 
                                 dir_ex_var = dir3DV_exp_variogram (normal_values.values, corr_x, corr_y, corr_z, setLagType.getValue(), setSpacingSamples.getValue(), directions, setVertTol.getValue(), setBandwidth.getValue(), setFactor.getValue(), setPointsVario.getValue(), setMaxDistance.getValue(), setToleranceFactor.getValue());
                                 std::cout << "Computing 3D VERTICAL directional experimental variogram... COMPLETED." << std::endl;
@@ -1965,10 +1982,11 @@ int main(int argc, char** argv)
                             int nzeros = 0;
                             if(setVarioCleanPoints.isSet())
                             {
-                                std::cout << "Clean directional experimental variogram ..." << std::endl;
+                                std::cout << "=== Clean directional experimental variogram ..." << std::endl;
+                                std::cout << "=== Min pair of points for clean: " << setVarioCleanPoints.getValue() << std::endl;
                                 for(uint i=0; i< dir_ex_var.size(); i++)
                                     dir_ex_var.at(i) = clean_exp_variogram (dir_ex_var.at(i), setVarioCleanPoints.getValue(), nzeros);
-                                std::cout << "Clean directional experimental variogram ... COMPLETED." << std::endl;
+                                std::cout << "=== Clean directional experimental variogram ... COMPLETED." << std::endl;
                             }
 
                             std::vector<MUSE::exp_variog_methods> variov;
@@ -1982,12 +2000,12 @@ int main(int argc, char** argv)
                                 variovv.setExpVariog_gamma(dir_ex_var.at(i).gamma);
 
                                 variov.push_back(variovv);
-
                             }
                             metavario.setDirExpVariog(variov);
 
 
                             // 3) Plot directional variograms
+                            std::cout << "=== Plotting experimental variogram ..." << std::endl;
                             int i_dir = 0;
                             for(const exp_variog &v:dir_ex_var)
                             {
@@ -2014,7 +2032,14 @@ int main(int argc, char** argv)
 
                     case VarioType::MODEL:
                     {
-                        std::string plot_title = "Fitted Experimental Variogram Model";
+                        std::cout << "=== Experimental points fitting ..." << std::endl;
+                        std::string plot_title = "Experimental Variogram Fitting";
+
+                        //Set MSE criterion for fitting
+                        weightsType w_type = weightsType::CRESSIE_WEIGHTED_MODIFIED;
+                        if(setMSEcriterion.isSet())
+                            w_type = stringToWeightsType(setMSEcriterion.getValue());
+                        std::cout << "=== MSE criterion for fitting is set on: " << setMSEcriterion.getValue() << std::endl;
 
                         //se ho già lo sperimentale, lo leggo da json?!
                         switch (dir)
@@ -2026,17 +2051,18 @@ int main(int argc, char** argv)
                             if(loadExpVario.isSet())
                             {
                                 //leggi un file .dat e riempi la struttura dati exp_var;
+                                std::cout << "=== Load experimental variogram from json file: " << loadExpVario.getValue() << std::endl;
                                 load_exp_variogram(loadExpVario.getValue(), exp_var);
                             }
                             else
                             {
                                 //Compute experimental variogram
-                                std::cout << "Variogram dimension is set on: " << varioDimension.getValue() << std::endl;
+                                std::cout << "=== Computing experimental variogram ..." << std::endl;
+                                std::cout << "=== Variogram dimension is set on: " << varioDimension.getValue() << std::endl;
                                 if(varioDimension.getValue().compare("3D") == 0)
                                 {
                                     exp_var = exp_variogram(normal_values.values, corr_x, corr_y, corr_z, setLagType.getValue(), setFactor.getValue(), setPointsVario.getValue(), setMaxDistance.getValue(), setToleranceFactor.getValue());
-                                    //exp_var = exp_variogram (normal_values.values, corr_x, corr_y, corr_z, setPointsVario.getValue(), setMaxDistance.getValue(), setToleranceFactor.getValue());
-                                    std::cout << "Computing 3D experimental variogram ... COMPLETED." << std::endl;
+                                    std::cout << "=== Computing 3D experimental variogram ... COMPLETED." << std::endl;
                                 }
                                 else if(varioDimension.getValue().compare("2D") == 0)
                                 {
@@ -2049,22 +2075,7 @@ int main(int argc, char** argv)
                                     exp_var = exp_variogram(normal_values.values, corr_z, setPointsVario.getValue(), setMaxDistance.getValue(), setToleranceFactor.getValue());
 
                                     plot_title.clear();
-                                    plot_title = "Fitted Vertical Experimental Variogram Model";
-
-    //                                PlotStruct vert_gamma_h;
-    //                                for(size_t j=0; j < vertical_vario.gamma.size(); j++)
-    //                                {
-    //                                    vert_gamma_h.x.push_back(vertical_vario.h.at(j));          //distanze
-    //                                    vert_gamma_h.y.push_back(vertical_vario.gamma.at(j));      //gamma (variogramma)
-    //                                }
-
-    //                                std::cout << "Automatic fitting of experimental variogram ... " << std::endl;
-    //                                variogram fitted_vertical_var = fit_variogram(vertical_vario, setRangeStep.getValue(), setNuggetStep.getValue());
-
-    //                                variogram_plot(vert_gamma_h, fitted_vertical_var, "Fitted Vertical Experimental Variogram Model", "Lag distance", "Semivariogram");
-
-    //                                matplot::save(app_folder + "/" + data.getName() + "_vertical", "jpeg");
-    //                                matplot::cla();
+                                    plot_title = "Vertical Experimental Variogram Fitting";
                                     std::cout << "Computing 1Dz experimental variogram ... COMPLETED." << std::endl;
                                 }
 
@@ -2090,6 +2101,7 @@ int main(int argc, char** argv)
                             if(setVarioCleanPoints.isSet())
                             {
                                 std::cout << "Clean experimental variogram ..." << std::endl;
+                                std::cout << "Min pair of points for clean: " << setVarioCleanPoints.getValue() << std::endl;
                                 exp_var = clean_exp_variogram (exp_var, setVarioCleanPoints.getValue());
                                 std::cout << "Clean experimental variogram ... COMPLETED." << std::endl;
                             }
@@ -2112,37 +2124,39 @@ int main(int argc, char** argv)
 
                             variogram fitted_exp_var;
 
+
                             if (setModel.isSet() && setNugget.isSet())
                             {
-                                std::cout << "Fit variogram with fixed model type: " << setModel.getValue() << " and fixed nugget: " << setNugget.getValue() << std::endl;
+                                std::cout << "=== Fit variogram with fixed model type: " << setModel.getValue() << " and fixed nugget: " << setNugget.getValue() << std::endl;
                                 variogram_type model_type;
                                 convert_from_str(setModel.getValue(), model_type);
 
-                                fitted_exp_var = fit_variogram (exp_var, setRangeStep.getValue(), model_type, setNugget.getValue(), true);
+                                fitted_exp_var = fit_variogram (exp_var, setRangeStep.getValue(), model_type, setNugget.getValue(), true, w_type);
                             }
                             else if(setNugget.isSet())
                             {
-                                std::cout << "Fit variogram with fixed nugget: " << setNugget.getValue() << std::endl;
-                                fitted_exp_var = fit_variogram_1par (exp_var, setRangeStep.getValue(), setNugget.getValue());
+                                std::cout << "=== Fit variogram with fixed nugget: " << setNugget.getValue() << std::endl;
+                                fitted_exp_var = fit_variogram_1par (exp_var, setRangeStep.getValue(), setNugget.getValue(), w_type);
                             }
                             else if(setModel.isSet())
                             {
-                                std::cout << "Fit variogram with fixed model type: " << setModel.getValue() << std::endl;
+                                std::cout << "=== Fit variogram with fixed model type: " << setModel.getValue() << std::endl;
                                 variogram_type model_type;
                                 convert_from_str(setModel.getValue(), model_type);
 
-                                fitted_exp_var = fit_variogram (exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), model_type);
+                                fitted_exp_var = fit_variogram (exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), model_type, w_type);
                             }
                             else if (setSill.isSet())
                             {
-                                std::cout << "Fit variogram with fixed sill: " << setSill.getValue() << std::endl;
-                                std::cout << FRED("COMMAND NOT ACTIVE!!") << std::endl;
+                                //std::cout << "=== Fit variogram with fixed sill: " << setSill.getValue() << std::endl;
+                                std::cout << "=== MUSE-vario operates on continuos normal-score values. Sill is assumed as 1.0." << std::endl;
+                                std::cout << FRED("COMMAND NOT ENABLED!!") << std::endl;
                                 exit(1);
                             }
                             else
                             {
                                 std::cout << "Automatic fitting of experimental variogram ... " << std::endl;
-                                fitted_exp_var = fit_variogram(exp_var, setRangeStep.getValue(), setNuggetStep.getValue());
+                                fitted_exp_var = fit_variogram(exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), w_type);
                             }
 
 
@@ -2223,13 +2237,13 @@ int main(int argc, char** argv)
                             if(varioDimension.getValue().compare("3D") == 0)
                             {
                                 //std::cout << "Computing 3D directional experimental variogram ... " << std::endl;
-                                std::cout << FRED("ERROR: NO 3D directional experimental variogram implementation... ") << std::endl;
+                                std::cout << FRED("ERROR: NO 3D directional experimental variogram implementation ... ") << std::endl;
                                 exit(1);
                             }
                             else if(varioDimension.getValue().compare("3Dxy") == 0)
                             {
                                 dir_ex_var = dir3DH_exp_variogram (normal_values.values, corr_x, corr_y, corr_z, setLagType.getValue(), directions, setTol.getValue(), setVertTol.getValue(), setBandwidth.getValue(), setVertBandwidth.getValue(), setFactor.getValue(), setPointsVario.getValue(), setMaxDistance.getValue(), setToleranceFactor.getValue());
-                                std::cout << "Computing 3D HORIZONTAL directional experimental variogram... COMPLETED." << std::endl;
+                                std::cout << "Computing 3D HORIZONTAL directional experimental variogram ... COMPLETED." << std::endl;
 
                             }
                             else if(varioDimension.getValue().compare("3Dz") == 0)
@@ -2334,7 +2348,6 @@ int main(int argc, char** argv)
                                 std::cout << FYEL("WARNING. Penalty function on: 1-(n_zeros(dir))*0.1") << std::endl;
                                 for(size_t k=0; k<zeros.size(); k++)
                                 {
-                                    //double w = 1.0/(zeros.at(k)+1);
                                     double w = 1.0-(zeros.at(k))*0.1; //penalty function
 
                                     std::cout << "dir = " << directions.at(k) << "; n_zeros = " << zeros.at(k) << "; weight = " << w << std::endl;
@@ -2359,14 +2372,14 @@ int main(int argc, char** argv)
                                     variogram_type model_type;
                                     convert_from_str(setModel.getValue(), model_type);
 
-                                    vv = fit_dir_variogram (dir_ex_var, directions, setRangeStep.getValue(), model_type, setNugget.getValue(), true);
+                                    vv = fit_dir_variogram (dir_ex_var, directions, setRangeStep.getValue(), model_type, setNugget.getValue(), true, w_type);
                                 }
                                 else if(setNugget.isSet())
                                 {
                                     std::cout << "Fit variogram with fixed nugget: " << setNugget.getValue() << std::endl;
                                     std::cout << FRED("Weight on nugget is not active!") << std::endl;
                                     std::cout << FMAG("Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd") << std::endl;
-                                    vv = fit_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNugget.getValue(), true);
+                                    vv = fit_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNugget.getValue(), true, w_type);
                                 }
                                 else if(setModel.isSet())
                                 {
@@ -2374,7 +2387,7 @@ int main(int argc, char** argv)
                                     variogram_type model_type;
                                     convert_from_str(setModel.getValue(), model_type);
 
-                                    vv = fit_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), model_type, weight, true);
+                                    vv = fit_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), model_type, weight, true, w_type);
                                 }
                                 else if (setSill.isSet())
                                 {
@@ -2390,7 +2403,7 @@ int main(int argc, char** argv)
                                 else
                                 {
                                     std::cout << "Automatic fitting of directional variograms is set ..." << std::endl;
-                                    vv = fit_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), weight, true);
+                                    vv = fit_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), weight, true, w_type);
                                 }
                             }
                             catch (exception e)
@@ -2518,18 +2531,20 @@ int main(int argc, char** argv)
                     if(subDataset.isSet())
                         vario_filename += "_" + subDataset.getValue();
                     metavario.write(vario_filename + ".json");
-                }
+                // }
 
-                else
-                {
-                    std::cout << "\033[0;31mWARNING: Set Normal Score Transformation --nscore\033[0m" << std::endl;
-                    exit(1);
-                }
+                // else
+                // {
+                //     std::cout << "\033[0;31mWARNING: Set Normal Score Transformation --nscore\033[0m" << std::endl;
+                //     exit(1);
+                // }
             }
 
             vario_frame.setFrameName(rel_datadir.string());
             vec_vario_frame.push_back(vario_frame);
         }
+
+
 
         /////////////////////////////
         //////////SUMMARY FOR FRAMES
@@ -2542,76 +2557,36 @@ int main(int argc, char** argv)
             vario_mf.write(out_folder + "/" + app_name + "/"+ Variable.getValue() + "_" + subDataset.getValue() + "_" + varioDirection.getValue() + varioDimension.getValue() +"_multiframe.json");
         else
             vario_mf.write(out_folder + "/" + app_name + "/"+ Variable.getValue() + "_" + varioDirection.getValue() + varioDimension.getValue() + "_multiframe.json");
+    }
 
 
+    if(setVarioDiagnose.isSet())
+    {
+        std::cout << "=== Variogram diagnose ..." << std::endl;
+        std::cout << "=== TO BE TESTED!" << std::endl;
+        if(!loadExpVario.isSet())
+        {
+            std::cout << FRED("=== ERROR: Set --load <file.txt> to enable variogram diagnose!") << std::endl;
+            std::cout << FRED("=== The file must be composed of three columns in this order: N, h, gamma(h)") << std::endl;
+            exit(1);
+        }
 
-        // /////////////////////////////
-        // //////////SUMMARY CSV FOR FRAMES
-        // ///
-        // ///
-        // if(setMoreInfo.isSet() && varioDimension.getValue() != "3Dz")
-        // {
-        //     std::cout << "Save summary of multi-frame variography analysis ... " << std::endl;
+        if(setVariableFile.isSet())
+        {
+            std::cout << FRED("=== ERROR: Set --file <var.dat> to enable variogram diagnose respect to such a dataset!") << std::endl;
+            std::cout << FRED("=== The file must be composed of one column, representing original data values") << std::endl;
+            exit(1);
+        }
 
-        //     std::ofstream file_summary(out_folder + "/" + app_name + "/" + Variable.getValue() + "_summary.csv");
-        //     std::string delimiter = ";";
+        std::cout << "=== Load experimental variogram from txt file: " << loadExpVario.getValue() << std::endl;
+        exp_variog exp_var;
+        load_exp_variogram(loadExpVario.getValue(), exp_var);
 
-        //     std::vector<std::string> vec_csv;
-        //     vec_csv.push_back("frame_name");
-        //     vec_csv.push_back("domain");
-        //     vec_csv.push_back("mean");
-        //     vec_csv.push_back("var");
-        //     vec_csv.push_back("mean_zscore");
-        //     vec_csv.push_back("var_zscore");
-        //     vec_csv.push_back("model_type");
-        //     vec_csv.push_back("nugget");
-        //     vec_csv.push_back("sill");
-        //     vec_csv.push_back("partial_sill");
-        //     vec_csv.push_back("range");
-        //     vec_csv.push_back("range_max");
-        //     vec_csv.push_back("range_min");
-        //     for(uint col =0; col < vec_csv.size(); col++)
-        //     {
-        //         file_summary << vec_csv.at(col);
-        //         if(col != vec_csv.size() - 1)
-        //             file_summary << delimiter; // No comma at end of line
-        //     }
-        //     file_summary << "\n";
-
-
-        //     for(size_t id_frame=0; id_frame < vec_vario_frame.size(); id_frame++)
-        //     {
-        //         vec_csv.clear();
-        //         vec_csv.push_back(vec_vario_frame.at(id_frame).frame_name);
-        //         if(subDataset.isSet())
-        //             vec_csv.push_back(subDataset.getValue());
-        //         else
-        //             vec_csv.push_back("");
-
-        //         vec_csv.push_back(to_string(vec_vario_frame.at(id_frame).getStatisticsInfo().mean));
-        //         vec_csv.push_back(to_string(vec_vario_frame.at(id_frame).getStatisticsInfo().var));
-        //         vec_csv.push_back(to_string(vec_vario_frame.at(id_frame).getStatisticsInfo().mean_zscore));
-        //         vec_csv.push_back(to_string(vec_vario_frame.at(id_frame).getStatisticsInfo().var_zscore));
-
-        //         vec_csv.push_back(vec_vario_frame.at(id_frame).vario.type);
-        //         vec_csv.push_back(to_string(vec_vario_frame.at(id_frame).vario.getNugget()));
-        //         vec_csv.push_back(to_string(1.0));
-        //         vec_csv.push_back(to_string(vec_vario_frame.at(id_frame).vario.getSill()));
-        //         vec_csv.push_back(to_string(vec_vario_frame.at(id_frame).vario.range));
-        //         vec_csv.push_back(to_string(vec_vario_frame.at(id_frame).vario.range_max));
-        //         vec_csv.push_back(to_string(vec_vario_frame.at(id_frame).vario.range_min));
-
-        //         for(uint col =0; col < vec_csv.size(); col++)
-        //         {
-        //             file_summary << vec_csv.at(col);
-        //             if(col != vec_csv.size() - 1)
-        //                 file_summary << delimiter; // No comma at end of line
-        //         }
-        //         file_summary << "\n";
-        //     }
-        //     file_summary.close();// Close the file
-        //     std::cout << FGRN("Save summary of multi-frame variography analysis ... COMPLETED.") << std::endl;
-        // }
+        std::vector<double> values;
+        load1d_xyzfile (setVariableFile.getValue(), values);
+        
+        diagnose_exp_variogram (exp_var, values);
+        std::cout << "=== Variogram diagnose ... COMPLETED." << std::endl;
     }
 
 

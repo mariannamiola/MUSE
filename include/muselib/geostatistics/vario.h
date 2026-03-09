@@ -146,28 +146,11 @@ std::vector<exp_variog> dir_exp_variogram_range (const vector<double> &values, c
 exp_variog clean_exp_variogram (const exp_variog &ev, const uint min_npoints);
 exp_variog clean_exp_variogram (const exp_variog &ev, const uint min_npoints, int &nzeros);
 
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+//Diagnose experimental variogram - check for anomalies
+void diagnose_exp_variogram (const exp_variog &ev, const std::vector<double> &values);
 
-
-
-
-
-// Compunting experimental variogram - omnidirectional
-//exp_variog experimental_variogram_with_variable_lag_opt (const vector<double> & values, const vector<double> & coord_x, const vector<double> & coord_y, const vector<double> & coord_z, const int n_points, const double &percent = 10);
-//exp_variog experimental_variogram_with_variable_lag_opt2        (const vector<double> & values, const vector<double> & coord_x, const vector<double> & coord_y, const vector<double> & coord_z, const int n_points, const double &percent = 10);
-
-//exp_variog experimental_variogram_varlag_opt            (const vector<double> & values, const vector<double> & coord_x, const vector<double> & coord_y, const vector<double> & coord_z, const int n_points, double max_dist, const double &percent = 10);
-
-/*std::vector<exp_variog> dir_experimental_variogram_varlag_opt (const vector<double> & values,
-                                  const vector<double> & coord_x,
-                                  const vector<double> & coord_y,
-                                  uint n_directions,
-                                  const double &degree_step,
-                                  const double &degree_tolerance,
-                                  const int n_points,
-                                  double max_dist,
-                                  const double &percent = 10);    // significato?? ; percent = settato su 10 (di default)
-*/
 
 
 
