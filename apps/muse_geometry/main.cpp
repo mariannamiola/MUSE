@@ -95,28 +95,26 @@ int main(int argc, char** argv)
 
     // Option 0. New project creation
     /**
-     * @brief Creation of new geometry
-     * @param geometry Flag to creation of new geometry
-     * @note When creating new geometry, requires:
-     * - Input data source (choose one):
-     *   - -V/--vector: Load vector file (.shp, .gpkg)
-     *   - -R/--raster: Load raster file (.ASCII)
-     *   - -P/--pcl: Load point cloud (.xyz, .dat, .txt)
-     * - Processing method (choose one):
-     *   - --tri: Triangulation for 2D meshing
-     *   - --grid: Grid for 2D meshing
-     * OPTIONAL:
+     * @brief Creation of new geometry environment in Project directory
+     * @param geometry Flag to creation of new geometry environment in Project directory
+     * @note This command initializes a new geometry environment within the specified project directory. 
+     * It sets up the necessary folder structure (--pdir path/to/project/dir) to store geometrical items and models created by various geospatial input data sources and processing methods (computational geometry techniques). 
+     * It is used with:
      * - --pdir: Project directory
-     * - --setEPSG: Set coordinate system
+     * - --setEPSG: Set coordinate reference system of geometry environment (optional)
      * @example muse_geometry -N -p /path/to/project 
      */
-    SwitchArg geometryCreation          ("N", "geometry", "Creation of new geometry", cmd, false); //booleano
+    SwitchArg geometryCreation ("N", "geometry", "Creation of new geometry environment in the project folder", cmd, false); //booleano
 
     /**
      * @brief Project directory
-     * @param pdir Path to project directory
+     * @param pdir Path where the project is created
+     * @note Used with -N/--geometry for geometry environment creation (and in other cases in which the project locations must be specified). 
+     * Required to specify the project directory where the geometry environment will be created. 
+     * The command initializes the necessary folder structure within the project directory to store geometrical items and models created by various geospatial input data sources and processing methods (computational geometry techniques).
+     * @example -p /path/to/project/dir
      */
-    ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", false, "Directory", "path", cmd);
+    ValueArg<std::string> projectFolder ("p", "pdir", "Set project directory", false, "/path/to/project/dir", "string", cmd);
 
     // Option 0a. Project creation - optional: setting project EPSG
     /**
@@ -124,6 +122,14 @@ int main(int argc, char** argv)
      * @param setEPSG project epsg
      */
     ValueArg<std::string> setEPSG        ("", "setEPSG", "Set project EPSG", false, "Unknown", "authority", cmd);
+
+    /**
+     * @brief Copy input file(s) in the data project directory (path/project/in/geometry) to replace manual data copy
+     * @param input File path of the input(s) to copy in the data folder project
+     * @note To be used with -N swith flag, when create a new geometry environment in the project
+     * @example --input user/path1/box.gpkg
+     */
+    MultiArg<std::string> setInput ("i", "input", "Copy input files in the project directory (in/geometry/)", false, "string", cmd );
 
 
     // Option 1. Reading vector file (+ flag for triangulation)
@@ -138,7 +144,6 @@ int main(int argc, char** argv)
      * - --save: Save data content
      * - --attribute: Save attribute table
      */
-
     SwitchArg loadVector                ("V", "vector", "Load Vector file", cmd, false); //booleano
     
     /**
@@ -671,23 +676,18 @@ int main(int argc, char** argv)
 
     // Format conversion for saving meshes
     /**
-
-     * @brief Saving mesh in obj format
-
+     * @brief Saving surface mesh in obj format
      * @param obj Enable saving mesh in obj format
-
+     * @example muse_geometry -L -p .. --obj
      */
-
-    SwitchArg objConversion             ("", "obj", "Saving mesh in obj format", cmd, false); //booleano
+    SwitchArg objConversion             ("", "obj", "Saving surface mesh in obj format (default: .off)", cmd, false); //booleano
+    
     /**
-
-     * @brief Saving mesh in vtk format
-
+     * @brief Saving volume mesh in vtk format
      * @param vtk Enable saving mesh in vtk format
-
+     * @example muse_geometry -M -p .. --vtk
      */
-
-    SwitchArg vtkConversion             ("", "vtk", "Saving mesh in vtk format", cmd, false); //booleano
+    SwitchArg vtkConversion             ("", "vtk", "Saving volume mesh in vtk format (default: .mesh)", cmd, false); //booleano
 
 
 
@@ -730,58 +730,28 @@ int main(int argc, char** argv)
 
 
     /**
-
-
-
      * @brief Create scalar field from centroids configuration and real samples
-
-
-
      * @param cscalar Flag to create scalar field from centroids configuration and real samples
-
-
-
      */
-
-
-
     SwitchArg createScalarField             ("F", "cscalar", "Create scalar field from centroids configuration and real samples", cmd, false); //booleano
+    
     /**
-
      * @brief Set samples mesh associated to (real) values
-
      * @param smesh samples mesh associated to (real) values
-
      */
-
     ValueArg<std::string> setSamplesMesh    ("","smesh","Set samples mesh associated to (real) values", false, "", "string", cmd);
+    
     /**
-
      * @brief Set samples values associated to each vertex of samples mesh
-
      * @param sval samples values associated to each vertex of samples mesh
-
      */
-
     ValueArg<std::string> setSamplesValues  ("","sval","Set samples values associated to each vertex of samples mesh", false, "", "string", cmd);
 
     /**
-
-
      * @brief Restore scalar field from centroids configuration and real samples
-
-
      * @param rscalar Enable restore scalar field from centroids configuration and real samples
-
-
      */
-
-
     SwitchArg restoreScalarField            ("", "rscalar", "Restore scalar field from centroids configuration and real samples", cmd, false); //booleano
-
-
-    //Option 8. Utility to extract id cells from a point cloud
-
 
 
     // Option 9. Multi-resolution approach (associate a scalar field to meshes with different resolutions)
@@ -814,17 +784,9 @@ int main(int argc, char** argv)
     ValueArg<std::string> setRefModel       ("", "refmod", "Geometry model", false, "name_geometry", "string", cmd);
 
     /**
-
-
      * @brief Set folder to save outputs
-
-
      * @param outf Path to set folder to save outputs
-
-
      */
-
-
     ValueArg<std::string> setOutFolder      ("", "outf", "Set folder to save outputs", false, "Directory", "string", cmd);
 
 
@@ -840,6 +802,11 @@ int main(int argc, char** argv)
 
     // 0) Project settings
     MUSE::Project Project;
+    if(!projectFolder.isSet())
+    {
+        std::cerr << "\033[0;31mInput ERROR: Insert project folder with -p/--pdir flag\033[0m" << std::endl;
+        exit(1);
+    }
     Project.setFolder(projectFolder.getValue()); //cartella di progetto
     Project.setName(Project.folder.substr(Project.folder.find_last_of("/")+1, Project.folder.length()));
 
@@ -896,9 +863,6 @@ int main(int argc, char** argv)
     if(vtkConversion.isSet() == true)
         ext_vol = ".vtk";
 
-
-    // buffered_points();
-    // exit(1);
 
     // ---------------------------------------------------------------------------------------------------------
     // STARTS:
@@ -5446,21 +5410,48 @@ int main(int argc, char** argv)
 
     //This switch allows to create a volume mesh starting from a surface mesh and a set of wells (defined as strings) with the command -createVolObjectwithWells. 
     //The output is a tetmesh with the wells as cylindrical holes (if generate_tet is set to true) or as cylinders (if generate_tet is set to false). 
-    //The command accepts several parameters for the generation of the volume mesh, such as the target edge length, the maximum tet volume, the option to refine the cylindrical holes, etc. 
+    //The command accepts several parameters for the generation of the volume mesh, such as the target edge length, the maximum tet volume, the option to refine the cylindrical holes, etc.
+    //The command saves the volume mesh in the output folder (project/out/geometry/volume) defined by the user (-p path/to/project)
     //For more details on the parameters, please refer to the documentation of the command -createVolObjectwithWells.
-    if(createVolObjectwithWells.isSet() && meshFiles.isSet())
+    if(createVolObjectwithWells.isSet())
     {
         std::cout << "=== Creating volume mesh with wells ... " << std::endl;
-        if(meshFiles.getValue().size() > 1)
+        if(!filesystem::exists(out_volume))
         {
-            std::cerr << "ERROR: For volume object, one mesh file is accepted by command -m!" << std::endl;
+            std::cout << "=== Creating volume directory in Project folder ... " << Project.getFolder() << std::endl;
+            filesystem::create_directory(out_volume);
+        }
+
+        if(!meshFiles.isSet() && !generate_box_arg.isSet())
+        {
+            std::cerr << "ERROR: For volume object, one mesh file is required by command -m or the option --generate_box!" << std::endl;
             exit(1);
         }
 
         CreateWellsConfig config;
-        config.input_file = meshFiles.getValue().at(0); //input_mesh_arg.getValue();
-        config.generate_box = generate_box_arg.getValue();
-        config.output_file = output_mesh_arg.getValue();
+        if(!meshFiles.isSet() && generate_box_arg.isSet())
+        {
+            std::cout << "=== Generate box mesh for volume creation ... " << std::endl;
+            config.generate_box = generate_box_arg.getValue();
+        }
+
+        if(meshFiles.isSet())
+        {
+            if(meshFiles.getValue().size() > 1)
+            {
+                std::cerr << "ERROR: For volume object, one mesh file is accepted by command -m!" << std::endl;
+                exit(1);
+            }
+
+            std::cout << "=== Load surface mesh for volume creation ... " << std::endl;
+            std::cout << "=== ... neglecting box generation even if option --generate_box is set!" << std::endl;
+            std::cout << "=== Mesh file: " << meshFiles.getValue().at(0) << std::endl;
+
+            config.input_file = meshFiles.getValue().at(0);
+        }
+
+        config.output_file = out_volume + "/" + output_mesh_arg.getValue();
+        config.volmesh_format = ext_vol;
         config.well_strings = wells_arg.getValue();
         config.target_edge_length = edge_length_arg.getValue();
         config.verbose = verbose_arg.getValue();
@@ -5472,13 +5463,21 @@ int main(int argc, char** argv)
         config.refine_cylinders = refine_cylinders_arg.getValue();
         config.cylinder_edge_scale = cylinder_edge_scale_arg.getValue();
 
-        return create_tetmesh_with_wells(config);
+        create_tetmesh_with_wells(config);
+        std::cout << "=== Volume mesh with wells created ... COMPLETED." << std::endl;
 
-        // std::string out_mesh = out_volume + "/" + get_basename(get_filename(meshFiles.getValue().at(0)));
-        // geometa.setMeshSummary(vol);
-        // geometa.write(out_mesh + ".json");
+        MUSE::VolumeMeta geometa;
+        geometa.setProject(Project);
 
-        std::cout << "=== Creating volume mesh with wells ... COMPLETED." << std::endl;
+        std::vector<std::string> excommands;
+        excommands.push_back(command);
+        geometa.setCommands(excommands);
+        
+        MUSE::Volume vol;
+        MUSE::Volume::Parameters vol_par;
+        vol.setParameters(vol_par);
+
+        geometa.write(out_volume + "/" + get_basename(output_mesh_arg.getValue()) + ".json");
         std::cout << "=== Saving JSON ... TO DO!" << std::endl;
     }
 

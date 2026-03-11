@@ -697,6 +697,7 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
     std::string input_file = config.input_file;
     std::string generate_box = config.generate_box;
     std::string output_file = config.output_file;
+    std::string volmesh_format = config.volmesh_format;
     std::vector<std::string> well_strings = config.well_strings;
     double target_edge_length = config.target_edge_length;
     bool verbose = config.verbose;
@@ -962,7 +963,7 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
                 std::cout << "Generated " << tet_mesh.num_verts() << " vertices, " << tet_mesh.num_polys() << " tetrahedra" << std::endl;
             }
 
-            std::string tet_filename = output_file.substr(0, output_file.find_last_of('.')) + ".mesh";
+            std::string tet_filename = output_file.substr(0, output_file.find_last_of('.')) + volmesh_format; //".mesh";
 
             try
             {
@@ -1009,7 +1010,7 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
                     cinolib::Tetmesh<> no_wells_mesh = tet_mesh;
                     removeTetsInsideWells(no_wells_mesh, cylinder_meshes, verbose);
 
-                    std::string no_wells_filename = output_file.substr(0, output_file.find_last_of('.')) + "_no_wells.mesh";
+                    std::string no_wells_filename = output_file.substr(0, output_file.find_last_of('.')) + "_no_wells" + volmesh_format;
                     no_wells_mesh.save(no_wells_filename.c_str());
 
                     if (verbose)
@@ -1031,7 +1032,7 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
                     cinolib::Tetmesh<> only_wells_mesh = tet_mesh;
                     removeTetsOutsideWells(only_wells_mesh, cylinder_meshes, verbose);
 
-                    std::string only_wells_filename = output_file.substr(0, output_file.find_last_of('.')) + "_only_wells.mesh";
+                    std::string only_wells_filename = output_file.substr(0, output_file.find_last_of('.')) + "_only_wells" + volmesh_format;
                     only_wells_mesh.save(only_wells_filename.c_str());
 
                     if (verbose)

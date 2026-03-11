@@ -7,9 +7,10 @@
 #include <vector>
 
 struct CreateWellsConfig {
-    std::string input_file;
-    std::string generate_box;
-    std::string output_file;
+    std::string input_file = "";
+    std::string generate_box = "";
+    std::string output_file = "";
+    std::string volmesh_format = ".mesh";
     std::vector<std::string> well_strings;
     double target_edge_length = -1.0;
     bool verbose = false;
