@@ -3,7 +3,7 @@
   "project_name": "14_sec_3D_4000_tet_sGs_sis",
 
   "samples": "samples.csv",
-  "varname": "cat",
+  "varname": "phi",
   "units": "-",
 
   "geometry": {
@@ -18,9 +18,9 @@
   },
 
   "compute": {
-    "space": "",
+    "space": "_varspace",
     "where": "_stats",
-    "var": "best",
+    "var": "mean",
     "units": "-",
     "geom": "sec_box"
   },
@@ -30,9 +30,9 @@
       "x": "X",
       "y": "Y",
       "z": "Z",
-      "value": "cat",
-      "cat": true,
-      "n_cat": 8
+      "value": "phi",
+      "cat": false,
+      "n_cat": 0
     },
 
     "scalarfield": {
@@ -40,8 +40,8 @@
       "y": "Field 0",
       "z": "Field 0",
       "value": "Field 0",
-      "cat": true,
-      "n_cat": 8
+      "cat": false,
+      "n_cat": 0
     }
   },
 

@@ -85,7 +85,9 @@ add_definitions(-DGEOSTATLIB_USES_FLANN)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LZ4 REQUIRED liblz4)
 find_package(LZ4)
-include_directories(BEFORE "../external/geostatslib/include")
+#include_directories(BEFORE "../external/geostatslib/include")
+include_directories(BEFORE "../external/GeoStatsLib/include")
+
 
 
 #####
@@ -116,7 +118,7 @@ link_libraries(cinolib)
 
 #####
 # VTK
-set(VTK_EXTERNAL_PREFIX "${CMAKE_SOURCE_DIR}/../external/VTK-9.6.0/VTK-9.6.0/installed/lib/cmake/vtk-9.6.0")
+set(VTK_EXTERNAL_PREFIX "${CMAKE_SOURCE_DIR}/../external/VTK/installed/lib/cmake/vtk-9.6")
 message("${VTK_EXTERNAL_PREFIX}")
 if(EXISTS "${VTK_EXTERNAL_PREFIX}")
   list(APPEND CMAKE_PREFIX_PATH "${VTK_EXTERNAL_PREFIX}")
