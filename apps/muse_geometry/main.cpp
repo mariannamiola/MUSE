@@ -530,9 +530,9 @@ int main(int argc, char** argv)
     // Well creation configuration
     ValueArg<std::string> generate_box_arg("", "generate-box", "Generate box with dimensions: width,height,depth (e.g., \"10,5,8\")", false, "", "string", cmd);
 
-    ValueArg<std::string> output_mesh_arg("o", "output", "Output triangle mesh file (.off format)", true, "", "string", cmd);
+    ValueArg<std::string> output_mesh_arg("o", "output", "Output triangle mesh file (.off format)", false, "", "string", cmd);
 
-    MultiArg<std::string> wells_arg("w", "well", "Well specification: x,y,z,height,radius[,z_sub1,z_sub2,...] (can be used multiple times)", true, "string", cmd);
+    MultiArg<std::string> wells_arg("w", "well", "Well specification: x,y,z,height,radius[,z_sub1,z_sub2,...] (can be used multiple times)", false, "string", cmd);
 
     ValueArg<double> edge_length_arg("e", "edge-length", "Target edge length for remeshing (default: auto from input mesh)", false, -1.0, "double", cmd);
 
