@@ -111,3 +111,6 @@ examples/21_DGM_PrecAgri*/data/ID_*_UTM.csv
 examples/19_Bisagno_*/data/*.vtk
 examples/19_Polcevera_*/data/*.vtk
 examples/19_Polcevera_*/data/piana.xyz
+
+# from WSL
+*:Zone.Identifier

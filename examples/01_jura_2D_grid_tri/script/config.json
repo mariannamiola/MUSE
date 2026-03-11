@@ -1,0 +1,53 @@
+{
+  "work_folder": "MUSE_test",
+  "project_name": "01_jura_2D_grid_tri",
+
+  "samples": "samples.csv",
+  "varname": "pb",
+  "units": "-",
+
+  "geometry": {
+    "name": "jura_boundary_tri",
+    "sub": "",
+    "ext": "obj"
+  },
+
+  "vario": {
+    "dir": "DIR",
+    "dim": "2D"
+  },
+
+  "compute": {
+    "space": "_varspace",
+    "where": "_stats",
+    "var": "mean",
+    "units": "-",
+    "geom": "jura_boundary_tri"
+  },
+
+  "columns": {
+    "samples": {
+      "x": "e",
+      "y": "n",
+      "z": "z",
+      "value": "pb",
+      "cat": false,
+      "n_cat": 0
+    },
+
+    "scalarfield": {
+      "x": "Field 0",
+      "y": "Field 0",
+      "z": "Field 0",
+      "value": "Field 0",
+      "cat": false,
+      "n_cat": 0
+    }
+  },
+
+  "output": {
+    "save": true,
+    "dir": "_fig",
+    "format": "png"
+  }
+}
