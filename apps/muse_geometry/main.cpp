@@ -205,17 +205,9 @@ int main(int argc, char** argv)
     ValueArg<std::string> setPolygon    ("", "polygon", "Load filename as POLYGON geometry type", false, "", "filename", cmd);
 
     /**
-
-
      * @brief Grid data - test
-
-
      * @param gridata Enable grid data - test
-
-
      */
-
-
     SwitchArg gridData                  ("G", "gridata", "Grid data - test", cmd, false); //booleano
     MultiArg<std::string> setBBPoints   ("", "bbp", "Set bounding box points", false, "string", cmd );
 
@@ -3912,27 +3904,34 @@ int main(int argc, char** argv)
             cinolib::Tetmesh<> volmesh;
             cinolib::tetgen_wrap(trimesh.vector_verts(), trimesh.vector_polys(), trimesh.vector_edges(), opt, volmesh);
 
-            // double av_vol=0.0;
-            // for(uint pid=0; pid<volmesh.num_polys(); pid++)
-            //     av_vol += volmesh.poly_volume(pid);
-            // av_vol /= volmesh.num_polys();
-            // std::cout << "### Compute poly average volume ... COMPLETED." << std::endl;
+            double voltet_min=DBL_MAX, voltet_max=-DBL_MAX;
+            for(uint pid=0; pid<volmesh.num_polys(); pid++)
+            {
+                double voltet = volmesh.poly_volume(pid);
+                if(voltet < voltet_min)
+                    voltet_min = voltet;
+                if(voltet > voltet_max)
+                    voltet_max = voltet;
+            }
+            std::cout << "### Compute min/max poly volumes ... COMPLETED." << std::endl;
 
             volmesh.translate(center);
             std::cout << "### Restore coordinates mesh from BBOX center: " << center << " COMPLETED." <<std::endl;
 
             std::cout << std::endl;
-            std::cout << "#############################################" << std::endl;
-            std::cout << "### Statistics on volume ... " << std::endl;
-            std::cout << "### Poly average volume: " << volmesh.mesh_volume()/volmesh.num_polys() << std::endl;
-            std::cout << "### Edge average length: " << volmesh.edge_avg_length() << std::endl;
-            std::cout << "### Edge max length: " << volmesh.edge_max_length() << std::endl;
-            std::cout << "### Edge min length: " << volmesh.edge_min_length() << std::endl;
-            //std::cout << FYEL("### WARNING: edge length major than 1.5 times edge average length ...") << std::endl;
+            std::cout << "=============================================" << std::endl;
+            std::cout << "=== Statistical report about tetrahedral mesh ... " << std::endl;
+            std::cout << "=== Poly average volume: " << volmesh.mesh_volume()/volmesh.num_polys() << std::endl;
+            std::cout << "=== Poly max volume: " << voltet_max << std::endl;
+            std::cout << "=== Poly min volume: " << voltet_min << std::endl;
+            std::cout << "=== Edge average length: " << volmesh.edge_avg_length() << std::endl;
+            std::cout << "=== Edge max length: " << volmesh.edge_max_length() << std::endl;
+            std::cout << "=== Edge min length: " << volmesh.edge_min_length() << std::endl;
+            
             if(volmesh.edge_max_length() > volmesh.edge_avg_length() * 1.5)
                 std::cout << FYEL("### WARNING: (max) edge length major than 1.5 times edge average length ...") << std::endl;
 
-            std::cout << "#############################################" << std::endl;
+            std::cout << "=============================================" << std::endl;
             std::cout << std::endl;
 
             volmesh.save(out_mesh.c_str());
