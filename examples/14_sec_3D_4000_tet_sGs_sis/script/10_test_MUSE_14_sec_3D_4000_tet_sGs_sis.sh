@@ -248,6 +248,19 @@ mv ${OUTSURF}/${GEOM}_absz-0.5-${GEOM}_absz-1.5.obj ${OUTSURF}/${GEOM}_box.obj
 muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --tet --vtk
 muse_geometry -Z -p ${WP} -m ${OUTVOL}/${GEOM}_box.vtk --rotaxis X --rotangle -270 --vtk ##only for visualization
 
+####### computing mesh with wells ...
+#wells:
+muse_geometry -W -p ${WP} --generate-box "10,5,8" -o test_box.off -w "0,0,-2,4,0.5" -v --tet --vtk
+##-m ${OUTSURF}/${GEOM}_box.obj -o ${GEOM}_box_tmp.off -w "0,0,-2,4,0.5" -v --tet ##--opt ... to complete with correct coordinate of wells in tetrahedral section model
+###string for testing: #--generate-box "10,5,8" -o test_box.off -w "0,0,-2,4,0.5" -v --generate-tet
+
+#### clean up geometry files from script folder and move to output geometry folder (volume/tmp)
+mkdir -p ${OUTVOL}/tmp
+cp ${SCRIPT_DIR}/black_faces.off ${OUTVOL}/tmp/black_faces.off
+cp ${SCRIPT_DIR}/box_mesh.off ${OUTVOL}/tmp/box_mesh.off
+cp ${SCRIPT_DIR}/cylinder_1.off ${OUTVOL}/tmp/cylinder_1.off
+cp ${SCRIPT_DIR}/cylinders.off ${OUTVOL}/tmp/cylinders.off
+rm ${SCRIPT_DIR}/black_faces.off ${SCRIPT_DIR}/box_mesh.off ${SCRIPT_DIR}/cylinder_1.off ${SCRIPT_DIR}/cylinders.off
 
 ############################## INDICATOR VARIOGRAM AND SIS COMPUTATION ##############################
 
