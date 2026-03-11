@@ -37,3 +37,6 @@
 [submodule "external/VolumeMesher"]
 	path = external/VolumeMesher
 	url = https://github.com/MarcoAttene/VolumeMesher.git
+[submodule "external/GeoStatsLib"]
+	path = external/GeoStatsLib
+	url = git@github.com:DanielaCabiddu/GeoStatsLib.git
