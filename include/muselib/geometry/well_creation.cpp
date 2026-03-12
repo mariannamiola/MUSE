@@ -902,7 +902,17 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
             std::cout << "Generating tetrahedral mesh using VolumeMesher boolean union + TetGen..." << std::endl;
         }
 
-        std::string box_file = "box_mesh.off";
+        std::string box_file = input_file.empty() ? "box_mesh.off" : input_file;
+
+        // if it is a .obj, convert in.off since VolumeMesher doesn't support .obj input
+        if (box_file.substr(box_file.find_last_of('.')) == ".obj")
+        {
+            cinolib::Trimesh<> input_for_meshing (box_file.c_str());
+            box_file += ".off";
+
+            input_for_meshing.save(box_file.c_str());
+        }
+
         std::string cylinders_file = "cylinders.off";
 
         std::string mesh_gen_path = get_mesh_generator_path();

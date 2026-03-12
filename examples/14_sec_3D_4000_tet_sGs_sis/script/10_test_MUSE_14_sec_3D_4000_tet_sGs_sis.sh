@@ -136,7 +136,8 @@ export VAR1=phi ##continuous variable
 # 2. Export flags
 #######################################################################
 #For geometry
-export OPT=a0.1
+export OPT=qa2
+export OPT_TET=q
 export RESX=0.5
 export RESY=0.5
 export RESZ=1.0
@@ -236,31 +237,31 @@ muse_geometry -N -p ${WP}
 cp -R ${DATA_SOURCE}/${GEOM}.xyz ${INGEOM}
 muse_geometry -P -p ${WP} --tri --polygon ${INGEOM}/${GEOM}.xyz --opt ${OPT} --setz -1.0 --obj --rotaxis X --rotangle 270
 
-muse_geometry -O -p ${WP} -m ${OUTSURF}/${GEOM}.obj --abs -z -0.5 --obj
-mv ${OUTSURF}/${GEOM}_absz.obj ${OUTSURF}/${GEOM}_absz-0.5.obj
+muse_geometry -O -p ${WP} -m ${OUTSURF}/${GEOM}.obj --abs -z 0.0 --obj
+mv ${OUTSURF}/${GEOM}_absz.obj ${OUTSURF}/${GEOM}_absz-0.0.obj
 
-muse_geometry -O -p ${WP} -m ${OUTSURF}/${GEOM}.obj --abs -z -1.5 --obj
-mv ${OUTSURF}/${GEOM}_absz.obj ${OUTSURF}/${GEOM}_absz-1.5.obj
+muse_geometry -O -p ${WP} -m ${OUTSURF}/${GEOM}.obj --abs -z 10.0 --obj
+mv ${OUTSURF}/${GEOM}_absz.obj ${OUTSURF}/${GEOM}_absz-10.0.obj
 
-muse_geometry -T -p ${WP} -m ${OUTSURF}/${GEOM}_absz-0.5.obj -m ${OUTSURF}/${GEOM}_absz-1.5.obj --obj
-mv ${OUTSURF}/${GEOM}_absz-0.5-${GEOM}_absz-1.5.obj ${OUTSURF}/${GEOM}_box.obj
+muse_geometry -T -p ${WP} -m ${OUTSURF}/${GEOM}_absz-0.0.obj -m ${OUTSURF}/${GEOM}_absz-10.0.obj --obj
+mv ${OUTSURF}/${GEOM}_absz-0.0-${GEOM}_absz-10.0.obj ${OUTSURF}/${GEOM}_box.obj
 
-muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --tet --vtk
+muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --tet --vtk --opt ${OPT_TET}
 muse_geometry -Z -p ${WP} -m ${OUTVOL}/${GEOM}_box.vtk --rotaxis X --rotangle -270 --vtk ##only for visualization
 
 ####### computing mesh with wells ...
 #wells:
-muse_geometry -W -p ${WP} --generate-box "10,5,8" -o test_box.off -w "0,0,-2,4,0.5" -v --tet --vtk
+muse_geometry -W -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj -o test_box.off -w "50,-5,0,4,0.5" -w "20,-5,0,4,0.5"  -w "75,-5,0,4,0.5" -v --tet --vtk
 ##-m ${OUTSURF}/${GEOM}_box.obj -o ${GEOM}_box_tmp.off -w "0,0,-2,4,0.5" -v --tet ##--opt ... to complete with correct coordinate of wells in tetrahedral section model
 ###string for testing: #--generate-box "10,5,8" -o test_box.off -w "0,0,-2,4,0.5" -v --generate-tet
 
 #### clean up geometry files from script folder and move to output geometry folder (volume/tmp)
-mkdir -p ${OUTVOL}/tmp
-cp ${SCRIPT_DIR}/black_faces.off ${OUTVOL}/tmp/black_faces.off
-cp ${SCRIPT_DIR}/box_mesh.off ${OUTVOL}/tmp/box_mesh.off
-cp ${SCRIPT_DIR}/cylinder_1.off ${OUTVOL}/tmp/cylinder_1.off
-cp ${SCRIPT_DIR}/cylinders.off ${OUTVOL}/tmp/cylinders.off
-rm ${SCRIPT_DIR}/black_faces.off ${SCRIPT_DIR}/box_mesh.off ${SCRIPT_DIR}/cylinder_1.off ${SCRIPT_DIR}/cylinders.off
+#mkdir -p ${OUTVOL}/tmp
+#cp ${SCRIPT_DIR}/black_faces.off ${OUTVOL}/tmp/black_faces.off
+#cp ${SCRIPT_DIR}/box_mesh.off ${OUTVOL}/tmp/box_mesh.off
+#cp ${SCRIPT_DIR}/cylinder_1.off ${OUTVOL}/tmp/cylinder_1.off
+#cp ${SCRIPT_DIR}/cylinders.off ${OUTVOL}/tmp/cylinders.off
+#rm ${SCRIPT_DIR}/black_faces.off ${SCRIPT_DIR}/box_mesh.off ${SCRIPT_DIR}/cylinder_1.off ${SCRIPT_DIR}/cylinders.off
 
 ############################## INDICATOR VARIOGRAM AND SIS COMPUTATION ##############################
 
@@ -271,7 +272,11 @@ muse_vario -V -p ${WP} -v ${VAR0} --vario MODEL --dir ${DIR} --dim ${DIM} --dirs
 #computesis:
 ##########  COMPUTE  ###########
 export GMOD=${GEOM}_box
+
+## decomment if you want to simulate with wells
+GMOD=test_box
 muse_compute -C -p ${WP} -v ${VAR0} --dir ${DIR} --dim ${DIM} -m ${OUTVOL}/${GMOD}.vtk --crit SISIM --nsim ${NSIM} --rotaxis X --rotangle 270 --scaleradius 1.5 --octant --simulated 7 --input 3
+
 
 ################################
 export OUTCOMP=${OUTWP}/compute/${VAR0}_${DIR}${DIM}_${GMOD}
