@@ -1906,7 +1906,12 @@ int main(int argc, char** argv)
 
                 // Read raster file
                 printSpatialReferenceInfo(list_grid.at(j), Project.authority);
-                load_rasterfile (list_grid.at(j), grid, XOrigin, YOrigin, nXSize, nYSize, XSizePixel, YSizePixel);
+                int loadRc = load_rasterfile(list_grid.at(j), grid, XOrigin, YOrigin, nXSize, nYSize, XSizePixel, YSizePixel);
+                if(loadRc != 0)
+                {
+                    std::cerr << "\033[0;31mERROR: Unable to read raster file: " << list_grid.at(j) << "\033[0m" << std::endl;
+                    exit(1);
+                }
 
                 std::cout << "=== Columns number (nXSize): " << nXSize << ", Rows number (nYSize): " << nYSize << std::endl;
                 std::cout << std::fixed << std::setprecision(setPrecision.getValue()) << "=== XOrigin: " << XOrigin << ", YOrigin: " << YOrigin << std::endl;
