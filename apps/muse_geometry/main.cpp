@@ -781,6 +781,9 @@ int main(int argc, char** argv)
      */
     ValueArg<std::string> setOutFolder      ("", "outf", "Set folder to save outputs", false, "Directory", "string", cmd);
 
+    ValueArg<int> setPrecision              ("", "prec", "Set precision", false, 6, "int" , cmd);
+    ValueArg<double> setTolerance           ("", "tol", "Set tolerance", false, 1e-02, "double" , cmd);
+
 
     // ---------------------------------------------------------------------------------------------------------
     // PARSING:
@@ -1864,7 +1867,7 @@ int main(int argc, char** argv)
         excommands.push_back(command);
         geometa.setCommands(excommands);
 
-        std::string out_rast = out_geometry +"/rast";
+        std::string out_rast = out_geometry +"/surf";
         if(!filesystem::exists(out_rast))
             filesystem::create_directory(out_rast);
 
@@ -1877,9 +1880,9 @@ int main(int argc, char** argv)
         std::vector<std::string> dir_grid = get_directories(in_geometry);
         if(dir_grid.empty())
         {
-            std::cout << "=== Input ERROR: no directories found!" << std::endl;
+            //std::cout << "=== Input ERROR: no directories found!" << std::endl;
             dir_grid.push_back(in_geometry);
-            std::cout << dir_grid.at(0) << std::endl;
+            //std::cout << dir_grid.at(0) << std::endl;
         }
 
         MUSE::GeospatialData Geometry;
@@ -1902,10 +1905,11 @@ int main(int argc, char** argv)
                 float YSizePixel = 1.0;
 
                 // Read raster file
+                printSpatialReferenceInfo(list_grid.at(j), Project.authority);
                 load_rasterfile (list_grid.at(j), grid, XOrigin, YOrigin, nXSize, nYSize, XSizePixel, YSizePixel);
 
                 std::cout << "=== Columns number (nXSize): " << nXSize << ", Rows number (nYSize): " << nYSize << std::endl;
-                std::cout << std::fixed << std::setprecision(6) << "=== XOrigin: " << XOrigin << ", YOrigin: " << YOrigin << std::endl;
+                std::cout << std::fixed << std::setprecision(setPrecision.getValue()) << "=== XOrigin: " << XOrigin << ", YOrigin: " << YOrigin << std::endl;
                 std::cout << "=== Grid size: " << grid.size() << " x " << (grid.empty() ? 0 : grid[0].size()) << std::endl;
                 std::cout << "=== X Pixel size: " << XSizePixel << ", Y Pixel size: " << YSizePixel << std::endl;
                 std::cout << "\033[0;32m=== Import raster file: " << list_grid.at(j) << "... COMPLETED.\033[0m" << std::endl;
@@ -1917,7 +1921,7 @@ int main(int argc, char** argv)
                 if(setEPSG.isSet())
                     Geometry.setAuthority(setEPSG.getValue());
 
-                geometa.write(out_rast + "/" + Geometry.getName() + ".json");
+                //geometa.write(out_rast + "/" + Geometry.getName() + ".json");
 
                 std::vector<Point3D> data, uniq_data;
                 for(int row = 0; row < nYSize; row++)
@@ -1933,8 +1937,44 @@ int main(int argc, char** argv)
                         data.push_back(p);
                     }
                 }
-                std::cout << "=== Extract coordinates ... COMPLETED." << std::endl;
+                MUSE::SurfaceMeta::DataSummary dataSummary;
+                dataSummary.setDataSummary(data);
+                geometa.setDataSummary(dataSummary);
+                std::cout << "=== Extract coordinates of pixel centroids ... COMPLETED." << std::endl;
+                std::cout << std::endl;
 
+                ///
+                /// Computing bbox data and traslate at the center - TO CHECK!!
+                ///
+                // std::vector<cinolib::vec3d> data_for_bbox;
+                // for(size_t di=0; di < data.size(); di++)
+                //     data_for_bbox.push_back(cinolib::vec3d({data.at(di).x, data.at(di).y, data.at(di).z}));
+                // cinolib::AABB aabb (data_for_bbox);
+                // data_for_bbox.clear();
+
+                // data_for_bbox.push_back(cinolib::vec3d({aabb.min.x(), aabb.min.y(), aabb.min.z()}));
+                // data_for_bbox.push_back(cinolib::vec3d({aabb.max.x(), aabb.min.y(), aabb.min.z()}));
+                // data_for_bbox.push_back(cinolib::vec3d({aabb.max.x(), aabb.max.y(), aabb.min.z()}));
+                // data_for_bbox.push_back(cinolib::vec3d({aabb.min.x(), aabb.max.y(), aabb.min.z()}));
+                // data_for_bbox.push_back(cinolib::vec3d({aabb.min.x(), aabb.min.y(), aabb.max.z()}));
+                // data_for_bbox.push_back(cinolib::vec3d({aabb.max.x(), aabb.min.y(), aabb.max.z()}));
+                // data_for_bbox.push_back(cinolib::vec3d({aabb.max.x(), aabb.max.y(), aabb.max.z()}));
+                // data_for_bbox.push_back(cinolib::vec3d({aabb.min.x(), aabb.max.y(), aabb.max.z()}));
+                // std::cout << "=== Computing best plane on points bounding box | vector size: " << data_for_bbox.size() << std::endl;
+
+                // cinolib::vec3d center (aabb.min.x() + aabb.delta_x()/2.0, aabb.min.y() + aabb.delta_y()/2.0, aabb.min.z() + aabb.delta_z()/2.0);
+                // std::cout << "=== Center bbox data: " << center.x() << "; " << center.y() << "; " << center.z() << std::endl;
+
+                // for(auto &point:data)
+                // {
+                //     point.x -= center.x();
+                //     point.y -= center.y();
+                //     point.z -= center.z();
+                // }
+
+                ///
+                /// Starting meshing
+                ///
                 if(triFlag.isSet())
                 {
                     cinolib::Trimesh<> trimesh;
@@ -1968,8 +2008,10 @@ int main(int argc, char** argv)
                         trimesh = points_triangulation(data, "c");
                         std::vector<int> convexhull;
                         std::vector<unsigned int> convex_uint = trimesh.get_ordered_boundary_vertices();
-                        for(unsigned int idx : convex_uint)
-                            convexhull.push_back((int)idx);
+                        //for(unsigned int idx : convex_uint)
+                        //    convexhull.push_back((int)idx);
+                        for (unsigned int i : convex_uint)
+                            convexhull.push_back(static_cast<int>(i));
 
                         std::vector<int> b_id;
                         std::vector<Point3D> concavehull = computing_concavehull(data, convexhull, b_id);
@@ -2045,32 +2087,38 @@ int main(int argc, char** argv)
                     Surface.setSummary(trimesh);
 
                     std::string out_mesh = out_rast + "/" + get_basename(Geometry.getName()) + ext_surf;
+                    //trimesh.translate(center);
                     trimesh.save(out_mesh.c_str());
                 }
                 else if(gridFlag.isSet())
                 {
                     paramSurface.type = "QUADMESH";
-                    paramSurface.resx = XSizePixel;
-                    paramSurface.resy = YSizePixel;
+                    // paramSurface.resx = XSizePixel;
+                    // paramSurface.resy = YSizePixel;
+                    // paramSurface.resz = 0.0;
+
+                    paramSurface.resx = setResx.isSet() ? setResx.getValue() : XSizePixel;
+                    paramSurface.resy = setResy.isSet() ? setResy.getValue() : YSizePixel;
                     paramSurface.resz = 0.0;
 
-                    //MUSE::Quadmesh<> quadmesh(nYSize-1, nXSize-1, XSizePixel, YSizePixel, XOrigin, YOrigin);
+                    std::string out_mesh = out_rast + "/" + get_basename(Geometry.getName()) + ext_surf;
+
+                    //ADD DOWNSAMPLING (FROM MUSE-GEOM): TO DO!
                     MUSE::Quadmesh<> quadmesh(nYSize-1, nXSize-1, XSizePixel, YSizePixel, XOrigin, YOrigin, grid);
 
-                    std::string out_mesh = out_rast + "/grid_" + get_basename(Geometry.getName()) + ext_surf;
+                    //std::string out_mesh = out_rast + "/grid_" + get_basename(Geometry.getName()) + ext_surf;
                     quadmesh.save(out_mesh.c_str());
-
-                    Surface.setParameters(paramSurface);
                     Surface.setSummary(quadmesh);
 
+                    Surface.setParameters(paramSurface);
                     std::cout << "\033[0;32m=== Saved quadmesh: " << out_mesh << "\033[0m" << std::endl;
                 }
 
                 geometa.setMeshSummary(Surface);
                 geometa.setGeospatialData(Geometry);
 
-                // CORREZIONE: Usa Geometry.getName() invece di Geometry.name
-                geometa.write(out_rast + "/" + Geometry.getName() + ".json");
+                geometa.write(out_rast + "/" + get_basename(Geometry.getName()) + ".json");
+                std::cout << "\033[0;32m=== Saved json: " << out_rast + "/" + get_basename(Geometry.getName()) + ".json" << "\033[0m" << std::endl;
             }
         }
     }
