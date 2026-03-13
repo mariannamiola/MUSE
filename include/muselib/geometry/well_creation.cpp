@@ -988,31 +988,13 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
             {
                 std::cerr << "Error: Failed to save tetrahedral mesh: " << e.what() << std::endl;
             }
-
-            std::string well_id_filename = output_file.substr(0, output_file.find_last_of('.')) + "_well_id.txt";
-            if (!saveTetWellIdField(tet_mesh, cylinder_meshes, wells, well_id_filename, verbose))
+            
+            std::string region_id_filename = output_file.substr(0, output_file.find_last_of('.')) + "_region_id.txt";
+            if (!saveTetRegionIdField(tet_mesh, cylinder_meshes, wells, region_id_filename, verbose))
             {
-                std::cerr << "Warning: Failed to save tet well id field" << std::endl;
+                std::cerr << "Warning: Failed to save tet region id field" << std::endl;
             }
-
-            bool has_subdivisions = false;
-            for (const auto& well : wells)
-            {
-                if (!well.z_subdivisions.empty())
-                {
-                    has_subdivisions = true;
-                    break;
-                }
-            }
-            if (has_subdivisions)
-            {
-                std::string region_id_filename = output_file.substr(0, output_file.find_last_of('.')) + "_region_id.txt";
-                if (!saveTetRegionIdField(tet_mesh, cylinder_meshes, wells, region_id_filename, verbose))
-                {
-                    std::cerr << "Warning: Failed to save tet region id field" << std::endl;
-                }
-            }
-
+            
             if (save_no_wells)
             {
                 try
