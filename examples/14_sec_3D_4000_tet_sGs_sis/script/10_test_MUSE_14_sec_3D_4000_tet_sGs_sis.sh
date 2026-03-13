@@ -240,18 +240,18 @@ muse_geometry -P -p ${WP} --tri --polygon ${INGEOM}/${GEOM}.xyz --opt ${OPT} --s
 muse_geometry -O -p ${WP} -m ${OUTSURF}/${GEOM}.obj --abs -z 0.0 --obj
 mv ${OUTSURF}/${GEOM}_absz.obj ${OUTSURF}/${GEOM}_absz-0.0.obj
 
-muse_geometry -O -p ${WP} -m ${OUTSURF}/${GEOM}.obj --abs -z 10.0 --obj
-mv ${OUTSURF}/${GEOM}_absz.obj ${OUTSURF}/${GEOM}_absz-10.0.obj
+muse_geometry -O -p ${WP} -m ${OUTSURF}/${GEOM}.obj --abs -z 5.0 --obj
+mv ${OUTSURF}/${GEOM}_absz.obj ${OUTSURF}/${GEOM}_absz-5.0.obj
 
-muse_geometry -T -p ${WP} -m ${OUTSURF}/${GEOM}_absz-0.0.obj -m ${OUTSURF}/${GEOM}_absz-10.0.obj --obj
-mv ${OUTSURF}/${GEOM}_absz-0.0-${GEOM}_absz-10.0.obj ${OUTSURF}/${GEOM}_box.obj
+muse_geometry -T -p ${WP} -m ${OUTSURF}/${GEOM}_absz-0.0.obj -m ${OUTSURF}/${GEOM}_absz-5.0.obj --obj
+mv ${OUTSURF}/${GEOM}_absz-0.0-${GEOM}_absz-5.0.obj ${OUTSURF}/${GEOM}_box.obj
 
-muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --tet --vtk --opt ${OPT_TET}
-muse_geometry -Z -p ${WP} -m ${OUTVOL}/${GEOM}_box.vtk --rotaxis X --rotangle -270 --vtk ##only for visualization
+#muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --tet --vtk --opt ${OPT_TET}
+muse_geometry -L -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --rotaxis X --rotangle -270 --obj ##only for visualization
 
 ####### computing mesh with wells ...
 #wells:
-muse_geometry -W -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj -o test_box.off -w "50,-5,0,4,0.5" -w "20,-5,0,4,0.5"  -w "75,-5,0,4,0.5" -v --tet --vtk
+muse_geometry -W -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj -o test_box.off -w "50,-2.5,2,-8,1" -v --tet --vtk --opt q
 ##-m ${OUTSURF}/${GEOM}_box.obj -o ${GEOM}_box_tmp.off -w "0,0,-2,4,0.5" -v --tet ##--opt ... to complete with correct coordinate of wells in tetrahedral section model
 ###string for testing: #--generate-box "10,5,8" -o test_box.off -w "0,0,-2,4,0.5" -v --generate-tet
 
@@ -259,7 +259,7 @@ muse_geometry -W -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj -o test_box.off -w "50,-
 #mkdir -p ${OUTVOL}/tmp
 #cp ${SCRIPT_DIR}/black_faces.off ${OUTVOL}/tmp/black_faces.off
 #cp ${SCRIPT_DIR}/box_mesh.off ${OUTVOL}/tmp/box_mesh.off
-#cp ${SCRIPT_DIR}/cylinder_1.off ${OUTVOL}/tmp/cylinder_1.off
+#cp ${SCRIPT_DIR}/cylinder_1.off ${OUTVOL}/tmp/cylinder_1.off 
 #cp ${SCRIPT_DIR}/cylinders.off ${OUTVOL}/tmp/cylinders.off
 #rm ${SCRIPT_DIR}/black_faces.off ${SCRIPT_DIR}/box_mesh.off ${SCRIPT_DIR}/cylinder_1.off ${SCRIPT_DIR}/cylinders.off
 
@@ -271,10 +271,9 @@ muse_vario -V -p ${WP} -v ${VAR0} --vario MODEL --dir ${DIR} --dim ${DIM} --dirs
 
 #computesis:
 ##########  COMPUTE  ###########
-export GMOD=${GEOM}_box
+export GMOD=test_box
 
 ## decomment if you want to simulate with wells
-GMOD=test_box
 muse_compute -C -p ${WP} -v ${VAR0} --dir ${DIR} --dim ${DIM} -m ${OUTVOL}/${GMOD}.vtk --crit SISIM --nsim ${NSIM} --rotaxis X --rotangle 270 --scaleradius 1.5 --octant --simulated 7 --input 3
 
 

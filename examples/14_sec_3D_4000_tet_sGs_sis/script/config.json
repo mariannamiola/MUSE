@@ -7,7 +7,7 @@
   "units": "-",
 
   "geometry": {
-    "name": "sec_box_rot",
+    "name": "test_box",
     "sub": "",
     "ext": "vtk"
   },
@@ -22,7 +22,7 @@
     "where": "_stats",
     "var": "mean",
     "units": "-",
-    "geom": "sec_box"
+    "geom": "test_box"
   },
 
   "columns": {
