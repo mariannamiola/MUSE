@@ -102,12 +102,17 @@ static WellSpec parseWellString(const std::string& well_str)
     well.height = values[3];
     well.radius = values[4];
 
+    // z_subdivisions are absolute z coordinates and must lie strictly inside the well z-interval
+    double z0 = well.z;
+    double z1 = well.z + well.height;
+    double z_min = std::min(z0, z1);
+    double z_max = std::max(z0, z1);
     for (size_t i = 5; i < values.size(); ++i)
     {
         double z_sub = values[i];
-        if (z_sub <= 0 || z_sub >= well.height)
+        if (z_sub <= z_min || z_sub >= z_max)
         {
-            throw std::runtime_error("Z subdivision must be between 0 and height: " + std::to_string(z_sub));
+            throw std::runtime_error("Z subdivision must be between " + std::to_string(z_min) + " and " + std::to_string(z_max) + ": " + std::to_string(z_sub));
         }
         well.z_subdivisions.push_back(z_sub);
     }
@@ -240,7 +245,7 @@ static cinolib::Trimesh<> generateCylinderMesh(const WellSpec& well, double targ
             {
                 if (i > 0)
                     std::cout << ", ";
-                std::cout << (well.z + well.z_subdivisions[i]);
+                std::cout << well.z_subdivisions[i];
             }
             std::cout << "]" << std::endl;
         }
@@ -249,11 +254,13 @@ static cinolib::Trimesh<> generateCylinderMesh(const WellSpec& well, double targ
     std::vector<cinolib::vec3d> vertices;
     std::vector<std::vector<uint>> faces;
 
+    // z_subdivisions are absolute z coordinates for internal critical levels
+
     std::vector<double> critical_z_levels;
     critical_z_levels.push_back(well.z);
     for (double z_sub : well.z_subdivisions)
     {
-        critical_z_levels.push_back(well.z + z_sub);
+        critical_z_levels.push_back(z_sub);
     }
     critical_z_levels.push_back(well.z + well.height);
     std::sort(critical_z_levels.begin(), critical_z_levels.end());
@@ -282,6 +289,10 @@ static cinolib::Trimesh<> generateCylinderMesh(const WellSpec& well, double targ
     }
 
     std::map<std::pair<int, int>, uint> ring_vertex_map;
+    const double eps = 1e-9;
+    double z_min = std::min(well.z, well.z + well.height);
+    double z_max = std::max(well.z, well.z + well.height);
+
     for (size_t level = 0; level < z_levels.size(); ++level)
     {
         double z = z_levels[level];
@@ -315,17 +326,8 @@ static cinolib::Trimesh<> generateCylinderMesh(const WellSpec& well, double targ
     for (size_t level = 0; level < z_levels.size(); ++level)
     {
         double z = z_levels[level];
-        bool is_critical = false;
-        for (double cz : critical_z_levels)
-        {
-            if (std::abs(z - cz) < 1e-9)
-            {
-                is_critical = true;
-                break;
-            }
-        }
-
-        if (!is_critical)
+        bool is_end_cap = (std::abs(z - z_min) < eps) || (std::abs(z - z_max) < eps);
+        if (!is_end_cap)
         {
             continue;
         }
@@ -333,7 +335,7 @@ static cinolib::Trimesh<> generateCylinderMesh(const WellSpec& well, double targ
         uint center_idx = vertices.size();
         vertices.push_back(cinolib::vec3d(well.x, well.y, z));
 
-        bool is_bottom = (std::abs(z - well.z) < 1e-9);
+        bool is_bottom = (std::abs(z - z_min) < eps);
 
         for (int i = 0; i < radial_segments; ++i)
         {
@@ -416,19 +418,6 @@ static bool saveMeshToOFF(const cinolib::Trimesh<>& mesh, const std::string& fil
     }
 }
 
-static bool isPointInsideCylinder(const cinolib::vec3d& point, const WellSpec& well)
-{
-    if (point.z() < well.z || point.z() > well.z + well.height)
-    {
-        return false;
-    }
-
-    double dx = point.x() - well.x;
-    double dy = point.y() - well.y;
-    double distance_from_axis = std::sqrt(dx * dx + dy * dy);
-    return distance_from_axis <= well.radius;
-}
-
 static bool isPointInsideCylinderWindingNumber(const cinolib::vec3d& point, const cinolib::Trimesh<>& cylinder_mesh)
 {
     int wn = cinolib::winding_number(cylinder_mesh, point);
@@ -437,7 +426,10 @@ static bool isPointInsideCylinderWindingNumber(const cinolib::vec3d& point, cons
 
 static int getWellRegion(const cinolib::vec3d& point, const WellSpec& well)
 {
-    if (!isPointInsideCylinder(point, well))
+    const double eps = 1e-9;
+    double z_min = std::min(well.z, well.z + well.height);
+    double z_max = std::max(well.z, well.z + well.height);
+    if (point.z() < z_min - eps || point.z() > z_max + eps)
     {
         return -1;
     }
@@ -446,7 +438,7 @@ static int getWellRegion(const cinolib::vec3d& point, const WellSpec& well)
 
     for (size_t i = 0; i < well.z_subdivisions.size(); ++i)
     {
-        double z_level = well.z + well.z_subdivisions[i];
+        double z_level = well.z_subdivisions[i];
         if (point_z < z_level)
         {
             return static_cast<int>(i);
