@@ -605,36 +605,31 @@ int main(int argc, char** argv)
     ValueArg<int> setIterations         ("", "it", "Set number of iterations", false, 1.0, "int" , cmd);
 
     /**
-
-
      * @brief Set scale mesh
-
-
      * @param scale Enable set scale mesh
-
-
      */
-
-
     SwitchArg setScaleMesh              ("", "scale", "Set scale mesh", cmd, false);
-    /**
 
+    /**
+     * @brief Set translate mesh of the quantity specified by the string (e.g., "10,20,5"). This can be used to translate the loaded surface mesh by the specified amounts in the x, y, and z directions. For example, if the string is "10,20,5", the mesh will be translated by 10 units in the x direction, 20 units in the y direction, and 5 units in the z direction.
+     * @param translate Enable set translate mesh of the quantity specified by the string
+     * @note The string must be in the format "x,y,z" where x, y, and z are the translation values in each direction. The command is able for loading surface switch.
+     * @example -L -p /path/to/project -m /path/to/mesh.off --translate 10,20,5
+     */
+    ValueArg<std::string> setTranslate ("", "translate", "Set translate mesh of the quantity specified by the string", false, "0,0,0", "string", cmd);
+
+    /**
      * @brief Set scale factor in X direction
-
      * @param sx scale factor in x direction
-
      */
-
     ValueArg<double> setScaleFactorX    ("", "sx", "Set scale factor in X direction", false, 1.0, "double" , cmd);
+
     /**
-
      * @brief Set scale factor in Y direction
-
      * @param sy scale factor in y direction
-
      */
-
     ValueArg<double> setScaleFactorY    ("", "sy", "Set scale factor in Y direction", false, 1.0, "double" , cmd);
+
     /**
 
      * @brief Set scale factor in Z direction
@@ -4684,6 +4679,30 @@ int main(int argc, char** argv)
         geometa.setMeshSummary(surf);
 
         std::string out_mesh = out_surf + "/"+ get_basename(get_filename(filename_mesh));
+
+        //AGGIUNGERE LA CONDIZIONE PER LA TRASLAZIONE
+        if(setTranslate.isSet())
+        {
+            std::vector<std::string> point_to_translate_string = split_string(setTranslate.getValue(), ',');
+            if(point_to_translate_string.size() > 3)
+            {
+                std::cout << FRED("ERROR. Set translation point with 3 coordinates (x,y,z) separated by comma.") << std::endl;
+                exit(1);
+            }
+                
+            out_mesh += "_tr";
+            std::cout << "=== Translate mesh at point: ( " << setTranslate.getValue() << " )" << std::endl;
+            
+            cinolib::vec3d point_to_translate;
+            point_to_translate.x() = std::stod(point_to_translate_string.at(0));
+            point_to_translate.y() = std::stod(point_to_translate_string.at(1));
+            point_to_translate.z() = std::stod(point_to_translate_string.at(2));
+
+            mesh.translate(point_to_translate);
+            mesh.save((out_mesh + ext_surf).c_str());
+            std::cout << "\033[0;32mSaving mesh file: " << out_mesh + ext_surf << "\033[0m" << std::endl;
+        }
+
         if(splitMethod.isSet())
         {
             out_mesh += "_res";
@@ -4707,12 +4726,14 @@ int main(int argc, char** argv)
             std::cout << "\033[0;32mSaving mesh file: " << out_mesh + ext_surf << "\033[0m" << std::endl;
         }
 
-        std::cout << std::setprecision(10) << mesh.bbox().min.x() << "; " << mesh.bbox().min.y() <<  std::endl;
-        std::cout << std::setprecision(10) << mesh.bbox().max.x() << "; " << mesh.bbox().min.y() <<  std::endl;
-        std::cout << std::setprecision(10) << mesh.bbox().max.x() << "; " << mesh.bbox().max.y() <<  std::endl;
-        std::cout << std::setprecision(10) << mesh.bbox().min.x() << "; " << mesh.bbox().max.y() <<  std::endl;
+        std::cout << "======================================" << std::endl;
+        std::cout << "=== BBOX - min_x:" << std::setprecision(10) << mesh.bbox().min.x() << "; - min_y:" << mesh.bbox().min.y() <<  std::endl;
+        std::cout << "=== BBOX - max_x:" << std::setprecision(10) << mesh.bbox().max.x() << "; - min_y " << mesh.bbox().min.y() <<  std::endl;
+        std::cout << "=== BBOX - max_x:" << std::setprecision(10) << mesh.bbox().max.x() << "; - max_y " << mesh.bbox().max.y() <<  std::endl;
+        std::cout << "=== BBOX - min_x:" << std::setprecision(10) << mesh.bbox().min.x() << "; - max_y " << mesh.bbox().max.y() <<  std::endl;
 
-        std::cout << std::setprecision(10) << mesh.bbox().diag() << std::endl;
+        std::cout << "=== BBOX - diag: " << std::setprecision(10) << mesh.bbox().diag() << std::endl;
+        std::cout << "======================================" << std::endl;
         geometa.write(out_mesh + ".json");
     }
 
