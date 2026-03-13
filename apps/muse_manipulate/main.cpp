@@ -834,7 +834,7 @@ int main(int argc, char** argv)
             if(xCoord.size() == id_points_in.size())
                 std::cout << "All points are included in mesh: " << geomModel.getValue() << std::endl;
             else
-                std::cout << id_points_in.size() << " points in mesh: " << geomModel.getValue() << std::endl;
+                std::cout << id_points_in.size() << " / " << xCoord.size() << " in mesh: " << geomModel.getValue() << std::endl;
 
 
             infoextr.n_points = id_points_in.size();
