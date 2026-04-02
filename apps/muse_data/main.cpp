@@ -176,6 +176,9 @@ int main(int argc, char** argv)
 //    SwitchArg setFlagRow                ("F", "set_flag", "Set flag row", cmd, false); //booleano
 //    ValueArg<int> FlagRow               ("r", "row", "Set row ", false, 0, "row", cmd);
 
+
+    ValueArg<double> setTolerance        ("", "tol", "Set tolerance", false, 1.0, "double", cmd);
+
     // Option 3. Reading MUSE format
     /**
      * @brief Enable reading of MUSE format files
@@ -236,8 +239,9 @@ int main(int argc, char** argv)
      */
     SwitchArg csvConversion             ("", "csv", "Saving file as csv", cmd, false); //booleano
 
-//    // Option 2a. Converter function - MULTI DATASET
-//    SwitchArg mergeDataset              ("M", "multi", "Merge dataset into CSV format", cmd, false); //booleano
+
+    SwitchArg setCheckDuplicates        ("", "check-duplicates", "Enable check of duplicated points", cmd, false); //booleano
+    SwitchArg setRemoveDuplicates       ("", "remove-duplicates", "Enable remvoval of duplicated points", cmd, false); //booleano
 
 
     // ---------------------------------------------------------------------------------------------------------
@@ -463,6 +467,85 @@ int main(int argc, char** argv)
             std::vector<std::vector<std::string>> matrix_data;
             read_csv_with_header(filename, n_rows_header, matrix_header, matrix_data, csv_delimiter); //opzione sul delimitatore da linea di comando; stessa cosa anche sul separatore decimale!
 
+
+            // if(setCheckDuplicates.isSet())
+            // {
+            //     if(!Colx.isSet())
+            //     {
+            //         std::cerr << "=== Set x column for duplicated points check." << std::endl;
+            //         exit(1);
+            //     }
+            //     if(!Coly.isSet())
+            //     {
+            //         std::cerr << "=== Set y column for duplicated points check." << std::endl;
+            //         exit(1);
+            //     }
+
+            //     int col_z = Colz.getValue()-1;
+            //     if(!Colz.isSet())
+            //     {
+            //         col_z = -1;
+            //         std::cout << "=== z column is set to -1.0 (2D case)" << std::endl;
+            //         std::cout << "=== Set z column for duplicated points check." << std::endl;
+            //     }
+
+            //     std::cout << "=== Distance tolerance is set on: " << setTolerance.getValue() << std::endl;
+            //     int n_dup = check_duplicate_coords(matrix_data, Colx.getValue()-1, Coly.getValue()-1, col_z, setTolerance.getValue(), 1.0, false);
+
+            //     if(n_dup > 0)
+            //     {
+            //         std::cout << "=== Set --remove-duplicates to enable duplicated points removal." << std::endl;
+            //         // opzionale:
+            //         // exit(1);
+            //     }
+            // }
+
+
+            if(setCheckDuplicates.isSet())
+            {
+                if(!Colx.isSet())
+                {
+                    std::cerr << "=== Set x column for duplicated points check." << std::endl;
+                    exit(1);
+                }
+                if(!Coly.isSet())
+                {
+                    std::cerr << "=== Set y column for duplicated points check." << std::endl;
+                    exit(1);
+                }
+
+                int col_z = Colz.getValue()-1;
+                if(!Colz.isSet())
+                {
+                    col_z = -1;
+                    std::cout << "=== z column is set to -1.0 (2D case)" << std::endl;
+                    std::cout << "=== Set z column for duplicated points check." << std::endl;
+                }
+
+                // -------------------------------------------------------
+                // DUPLICATE CHECK on spatial coordinates
+                // -------------------------------------------------------
+                // Estrai colonne x e y dalla matrix_data
+                // (assumendo che le colonne di coordinate siano note per posizione)
+
+                //int col_x = Colx.getValue();
+                //int col_y = Coly.getValue();
+
+                std::cout << "=== Distance tolerance is set on: " << setTolerance.getValue() << std::endl;
+                int n_remove = check_points_to_remove(matrix_data, Colx.getValue()-1, Coly.getValue()-1, col_z, setTolerance.getValue());
+
+                if(setRemoveDuplicates.isSet())
+                {
+                    int n_dup = remove_duplicate_rows_by_coords(matrix_data, Colx.getValue()-1, Coly.getValue()-1, col_z, setTolerance.getValue());
+
+                    if(n_dup > 0)
+                    {
+                        std::cout << "=== WARNING: Duplicate points detected and removed before processing." << std::endl;
+                    }
+                    // -------------------------------------------------------
+                }
+            }
+
             size_t n_var = matrix_header[0].size();
             size_t n_files = 0; //numero file creati in formato MUSE
 
@@ -471,13 +554,11 @@ int main(int argc, char** argv)
             flagsTable(table);
 
             int flag_row = 3; //riga della matrice (contando da 1) dove si trova il flag
-//            if(setFlagRow.isSet())
-//                flag_row = FlagRow.getValue();
 
             // Preliminary check on values and creation of MUSE Format (json and data file)
-
+            std::cout << std::endl;
             std::cout << "Conversion into MUSE format ..." << std::endl;
-            std::cout << "###############################" << std::endl;
+            std::cout << "==========================================================" << std::endl;
 
             for(size_t i=0; i<n_var; i++)
             {
@@ -567,7 +648,7 @@ int main(int argc, char** argv)
                 restoreTable(table);
             }
 
-            std::cout << "###############################" << std::endl;
+            std::cout << "==========================================================" << std::endl;
             std::cout << "Conversion into MUSE format ... COMPLETED." << std::endl;
             std::cout << std::endl;
 
