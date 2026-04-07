@@ -38,6 +38,20 @@ std::vector<std::string> get_meshfiles   (const std::string &project_dir);
 void cout_list                           (const std::vector<std::string> &list);
 
 
+/////////////////////////////////////
+
+int check_duplicate_coords(const std::vector<std::vector<std::string>> &matrix_data,
+                           int col_x,
+                           int col_y,
+                           double tol_dist,
+                           bool verbose = true);
+
+int remove_duplicate_rows_by_coords(std::vector<std::vector<std::string>> &matrix_data,
+                                    int col_x,
+                                    int col_y,
+                                    double tol_dist);
+
+
 #ifndef STATIC_MUSELIB
 #include "utils.cpp"
 #endif

@@ -975,6 +975,22 @@ static WellSpec parseWellString(const std::string& well_str,
     }
 
     std::sort(well.z_subdivisions.begin(), well.z_subdivisions.end());
+
+    // Remove duplicate/near-duplicate subdivision levels to avoid zero-thickness segments.
+    {
+        std::vector<double> unique_subdivisions;
+        unique_subdivisions.reserve(well.z_subdivisions.size());
+        const double eps = 1e-9;
+        for (double z_sub : well.z_subdivisions)
+        {
+            if (unique_subdivisions.empty() || std::abs(z_sub - unique_subdivisions.back()) > eps)
+            {
+                unique_subdivisions.push_back(z_sub);
+            }
+        }
+        well.z_subdivisions.swap(unique_subdivisions);
+    }
+
     return well;
 }
 
@@ -1125,6 +1141,21 @@ static cinolib::Trimesh<> attachCylinderWalls(cinolib::Trimesh<>& surface_mesh,
     critical_z_levels.push_back(well.z + well.height);
     std::sort(critical_z_levels.begin(), critical_z_levels.end());
 
+    // Ensure strictly increasing z levels to prevent degenerate side quads.
+    {
+        std::vector<double> unique_levels;
+        unique_levels.reserve(critical_z_levels.size());
+        const double eps = 1e-9;
+        for (double z : critical_z_levels)
+        {
+            if (unique_levels.empty() || std::abs(z - unique_levels.back()) > eps)
+            {
+                unique_levels.push_back(z);
+            }
+        }
+        critical_z_levels.swap(unique_levels);
+    }
+
     std::vector<double> z_levels;
     for (size_t i = 0; i < critical_z_levels.size() - 1; ++i)
     {
@@ -1203,6 +1234,41 @@ static cinolib::Trimesh<> attachCylinderWalls(cinolib::Trimesh<>& surface_mesh,
             wall_faces.push_back({ v1, v3, v2 });
         }
     }
+
+    // at each critical z level, add a small planar surface to force the meshing algorithm to create a layer boundary theere. create the planar surface bu add a vertex at the center and connecting it to the ring vertices at that level. this will create a small "cap" at that level which will force the meshing algorithm to create a layer boundary there. this is needed to ensure that we can assign different material properties to different layers of the well based on the z_subdivisions specified by the user.
+
+    /**std::vector<int> internal_faces;
+
+    for (double z_sub : well.z_subdivisions)
+    {
+        uint center_idx = vertices.size();
+        vertices.push_back(cinolib::vec3d(well.x, well.y, z_sub));
+
+        int level = -1;
+        for (size_t i = 0; i < z_levels.size(); ++i)
+        {
+            if (std::abs(z_levels[i] - z_sub) < eps)
+            {
+                level = static_cast<int>(i);
+                break;
+            }
+        }
+
+        if (level == -1)
+        {
+            continue;
+        }
+
+        for (int i = 0; i < radial_segments; ++i)
+        {
+            int next_i = (i + 1) % radial_segments;
+            uint v0 = ring_vertex_map[{ level, i }];
+            uint v1 = ring_vertex_map[{ level, next_i }];
+
+            faces.push_back({ center_idx, v0, v1 });
+            internal_faces.push_back(faces.size() - 1);
+        }
+    }*/
 
     if (verbose)
     {
@@ -1731,6 +1797,8 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
     }
 
     std::vector<cinolib::Trimesh<>> cylinder_meshes;
+    std::vector<cinolib::Trimesh<>> cylinder_meshes_without_internal_critical; // for debugging - includes the internal critical level caps to verify they are created correctly in the mesh and have the correct labels
+    
     for (size_t i = 0; i < wells.size(); ++i)
     {
         if (verbose)
@@ -1845,7 +1913,7 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
             }
             
             std::string region_id_filename = output_file.substr(0, output_file.find_last_of('.')) + "_region_id.txt";
-            if (!saveTetRegionIdField(tet_mesh, cylinder_meshes, wells, region_id_filename, verbose))
+            if (!saveTetRegionIdField(tet_mesh, cylinder_meshes_without_internal_critical, wells, region_id_filename, verbose))
             {
                 std::cerr << "Warning: Failed to save tet region id field" << std::endl;
             }

@@ -891,25 +891,7 @@ int main(int argc, char** argv)
                         exit(1);
                     }
 
-                    for(uint i:extrmeta.getDataExtraction().id_points)
-                    {
-                        std::string val_tmp = data.text_values.at(i);
-                        if(!val_tmp.empty() && val_tmp.compare("nd")!=0)
-                        {
-                            if(val_tmp.compare("*")!=0)
-                            {
-                                double val = std::stod(val_tmp);
-                                conv_values.push_back(val);
-
-                                if(id.size() > 0)
-                                    corr_id.push_back(id.at(i));
-                            }
-                        }
-                    }
-
-                    corr_x = xCoord;
-                    corr_y = yCoord;
-                    corr_z = zCoord;
+                    string_to_double_conversion_vectors(extrmeta.getDataExtraction().id_points, data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
 
                     std::cout << FGRN("Extraction sub-dataset ... COMPLETED.") << std::endl;
                 }
@@ -1298,6 +1280,13 @@ int main(int argc, char** argv)
                     {
                         //se ho già lo sperimentale, lo leggo da json?!
 
+                        //Set MSE criterion for fitting
+                        weightsType w_type = weightsType::CRESSIE_WEIGHTED_MODIFIED;
+                        if(setMSEcriterion.isSet())
+                            w_type = stringToWeightsType(setMSEcriterion.getValue());
+                        std::cout << "=== MSE criterion for fitting is set on: " << setMSEcriterion.getValue() << std::endl;
+
+
                         switch (dir)
                         {
                         case VarioDirection::OMNI:
@@ -1379,12 +1368,12 @@ int main(int argc, char** argv)
                                 variogram_type model_type;
                                 convert_from_str(fix_mod, model_type);
 
-                                fitted_exp_var = fit_ind_variogram_2par (exp_var, setRangeStep.getValue(), setNugget.getValue(), var_cat, model_type, true);
+                                fitted_exp_var = fit_ind_variogram_2par (exp_var, setRangeStep.getValue(), setNugget.getValue(), var_cat, model_type, true, w_type);
                             }
                             else if(setIndNugget.isSet() && nug_setcat)
                             {
                                 std::cout << "Fit variogram with fixed nugget: " << fix_nug << std::endl;
-                                fitted_exp_var = fit_ind_variogram_1par (exp_var, setRangeStep.getValue(), fix_nug, var_cat);
+                                fitted_exp_var = fit_ind_variogram_1par (exp_var, setRangeStep.getValue(), fix_nug, var_cat, w_type);
                             }
                             else if(setIndModel.isSet() && mod_setcat)
                             {
@@ -1392,7 +1381,7 @@ int main(int argc, char** argv)
                                 variogram_type model_type;
                                 convert_from_str(fix_mod, model_type);
 
-                                fitted_exp_var = fit_ind_variogram_1par (exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), var_cat, model_type);
+                                fitted_exp_var = fit_ind_variogram_1par (exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), var_cat, model_type, w_type);
                             }
                             else if (setSill.isSet())
                             {
@@ -1403,7 +1392,7 @@ int main(int argc, char** argv)
                             else
                             {
                                 std::cout << "Automatic fitting of experimental variogram ... " << std::endl;
-                                fitted_exp_var = fit_ind_variogram(exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), var_cat);
+                                fitted_exp_var = fit_ind_variogram(exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), var_cat, w_type);
                             }
 
                             std::vector<MUSE::variogram_methods> fitvario;
@@ -1612,14 +1601,14 @@ int main(int argc, char** argv)
                                     variogram_type model_type;
                                     convert_from_str(fix_mod, model_type);
 
-                                    vv = fit_ind_dir_variogram_2par (dir_ex_var, directions, setRangeStep.getValue(), fix_nug, var_cat, model_type, true);
+                                    vv = fit_ind_dir_variogram_2par (dir_ex_var, directions, setRangeStep.getValue(), fix_nug, var_cat, model_type, true, w_type);
                                 }
                                 else if(setIndNugget.isSet() && nug_setcat)
                                 {
                                     std::cout << "Fit variogram with fixed nugget: " << fix_nug << std::endl;
                                     std::cout << FRED("Weight on nugget is not active!") << std::endl;
                                     std::cout << FMAG("Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd") << std::endl;
-                                    vv = fit_ind_dir_variogram_1par (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), fix_nug, var_cat, true);
+                                    vv = fit_ind_dir_variogram_1par (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), fix_nug, var_cat, true, w_type);
                                 }
                                 else if(setIndModel.isSet() && mod_setcat)
                                 {
@@ -1627,7 +1616,7 @@ int main(int argc, char** argv)
                                     variogram_type model_type;
                                     convert_from_str(fix_mod, model_type);
 
-                                    vv = fit_ind_dir_variogram_1par (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), var_cat, model_type, weight, true);
+                                    vv = fit_ind_dir_variogram_1par (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), var_cat, model_type, weight, true, w_type);
                                 }
                                 else if (setSill.isSet())
                                 {
@@ -1638,16 +1627,17 @@ int main(int argc, char** argv)
                                 else
                                 {
                                     std::cout << "Automatic fitting of directional variograms is set ..." << std::endl;
-                                    vv = fit_ind_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), var_cat, weight, true);
+                                    vv = fit_ind_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), var_cat, weight, true, w_type);
                                 }
                             }
-
                             catch (exception e)
                             {
-                                std::cerr << "ERROR Directional variogram " << e.what() << std::endl;
+                                std::cerr << "ERROR Computing directional variogram modeling ... " << e.what() << std::endl;
                             }
 
 
+                            if(vv.empty())
+                                std::cout << "fitting vector is empty ###########################" << std::endl;
 
                             std::vector<MUSE::variogram_methods> fitvario;
                             for(size_t i=0; i<vv.size(); i++)

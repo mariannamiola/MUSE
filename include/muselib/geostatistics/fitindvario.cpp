@@ -9,9 +9,10 @@
 /// \param range_step is the factor to step range interval (from range max to range min) for the loop
 /// \param nugget_step is the factor to step nugget interval (from nugget max to nugget min) for the loop
 /// \param variance is the variance of categorical variables
+/// \param w_type is the type of weights to be used
 /// \return fitting of indicator variogram
 ///
-variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, const double &nugget_step, const double &variance)
+variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, const double &nugget_step, const double &variance, weightsType w_type)
 {
     //The value that the semivariogram model attains at the range (the value on the y-axis) is called the sill. The partial sill is the sill minus the nugget.
 
@@ -26,7 +27,7 @@ variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, con
         double best_mse_nug = DBL_MAX;
 
         double min_nugget = 0.0;
-        double max_nugget = variance; //per variabili raw/indicatori: varianza!!
+        double max_nugget = variance; //per variabili raw/indicatori: varianza campionaria
 
         //ciclo sui valori di nugget
         for(double nugget = min_nugget; nugget < max_nugget; nugget = nugget + max_nugget/nugget_step)
@@ -41,51 +42,37 @@ variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, con
             double min_range = ev.h.at(0);
 
             double best_mse_range = DBL_MAX;
-            double best_r = 0;
+            double best_r = 0.0;
             //std::string best_type;
 
             // Inizializzazione di out a variance (asintoto variogramma: max valore)
             vector<double> out (ev.gamma.size(), variance);
 
-            double mse = 0.0;
-
             //ciclo sui range
-            for(double r = min_range; r<max_range; r = r + max_range/range_step)
+            for(double r = min_range; r<=max_range; r = r + max_range/range_step)
             {
                 for(size_t i=0; i<ev.h.size(); i++)
                     out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_types.at(m));
 
-                //double last_mse_j = mse;
-                mse = 0.0;
-                int count = 0;
-
-                //int countGT1 = 0;
-
+                double mse = 0.0;
                 for(unsigned int i=0; i<out.size(); i++)
                 {
-                    //if(ev.gamma.at(i) <= variance && countGT1<3)
-                    if(ev.gamma.at(i) <= variance && ev.h.at(i) > 0)
-                    {
-                        count++;
-                        mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
-                    }
-                    // else
-                    //     countGT1++;
-                }
+                    if(ev.h.at(i) <= 0)
+                        continue;
 
-                // FIX: normalizzazione per count
-                if(count > 0)
-                    mse /= count;
-                else
-                    continue;
+                    //Condizione per escludere fluttuazioni da campionamento (lag che hanno valori di gamma sperimentale > variance), non informazione affidabili
+                    if(ev.gamma.at(i) > variance)
+                        continue;
+
+                    double weight_coefficient = compute_weight(ev, i, w_type);
+                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
+                }
 
                 if(mse < best_mse_range)
                 {
                     best_mse_range = mse;
                     best_r = r;    
                 }
-                // else
-                //     mse = last_mse_j;
             }
 
             // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -115,11 +102,9 @@ variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, con
                     continue;
                 }
             }
-            // else
-            // {
+
             best_mse_model = best_mse_nug;
             fitvario = fitvario_on_nug;
-            //}
         }
     }
 
@@ -140,7 +125,16 @@ variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, con
     return fitvario;
 }
 
-variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step, const double &nugget, const double &variance)
+
+///
+// \brief fit_ind_variogram_1par compute the automatic fitting of omnidirectional variogram for indicators, with nugget fixed by user
+/// \param ev is the omnidirectional experimental variogram
+/// \param range_step is the factor to step range interval (from range max to range min) for the loop
+/// \param nugget is the nugget fixed by user
+/// \param variance is the variance of categorical variables
+/// \param w_type is the type of weights to be used
+/// \return fitting of indicator variogram
+variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step, const double &nugget, const double &variance, weightsType w_type)
 {
     //The value that the semivariogram model attains at the range (the value on the y-axis) is called the sill. The partial sill is the sill minus the nugget.
 
@@ -161,50 +155,36 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
         double min_range = ev.h.at(0);
 
         double best_mse_range = DBL_MAX;
-        double best_r = 0;
-        //std::string best_type;
+        double best_r = 0.0;
 
         // Inizializzazione di out a variance (asintoto variogramma: max valore)
         vector<double> out (ev.gamma.size(), variance);
 
-        double mse = 0.0;
-
         //ciclo sui range
-        for(double r = min_range; r<max_range; r = r + max_range/range_step)
+        for(double r = min_range; r<=max_range; r = r + max_range/range_step)
         {
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_types.at(m));
 
-            //double last_mse_j = mse;
-            mse = 0.0;
-            int count = 0;
-
-            //int countGT1 = 0;
-
+            double mse = 0.0;
             for(unsigned int i=0; i<out.size(); i++)
             {
-                if(ev.gamma.at(i) <= variance && ev.h.at(i) > 0) //&& countGT1<3)
-                {
-                    count++;
-                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
-                }
-                // else
-                //     countGT1++;
-            }
+                if(ev.h.at(i) <= 0)
+                    continue;
 
-            // FIX: normalizzazione per count
-            if(count > 0)
-                mse /= count;
-            else
-                continue;
+                //Condizione per escludere fluttuazioni da campionamento (lag che hanno valori di gamma sperimentale > variance), non informazione affidabili
+                if(ev.gamma.at(i) > variance)
+                    continue;
+
+                double weight_coefficient = compute_weight(ev, i, w_type);
+                mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
+            }
 
             if(mse < best_mse_range)
             {
                 best_mse_range = mse;
                 best_r = r;
             }
-            // else
-            //     mse = last_mse_j;
         }
 
         // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -226,11 +206,9 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
                     continue;
                 }
             }
-            // else
-            // {
+
             best_mse_model = best_mse_range;
             fitvario = fitvario_on_range;
-            //}
         }
     }
 
@@ -251,7 +229,7 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
     return fitvario;
 }
 
-variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step, const double &nugget_step, const double &variance, variogram_type &model_type)
+variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step, const double &nugget_step, const double &variance, variogram_type &model_type, weightsType w_type)
 {
     variogram fitvario; //risultato finale
     double best_mse_nug = DBL_MAX;
@@ -271,52 +249,39 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
         double min_range = ev.h.at(0);
 
         double best_mse_range = DBL_MAX;
-        double best_r = 0;
-        std::string best_type;
+        double best_r = 0.0;
+        std::string best_type="";
 
-        // Inizializzazione di out a 1 (asintoto variogramma: max valore)
+        // Inizializzazione di out a variance (asintoto variogramma: max valore)
         vector<double> out (ev.gamma.size(), variance);
 
-        double mse = 0.0;
-
         //ciclo sui range
-        for(double r = min_range; r<max_range; r = r + max_range/range_step)
+        for(double r = min_range; r<=max_range; r = r + max_range/range_step)
         {
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
             //double last_mse_j = mse;
-            mse = 0.0;
-            int count = 0;
-
-            //int countGT1 = 0;
+            double mse = 0.0;
 
             for(unsigned int i=0; i<out.size(); i++)
             {
-                if(ev.gamma.at(i)<= variance && ev.h.at(i) > 0) //&& countGT1<3)
-                {
-                    count++;
-                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
-                }
-                // else
-                //     countGT1++;
+                if(ev.h.at(i) <= 0)
+                    continue;
+
+                //Condizione per escludere fluttuazioni da campionamento (lag che hanno valori di gamma sperimentale > variance), non informazione affidabili
+                if(ev.gamma.at(i) > variance)
+                    continue;
+
+                double weight_coefficient = compute_weight(ev, i, w_type);
+                mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
-
-            //mse = mse;
-
-            // FIX: normalizzazione per count
-            if(count > 0)
-                mse /= count;
-            else
-                continue;
 
             if(mse < best_mse_range)
             {
                 best_mse_range = mse;
                 best_r = r;
             }
-            // else
-            //     mse = last_mse_j;
         }
 
         // Soluzione a minimo errore (variando sul range) per un valore di fissato di nugget e per un modello fissato
@@ -347,7 +312,7 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
     return fitvario;
 }
 
-variogram fit_ind_variogram_2par (const exp_variog &ev, const double &range_step, const double &nugget, const double &variance, variogram_type &model_type, bool is_print)
+variogram fit_ind_variogram_2par (const exp_variog &ev, const double &range_step, const double &nugget, const double &variance, variogram_type &model_type, bool is_print, weightsType w_type)
 {
     variogram fitvario; //risultato finale
 
@@ -358,44 +323,32 @@ variogram fit_ind_variogram_2par (const exp_variog &ev, const double &range_step
     double min_range = ev.h.at(0);
 
     double best_mse_range = DBL_MAX;
-    double best_r = 0;
-    std::string best_type;
+    double best_r = 0.0;
+    std::string best_type="";
 
     // Inizializzazione di out a 1 (asintoto variogramma: max valore)
     vector<double> out (ev.gamma.size(), variance);
 
-    double mse = 0.0;
-
     //ciclo sui range
-    for(double r = min_range; r<max_range; r = r + max_range/range_step)
+    for(double r = min_range; r<=max_range; r = r + max_range/range_step)
     {
         for(size_t i=0; i<ev.h.size(); i++)
             out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-        //double last_mse_j = mse;
-        mse = 0;
-        int count = 0;
-
-        //int countGT1 = 0;
+        double mse = 0.0;
 
         for(unsigned int i=0; i<out.size(); i++)
         {
-            if(ev.gamma.at(i)<= variance && ev.h.at(i) > 0) //&& countGT1<3)
-            {
-                count++;
-                mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
-            }
-            // else
-            //     countGT1++;
+            if(ev.h.at(i) <= 0)
+                continue;
+
+            //Condizione per escludere fluttuazioni da campionamento (lag che hanno valori di gamma sperimentale > variance), non informazione affidabili
+            if(ev.gamma.at(i) > variance)
+                continue;
+
+            double weight_coefficient = compute_weight(ev, i, w_type);
+            mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
         }
-
-        // FIX: normalizzazione per count
-        if(count > 0)
-            mse /= count;
-        else
-            continue;
-
-        //mse = mse;
 
         if(mse < best_mse_range)
         {
@@ -403,8 +356,6 @@ variogram fit_ind_variogram_2par (const exp_variog &ev, const double &range_step
             best_r = r;
             convert_to_str(best_type, model_type);
         }
-        // else
-        //     mse = last_mse_j;
     }
 
     // Soluzione per un valore di nugget
@@ -436,11 +387,11 @@ variogram fit_ind_variogram_2par (const exp_variog &ev, const double &range_step
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
-MUSE::VarioError fit_ind_variogram_1par_mse (const exp_variog &ev, const double &range_step, const double &nugget_step, const double &variance, variogram_type &model_type, bool is_print)
+MUSE::VarioError fit_ind_variogram_1par_mse (const exp_variog &ev, const double &range_step, const double &nugget_step, const double &variance, variogram_type &model_type, bool is_print, weightsType w_type)
 {
     MUSE::VarioError fitvario; //risultato finale
 
-    double min_nugget = 0;
+    double min_nugget = 0.0;
     double max_nugget = variance;
 
     std::vector<MUSE::VarioError> fitvario_on_nug; //fit vario on nugget -> variogramma modello al variare del nugget
@@ -458,44 +409,31 @@ MUSE::VarioError fit_ind_variogram_1par_mse (const exp_variog &ev, const double 
         double min_range = ev.h.at(0);
 
         double best_mse_range = DBL_MAX;
-        double best_r = 0;
-        std::string best_type;
+        double best_r = 0.0;
+        std::string best_type="";
 
-        // Inizializzazione di out a 1 (asintoto variogramma: max valore)
+        // Inizializzazione di out a variance (asintoto variogramma: max valore)
         vector<double> out (ev.gamma.size(), variance);
 
-        double mse = 0.0;
-
         //ciclo sui range
-        for(double r = min_range; r<max_range; r = r + max_range/range_step)
+        for(double r = min_range; r<=max_range; r = r + max_range/range_step)
         {
             for(size_t i=0; i<ev.h.size(); i++)
                 out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
-            //double last_mse_j = mse;
-            mse = 0;
-            int count = 0;
-
-            //int countGT1 = 0;
-
+            double mse = 0.0;
             for(unsigned int i=0; i<out.size(); i++)
             {
-                if(ev.gamma.at(i)<=variance && ev.h.at(i) > 0) //&& countGT1<3)
-                {
-                    count++;
-                    mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
-                }
-                // else
-                //     countGT1++;
+                if(ev.h.at(i) <= 0)
+                    continue;
+
+                //Condizione per escludere fluttuazioni da campionamento (lag che hanno valori di gamma sperimentale > variance), non informazione affidabili
+                if(ev.gamma.at(i) > variance)
+                    continue;
+
+                double weight_coefficient = compute_weight(ev, i, w_type);
+                mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
-
-            //mse = mse;
-
-            // FIX: normalizzazione per count
-            if(count > 0)
-                mse /= count;
-            else
-                continue;
 
             if(mse < best_mse_range)
             {
@@ -503,8 +441,6 @@ MUSE::VarioError fit_ind_variogram_1par_mse (const exp_variog &ev, const double 
                 best_r = r;
                 convert_to_str(best_type, model_type);
             }
-            // else
-            //     mse = last_mse_j;
         }
 
         // Soluzione per un valore di nugget
@@ -555,7 +491,7 @@ MUSE::VarioError fit_ind_variogram_1par_mse (const exp_variog &ev, const double 
 }
 
 
-MUSE::VarioError fit_ind_variogram_2par_mse (const exp_variog &ev, const double &range_step, const double &nugget, const double &variance, variogram_type &model_type, bool is_print)
+MUSE::VarioError fit_ind_variogram_2par_mse (const exp_variog &ev, const double &range_step, const double &nugget, const double &variance, variogram_type &model_type, bool is_print, weightsType w_type)
 {
     MUSE::VarioError fitvario; //risultato finale
 
@@ -566,44 +502,32 @@ MUSE::VarioError fit_ind_variogram_2par_mse (const exp_variog &ev, const double 
     double min_range = ev.h.at(0);
 
     double best_mse_range = DBL_MAX;
-    double best_r = 0;
-    std::string best_type;
+    double best_r = 0.0;
+    std::string best_type="";
 
-    // Inizializzazione di out a 1 (asintoto variogramma: max valore)
+    // Inizializzazione di out a variance (asintoto variogramma: max valore)
     vector<double> out (ev.gamma.size(), variance);
 
-    double mse = 0.0;
-
     //ciclo sui range
-    for(double r = min_range; r<max_range; r = r + max_range/range_step)
+    for(double r = min_range; r<=max_range; r = r + max_range/range_step)
     {
         for(size_t i=0; i<ev.h.size(); i++)
             out.at(i) = get_gamma (ev.h.at(i), r, c0, c, model_type);
 
         //double last_mse_j = mse;
-        mse = 0;
-        int count = 0;
-
-        //int countGT1 = 0;
-
+        double mse = 0.0;
         for(unsigned int i=0; i<out.size(); i++)
         {
-            if(ev.gamma.at(i)<= variance && ev.h.at(i) > 0) //&& countGT1<3)
-            {
-                count++;
-                mse += pow((out.at(i) - ev.gamma.at(i)),2) * (ev.N.at(i) / pow((ev.h.at(i)),1));
-            }
-            // else
-            //     countGT1++;
+            if(ev.h.at(i) <= 0)
+                continue;
+
+            //Condizione per escludere fluttuazioni da campionamento (lag che hanno valori di gamma sperimentale > variance), non informazione affidabili
+            if(ev.gamma.at(i) > variance)
+                continue;
+
+            double weight_coefficient = compute_weight(ev, i, w_type);
+            mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
         }
-
-        //mse = mse;
-
-        // FIX: normalizzazione per count
-        if(count > 0)
-            mse /= count;
-        else
-            continue;
 
         if(mse < best_mse_range)
         {
@@ -611,8 +535,6 @@ MUSE::VarioError fit_ind_variogram_2par_mse (const exp_variog &ev, const double 
             best_r = r;
             convert_to_str(best_type, model_type);
         }
-        // else
-        //     mse = last_mse_j;
     }
 
     // Soluzione per un valore di nugget
@@ -647,17 +569,11 @@ MUSE::VarioError fit_ind_variogram_2par_mse (const exp_variog &ev, const double 
 
 
 
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-
-
-
 
 //INDICATOR FITTING - DIRECTIONAL
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-vector<variogram> fit_ind_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_step, const double &nugget_step, const double &variance, const std::vector<double> &weigth, bool is_print)
+vector<variogram> fit_ind_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_step, const double &nugget_step, const double &variance, const std::vector<double> &weigth, bool is_print, weightsType w_type)
 {
     // 0) Definisco il vettore dei modelli
     std::vector<variogram_type> types = {variogram_type::SPHERIC, variogram_type::GAUSSIAN, variogram_type::EXPONENTIAL};
@@ -665,7 +581,7 @@ vector<variogram> fit_ind_dir_variogram (const std::vector<exp_variog> &dev,cons
 
     // 1) Ciclo sui modelli e calcolo il fit (a modello fissato) dei variogrammi direzionali
     for(size_t i=0; i<types.size(); i++)
-        dir_vario.at(i) = fit_ind_dir_variogram_1par_mse (dev, directions, range_step, nugget_step, variance, types.at(i));
+        dir_vario.at(i) = fit_ind_dir_variogram_1par_mse (dev, directions, range_step, nugget_step, variance, types.at(i), is_print, w_type);
 
     // 2) Inizializza l'errore somma per ogni modello
     std::vector<double> sum_mse (types.size(), 0.0);
@@ -741,7 +657,7 @@ vector<variogram> fit_ind_dir_variogram (const std::vector<exp_variog> &dev,cons
 
 
     // 5) Ricalcolo il fitting a modello e nugget (medio sulle direzioni per il modello prescelto) fissato
-    vector<variogram> vv = fit_ind_dir_variogram_2par (dev, directions, range_step, avg_nugget, variance, types.at(min_index));
+    vector<variogram> vv = fit_ind_dir_variogram_2par (dev, directions, range_step, avg_nugget, variance, types.at(min_index), is_print, w_type);
 
     if(is_print == true)
     {
@@ -770,7 +686,7 @@ vector<variogram> fit_ind_dir_variogram (const std::vector<exp_variog> &dev,cons
 }
 
 
-vector<variogram> fit_ind_dir_variogram_1par (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double & degree_tolerance, const double &range_step, const double &nugget, const double &variance, bool is_print)
+vector<variogram> fit_ind_dir_variogram_1par (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double & degree_tolerance, const double &range_step, const double &nugget, const double &variance, bool is_print, weightsType w_type)
 {
     // 0) Definisco il vettore dei modelli
     std::vector<variogram_type> types = {variogram_type::SPHERIC, variogram_type::GAUSSIAN, variogram_type::EXPONENTIAL};
@@ -778,7 +694,7 @@ vector<variogram> fit_ind_dir_variogram_1par (const std::vector<exp_variog> &dev
 
     // 1) Ciclo sui modelli e calcolo il fit (a modello fissato) dei variogrammi direzionali
     for(size_t i=0; i<types.size(); i++)
-        dir_vario.at(i) = fit_ind_dir_variogram_2par_mse (dev, directions, range_step, nugget, variance, types.at(i));
+        dir_vario.at(i) = fit_ind_dir_variogram_2par_mse (dev, directions, range_step, nugget, variance, types.at(i), is_print, w_type);
 
 
     // 2) Inizializza l'errore somma per ogni modello
@@ -859,10 +775,10 @@ vector<variogram> fit_ind_dir_variogram_1par (const std::vector<exp_variog> &dev
 }
 
 
-vector<variogram> fit_ind_dir_variogram_1par (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double & degree_tolerance, const double &range_step, const double &nugget_step, const double &variance, variogram_type &model_type, const std::vector<double> &weigth, bool is_print)
+vector<variogram> fit_ind_dir_variogram_1par (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double & degree_tolerance, const double &range_step, const double &nugget_step, const double &variance, variogram_type &model_type, const std::vector<double> &weigth, bool is_print, weightsType w_type)
 {
     // 0) Calcolo fit a modello fissato dei variogrammi direzionali
-    std::vector<MUSE::VarioError> dir_vario = fit_ind_dir_variogram_1par_mse (dev, directions, range_step, nugget_step, variance, model_type);
+    std::vector<MUSE::VarioError> dir_vario = fit_ind_dir_variogram_1par_mse (dev, directions, range_step, nugget_step, variance, model_type, is_print, w_type);
 
     // 1) Inizializza l'errore somma per ogni modello
     double sum_mse = 0.0;
@@ -884,7 +800,7 @@ vector<variogram> fit_ind_dir_variogram_1par (const std::vector<exp_variog> &dev
 
 
     // 5) Ricalcolo il fitting a modello e nugget (medio sulle direzioni per il modello prescelto) fissato
-    vector<variogram> vv = fit_ind_dir_variogram_2par (dev, directions, range_step, avg_nugget, variance, model_type);
+    vector<variogram> vv = fit_ind_dir_variogram_2par (dev, directions, range_step, avg_nugget, variance, model_type, is_print, w_type);
 
     if(is_print == true)
     {
@@ -914,12 +830,12 @@ vector<variogram> fit_ind_dir_variogram_1par (const std::vector<exp_variog> &dev
 
 
 
-vector<variogram> fit_ind_dir_variogram_2par (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double &range_step, const double &nugget, const double &variance, variogram_type &model_type, bool is_print)
+vector<variogram> fit_ind_dir_variogram_2par (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double &range_step, const double &nugget, const double &variance, variogram_type &model_type, bool is_print, weightsType w_type)
 {
     vector<variogram> res_k (dev.size());
 
     for(uint k = 0; k< directions.size(); k++)
-        res_k.at(k) = fit_ind_variogram_2par (dev.at(k), range_step, nugget, variance, model_type, is_print);
+        res_k.at(k) = fit_ind_variogram_2par (dev.at(k), range_step, nugget, variance, model_type, is_print, w_type);
 
     return res_k;
 }
@@ -927,23 +843,24 @@ vector<variogram> fit_ind_dir_variogram_2par (const std::vector<exp_variog> &dev
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
-vector<MUSE::VarioError> fit_ind_dir_variogram_1par_mse (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double &range_step, const double &nugget_step, const double &variance, variogram_type &model_type)
+vector<MUSE::VarioError> fit_ind_dir_variogram_1par_mse (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double &range_step, const double &nugget_step, const double &variance, variogram_type &model_type, bool is_print, weightsType w_type)
 {
     vector<MUSE::VarioError> res_k (dev.size()); //VarioError per ogni direzione
 
     // Ciclo sulle direzioni e faccio il fitting a modello fissato + mse in output
     for(size_t k = 0; k < directions.size(); k++)
-        res_k.at(k) = fit_ind_variogram_1par_mse (dev.at(k), range_step, nugget_step, variance, model_type);
+        res_k.at(k) = fit_ind_variogram_1par_mse (dev.at(k), range_step, nugget_step, variance, model_type, is_print, w_type);
 
     return res_k;
 }
 
-vector<MUSE::VarioError> fit_ind_dir_variogram_2par_mse (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double &range_step, const double &nugget, const double &variance, variogram_type &model_type, bool is_print)
+
+vector<MUSE::VarioError> fit_ind_dir_variogram_2par_mse (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double &range_step, const double &nugget, const double &variance, variogram_type &model_type, bool is_print, weightsType w_type)
 {
     vector<MUSE::VarioError> res_k (dev.size());
 
     for(uint k = 0; k< directions.size(); k++)
-        res_k.at(k) = fit_ind_variogram_2par_mse (dev.at(k), range_step, nugget, variance, model_type, is_print);
+        res_k.at(k) = fit_ind_variogram_2par_mse (dev.at(k), range_step, nugget, variance, model_type, is_print, w_type);
 
     return res_k;
 }
