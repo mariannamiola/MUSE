@@ -1235,6 +1235,49 @@ static cinolib::Trimesh<> attachCylinderWalls(cinolib::Trimesh<>& surface_mesh,
         }
     }
 
+    // Close the classifier mesh used by winding-number queries.
+    auto append_ring_cap = [&](const std::vector<uint>& ring_vids, const bool invert_orientation)
+    {
+        if (ring_vids.size() < 3)
+        {
+            return;
+        }
+
+        for (size_t i = 1; i + 1 < ring_vids.size(); ++i)
+        {
+            if (!invert_orientation)
+            {
+                wall_faces.push_back({ ring_vids[0], ring_vids[i], ring_vids[i + 1] });
+            }
+            else
+            {
+                wall_faces.push_back({ ring_vids[0], ring_vids[i + 1], ring_vids[i] });
+            }
+        }
+    };
+
+    std::vector<uint> bottom_ring_for_caps;
+    int bottom_level = -1;
+    for (size_t level = 0; level < z_levels.size(); ++level)
+    {
+        if (std::abs(z_levels[level] - bottom_z) < eps)
+        {
+            bottom_level = static_cast<int>(level);
+            break;
+        }
+    }
+    if (bottom_level >= 0)
+    {
+        bottom_ring_for_caps.reserve(radial_segments);
+        for (int i = 0; i < radial_segments; ++i)
+        {
+            bottom_ring_for_caps.push_back(ring_vertex_map[{ bottom_level, i }]);
+        }
+    }
+
+    append_ring_cap(top_ring_vids, false);
+    append_ring_cap(bottom_ring_for_caps, true);
+
     // at each critical z level, add a small planar surface to force the meshing algorithm to create a layer boundary theere. create the planar surface bu add a vertex at the center and connecting it to the ring vertices at that level. this will create a small "cap" at that level which will force the meshing algorithm to create a layer boundary there. this is needed to ensure that we can assign different material properties to different layers of the well based on the z_subdivisions specified by the user.
 
     /**std::vector<int> internal_faces;
@@ -1797,7 +1840,6 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
     }
 
     std::vector<cinolib::Trimesh<>> cylinder_meshes;
-    std::vector<cinolib::Trimesh<>> cylinder_meshes_without_internal_critical; // for debugging - includes the internal critical level caps to verify they are created correctly in the mesh and have the correct labels
     
     for (size_t i = 0; i < wells.size(); ++i)
     {
@@ -1913,7 +1955,7 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
             }
             
             std::string region_id_filename = output_file.substr(0, output_file.find_last_of('.')) + "_region_id.txt";
-            if (!saveTetRegionIdField(tet_mesh, cylinder_meshes_without_internal_critical, wells, region_id_filename, verbose))
+            if (!saveTetRegionIdField(tet_mesh, cylinder_meshes, wells, region_id_filename, verbose))
             {
                 std::cerr << "Warning: Failed to save tet region id field" << std::endl;
             }
