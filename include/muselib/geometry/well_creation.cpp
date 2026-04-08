@@ -1278,15 +1278,11 @@ static cinolib::Trimesh<> attachCylinderWalls(cinolib::Trimesh<>& surface_mesh,
     append_ring_cap(top_ring_vids, false);
     append_ring_cap(bottom_ring_for_caps, true);
 
-    // at each critical z level, add a small planar surface to force the meshing algorithm to create a layer boundary theere. create the planar surface bu add a vertex at the center and connecting it to the ring vertices at that level. this will create a small "cap" at that level which will force the meshing algorithm to create a layer boundary there. this is needed to ensure that we can assign different material properties to different layers of the well based on the z_subdivisions specified by the user.
-
-    /**std::vector<int> internal_faces;
-
+    // Add internal horizontal caps at user-provided z levels so TetGen can honor
+    // internal layer boundaries inside each well.
+    int internal_cap_faces = 0;
     for (double z_sub : well.z_subdivisions)
     {
-        uint center_idx = vertices.size();
-        vertices.push_back(cinolib::vec3d(well.x, well.y, z_sub));
-
         int level = -1;
         for (size_t i = 0; i < z_levels.size(); ++i)
         {
@@ -1297,25 +1293,29 @@ static cinolib::Trimesh<> attachCylinderWalls(cinolib::Trimesh<>& surface_mesh,
             }
         }
 
-        if (level == -1)
+        if (level < 0)
         {
             continue;
         }
 
+        const uint center_vid = surface_mesh.vert_add(cinolib::vec3d(well.x, well.y, z_sub));
         for (int i = 0; i < radial_segments; ++i)
         {
-            int next_i = (i + 1) % radial_segments;
-            uint v0 = ring_vertex_map[{ level, i }];
-            uint v1 = ring_vertex_map[{ level, next_i }];
-
-            faces.push_back({ center_idx, v0, v1 });
-            internal_faces.push_back(faces.size() - 1);
+            const int next_i = (i + 1) % radial_segments;
+            const uint v0 = ring_vertex_map[{ level, i }];
+            const uint v1 = ring_vertex_map[{ level, next_i }];
+            surface_mesh.poly_add(center_vid, v0, v1);
+            ++internal_cap_faces;
         }
-    }*/
+    }
 
     if (verbose)
     {
         std::cout << "  - Generated: " << wall_vertices.size() << " new wall vertices, " << wall_faces.size() << " wall faces" << std::endl;
+        if (!well.z_subdivisions.empty())
+        {
+            std::cout << "  - Added " << internal_cap_faces << " internal critical-level cap faces" << std::endl;
+        }
     }
 
     std::vector<cinolib::vec3d> all_vertices;
