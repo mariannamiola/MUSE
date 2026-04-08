@@ -1387,7 +1387,7 @@ static bool saveMesh(const cinolib::Trimesh<>& mesh, const std::string& filename
 static bool isPointInsideCylinderWindingNumber(const cinolib::vec3d& point, const cinolib::Trimesh<>& cylinder_mesh)
 {
     int wn = cinolib::winding_number(cylinder_mesh, point);
-    return wn > 0;
+    return wn != 0;
 }
 
 static int getWellRegion(const cinolib::vec3d& point, const WellSpec& well)
