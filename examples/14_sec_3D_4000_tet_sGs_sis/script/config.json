@@ -7,14 +7,14 @@
   "units": "-",
 
   "geometry": {
-    "name": "test_box",
+    "name": "sec_box_rot",
     "sub": "",
     "ext": "vtk"
   },
 
   "vario": {
     "dir": "DIR",
-    "dim": "2D"
+    "dim": "3Dxy"
   },
 
   "compute": {
@@ -22,7 +22,7 @@
     "where": "_stats",
     "var": "mean",
     "units": "-",
-    "geom": "test_box"
+    "geom": "sec_box_rot"
   },
 
   "columns": {

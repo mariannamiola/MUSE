@@ -136,7 +136,7 @@ export VAR1=phi ##continuous variable
 # 2. Export flags
 #######################################################################
 #For geometry
-export OPT=qa2
+export OPT=qa0.5
 export OPT_TET=q
 export RESX=0.5
 export RESY=0.5
@@ -144,7 +144,7 @@ export RESZ=1.0
 
 #For vario
 export DIR=DIR
-export DIM=2D
+export DIM=3Dxy
 
 #For compute
 if [ "$OPTSIM" ]	#if a number of simulations is provided
@@ -249,12 +249,16 @@ mv ${OUTSURF}/${GEOM}_absz-0.0-${GEOM}_absz-5.0.obj ${OUTSURF}/${GEOM}_box.obj
 #muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --tet --vtk --opt ${OPT_TET}
 muse_geometry -L -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --rotaxis X --rotangle -270 --obj ##only for visualization
 
+muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj --tet --vtk --opt q
+
 ####### computing mesh with wells ...
 #wells:
-muse_geometry -W -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj -o test_box.off -w "50,-2.5,2,-8,1" -v --tet --vtk --opt q
+#muse_geometry -W -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj -o test_box.off \
+#                                                            -w "XYHR:25,-2.5,-7,0.25,-6.5" \
+#                                                            -w "XYHR:75,-2.5,-7,0.25,-6.5" --save-no-wells -v --tet --vtk --opt qp
 ##-m ${OUTSURF}/${GEOM}_box.obj -o ${GEOM}_box_tmp.off -w "0,0,-2,4,0.5" -v --tet ##--opt ... to complete with correct coordinate of wells in tetrahedral section model
 ###string for testing: #--generate-box "10,5,8" -o test_box.off -w "0,0,-2,4,0.5" -v --generate-tet
-
+ 
 #### clean up geometry files from script folder and move to output geometry folder (volume/tmp)
 #mkdir -p ${OUTVOL}/tmp
 #cp ${SCRIPT_DIR}/black_faces.off ${OUTVOL}/tmp/black_faces.off
@@ -271,7 +275,7 @@ muse_vario -V -p ${WP} -v ${VAR0} --vario MODEL --dir ${DIR} --dim ${DIM} --dirs
 
 #computesis:
 ##########  COMPUTE  ###########
-export GMOD=test_box
+export GMOD=${GEOM}_box_rot
 
 ## decomment if you want to simulate with wells
 muse_compute -C -p ${WP} -v ${VAR0} --dir ${DIR} --dim ${DIM} -m ${OUTVOL}/${GMOD}.vtk --crit SISIM --nsim ${NSIM} --rotaxis X --rotangle 270 --scaleradius 1.5 --octant --simulated 7 --input 3
