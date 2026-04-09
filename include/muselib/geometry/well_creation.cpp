@@ -8,6 +8,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <queue>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -501,9 +502,10 @@ static bool triangleIntersectsDiskXY(const cinolib::vec3d& v0,
         return true;
     }
 
-    return pointSegmentDistanceSquared2D(center, p0, p1) <= radius_sq ||
-           pointSegmentDistanceSquared2D(center, p1, p2) <= radius_sq ||
-           pointSegmentDistanceSquared2D(center, p2, p0) <= radius_sq;
+    // Keep patch selection local: avoid selecting far elongated triangles whose
+    // edges happen to cross the disk, as they can create non-local holes.
+    const cinolib::vec2d centroid = (p0 + p1 + p2) / 3.0;
+    return (centroid - center).dot(centroid - center) <= radius_sq;
 }
 
 static bool triangleMatchesSurfaceSheet(const cinolib::Trimesh<>& surface,
@@ -525,9 +527,58 @@ static bool triangleMatchesSurfaceSheet(const cinolib::Trimesh<>& surface,
     }
 }
 
+static std::set<uint> selectConnectedPatchComponent(const cinolib::Trimesh<>& surface,
+                                                    const std::set<uint>& candidate_triangles,
+                                                    const cinolib::vec2d& center)
+{
+    if (candidate_triangles.empty())
+    {
+        return candidate_triangles;
+    }
+
+    uint seed = *candidate_triangles.begin();
+    double best_dist_sq = std::numeric_limits<double>::max();
+    for (uint pid : candidate_triangles)
+    {
+        const cinolib::vec2d cxy = toXY(surface.poly_centroid(pid));
+        const double dist_sq = (cxy - center).dot(cxy - center);
+        if (dist_sq < best_dist_sq)
+        {
+            best_dist_sq = dist_sq;
+            seed = pid;
+        }
+    }
+
+    std::set<uint> component;
+    std::queue<uint> frontier;
+    component.insert(seed);
+    frontier.push(seed);
+
+    while (!frontier.empty())
+    {
+        const uint curr = frontier.front();
+        frontier.pop();
+
+        for (uint nbr : surface.adj_p2p(curr))
+        {
+            if (candidate_triangles.count(nbr) == 0)
+            {
+                continue;
+            }
+            if (component.insert(nbr).second)
+            {
+                frontier.push(nbr);
+            }
+        }
+    }
+
+    return component;
+}
+
 static std::vector<std::vector<uint>> collectBoundaryLoops(const cinolib::Trimesh<>& surface,
                                                            const std::set<uint>& selected_triangles)
 {
+    std::cout << "Collecting boundary edges from the selected patch triangles..." << std::endl;
     std::map<std::pair<uint, uint>, int> edge_counts;
     for (uint pid : selected_triangles)
     {
@@ -535,6 +586,129 @@ static std::vector<std::vector<uint>> collectBoundaryLoops(const cinolib::Trimes
         {
             uint a = surface.poly_vert_id(pid, offset);
             uint b = surface.poly_vert_id(pid, (offset + 1) % 3);
+            if (a > b)
+            {
+                std::swap(a, b);
+            }
+            edge_counts[{ a, b }]++;
+        }
+    }
+
+    std::cout << "Building adjacency for boundary edges..." << std::endl;
+    std::map<uint, std::vector<uint>> boundary_adjacency;
+    for (const auto& item : edge_counts)
+    {
+        if (item.second == 1)
+        {
+            boundary_adjacency[item.first.first].push_back(item.first.second);
+            boundary_adjacency[item.first.second].push_back(item.first.first);
+        }
+    }
+
+    std::cout << "Extracting boundary loops from adjacency..." << std::endl;
+    std::set<std::pair<uint, uint>> visited_edges;
+    std::vector<std::vector<uint>> loops;
+    const size_t max_walk_steps = std::max<size_t>(1, boundary_adjacency.size()) * 4;
+    for (const auto& item : boundary_adjacency)
+    {
+        const uint start = item.first;
+        for (uint next : item.second)
+        {
+            const std::pair<uint, uint> edge_key = std::minmax(start, next);
+            if (visited_edges.count(edge_key) > 0)
+            {
+                continue;
+            }
+
+            std::vector<uint> loop;
+            uint prev = std::numeric_limits<uint>::max();
+            uint curr = start;
+            uint candidate = next;
+            bool closed_loop = false;
+            size_t walk_steps = 0;
+            while (true)
+            {
+                if (++walk_steps > max_walk_steps)
+                {
+                    std::cout << "Boundary loop walk guard triggered (non-manifold or invalid boundary around vertex "
+                              << curr << ")" << std::endl;
+                    break;
+                }
+
+                loop.push_back(curr);
+                const std::pair<uint, uint> walk_edge = std::minmax(curr, candidate);
+                if (visited_edges.count(walk_edge) > 0)
+                {
+                    break;
+                }
+                visited_edges.insert(walk_edge);
+
+                prev = curr;
+                curr = candidate;
+                if (curr == start)
+                {
+                    closed_loop = true;
+                    break;
+                }
+
+                const auto& neighbors = boundary_adjacency.at(curr);
+                bool found_next = false;
+                for (uint neigh : neighbors)
+                {
+                    if (neigh == prev)
+                    {
+                        continue;
+                    }
+
+                    const std::pair<uint, uint> next_edge = std::minmax(curr, neigh);
+                    if (visited_edges.count(next_edge) == 0)
+                    {
+                        candidate = neigh;
+                        found_next = true;
+                        break;
+                    }
+                }
+
+                if (!found_next)
+                {
+                    for (uint neigh : neighbors)
+                    {
+                        const std::pair<uint, uint> next_edge = std::minmax(curr, neigh);
+                        if (visited_edges.count(next_edge) == 0)
+                        {
+                            candidate = neigh;
+                            found_next = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!found_next)
+                {
+                    break;
+                }
+            }
+
+            if (closed_loop && loop.size() >= 3)
+            {
+                loops.push_back(loop);
+            }
+        }
+    }
+
+    std::cout << "Identified " << loops.size() << " boundary loops." << std::endl;
+    return loops;
+}
+
+static std::vector<std::vector<uint>> collectMeshBoundaryLoops(const cinolib::Trimesh<>& mesh)
+{
+    std::map<std::pair<uint, uint>, int> edge_counts;
+    for (uint pid = 0; pid < mesh.num_polys(); ++pid)
+    {
+        for (uint offset = 0; offset < 3; ++offset)
+        {
+            uint a = mesh.poly_vert_id(pid, offset);
+            uint b = mesh.poly_vert_id(pid, (offset + 1) % 3);
             if (a > b)
             {
                 std::swap(a, b);
@@ -555,6 +729,7 @@ static std::vector<std::vector<uint>> collectBoundaryLoops(const cinolib::Trimes
 
     std::set<std::pair<uint, uint>> visited_edges;
     std::vector<std::vector<uint>> loops;
+    const size_t max_walk_steps = std::max<size_t>(1, boundary_adjacency.size()) * 4;
     for (const auto& item : boundary_adjacency)
     {
         const uint start = item.first;
@@ -570,26 +745,56 @@ static std::vector<std::vector<uint>> collectBoundaryLoops(const cinolib::Trimes
             uint prev = std::numeric_limits<uint>::max();
             uint curr = start;
             uint candidate = next;
+            bool closed_loop = false;
+            size_t walk_steps = 0;
             while (true)
             {
-                loop.push_back(curr);
-                visited_edges.insert(std::minmax(curr, candidate));
-                prev = curr;
-                curr = candidate;
-                if (curr == start)
+                if (++walk_steps > max_walk_steps)
                 {
                     break;
                 }
 
-                const auto& neighbors = boundary_adjacency.at(curr);
-                candidate = neighbors.front();
-                if (candidate == prev && neighbors.size() > 1)
+                loop.push_back(curr);
+                const std::pair<uint, uint> walk_edge = std::minmax(curr, candidate);
+                if (visited_edges.count(walk_edge) > 0)
                 {
-                    candidate = neighbors.back();
+                    break;
+                }
+                visited_edges.insert(walk_edge);
+
+                prev = curr;
+                curr = candidate;
+                if (curr == start)
+                {
+                    closed_loop = true;
+                    break;
+                }
+
+                const auto& neighbors = boundary_adjacency.at(curr);
+                bool found_next = false;
+                for (uint neigh : neighbors)
+                {
+                    if (neigh == prev)
+                    {
+                        continue;
+                    }
+
+                    const std::pair<uint, uint> next_edge = std::minmax(curr, neigh);
+                    if (visited_edges.count(next_edge) == 0)
+                    {
+                        candidate = neigh;
+                        found_next = true;
+                        break;
+                    }
+                }
+
+                if (!found_next)
+                {
+                    break;
                 }
             }
 
-            if (loop.size() >= 3)
+            if (closed_loop && loop.size() >= 3)
             {
                 loops.push_back(loop);
             }
@@ -597,6 +802,62 @@ static std::vector<std::vector<uint>> collectBoundaryLoops(const cinolib::Trimes
     }
 
     return loops;
+}
+
+static void closeBoundaryHoles(cinolib::Trimesh<>& mesh,
+                              const cinolib::vec2d& center,
+                              const double local_radius)
+{
+    const auto loops = collectMeshBoundaryLoops(mesh);
+    if (loops.empty())
+    {
+        return;
+    }
+
+    int added_faces = 0;
+    int closed_loops = 0;
+    int skipped_loops = 0;
+    const double local_radius_sq = local_radius * local_radius;
+    for (const auto& loop : loops)
+    {
+        if (loop.size() < 3)
+        {
+            continue;
+        }
+
+        cinolib::vec2d loop_centroid(0.0, 0.0);
+        for (uint vid : loop)
+        {
+            const cinolib::vec2d p = toXY(mesh.vert(vid));
+            loop_centroid = loop_centroid + p;
+        }
+        loop_centroid = loop_centroid / static_cast<double>(loop.size());
+
+        const double dist_sq = (loop_centroid - center).dot(loop_centroid - center);
+        if (dist_sq > local_radius_sq)
+        {
+            ++skipped_loops;
+            continue;
+        }
+
+        for (size_t i = 1; i + 1 < loop.size(); ++i)
+        {
+            mesh.poly_add(loop[0], loop[i], loop[i + 1]);
+            ++added_faces;
+        }
+        ++closed_loops;
+    }
+
+    if (closed_loops > 0)
+    {
+        std::cout << "Closed " << closed_loops << " local open boundary loops by adding "
+                  << added_faces << " repair triangles." << std::endl;
+    }
+    if (skipped_loops > 0)
+    {
+        std::cout << "Skipped " << skipped_loops
+                  << " non-local boundary loops during repair to avoid modifying distant geometry." << std::endl;
+    }
 }
 
 static std::vector<cinolib::vec3d> chooseOuterPatchBoundary(const cinolib::Trimesh<>& surface,
@@ -843,8 +1104,9 @@ static cinolib::Trimesh<> embedRingIntoSurfacePatch(const cinolib::Trimesh<>& su
                                                     const SurfaceSheet sheet,
                                                     const double target_edge_length)
 {
+    static int patch_debug_counter = 0;
     const cinolib::vec2d center(well.x, well.y);
-    const double patch_radius = well.radius + std::max(target_edge_length * 3.0, well.radius * 0.5);
+    const double patch_radius = well.radius + std::max(1e-6, target_edge_length * 1e-3);
     const double sheet_tolerance = std::max(1e-6, target_edge_length * 0.25);
 
     std::set<uint> patch_triangles;
@@ -866,9 +1128,20 @@ static cinolib::Trimesh<> embedRingIntoSurfacePatch(const cinolib::Trimesh<>& su
         throw std::runtime_error("Could not find a surface patch to remesh around the well ring");
     }
 
+    if (patch_triangles.size() >= surface.num_polys())
+    {
+        throw std::runtime_error("Patch selection consumed the full surface; aborting local remeshing to avoid losing the input mesh");
+    }
+
+    std::cout << "Identified " << patch_triangles.size() << " triangles in the initial patch around the well ring." << std::endl;
+
+    std::cout << "Collecting patch boundary loops..." << std::endl;
     const auto loops = collectBoundaryLoops(surface, patch_triangles);
+
+    std::cout << "Choosing outer patch boundary loop..." << std::endl;
     const std::vector<cinolib::vec3d> outer_boundary = chooseOuterPatchBoundary(surface, loops, center);
 
+    std::cout << "Embedding ring vertices into the patch..." << std::endl;
     std::set<uint> patch_vertices;
     for (uint pid : patch_triangles)
     {
@@ -877,6 +1150,7 @@ static cinolib::Trimesh<> embedRingIntoSurfacePatch(const cinolib::Trimesh<>& su
         patch_vertices.insert(surface.poly_vert_id(pid, 2));
     }
 
+    std::cout << "Found " << patch_vertices.size() << " unique vertices in the initial patch." << std::endl;
     std::vector<cinolib::vec3d> patch_points;
     patch_points.reserve(patch_vertices.size());
     for (uint vid : patch_vertices)
@@ -884,11 +1158,45 @@ static cinolib::Trimesh<> embedRingIntoSurfacePatch(const cinolib::Trimesh<>& su
         patch_points.push_back(surface.vert(vid));
     }
 
+
+    std::cout << "Triangulating the patch with the embedded ring as a constraint..." << std::endl;
     const cinolib::Trimesh<> remeshed_patch = triangulateSurfacePatchWithConstraints(outer_boundary, ring, patch_points, reference_surface, reference_octree, sheet, target_edge_length);
+    
+    std::cout << "Merging the remeshed patch back into the original surface..." << std::endl;
     const cinolib::Trimesh<> cut_surface = rebuildSurfaceWithoutTriangles(surface, patch_triangles);
 
+    const std::string cut_surface_filename = std::string("cut_surface_")
+                                           + (sheet == SurfaceSheet::Top ? "top_" : "bottom_")
+                                           + std::to_string(++patch_debug_counter) + ".obj";
+    try
+    {
+        cinolib::Trimesh<> cut_surface_copy = cut_surface;
+        cut_surface_copy.save(cut_surface_filename.c_str());
+        std::cout << "Saved cut surface before patch reinsertion to: " << cut_surface_filename << std::endl;
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "Warning: failed to save cut surface debug mesh: " << e.what() << std::endl;
+    }
+
+    if (cut_surface.num_polys() == 0)
+    {
+        throw std::runtime_error("Patch removal emptied the input surface; aborting local remeshing");
+    }
+
+
+    std::cout << "Merging meshes at coincident vertices..." << std::endl;
     cinolib::Trimesh<> embedded_surface;
     cinolib::merge_meshes_at_coincident_vertices(cut_surface, remeshed_patch, embedded_surface);
+
+    closeBoundaryHoles(embedded_surface, center, well.radius * 2.0);
+
+    if (embedded_surface.num_polys() < surface.num_polys() / 2)
+    {
+        throw std::runtime_error("Remeshing produced an unexpectedly small surface; aborting to avoid dropping the input geometry");
+    }
+
+    std::cout << "Successfully embedded the well ring into the surface patch." << std::endl;
     return embedded_surface;
 }
 
@@ -1921,6 +2229,7 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
         if (verbose)
         {
             std::cout << "Generating tetrahedral mesh directly with TetGen on the remeshed surface..." << std::endl;
+            std::cout << "#V = " << result_mesh.num_verts() << ", #F = " << result_mesh.num_polys() << std::endl;
         }
 
         cinolib::Tetmesh<> tet_mesh;
