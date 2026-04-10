@@ -678,14 +678,41 @@ int main(int argc, char** argv)
             std::vector<std::string> id;
             std::vector<double> xCoord, yCoord, zCoord;
 
+            // LAMBDA FUNCTION TO APPLY ROTATION (IF SET):
+            auto apply_rotation = [&](const MUSE::Rotation& rot)
+            {
+                cinolib::vec3d axis = set_rotation_axis(rot.rotation_axis);
+                cinolib::vec3d c (rot.rotation_center_x, rot.rotation_center_y, rot.rotation_center_z);
+
+                for(size_t i=0; i< xCoord.size(); i++)
+                {
+                    //rotazione coordinate all'inidice i
+                    cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
+                    sample = point_rotation(sample, axis, rot.rotation_angle, c);
+
+                    xCoord.at(i) = sample.x();
+                    yCoord.at(i) = sample.y();
+                    zCoord.at(i) = sample.z();
+                }
+
+                std::cout << "=== Rotation is activate on data ... " << rot.rotation << std::endl;
+                std::cout << "=== Rotation axis: " << rot.rotation_axis << std::endl;
+                std::cout << "=== Rotation center: [" << rot.rotation_center_x << "; " << rot.rotation_center_y << "; " << rot.rotation_center_z << "]" <<  std::endl;
+                std::cout << "=== Rotation angle (degree): " << rot.rotation_angle << std::endl;
+            };
+            
+            // ================================
+            // 1. LOADING COORDINATES AND ID
+            // ================================
             if(!stratCondition.isSet()) //Condizione di default
             {
-                std::cout << "\033[0;33mWARNING: No stratigraphic trasformation is set. The coordinate system remains unchanged.\033[0m" << std::endl;
+                std::cout << "\033[0;33m=== WARNING: No stratigraphic trasformation is set.\033[0m" << std::endl;
 
                 if(datameta.getInfoData().id_name.compare("Unknown") != 0)
                 {
                     readTextValues(l + "/data/" + datameta.getInfoData().id_name + ".dat", id);
                     depsvario.push_back(filesystem::relative(l + "/metadata/" + datameta.getInfoData().id_name + ".json", Project.folder));
+                    std::cout << "=== Loaded ... coordinates points ID - size: " << id.size() << std::endl;
                 }
                 else
                     std::cerr << "ERROR reading ID: " << l + "/data/" + datameta.getInfoData().id_name + ".dat" << " NOT found." << std::endl;
@@ -694,6 +721,7 @@ int main(int argc, char** argv)
                 {
                     readCoordinate(l + "/data/" + datameta.getInfoData().x_name + ".dat", xCoord);
                     depsvario.push_back(filesystem::relative(l + "/metadata/" + datameta.getInfoData().x_name + ".json", Project.folder));
+                    std::cout << "=== Loaded ... coordinates points X - size: " << xCoord.size() << std::endl;
                 }
                 else
                     std::cerr << "ERROR reading X coordinate: " << l + "/data/" + datameta.getInfoData().x_name + ".dat" << " NOT found." << std::endl;
@@ -702,6 +730,7 @@ int main(int argc, char** argv)
                 {
                     readCoordinate(l + "/data/" + datameta.getInfoData().y_name + ".dat", yCoord);
                     depsvario.push_back(filesystem::relative(l + "/metadata/" + datameta.getInfoData().y_name + ".json", Project.folder));
+                    std::cout << "=== Loaded ... coordinates points Y - size: " << yCoord.size() << std::endl;
                 }
                 else
                     std::cerr << "ERROR reading Y coordinate: " << l + "/data/" + datameta.getInfoData().y_name + ".dat" << " NOT found." << std::endl;
@@ -710,27 +739,31 @@ int main(int argc, char** argv)
                 {
                     readCoordinate(l + "/data/" + datameta.getInfoData().z_name + ".dat", zCoord);
                     depsvario.push_back(filesystem::relative(l + "/metadata/" + datameta.getInfoData().z_name + ".json", Project.folder));
+                    std::cout << "=== Loaded ... coordinates points Z - size: " << zCoord.size() << std::endl;
                 }
                 else
                 {
                     zCoord.resize(xCoord.size(), 0.0);
-                    //std::cerr << "ERROR reading Z coordinate: " << l + "/data/" + datameta.getInfoData().z_name + ".dat" << " NOT found." << std::endl;
-                    //std::cout << "\033[0;33mWARNING: Z coordinate is Unknown. Set -z --name <variable> for setting the variable.\033[0;0m" << std::endl;
+                    std::cout << "=== Z coordinate is missing. Set it as 0.0 for all points." << std::endl;
                 }
                 std::cout << std::endl;
             }
             else
             {
-                std::cout << "\033[0;33mWARNING: Stratigraphic transformation is set on " << stratCondition.getValue() << ". Variogram is computed in stratigraphic coordinate system.\033[0m" << std::endl;
-                std::cout << "Stratigraphic coordinates are located in " << out_folder + "/" + app_manipulate + "/" << std::endl;
+                std::cout << "\033[0;33m=== WARNING: Stratigraphic transformation is set on " << stratCondition.getValue() << ". Variogram is computed in stratigraphic coordinate system.\033[0m" << std::endl;
+                std::cout << "=== Stratigraphic coordinates are located in " << out_folder + "/" + app_manipulate + "/" << std::endl;
                 load_xyzfile(man_folder + "/" + filenameStrat.getValue() + ".xyz", xCoord, yCoord, zCoord);
                 depsvario.push_back(filesystem::relative(man_folder + "/" + filenameStrat.getValue() + ".json", Project.folder));
+                std::cout << "=== Loading coordinates points (x,y,z) in stratigraphic coordinate system ... COMPLETED." << std::endl;
             }
 
+            // ================================
+            // 2. CHECK DIMENSIONS
+            // ================================
             if((xCoord.size() != yCoord.size()) || (xCoord.size() != zCoord.size()) || (yCoord.size() != zCoord.size()))
             {
-                std::cerr << "ERROR in loading vector coordinates data!" << std::endl;
-                    exit(1);
+                std::cerr << "=== ERROR in loading vector coordinates data. Please check the dimensions of the coordinate vectors." << std::endl;
+                exit(1);
             }
 
             VarioMeta::Manipulate processingData;
@@ -738,6 +771,9 @@ int main(int argc, char** argv)
             processingData.filename = filenameStrat.getValue();
 
 
+            // ================================
+            // 3. LOAD VALUES
+            // ================================
             // Storing json information into class Data
             MUSE::Metadata meta_input;
             meta_input.read(l + "/metadata/" + infovar.v_name + ".json");
@@ -753,122 +789,107 @@ int main(int argc, char** argv)
 
             size_t n_sample = data.text_values.size();
 
-            std::vector<std::string> corr_id;
-            std::vector<double> conv_values, corr_x, corr_y, corr_z; //sampled data
-
-            //NEWWWWWWWWWWWWWWWWWWWWW
-
-            if(!stratCondition.isSet()) //Se non sono in coordinate stratigr
+            // Check if the number of samples in the coordinate vectors matches the number of samples in the variable data
+            if(xCoord.size() != n_sample)
             {
-                if(setRotAxis.isSet())
-                {
-                    MUSE::Rotation dataRotation_vario;
-
-                    dataRotation_vario.rotation = true;
-                    dataRotation_vario.rotation_axis = setRotAxis.getValue();
-                    dataRotation_vario.rotation_center_x = setRotCenterX.getValue();
-                    dataRotation_vario.rotation_center_y = setRotCenterY.getValue();
-                    dataRotation_vario.rotation_center_z = setRotCenterZ.getValue();
-                    dataRotation_vario.rotation_angle = setRotAngle.getValue();
-
-                    std::cout << std::endl;
-                    std::cout << "Rotation is activate on data ... " << dataRotation_vario.rotation << std::endl;
-                    std::cout << "Rotation axis: " << dataRotation_vario.rotation_axis << std::endl;
-                    std::cout << "Rotation center: [" << dataRotation_vario.rotation_center_x << "; " << dataRotation_vario.rotation_center_y << "; " << dataRotation_vario.rotation_center_z << "]" <<  std::endl;
-                    std::cout << "Rotation angle (degree): " << dataRotation_vario.rotation_angle << std::endl;
-                    std::cout << std::endl;
-
-                    for(uint i=0; i< xCoord.size(); i++)
-                    {
-                        //rotazione coordinate all'inidice i
-                        cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
-                        cinolib::vec3d axis = set_rotation_axis(dataRotation_vario.rotation_axis);
-                        cinolib::vec3d c (dataRotation_vario.rotation_center_x, dataRotation_vario.rotation_center_y, dataRotation_vario.rotation_center_z);
-                        sample = point_rotation(sample, axis, dataRotation_vario.rotation_angle, c);
-
-                        xCoord.at(i) = sample.x();
-                        yCoord.at(i) = sample.y();
-                        zCoord.at(i) = sample.z();
-                    }
-                    metavario.setRotation(dataRotation_vario);
-                    std::cout << FGRN("Rotation on data ... COMPLETED.") << std::endl;
-                }
-
-                //Dopo aver caricato i dati grezzi, posso considerare un sottodataset o la totalità
-                if(subDataset.isSet()) //sotto dataset da manipulate
-                {
-                    //depsvario.push_back("manipulate/" + subDataset.getValue() + ".json");
-
-                    processingData.sub_dataset = "YES";
-                    processingData.domain = subDataset.getValue();
-
-                    MUSE::ExtractionMeta extrmeta;
-                    extrmeta.read(man_folder + "/" + subDataset.getValue() + ".json");
-                    std::cout << "Extraction sub-dataset is set. Reading ... " << man_folder + "/" + subDataset.getValue() + ".json" << std::endl;
-                    depsvario.push_back(filesystem::relative(man_folder + "/" + subDataset.getValue() + ".json", Project.folder));
-
-
-                    //1) VERIFICARE ROTAZIONE DATI
-                    MUSE::Rotation dataRotation = extrmeta.getRotation();
-                    if(dataRotation.rotation == true)
-                    {
-                        std::cout << std::endl;
-                        std::cout << "Rotation is activate on data ... " << dataRotation.rotation << std::endl;
-                        std::cout << "Rotation axis: " << dataRotation.rotation_axis << std::endl;
-                        std::cout << "Rotation center: [" << dataRotation.rotation_center_x << "; " << dataRotation.rotation_center_y << "; " << dataRotation.rotation_center_z << "]" <<  std::endl;
-                        std::cout << "Rotation angle (degree): " << dataRotation.rotation_angle << std::endl;
-                        std::cout << std::endl;
-
-                        for(uint i=0; i< xCoord.size(); i++)
-                        {
-                            //rotazione coordinate all'inidice i
-                            cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
-                            cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
-                            cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
-                            sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
-
-                            xCoord.at(i) = sample.x();
-                            yCoord.at(i) = sample.y();
-                            zCoord.at(i) = sample.z();
-                        }
-
-                        metavario.setRotation(dataRotation);
-                        std::cout << FGRN("Rotation on data ... COMPLETED.") << std::endl;
-                    }
-
-                    //2) ESTRARRE SOTTODATASET DA INDICI
-                    if(extrmeta.getDataExtraction().id_points.size() == 0)
-                    {
-                        std::cout << FRED("Vector of index is empty.") << std::endl;
-                        exit(1);
-                    }
-
-                    string_to_double_conversion_vectors(extrmeta.getDataExtraction().id_points, data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
-                    std::cout << FGRN("Extraction sub-dataset ... COMPLETED.") << std::endl;
-                }
-                else
-                    string_to_double_conversion_vectors(data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
+                std::cerr << "=== WARNING in loading data. The number of samples in the coordinate vectors does not match the number of samples in the variable data." << std::endl;
+                std::cerr << "=== WARNING: mismatch coordinates (" << xCoord.size() << " vs " << n_sample << ")." << std::endl;
             }
-            else
+
+            if(!stratCondition.isSet() && setRotAxis.isSet()) //Se non sono in coordinate stratigrafiche, posso applicare una rotazione ai dati grezzi prima di qualsiasi altra operazione
             {
-                if(setRotAxis.isSet())
+                std::cout << "=== Applying rotation on data before any other operation ... " << std::endl;
+
+                MUSE::Rotation dataRotation_vario;
+
+                dataRotation_vario.rotation = true;
+                dataRotation_vario.rotation_axis = setRotAxis.getValue();
+                dataRotation_vario.rotation_center_x = setRotCenterX.getValue();
+                dataRotation_vario.rotation_center_y = setRotCenterY.getValue();
+                dataRotation_vario.rotation_center_z = setRotCenterZ.getValue();
+                dataRotation_vario.rotation_angle = setRotAngle.getValue();
+
+                apply_rotation(dataRotation_vario);
+                metavario.setRotation(dataRotation_vario);
+                std::cout << FGRN("=== Rotation on data ... COMPLETED.") << std::endl;
+            }
+
+            std::vector<std::string> corr_id;
+            std::vector<double> conv_values, corr_x, corr_y, corr_z; //sampled data 
+            if(subDataset.isSet())
+            {
+                std::cout << "=== Sub-dataset is set on " << subDataset.getValue() << ". Variogram is computed on the sub-dataset selected by muse-manipulate." << std::endl;
+                std::cout << "=== Reading ... " << man_folder + "/" + subDataset.getValue() + ".json" << std::endl;
+
+                processingData.sub_dataset = "YES";
+                processingData.domain = subDataset.getValue();
+
+                MUSE::ExtractionMeta extrmeta;
+                extrmeta.read(man_folder + "/" + subDataset.getValue() + ".json");              
+                depsvario.push_back(filesystem::relative(man_folder + "/" + subDataset.getValue() + ".json", Project.folder));
+
+                //2) ESTRARRE SOTTODATASET DA INDICI
+                const auto& indices = extrmeta.getDataExtraction().id_points;
+                if(indices.empty())
                 {
-                    std::cout << FRED("Data rotation from cmdline is not active!") << std::endl;
+                    std::cerr << "=== ERROR: Vector of index is empty." << std::endl;
+                    std::cerr << "=== Please check the JSON file for the sub-dataset extraction: " << man_folder + "/" + subDataset.getValue() + ".json" << std::endl;
+                    std::cerr << "=== or use muse-manipulate (-E command)." << std::endl;
                     exit(1);
                 }
 
-                if(subDataset.isSet()) //sotto dataset da manipulate
+                if(stratCondition.isSet())
                 {
-                    //depsvario.push_back("manipulate/" + subDataset.getValue() + ".json");
+                    //Le coordinate sono già filtrate e ordinate secondo il vettore 'indices' 
+                    //(prodotte da muse-manipulate): xCoord, yCoord, zCoord hanno già dimensione indices.size()
+                    //Bisogna solo allinere i valori della variabile usando il vettore indices come riferimento
+                    if(xCoord.size() != indices.size())
+                    {
+                        std::cerr << "=== ERROR: Mismatch between coordinate vectors and index vector for sub-dataset extraction." << std::endl;
+                        std::cerr << "=== Coordinate vectors size: " << xCoord.size() << ", Index vector size: " << indices.size() << std::endl;
+                        std::cerr << "=== Please check the JSON file for the sub-dataset extraction: " << man_folder + "/" + subDataset.getValue() + ".json" << std::endl;
+                        std::cerr << "=== or use muse-manipulate (-E command)." << std::endl;
+                        exit(1);
+                    }
 
-                    processingData.sub_dataset = "YES";
-                    processingData.domain = subDataset.getValue();
+                    for(size_t k=0; k<indices.size(); k++)
+                    {
+                        uint idx = indices.at(k);
+                        if(idx >= data.text_values.size())
+                        {
+                            std::cerr << "=== ERROR: Index " << idx << " is out of bounds for variable data." << std::endl;
+                            continue; //skip this index
+                        }
+                        std::string val_str = data.text_values.at(idx);
+                        if(val_str.empty() || val_str == "nd" || val_str == "*")
+                        {
+                            std::cerr << "=== WARNING: Missing or invalid value at index " << idx << ". Skipping this sample." << std::endl;
+                            continue; //skip this index
+                        }
 
-                    MUSE::ExtractionMeta extrmeta;
-                    extrmeta.read(man_folder + "/" + subDataset.getValue() + ".json");
-                    std::cout << "Extraction sub-dataset is set. Reading ... " << man_folder + "/" + subDataset.getValue() + ".json" << std::endl;
-                    depsvario.push_back(filesystem::relative(man_folder + "/" + subDataset.getValue() + ".json", Project.folder));
+                        try
+                        {
+                            double val = std::stod(val_str);
+                            conv_values.push_back(val);
 
+                            if(!id.empty())
+                                corr_id.push_back(id.at(k));
+                            
+                            corr_x.push_back(xCoord.at(k)); //k è l'indice del vettore indices, che è allineato con le coordinate filtrate
+                            corr_y.push_back(yCoord.at(k));
+                            corr_z.push_back(zCoord.at(k));
+                        }
+                        catch(const std::exception& e)
+                        {
+                            std::cerr << "=== ERROR: Exception while converting value at index " << idx << ": " << e.what() << std::endl;
+                            std::cerr << "=== Invalid Value string: '" << val_str << "'" << std::endl;
+                        }
+                    }
+
+                    std::cout << "=== Loaded sub-dataset with " << conv_values.size() << " valid values out of " << indices.size() << " sub-dataset indices." << std::endl;
+                }
+                else //no stratigraphic transformation, quindi le coordinate non sono state ancora filtrate e ordinate secondo il vettore 'indices'
+                {
                     //1) VERIFICARE ROTAZIONE DATI
                     MUSE::Rotation dataRotation = extrmeta.getRotation();
                     if(dataRotation.rotation == true)
@@ -884,41 +905,61 @@ int main(int argc, char** argv)
                         metavario.setRotation(dataRotation);
                     }
 
-                    //2) ESTRARRE SOTTODATASET DA INDICI
-                    if(extrmeta.getDataExtraction().id_points.size() == 0)
+                    for(uint i:indices)
                     {
-                        std::cout << FRED("Vector of index is empty.") << std::endl;
-                        exit(1);
+                        if(i >= data.text_values.size())
+                        {
+                            std::cerr << "=== ERROR: Index " << i << " is out of bounds for variable data." << std::endl;
+                            continue; //skip this index
+                        }
+                        std::string val_str = data.text_values.at(i);
+                        if(val_str.empty() || val_str == "nd" || val_str == "*")
+                        {
+                            std::cerr << "=== WARNING: Missing or invalid value at index " << i << ". Skipping this sample." << std::endl;
+                            continue; //skip this index
+                        }
+
+                        try
+                        {
+                            double val = std::stod(val_str);
+                            conv_values.push_back(val);
+
+                            if(!id.empty())
+                                corr_id.push_back(id.at(i));
+                            
+                            corr_x.push_back(xCoord.at(i));
+                            corr_y.push_back(yCoord.at(i));
+                            corr_z.push_back(zCoord.at(i));
+                        }
+                        catch(const std::exception& e)
+                        {
+                            std::cerr << "=== ERROR: Exception while converting value at index " << i << ": " << e.what() << std::endl;
+                            std::cerr << "=== Invalid Value string: '" << val_str << "'" << std::endl;
+                        }
                     }
-
-                    string_to_double_conversion_vectors(extrmeta.getDataExtraction().id_points, data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
-
-                    std::cout << FGRN("Extraction sub-dataset ... COMPLETED.") << std::endl;
                 }
-                else
-                    string_to_double_conversion_vectors(data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
             }
-            //NEWWWWWWWWWWWWWWWWWWWWW
+            else
+                string_to_double_conversion_vectors(data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
+
 
             std::cout << std::endl;
 
             metavario.setDependencies(depsvario); //added dependencies
-
             metavario.setManipulate(processingData);
-
 
             int n_conv_samples = conv_values.size(); //numero campioni convertiti da stringa a double
             if(n_conv_samples == 0)
             {
-                std::cerr << "\033[0;31mERROR: All values are invalid!\033[0m" << std::endl;
+                std::cerr << "=== ERROR: No valid sample is available for variogram computation after conversion. Please check the variable data and the sub-dataset extraction." << std::endl;
                 exit(1);
             }
             else
             {
-                std::cout << "Data Statistical Summary ..." << std::endl;
+                std::cout << "=== Data Statistical Summary ..." << std::endl;
+                if(n_sample > n_conv_samples)
+                    std::cout << "N (original)" << n_sample << std::endl;
                 summary(conv_values);
-                // infovar.mean = mean(conv_values);
-                // infovar.var = variance(conv_values);
 
                 stats.mean = mean(conv_values);
                 stats.var = variance(conv_values);
@@ -927,63 +968,18 @@ int main(int argc, char** argv)
             std::cout << "\033[0;32mReading MUSE format and data analysis... COMPLETED.\033[0m" << std::endl;
             std::cout << std::endl;
 
-
-            // if((xCoord.size() != n_conv_samples) || (yCoord.size() != n_conv_samples) || (zCoord.size() != n_conv_samples))
-            // {
-            //     std::cerr << "ERROR in loading vector data!" << std::endl;
-            //     exit(1);
-            // }
             xCoord.clear();
             yCoord.clear();
             zCoord.clear();
 
 
-
-            if (data.type == varType::CATEGORIC_TEXT)
+            // ================================
+            // STARTING VARIO COMPUTATION
+            // ================================
+            if (data.type == varType::CATEGORIC)
             {
                 std::cout << std::endl;
-                std::cout << FGRN("### VARTYPE CHECK: The variable is categoric (textual).") << std::endl;
-                std::cout << std::endl;
-
-                //la variabile categorica può essere anche testuale: in quel caso prevedere una trasformazione in indici/categorie numeriche e trattarla come indicatore
-                std::vector<std::string> conv_values;
-
-                //PUNTO DA MODIFICARE DATO CHE FACCIO LA CORRISPONDENZA DATI PRIMA!
-                for(size_t i = 0; i<n_sample; i++)
-                {
-                    std::string val_tmp = data.text_values.at(i);
-                    if(!val_tmp.empty() && val_tmp.compare("nd")!=0)
-                    {
-                        conv_values.push_back(val_tmp);
-
-                        if(id.size() > 0)
-                            corr_id.push_back(id.at(i));
-                        corr_x.push_back(xCoord.at(i));
-                        corr_y.push_back(yCoord.at(i));
-                        corr_z.push_back(zCoord.at(i));
-                    }
-                }
-
-                std::vector<std::string> categ_name = categories_extraction(conv_values);
-                std::vector<double> categ_index;
-                for(size_t i=0; i< categ_name.size(); i++)
-                    categ_index.push_back(i+1);
-
-
-                std::cout << FRED("ERROR: THE IMPLEMENTATION IS NOT COMPLETED!") << std::endl;
-                exit(1);
-
-                // ................................................... TO DO
-            }
-
-
-
-
-
-            else if (data.type == varType::CATEGORIC)
-            {
-                std::cout << std::endl;
-                std::cout << FGRN("### VARTYPE CHECK: The variable is categoric.") << std::endl;
+                std::cout << FGRN("=== VARTYPE CHECK: The variable is categoric.") << std::endl;
                 std::cout << std::endl;
 
                 // 1) Codifica ad indicatori prima di passare al variogramma!!

@@ -59,7 +59,9 @@ using namespace TCLAP;
 int main(int argc, char** argv)
 {
     std::cout << std::endl;
-    std::cout << "########### STARTING MUSE-COMPUTE ..." << std::endl;
+    std::cout << "============================================================" << std::endl;
+    std::cout << "================== STARTING MUSE-COMPUTE ===================" << std::endl;
+    std::cout << "============================================================" << std::endl;
     std::cout << std::endl;
 
     std::string app_name = "compute"; //app name
@@ -69,7 +71,7 @@ int main(int argc, char** argv)
 
 
     try {
-    CmdLine cmd("MUSE = Modelling of Uncertainty as a Support of Environment; Compute tool", ' ', "version 0.0");
+    CmdLine cmd("MUSE - Modelling Uncertainty as a Support of Environment. MUSE-compute application", ' ', "version 0.0");
 
 
     // ---------------------------------------------------------------------------------------------------------
@@ -426,1002 +428,6 @@ int main(int argc, char** argv)
 
     // ---------------------------------------------------------------------------------------------------------
     // STARTS:
-
-    //---------------------------------------------------
-    //---------------------------------------------------
-    //---------------------------------------------------
-    //---> COMPUTE SWITCH ARGUMENT (MODE SET - FIXED)
-    //---------------------------------------------------
-    //---------------------------------------------------
-    //---------------------------------------------------
-    // Questo comando in modalità FIXED permette di calcolare le simulazioni su una variable specificata (n° campioni originali),
-    // considerando un variogramma calcolato sulla stessa variabile ma con un numero diverso di campioni (n° campioni originali + campioni aggiunti)
-    // (Vedi esempio 20_DGM_SMargherita)
-    if(interpolationCompute.isSet() && modeCompute.isSet())
-    {
-        if(!Variable.isSet())
-        {
-            std::cout << FRED("ERROR. Variable is NOT set!") << std::endl;
-            exit(1);
-        }
-
-        if(!geomModel.isSet())
-        {
-            std::cout << FRED("ERROR. Geometry support is NOT set!") << std::endl;
-            exit(1);
-        }
-
-        if(!filesystem::exists(app_folder))
-            filesystem::create_directory(app_folder);
-
-        /////////////////////////////
-        //////////SUMMARY CSV FOR FRAMES
-        ///
-        ///
-        std::cout << "Save summary of multi-frame variography analysis ... " << std::endl;
-        std::ofstream file_summary;
-        file_summary.open(app_folder + "/" + Variable.getValue() + "_SGSsummary.csv", std::fstream::out);
-        if(!file_summary.is_open())
-        {
-            std::cerr << "\033[0;31mError in file opening: " << app_folder + "/" + Variable.getValue() + "_SGSsummary.csv" << "\033[0m" << std::endl;
-            exit(1);
-        }
-        std::string delimiter = ";";
-
-        std::vector<std::string> vec_csv;
-        vec_csv.push_back("frame_name");
-        vec_csv.push_back("domain");
-        vec_csv.push_back(Variable.getValue()+"_mean");
-        vec_csv.push_back(Variable.getValue()+"_var");
-        vec_csv.push_back(Variable.getValue()+"_mean_zscore");
-        vec_csv.push_back(Variable.getValue()+"_var_zscore");
-        vec_csv.push_back("model_type");
-        vec_csv.push_back("nugget");
-        vec_csv.push_back("sill");
-        vec_csv.push_back("partial_sill");
-        vec_csv.push_back("range");
-        vec_csv.push_back("range_max");
-        vec_csv.push_back("range_min");
-        vec_csv.push_back("range_z");
-        for(uint col =0; col < vec_csv.size(); col++)
-        {
-            file_summary << vec_csv.at(col);
-            if(col != vec_csv.size() - 1)
-                file_summary << delimiter; // No comma at end of line
-        }
-        file_summary << "\n";
-        ///////////////////////////////////////////////////////////////////////
-
-        std::string abs_datadir = out_folder + "/" + app_data;
-        std::vector<std::string> list_dir = get_directories(abs_datadir);
-        if(list_dir.empty())
-            list_dir.push_back(abs_datadir);
-
-        if((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
-            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0))
-        {
-            list_dir.clear();
-            list_dir.resize(1, abs_datadir);
-        }
-
-        int count_frame = 0;
-        for(const std::string &l:list_dir)
-        {
-            vec_csv.clear();
-
-            count_frame++;
-
-            filesystem::path dir = l;
-            filesystem::path rel_datadir = filesystem::relative(dir, abs_datadir);
-            vec_csv.push_back(rel_datadir.string());
-            if(subDataset.isSet())
-                vec_csv.push_back(subDataset.getValue());
-            else
-                vec_csv.push_back("");
-
-            app_folder.clear();
-            app_folder = out_folder + "/" + app_name;
-
-            if(!filesystem::exists(app_folder))
-                filesystem::create_directory(app_folder);
-
-            out_vario.clear();
-            out_vario = out_folder + "/" + app_vario;
-
-            if(rel_datadir.string().compare(".") != 0)
-            {
-                app_folder += "/" + rel_datadir.string();
-                out_vario += "/" + rel_datadir.string();
-                filesystem::create_directory(app_folder);
-
-                std::cout << std::endl;
-                std::cout << "###########################" << std::endl;
-                std::cout << "### NUMBER OF TIME FRAMES: " << list_dir.size() << std::endl;
-                std::cout << "### TIME FRAME N° " << count_frame << " ON " << list_dir.size() << std::endl;
-                std::cout << "### TIME FRAME NAME: " << rel_datadir.string() << std::endl;
-            }
-
-            std::vector<std::string> list_json = get_files(l, ".json");
-            if(list_json.size() > 1)
-            {
-                std::cerr << "ERROR. Only a file JSON is expected!" << std::endl;
-                exit(1);
-            }
-
-
-            /// FIXED VARIOGRAM!!
-            VarioMeta metavario;
-            metavario.read(out_vario + "/" + setVario.getValue());
-            std::cout << "### Set fixed variogram from JSON file: " << setVario.getValue() << std::endl;
-
-
-            /// CREATION OF COMPUTE METADATA
-            ComputeMeta metacompute;
-            metacompute.setProject(Project);
-
-            std::vector<std::string> excommands;
-            excommands.push_back(command);
-            metacompute.setCommands(excommands);
-
-            app_folder += "/" + Variable.getValue();
-            if(subDataset.isSet())
-                app_folder += "_" + subDataset.getValue();
-
-            app_folder += "_" + metavario.getInfoVariogram().direction + metavario.getInfoVariogram().dimension;
-
-            app_folder += "_" + get_basename(get_filename(geomModel.getValue()));
-            if(!filesystem::exists(app_folder))
-                filesystem::create_directory(app_folder);
-
-
-
-
-
-
-
-            // // 0) Define meta for vario - dependencies
-            // std::vector<std::string> deps;
-            // filesystem::path rel_variopath = filesystem::relative(out_vario, Project.folder);
-            // if(subDataset.isSet())
-            //     rel_variopath += "/" + Variable.getValue() + "_" + subDataset.getValue() + ".json";
-            // else
-            //     rel_variopath += "/" + Variable.getValue() + ".json";
-            // deps.push_back(rel_variopath);
-
-            // filesystem::path rel_geompath = filesystem::relative(geomModel.getValue(), Project.folder);
-            // deps.push_back(get_basename(rel_geompath) + ".json");
-
-            // metacompute.setDependencies(deps);
-
-
-
-
-
-            // 2. Storing json information into class Data
-            MUSE::Metadata meta_input;
-            meta_input.read(l + "/metadata/" + Variable.getValue() + ".json");
-            Data data = meta_input.getData(0);
-
-            data.setType(data.flag);
-            readTextValues(l + "/data/" + Variable.getValue() + ".dat", data.text_values);
-
-            //DataSummary(data); //da sistemare
-            DataSummary sumdata;
-            sumdata.setSummary(data);
-
-
-
-
-            std::vector<std::string> id;
-            std::vector<double> xCoord, yCoord, zCoord;
-
-
-            if(metavario.getManipulate().stratigraphic_transf.compare("NO") == 0) //Condizione di default
-            {
-                std::cout << "\033[0;33mWARNING: No stratigraphic trasformation is set. The coordinate system remains unchanged.\033[0m" << std::endl;
-
-                if(metavario.getInfoData().id_name.compare("Unknown") != 0)
-                    readTextValues(l + "/data/" + metavario.getInfoData().id_name + ".dat", id);
-                else
-                    std::cerr << "ERROR reading ID: " << l + "/data/" + metavario.getInfoData().id_name + ".dat" << " NOT found." << std::endl;
-
-                if(metavario.getInfoData().x_name.compare("Unknown") != 0)
-                    readCoordinate(l + "/data/" + metavario.getInfoData().x_name + ".dat", xCoord);
-                else
-                    std::cerr << "ERROR reading X coordinate: " << l + "/data/" + metavario.getInfoData().x_name + ".dat" << " NOT found." << std::endl;
-
-                if(metavario.getInfoData().y_name.compare("Unknown") != 0)
-                    readCoordinate(l + "/data/" + metavario.getInfoData().y_name + ".dat", yCoord);
-                else
-                    std::cerr << "ERROR reading Y coordinate: " << l + "/data/" + metavario.getInfoData().y_name + ".dat" << " NOT found." << std::endl;
-
-
-                if(metavario.getInfoData().z_name.compare("Unknown") != 0)
-                    readCoordinate(l + "/data/" + metavario.getInfoData().z_name + ".dat", zCoord);
-                else
-                {
-                    zCoord.resize(xCoord.size());
-                    std::fill(zCoord.begin(), zCoord.end(), 0.0);
-
-                    std::cerr << "ERROR reading Z coordinate: " << l + "/data/" + metavario.getInfoData().z_name + ".dat" << " NOT found." << std::endl;
-                    std::cout << "\033[0;33mWARNING: Z coordinate is Unknown. Set -z --name <variable> for setting the variable.\033[0;0m" << std::endl;
-                }
-            }
-            else
-            {
-                exit(1);
-                //TO ENABLE ...
-                std::cout << "\033[0;33mWARNING: Stratigraphic transformation is set on " << metavario.getManipulate().stratigraphic_transf << ". Variogram is computed in stratigraphic coordinate system.\033[0m" << std::endl;
-
-                std::cout << "Stratigraphic coordinates are located in " << out_man + "/" << std::endl;
-                //load_xyzfile(out_man + "/" + metavario.getManipulate().filename + ".xyz", xCoord, yCoord, zCoord);
-            }
-
-            metacompute.setInfoData(metavario.getInfoData());
-
-
-
-            // String to double Conversion
-            std::vector<std::string> corr_id;
-            std::vector<double> conv_values, corr_x, corr_y, corr_z; //sampled data
-
-            if(metavario.getManipulate().stratigraphic_transf.compare("NO") == 0) //Se non sono in coordinate stratigr
-            {
-                if(setRotAxis.isSet())
-                {
-                    MUSE::Rotation dataRotation_vario;
-
-                    dataRotation_vario.rotation = true;
-                    dataRotation_vario.rotation_axis = setRotAxis.getValue();
-                    dataRotation_vario.rotation_center_x = setRotCenterX.getValue();
-                    dataRotation_vario.rotation_center_y = setRotCenterY.getValue();
-                    dataRotation_vario.rotation_center_z = setRotCenterZ.getValue();
-                    dataRotation_vario.rotation_angle = setRotAngle.getValue();
-
-                    std::cout << std::endl;
-                    std::cout << "Rotation is activate on data ... " << dataRotation_vario.rotation << std::endl;
-                    std::cout << "Rotation axis: " << dataRotation_vario.rotation_axis << std::endl;
-                    std::cout << "Rotation center: [" << dataRotation_vario.rotation_center_x << "; " << dataRotation_vario.rotation_center_y << "; " << dataRotation_vario.rotation_center_z << "]" <<  std::endl;
-                    std::cout << "Rotation angle (degree): " << dataRotation_vario.rotation_angle << std::endl;
-                    std::cout << std::endl;
-
-                    for(uint i=0; i< xCoord.size(); i++)
-                    {
-                        //rotazione coordinate all'inidice i
-                        cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
-                        cinolib::vec3d axis = set_rotation_axis(dataRotation_vario.rotation_axis);
-                        cinolib::vec3d c (dataRotation_vario.rotation_center_x, dataRotation_vario.rotation_center_y, dataRotation_vario.rotation_center_z);
-                        sample = point_rotation(sample, axis, dataRotation_vario.rotation_angle, c);
-
-                        xCoord.at(i) = sample.x();
-                        yCoord.at(i) = sample.y();
-                        zCoord.at(i) = sample.z();
-                    }
-                    metacompute.setRotation(dataRotation_vario);
-                    std::cout << FGRN("Rotation on data ... COMPLETED.") << std::endl;
-                }
-
-                //Dopo aver caricato i dati grezzi, posso considerare un sottodataset o la totalità
-                if(subDataset.isSet()) //sotto dataset da manipulate
-                {
-                    exit(1);
-                    //TO ENABLE ...
-
-                    // if(subDataset.getValue().compare(metavario.getManipulate().domain) != 0)
-                    // {
-                    //     std::cerr << "ERROR: vario is compute for another subdataset!" << std::endl;
-                    //     exit(1);
-                    // }
-
-                    // MUSE::ExtractionMeta extrmeta;
-                    // extrmeta.read(out_man + "/" + metavario.getManipulate().domain + ".json");
-                    // std::cout << "Extraction sub-dataset is set. Reading ... " << out_man + "/" + metavario.getManipulate().domain + ".json" << std::endl;
-
-                    // //1) VERIFICARE ROTAZIONE DATI
-                    // MUSE::Rotation dataRotation = extrmeta.getRotation();
-                    // if(dataRotation.rotation == true)
-                    // {
-                    //     std::cout << std::endl;
-                    //     std::cout << "Rotation is activate on data ... " << dataRotation.rotation << std::endl;
-                    //     std::cout << "Rotation axis: " << dataRotation.rotation_axis << std::endl;
-                    //     std::cout << "Rotation center: [" << dataRotation.rotation_center_x << "; " << dataRotation.rotation_center_y << "; " << dataRotation.rotation_center_z << "]" <<  std::endl;
-                    //     std::cout << "Rotation angle (degree): " << dataRotation.rotation_angle << std::endl;
-                    //     std::cout << std::endl;
-
-                    //     for(uint i=0; i< xCoord.size(); i++)
-                    //     {
-                    //         //rotazione coordinate all'inidice i
-                    //         cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
-                    //         cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
-                    //         cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
-                    //         sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
-
-                    //         xCoord.at(i) = sample.x();
-                    //         yCoord.at(i) = sample.y();
-                    //         zCoord.at(i) = sample.z();
-                    //     }
-
-                    //     metacompute.setRotation(dataRotation);
-                    //     std::cout << FGRN("Rotation on data ... COMPLETED.") << std::endl;
-                    // }
-
-                    // //2) ESTRARRE SOTTODATASET DA INDICI
-                    // if(extrmeta.getDataExtraction().id_points.size() == 0)
-                    // {
-                    //     std::cout << FRED("Vector of index is empty.") << std::endl;
-                    //     exit(1);
-                    // }
-
-                    // string_to_double_conversion_vectors(extrmeta.getDataExtraction().id_points, data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
-                    // std::cout << FGRN("Extraction sub-dataset ... COMPLETED.") << std::endl;
-                }
-                else
-                    string_to_double_conversion_vectors(data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
-            }
-            else
-            {
-                if(setRotAxis.isSet())
-                {
-                    std::cout << FRED("Data rotation from cmdline is not active!") << std::endl;
-                    exit(1);
-                }
-
-                if(subDataset.isSet()) //sotto dataset da manipulate
-                {
-                    exit(1);
-                    //TO ENABLE ...
-
-                    // if(subDataset.getValue().compare(metavario.getManipulate().domain) != 0)
-                    // {
-                    //     std::cerr << "ERROR: vario is compute for another subdataset!" << std::endl;
-                    //     exit(1);
-                    // }
-
-                    // MUSE::ExtractionMeta extrmeta;
-                    // extrmeta.read(out_man + "/" + metavario.getManipulate().domain + ".json");
-                    // std::cout << "Extraction sub-dataset is set. Reading ... " << out_man + "/" + metavario.getManipulate().domain + ".json" << std::endl;
-
-                    // //1) VERIFICARE ROTAZIONE DATI
-                    // MUSE::Rotation dataRotation = extrmeta.getRotation();
-                    // if(dataRotation.rotation == true)
-                    // {
-                    //     std::cout << std::endl;
-                    //     std::cout << "Rotation is activate on data ... " << dataRotation.rotation << std::endl;
-                    //     std::cout << "Rotation axis: " << dataRotation.rotation_axis << std::endl;
-                    //     std::cout << "Rotation center: [" << dataRotation.rotation_center_x << "; " << dataRotation.rotation_center_y << "; " << dataRotation.rotation_center_z << "]" <<  std::endl;
-                    //     std::cout << "Rotation angle (degree): " << dataRotation.rotation_angle << std::endl;
-                    //     std::cout << std::endl;
-
-                    //     //NON DEVO RUOTARE I DATI DI NUOVO, MA SOLO COPIARE NEL JSON LE INFORMAZIONI DI ROTAZIONE DA MANIPULATE
-                    //     metacompute.setRotation(dataRotation);
-                    // }
-
-                    // //2) ESTRARRE SOTTODATASET DA INDICI
-                    // if(extrmeta.getDataExtraction().id_points.size() == 0)
-                    // {
-                    //     std::cout << FRED("Vector of index is empty.") << std::endl;
-                    //     exit(1);
-                    // }
-
-                    // for(uint i:extrmeta.getDataExtraction().id_points)
-                    // {
-                    //     std::string val_tmp = data.text_values.at(i);
-                    //     if(!val_tmp.empty() && val_tmp.compare("nd")!=0)
-                    //     {
-                    //         if(val_tmp.compare("*")!=0)
-                    //         {
-                    //             double val = std::stod(val_tmp);
-                    //             conv_values.push_back(val);
-
-                    //             if(id.size() > 0)
-                    //                 corr_id.push_back(id.at(i));
-                    //         }
-                    //     }
-                    // }
-
-                    // corr_x = xCoord;
-                    // corr_y = yCoord;
-                    // corr_z = zCoord;
-
-                    // std::cout << FGRN("Extraction sub-dataset ... COMPLETED.") << std::endl;
-                }
-                else
-                    string_to_double_conversion_vectors(data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
-            }
-
-
-            int n_conv_samples = conv_values.size(); //numero campioni convertiti da stringa a double
-            if(n_conv_samples == 0)
-            {
-                std::cerr << "ERROR: All values are invalid!" << std::endl;
-                exit(1);
-            }
-            else
-            {
-                std::cout << "Data Statistical Summary ..." << std::endl;
-                summary(conv_values);
-                vec_csv.push_back(to_string(mean(conv_values)));
-                vec_csv.push_back(to_string(variance(conv_values)));
-            }
-
-            std::cout << "\033[0;32mReading MUSE format and data analysis... COMPLETED.\033[0m" << std::endl;
-            std::cout << std::endl;
-
-            ComputeMeta::Processing infovar;
-            infovar.v_name = Variable.getValue();
-            infovar.normal_score = metavario.getProcessing().normal_score;
-            infovar.declustering = metavario.getProcessing().declustering;
-            metacompute.setProcessing(infovar);
-
-            switch (data.type)
-            {
-            case varType::CATEGORIC_TEXT:
-            {
-                std::cout << std::endl;
-                std::cout << FGRN("### VARTYPE CHECK: The variable is categoric (textual).") << std::endl;
-                std::cout << std::endl;
-
-                std::cout << FRED("ERROR: THE IMPLEMENTATION IS NOT COMPLETED!") << std::endl;
-                exit(1);
-
-                // ................................................... TO DO
-
-                break;
-            }
-            case varType::CATEGORIC:
-            {
-                std::cout << std::endl;
-                std::cout << FGRN("### VARTYPE CHECK: The variable is categoric.") << std::endl;
-                std::cout << "### Only Indicator Kriging is active for categoric variables" << std::endl;
-                std::cout << FMAG("### RICORDA - In questo caso mi aspetto più file json, uno per ogni categoria") << std::endl;
-                std::cout << std::endl;
-
-
-                std::cout << FRED("ERROR: THE IMPLEMENTATION IS NOT COMPLETED!") << std::endl;
-                exit(1);
-
-                // ................................................... TO DO
-
-                break;
-            }
-            case varType::NUMBER: //VARIABILE CONTINUA
-            {
-                //4. Starting simulations (CHOSEN THE INTERPOLATION METHOD: KRIGING, SGS??)
-                if(setCRIT.getValue().compare("SGS") != 0)
-                {
-                    std::cerr << "ERROR. Algorithm "<< setCRIT.getValue() << " is not available for continous variable. Set --crit SGS to interpolate continuous variable." << std::endl;
-                    exit(1);
-                }
-
-                //NORMALSCORE
-                normalscore normal_values;
-                if(metavario.getProcessing().declustering.compare("YES") == 0)
-                {
-                    std::cout << "2D declustering ..." << std::endl;
-                    std::cout << "### Cell size for declustering is set on " << setCellSize.getValue() << std::endl;
-                    std::cout << "### Number of step for declustering (grid translation) is set on " << setNStep.getValue() << std::endl;
-                    std::vector<double> decl_weight = decluster2d(corr_x, corr_y, setCellSize.getValue(), setNStep.getValue());
-                    std::cout << "2D declustering ... COMPLETED." << std::endl;
-
-                    normal_values = normal_score(conv_values, decl_weight); //RICORDA!! c'è un terzo parametro da considerare nella normal score, settato di default su false
-                    export1d_xyz(app_folder + "/" + Variable.getValue() + "_weight.dat", decl_weight);
-                }
-                else
-                    normal_values = normal_score(conv_values);
-
-                vec_csv.push_back(to_string(mean(normal_values.values)));
-                vec_csv.push_back(to_string(variance(normal_values.values)));
-
-                export1d_xyz(app_folder + "/" + Variable.getValue() + "_convval.dat", conv_values);
-                export3d_xyz(app_folder + "/" + Variable.getValue() + "_nscore.dat", normal_values.values, normal_values.x, normal_values.nsco);
-
-                std::cout << "### Computing normal score for variable: " << Variable.getValue() << " ... COMPLETED." << std::endl;
-
-
-
-                // 2. Read fitted variogram model from json (into vario folder)
-
-                VarioDirection dir;
-                convert_from_str(metavario.getInfoVariogram().direction, dir);
-
-                ComputeMeta::InfoVariogram info_vario;
-                info_vario.dimension = metavario.getInfoVariogram().dimension;
-                info_vario.direction = metavario.getInfoVariogram().direction;
-                metacompute.setInfoVariogram(info_vario);
-
-
-                Variogram fvm;
-                MUSE::variogram_methods fitvariov;
-                switch (dir)
-                {
-                case VarioDirection::OMNI:
-                {
-                    fvm.set_range(metavario.getFitExpVariog(0).range);
-                    fvm.nugget = metavario.getFitExpVariog(0).nugget;
-
-                    //MODIFICATO COME 1 - NUGGET!!!!!!!!!!!!!!!!!
-                    fvm.sill = metavario.getFitExpVariog(0).sill - fvm.nugget;
-
-                    variogram_type type;
-                    convert_from_str(metavario.getFitExpVariog(0).type, type);
-                    fvm.type = type;
-
-                    //for json
-                    fitvariov.setNugget(fvm.nugget);
-                    fitvariov.setSill(fvm.sill);
-                    fitvariov.set_range(metavario.getFitExpVariog(0).range);
-                    fitvariov.setType(metavario.getFitExpVariog(0).type);
-
-                    break;
-                }
-                case VarioDirection::DIR:
-                {
-                    std::cout << "Range min is set on: " << metavario.getSummary().min_semiaxis << std::endl;
-                    std::cout << "Range max is set on: " << metavario.getSummary().max_semiaxis << std::endl;
-
-                    if(setZRange.isSet())
-                    {
-                        std::cout << "Range in Z direction is set on: " << setZRange.getValue() << std::endl;
-                        fvm.set_range(metavario.getSummary().min_semiaxis, metavario.getSummary().max_semiaxis, setZRange.getValue());
-                    }
-                    else
-                        fvm.set_range(metavario.getSummary().min_semiaxis, metavario.getSummary().max_semiaxis);
-
-
-                    fvm.set_azimuth(metavario.getSummary().max_direction);
-                    std::cout << "Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North" << std::endl;
-
-                    //Settati sulla massima direzione, ma non cambiano (per costruzione -> calcolo automatico del vario direzionale)
-                    fvm.nugget = metavario.getFitExpVariog(0).nugget;
-                    std::cout << "Nugget is set on: " << fvm.nugget << std::endl;
-
-                    //MODIFICATO COME 1 - NUGGET!!!!!!!!!!!!!!!!!
-                    fvm.sill = metavario.getFitExpVariog(0).sill - fvm.nugget; //che deve essere ovviamente = 1
-                    std::cout << "Sill is set on: " << fvm.sill << std::endl;
-
-                    //anche il tipo è uguale tra tutti, quindi prendo quello a modello in dir 0
-                    variogram_type type;
-                    convert_from_str(metavario.getFitExpVariog(0).type, type);
-                    fvm.type = type;
-                    std::cout << "Type is set on: " << metavario.getFitExpVariog(0).type << std::endl;
-                    std::cout << std::endl;
-
-
-
-                    //for json
-                    fitvariov.setNugget(fvm.nugget);
-                    fitvariov.setSill(fvm.sill);
-                    fitvariov.range_max = fvm.get_maxrange();
-                    fitvariov.range_min = fvm.get_minrange();
-                    fitvariov.setRangeZ(fvm.get_zrange());
-                    fitvariov.setType(metavario.getFitExpVariog(0).type);
-
-                    break;
-                }
-                }
-                metacompute.setFitExpVariog(fitvariov);
-
-                vec_csv.push_back(fitvariov.type);
-                vec_csv.push_back(to_string(fitvariov.nugget));
-                vec_csv.push_back(to_string(1.0));
-                vec_csv.push_back(to_string(fitvariov.sill));
-                vec_csv.push_back(to_string(fitvariov.range));
-                vec_csv.push_back(to_string(fitvariov.range_max));
-                vec_csv.push_back(to_string(fitvariov.range_min));
-                vec_csv.push_back(to_string(fitvariov.getRangeZ()));
-
-
-                // 3. Load geometry model
-                std::string geom_name = geomModel.getValue().substr(geomModel.getValue().find_last_of("/")+1, geomModel.getValue().length());
-                std::string ext_mesh = get_extension(geom_name);
-
-
-                SGSResults sgs_output;
-                std::vector<std::vector<point3d>> sgs;
-
-                ComputeMeta::Simulation sim;
-                sim.geometry = geom_name;
-                sim.sim_criterion = setCRIT.getValue();
-                sim.n_iterations = setNsim.getValue();
-
-
-                std::cout << "#########################"<< std::endl;
-                std::cout << "### SGS Output type is set on " << setSGSoutput.getValue() << std::endl;
-
-                bool back_normal_score_inSGS = false; //SGSresults non terranno in conto della back normal score (farla a posteriori)
-                if(setBackNormalScore.isSet())
-                {
-                    back_normal_score_inSGS = true;
-                    std::cout << "### Back Normal Score trasformation is performed into parallel_sgs algorithm." << std::endl;
-                }
-                else
-                {
-                    std::cout << "### Back Normal Score transformation is not performed into parallel_sgs algorithm." << std::endl;
-                    std::cout << "### Simulation results have a normal distribution!" << std::endl;
-                }
-                std::cout << std::endl;
-
-                std::cout << "### Number of input samples is set on " << setInputSamples.getValue() << std::endl;
-                std::cout << "### Number of simulated points in SGS algorithm is set on " << setSimulatedPoints.getValue() << std::endl;
-                std::cout << "### Scale factor for search radius is set on " << setScaleRadius.getValue() << std::endl;
-                std::cout << "### Search by octant is set on " << doOctantSearch.getValue() << std::endl;
-                std::cout << std::endl;
-                std::cout << "######################### START SIMULATIONS ..."<< std::endl;
-
-                //APPLICARE LA BACK NORMAL SCORE (SE NECESSARIO)
-                if(!back_normal_score_inSGS)
-                    sim.back_normal_score = false;
-                else
-                    sim.back_normal_score = true;
-
-                sim.extrapolation_type = setExtrType.getValue();
-                sim.min_extrapolation_value = setMinExtr.getValue();
-                sim.max_extrapolation_value = setMaxExtr.getValue();
-                // sim.est_mean_zscore = mean(normal_values.values);
-                // sim.est_var_zscore = variance(normal_values.values);
-
-                //std::vector<MUSE::Data> vec_encode_output;
-                MUSE::Metadata meta_output;
-                std::vector<MUSE::Data> multi_output;
-
-                //Distinguo le mesh surf/vol in base all'estensione
-                if(ext_mesh.compare(".off") == 0 || ext_mesh.compare(".obj") == 0)
-                {
-                    std::cout << "Mesh is surface." << std::endl;
-
-                    MUSE::SurfaceMesh<> surf_mesh;
-                    surf_mesh.load(geomModel.getValue().c_str());
-
-                    sim.n_elements = surf_mesh.num_polys();
-
-                    std::cout << std::endl;
-                    std::cout << FMAG("############################################################") << std::endl;
-                    std::cout << FMAG("PER CONTROLLO (PRIMA DELLE SIMULAZIONI):") << std::endl;
-                    std::cout << FMAG("La funzione delle SGS considera il VARIO DIREZIONALE con i seguenti parametri: ") << std::endl;
-                    std::string string_type;
-                    convert_to_str(string_type, fvm.type);
-                    std::cout << "Type = " << string_type << std::endl;
-                    std::cout << "Dir max (azimuth) = " << fvm.get_azimuth() << " degree from North." << std::endl;
-                    std::cout << "Range max = " << fvm.get_maxrange() << std::endl;
-                    std::cout << "Range min = " << fvm.get_minrange() << std::endl;
-                    std::cout << "Range z = " << fvm.get_zrange() << std::endl;
-                    std::cout << "Nugget = " << fvm.nugget << std::endl;
-                    std::cout << "Sill = " << fvm.sill << std::endl;
-                    std::cout << FMAG("############################################################") << std::endl;
-                    std::cout << std::endl;
-
-
-                    if(setSGSoutput.getValue().compare("VECSIM") == 0)
-                    {
-                        std::cout << std::endl;
-                        std::cout << FMAG("### SGS OUTPUT - VECSIM: vector of simulation results in the normal space -> a CSV file for each simulation") << std::endl;
-                        std::cout << FMAG("### Back normal score is managed by using the command -B") << std::endl;
-                        std::cout << std::endl;
-
-                        app_folder += "/_normspace";
-                        if(!filesystem::exists(app_folder))
-                            filesystem::create_directory(app_folder);
-
-                        sgs = parallel_sgs2 (surf_mesh, normal_values.values, corr_x, corr_y, corr_z, fvm, setNsim.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue(), doOctantSearch.getValue());
-
-                        std::cout << std::endl;
-                        for(uint it=0; it< setNsim.getValue(); it++)
-                        {
-                            std::vector<double> results_per_sim;
-
-                            for(uint pid=0; pid < surf_mesh.num_polys(); pid++)
-                            {
-                                double v = sgs.at(it).at(pid).get_value(0);
-                                results_per_sim.push_back(v);
-                            }
-
-                            stringstream filename_sim;
-                            filename_sim << std::setw(4) << std::setfill('0') << it;
-                            //filename_sim << data.name << "_sgs_" << std::setw(4) << std::setfill('0') << it;
-                            //filename_sim << data.name << "_" << std::setw(4) << std::setfill('0') << it;
-                            export1d_xyz (app_folder + "/" + data.getName() + "_" + filename_sim.str() + ".csv", results_per_sim);
-
-                            if(setFormat.getValue().compare("YES") == 0) //se è settato, insieme da ogni file di output, restituisci la codifica in data format (JSON)
-                            {
-                                MUSE::Data encode_output = data;
-                                encode_output.setFlag("R");
-                                encode_output.setDescription(filename_sim.str());
-                                encode_output.setComments(app_name + "OUTPUT-SIM");
-
-                                multi_output.push_back(encode_output);
-                            }
-                            std::cout << FGRN("### Saving files for simulation ... ") << it << FGRN(" COMPLETED.") << std::endl;
-                        }
-
-                        std::string out_filename = app_folder + "/" + data.name;
-                        if(subDataset.isSet())
-                            out_filename += "_" + subDataset.getValue();
-
-                        metacompute.setSimulation(sim);
-                        metacompute.write(out_filename + ".json");
-
-                        std::vector<std::string> deps_sgs;
-                        filesystem::path realpath_sgs = filesystem::relative(out_filename + ".json", abspath);
-                        deps_sgs.push_back(realpath_sgs);
-                        meta_output.setDependencies(deps_sgs);
-                    }
-                    else if(setSGSoutput.getValue().compare("MEAN") == 0)
-                    {
-                        std::cout << std::endl;
-                        std::cout << FMAG("### SGS OUTPUT - MEAN: mean of estimates in the variable space -> unique CSV file") << std::endl;
-                        std::cout << FMAG("### Back normal score is managed in the SGS algorithm") << std::endl;
-                        std::cout << std::endl;
-
-                        sgs_output = parallel_sgs2 (surf_mesh, normal_values.values, corr_x, corr_y, corr_z, fvm, setNsim.getValue(), normal_values,
-                                                   back_normal_score_inSGS, setExtrType.getValue(), setMinExtr.getValue(), setMaxExtr.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue(), doOctantSearch.getValue());
-
-
-
-                        std::string out_filename = app_folder + "/" + data.name;
-                        if(subDataset.isSet())
-                            out_filename += "_" + subDataset.getValue();
-
-                        export1d_xyz (out_filename + ".csv", sgs_output.estimates);
-                        export1d_xyz (out_filename + "_unc.csv", sgs_output.uncertainties);
-
-                        metacompute.setSimulation(sim);
-                        metacompute.write(out_filename + ".json");
-
-                        double max_unc =  -DBL_MAX;
-                        uint id_max = 0;
-                        for(uint pid=0; pid<surf_mesh.num_polys(); pid++)
-                        {
-                            if(sgs_output.uncertainties.at(pid) >= max_unc)
-                            {
-                                max_unc = sgs_output.uncertainties.at(pid);
-                                id_max = pid;
-                            }
-                        }
-                        std::cout << "### Max uncertainty: " << max_unc << "at point " << surf_mesh.poly_centroid(id_max) << std::endl;
-
-
-
-                        //MESH IN COORDINATE STRATIGRAFICHE
-                        if(!filesystem::exists(app_folder + "/_fordebug"))
-                            filesystem::create_directory(app_folder + "/_fordebug");
-
-                        std::ofstream file_out1;
-                        file_out1.open(app_folder + "/_fordebug/" + Variable.getValue() + "centr_sim" + to_string(setNsim.getValue()) + ".dat", std::fstream::out);
-                        if(!file_out1.is_open())
-                        {
-                            std::cerr << "\033[0;31mError in file opening: \033[0m" << std::endl;
-                            exit(1);
-                        }
-
-                        else
-                        {
-                            for(uint pid = 0; pid < surf_mesh.num_polys(); pid++)
-                            {
-                                cinolib::vec3d centroid = surf_mesh.poly_centroid(pid);
-                                file_out1 << std::setprecision(4) << centroid.x() << " " << centroid.y() << " " << centroid.z() << " " << sgs_output.estimates.at(pid) << std::endl;
-                            }
-                            file_out1.close();
-                        }
-                        std::cout << FGRN("Saving files in _fordebug folder ... COMPLETED.") << std::endl;
-
-                        if (metavario.getManipulate().stratigraphic_transf.compare("NO") != 0)
-                        {
-                            //MESH IN COORDINATE CARTESIANE
-                            //cinolib::Trimesh<> surf_mesh_piega;
-                            MUSE::SurfaceMesh<> surf_mesh_piega;
-                            std::string surf_name = geom_name.substr(geom_name.find_first_of("_")+1, Project.folder.length()); //nome progetto
-                            std::string surf_filename = out_folder + "/geometry/surf/" + surf_name;
-                            surf_mesh_piega.load(surf_filename.c_str());
-
-                            std::ofstream file_out2;
-                            file_out2.open(app_folder + "/_fordebug/" + Variable.getValue() + "centr_sim" + to_string(setNsim.getValue()) + "_original.dat", std::fstream::out);
-                            if(!file_out2.is_open())
-                            {
-                                std::cerr << "\033[0;31mError in file opening: \033[0m" << std::endl;
-                                exit(1);
-                            }
-
-                            else
-                            {
-                                for(uint pid = 0; pid < surf_mesh_piega.num_polys(); pid++)
-                                {
-                                    cinolib::vec3d centroid = surf_mesh_piega.poly_centroid(pid);
-                                    file_out2 << std::setprecision(4) << centroid.x() << " " << centroid.y() << " " << centroid.z() << " " << sgs_output.estimates.at(pid) << std::endl;
-                                }
-                                file_out2.close();
-                            }
-                            std::cout << FGRN("Saving files (stratigraphic condition - original model) in _fordebug folder ... COMPLETED.") << std::endl;
-                        }
-                    }
-                }
-
-
-                else if (ext_mesh.compare(".mesh") == 0 || ext_mesh.compare(".vtk") == 0)
-                {
-                    std::cout << std::endl;
-                    std::cout << FMAG("############################################################") << std::endl;
-                    std::cout << FMAG("PER CONTROLLO (PRIMA DELLE SIMULAZIONI):") << std::endl;
-                    std::cout << FMAG("La funzione delle SGS considera il VARIO DIREZIONALE con i seguenti parametri: ") << std::endl;
-                    std::string string_type;
-                    convert_to_str(string_type, fvm.type);
-                    std::cout << "Type = " << string_type << std::endl;
-                    std::cout << "Dir max (azimuth) = " << fvm.get_azimuth() << " degree from North." << std::endl;
-                    std::cout << "Range max = " << fvm.get_maxrange() << std::endl;
-                    std::cout << "Range min = " << fvm.get_minrange() << std::endl;
-                    std::cout << "Range z = " << fvm.get_zrange() << std::endl;
-                    std::cout << "Nugget = " << fvm.nugget << std::endl;
-                    std::cout << "Sill = " << fvm.sill << std::endl;
-                    std::cout << FMAG("############################################################") << std::endl;
-                    std::cout << std::endl;
-
-                    std::cout << "Mesh is volumetric." << std::endl;
-
-                    MUSE::VolumeMesh<> vol_mesh;
-                    vol_mesh.load(geomModel.getValue().c_str());
-
-                    sim.n_elements = vol_mesh.num_polys();
-
-
-                    if(setSGSoutput.getValue().compare("VECSIM") == 0)
-                    {
-                        std::cout << std::endl;
-                        std::cout << FMAG("### SGS OUTPUT - VECSIM: vector of simulation results in the normal space -> a CSV file for each simulation") << std::endl;
-                        std::cout << FMAG("### Back normal score is managed by using the command -B") << std::endl;
-                        std::cout << std::endl;
-
-                        app_folder += "/_normspace";
-                        if(!filesystem::exists(app_folder))
-                            filesystem::create_directory(app_folder);
-
-                        sgs = parallel_sgs2 (vol_mesh, normal_values.values, corr_x, corr_y, corr_z, fvm, setNsim.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue(), doOctantSearch.getValue());
-
-                        for(uint it=0; it< setNsim.getValue(); it++)
-                        {
-                            std::vector<double> results_per_sim;
-
-                            for(uint pid=0; pid < vol_mesh.num_polys(); pid++)
-                            {
-                                double v = sgs.at(it).at(pid).get_value(0);
-                                results_per_sim.push_back(v);
-                            }
-
-                            stringstream filename_sim;
-                            filename_sim << std::setw(4) << std::setfill('0') << it;
-                            export1d_xyz (app_folder + "/" + data.getName() + "_" + filename_sim.str() + ".csv", results_per_sim);
-
-                            if(setFormat.getValue().compare("YES") == 0) //se è settato, insieme da ogni file di output, restituisci la codifica in data format (JSON)
-                            {
-                                MUSE::Data encode_output = data;
-                                encode_output.setFlag("R");
-                                encode_output.setDescription(filename_sim.str());
-                                encode_output.setComments(app_name + "OUTPUT-SIM");
-
-                                multi_output.push_back(encode_output);
-                            }
-                            std::cout << FGRN("### Saving files for simulation ... ") << it << FGRN(" COMPLETED.") << std::endl;
-                        }
-
-                        std::string out_filename = app_folder + "/" + data.name;
-                        if(subDataset.isSet())
-                            out_filename += "_" + subDataset.getValue();
-
-                        metacompute.setSimulation(sim);
-                        metacompute.write(out_filename + ".json");
-
-                        std::vector<std::string> deps_sgs;
-                        filesystem::path realpath_sgs = filesystem::relative(out_filename + ".json", abspath);
-                        deps_sgs.push_back(realpath_sgs);
-                        meta_output.setDependencies(deps_sgs);
-
-                    }
-                    else if(setSGSoutput.getValue().compare("MEAN") == 0)
-                    {
-                        std::cout << std::endl;
-                        std::cout << FMAG("### SGS OUTPUT - MEAN: mean of estimates in the variable space -> unique CSV file") << std::endl;
-                        std::cout << FMAG("### Back normal score is managed in the SGS algorithm") << std::endl;
-                        std::cout << std::endl;
-
-                        sgs_output = parallel_sgs2 (vol_mesh, normal_values.values, corr_x, corr_y, corr_z, fvm, setNsim.getValue(), normal_values,
-                                                   back_normal_score_inSGS, setExtrType.getValue(), setMinExtr.getValue(), setMaxExtr.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue(), doOctantSearch.getValue());
-
-                        std::string out_filename = app_folder + "/" + data.name;
-                        if(subDataset.isSet())
-                            out_filename += "_" + subDataset.getValue();
-
-                        export1d_xyz (out_filename + ".csv", sgs_output.estimates);
-                        export1d_xyz (out_filename + "_unc.csv", sgs_output.uncertainties);
-
-                        metacompute.setSimulation(sim);
-                        metacompute.write(out_filename + ".json");
-
-
-                        //MESH IN COORDINATE STRATIGRAFICHE
-                        if(!filesystem::exists(app_folder + "/_fordebug"))
-                            filesystem::create_directory(app_folder + "/_fordebug");
-
-                        std::ofstream file_out1;
-                        file_out1.open(app_folder + "/_fordebug/" + Variable.getValue() + "centr_sim" + to_string(setNsim.getValue()) + ".dat", std::fstream::out);
-                        if(!file_out1.is_open())
-                        {
-                            std::cerr << "\033[0;31mError in file opening: \033[0m" << std::endl;
-                            exit(1);
-                        }
-                        else
-                        {
-                            for(uint pid = 0; pid < vol_mesh.num_polys(); pid++)
-                            {
-                                cinolib::vec3d centroid = vol_mesh.poly_centroid(pid);
-                                file_out1 << std::setprecision(4) << centroid.x() << " " << centroid.y() << " " << centroid.z() << " " << sgs_output.estimates.at(pid) << std::endl;
-                            }
-                            file_out1.close();
-                        }
-                        std::cout << FGRN("Saving files in _fordebug folder ... COMPLETED.") << std::endl;
-
-                        if (metavario.getManipulate().stratigraphic_transf.compare("NO") != 0)
-                        {
-                            std::cout << FYEL("SAVE fordebug file for model in stratigraphic coordinate ... TO DO!!") << std::endl;
-
-                            //MESH IN COORDINATE CARTESIANE
-                            MUSE::VolumeMesh<> vol_mesh_piega;
-                            std::string surf_name = geom_name.substr(geom_name.find_first_of("_")+1, Project.folder.length()); //nome progetto
-                            std::string surf_filename = out_folder + "/geometry/volume/" + surf_name;
-                            vol_mesh_piega.load(surf_filename.c_str());
-
-                            std::ofstream file_out2;
-                            file_out2.open(app_folder + "/_fordebug/" + Variable.getValue() + "centr_sim" + to_string(setNsim.getValue()) + "_original.dat", std::fstream::out);
-                            if(!file_out2.is_open())
-                            {
-                                std::cerr << "\033[0;31mError in file opening: \033[0m" << std::endl;
-                                exit(1);
-                            }
-
-                            else
-                            {
-                                for(uint pid = 0; pid < vol_mesh_piega.num_polys(); pid++)
-                                {
-                                    cinolib::vec3d centroid = vol_mesh_piega.poly_centroid(pid);
-                                    file_out2 << std::setprecision(4) << centroid.x() << " " << centroid.y() << " " << centroid.z() << " " << sgs_output.estimates.at(pid) << std::endl;
-                                }
-                                file_out2.close();
-                            }
-                            std::cout << FGRN("Saving files (stratigraphic condition - original model) in _fordebug folder ... COMPLETED.") << std::endl;
-                        }
-                    }
-                }
-                else
-                {
-                    std::cerr << "ERROR: Mesh format is not supported." << std::endl;
-                    exit(1);
-                }
-
-                meta_output.setProject(Project);
-                //meta_output.setDependencies(deps);
-                meta_output.setCommands(excommands);
-                meta_output.setMultiData(multi_output);
-                meta_output.write(app_folder + "/_" + data.name + ".json");
-
-                for(uint col =0; col < vec_csv.size(); col++)
-                {
-                    file_summary << vec_csv.at(col);
-                    if(col != vec_csv.size() - 1)
-                        file_summary << delimiter; // No comma at end of line
-                }
-                file_summary << "\n";
-
-                break;
-
-
-            }
-            case COORDINATE:
-            case ERROR:
-            case ID:
-            case TEXT:
-                break;
-            }
-        }
-        file_summary.close();// Close the file
-        std::cout << FGRN("Save summary of multi-frame variography analysis ... COMPLETED.") << std::endl;
-    }
 
     //---------------------------------------------------
     //---------------------------------------------------
@@ -1900,7 +906,8 @@ int main(int argc, char** argv)
                 // 2) Preparazione dati di input -> vector<point3d>
                 std::vector<point3d> input;
                 for(uint i=0; i< conv_values.size(); i++)
-                    input.push_back(point3d({xCoord.at(i), yCoord.at(i), zCoord.at(i)}, {conv_values.at(i)}));
+                    input.push_back(point3d({corr_x.at(i), corr_y.at(i), corr_z.at(i)}, {conv_values.at(i)}));
+                    //input.push_back(point3d({xCoord.at(i), yCoord.at(i), zCoord.at(i)}, {conv_values.at(i)}));
 
 
                 // 3) Load geometry model
@@ -3445,6 +2452,1003 @@ int main(int argc, char** argv)
     }
 
 
+
+
+    //---------------------------------------------------
+    //---------------------------------------------------
+    //---------------------------------------------------
+    //---> COMPUTE SWITCH ARGUMENT (MODE SET - FIXED)
+    //---------------------------------------------------
+    //---------------------------------------------------
+    //---------------------------------------------------
+    // Questo comando in modalità FIXED permette di calcolare le simulazioni su una variable specificata (n° campioni originali),
+    // considerando un variogramma calcolato sulla stessa variabile ma con un numero diverso di campioni (n° campioni originali + campioni aggiunti)
+    // (Vedi esempio 20_DGM_SMargherita)
+    if(interpolationCompute.isSet() && modeCompute.isSet())
+    {
+        if(!Variable.isSet())
+        {
+            std::cout << FRED("ERROR. Variable is NOT set!") << std::endl;
+            exit(1);
+        }
+
+        if(!geomModel.isSet())
+        {
+            std::cout << FRED("ERROR. Geometry support is NOT set!") << std::endl;
+            exit(1);
+        }
+
+        if(!filesystem::exists(app_folder))
+            filesystem::create_directory(app_folder);
+
+        /////////////////////////////
+        //////////SUMMARY CSV FOR FRAMES
+        ///
+        ///
+        std::cout << "Save summary of multi-frame variography analysis ... " << std::endl;
+        std::ofstream file_summary;
+        file_summary.open(app_folder + "/" + Variable.getValue() + "_SGSsummary.csv", std::fstream::out);
+        if(!file_summary.is_open())
+        {
+            std::cerr << "\033[0;31mError in file opening: " << app_folder + "/" + Variable.getValue() + "_SGSsummary.csv" << "\033[0m" << std::endl;
+            exit(1);
+        }
+        std::string delimiter = ";";
+
+        std::vector<std::string> vec_csv;
+        vec_csv.push_back("frame_name");
+        vec_csv.push_back("domain");
+        vec_csv.push_back(Variable.getValue()+"_mean");
+        vec_csv.push_back(Variable.getValue()+"_var");
+        vec_csv.push_back(Variable.getValue()+"_mean_zscore");
+        vec_csv.push_back(Variable.getValue()+"_var_zscore");
+        vec_csv.push_back("model_type");
+        vec_csv.push_back("nugget");
+        vec_csv.push_back("sill");
+        vec_csv.push_back("partial_sill");
+        vec_csv.push_back("range");
+        vec_csv.push_back("range_max");
+        vec_csv.push_back("range_min");
+        vec_csv.push_back("range_z");
+        for(uint col =0; col < vec_csv.size(); col++)
+        {
+            file_summary << vec_csv.at(col);
+            if(col != vec_csv.size() - 1)
+                file_summary << delimiter; // No comma at end of line
+        }
+        file_summary << "\n";
+        ///////////////////////////////////////////////////////////////////////
+
+        std::string abs_datadir = out_folder + "/" + app_data;
+        std::vector<std::string> list_dir = get_directories(abs_datadir);
+        if(list_dir.empty())
+            list_dir.push_back(abs_datadir);
+
+        if((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
+            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0))
+        {
+            list_dir.clear();
+            list_dir.resize(1, abs_datadir);
+        }
+
+        int count_frame = 0;
+        for(const std::string &l:list_dir)
+        {
+            vec_csv.clear();
+
+            count_frame++;
+
+            filesystem::path dir = l;
+            filesystem::path rel_datadir = filesystem::relative(dir, abs_datadir);
+            vec_csv.push_back(rel_datadir.string());
+            if(subDataset.isSet())
+                vec_csv.push_back(subDataset.getValue());
+            else
+                vec_csv.push_back("");
+
+            app_folder.clear();
+            app_folder = out_folder + "/" + app_name;
+
+            if(!filesystem::exists(app_folder))
+                filesystem::create_directory(app_folder);
+
+            out_vario.clear();
+            out_vario = out_folder + "/" + app_vario;
+
+            if(rel_datadir.string().compare(".") != 0)
+            {
+                app_folder += "/" + rel_datadir.string();
+                out_vario += "/" + rel_datadir.string();
+                filesystem::create_directory(app_folder);
+
+                std::cout << std::endl;
+                std::cout << "###########################" << std::endl;
+                std::cout << "### NUMBER OF TIME FRAMES: " << list_dir.size() << std::endl;
+                std::cout << "### TIME FRAME N° " << count_frame << " ON " << list_dir.size() << std::endl;
+                std::cout << "### TIME FRAME NAME: " << rel_datadir.string() << std::endl;
+            }
+
+            std::vector<std::string> list_json = get_files(l, ".json");
+            if(list_json.size() > 1)
+            {
+                std::cerr << "ERROR. Only a file JSON is expected!" << std::endl;
+                exit(1);
+            }
+
+
+            /// FIXED VARIOGRAM!!
+            VarioMeta metavario;
+            metavario.read(out_vario + "/" + setVario.getValue());
+            std::cout << "### Set fixed variogram from JSON file: " << setVario.getValue() << std::endl;
+
+
+            /// CREATION OF COMPUTE METADATA
+            ComputeMeta metacompute;
+            metacompute.setProject(Project);
+
+            std::vector<std::string> excommands;
+            excommands.push_back(command);
+            metacompute.setCommands(excommands);
+
+            app_folder += "/" + Variable.getValue();
+            if(subDataset.isSet())
+                app_folder += "_" + subDataset.getValue();
+
+            app_folder += "_" + metavario.getInfoVariogram().direction + metavario.getInfoVariogram().dimension;
+
+            app_folder += "_" + get_basename(get_filename(geomModel.getValue()));
+            if(!filesystem::exists(app_folder))
+                filesystem::create_directory(app_folder);
+
+
+
+
+
+
+
+            // // 0) Define meta for vario - dependencies
+            // std::vector<std::string> deps;
+            // filesystem::path rel_variopath = filesystem::relative(out_vario, Project.folder);
+            // if(subDataset.isSet())
+            //     rel_variopath += "/" + Variable.getValue() + "_" + subDataset.getValue() + ".json";
+            // else
+            //     rel_variopath += "/" + Variable.getValue() + ".json";
+            // deps.push_back(rel_variopath);
+
+            // filesystem::path rel_geompath = filesystem::relative(geomModel.getValue(), Project.folder);
+            // deps.push_back(get_basename(rel_geompath) + ".json");
+
+            // metacompute.setDependencies(deps);
+
+
+
+
+
+            // 2. Storing json information into class Data
+            MUSE::Metadata meta_input;
+            meta_input.read(l + "/metadata/" + Variable.getValue() + ".json");
+            Data data = meta_input.getData(0);
+
+            data.setType(data.flag);
+            readTextValues(l + "/data/" + Variable.getValue() + ".dat", data.text_values);
+
+            //DataSummary(data); //da sistemare
+            DataSummary sumdata;
+            sumdata.setSummary(data);
+
+
+
+
+            std::vector<std::string> id;
+            std::vector<double> xCoord, yCoord, zCoord;
+
+
+            if(metavario.getManipulate().stratigraphic_transf.compare("NO") == 0) //Condizione di default
+            {
+                std::cout << "\033[0;33mWARNING: No stratigraphic trasformation is set. The coordinate system remains unchanged.\033[0m" << std::endl;
+
+                if(metavario.getInfoData().id_name.compare("Unknown") != 0)
+                    readTextValues(l + "/data/" + metavario.getInfoData().id_name + ".dat", id);
+                else
+                    std::cerr << "ERROR reading ID: " << l + "/data/" + metavario.getInfoData().id_name + ".dat" << " NOT found." << std::endl;
+
+                if(metavario.getInfoData().x_name.compare("Unknown") != 0)
+                    readCoordinate(l + "/data/" + metavario.getInfoData().x_name + ".dat", xCoord);
+                else
+                    std::cerr << "ERROR reading X coordinate: " << l + "/data/" + metavario.getInfoData().x_name + ".dat" << " NOT found." << std::endl;
+
+                if(metavario.getInfoData().y_name.compare("Unknown") != 0)
+                    readCoordinate(l + "/data/" + metavario.getInfoData().y_name + ".dat", yCoord);
+                else
+                    std::cerr << "ERROR reading Y coordinate: " << l + "/data/" + metavario.getInfoData().y_name + ".dat" << " NOT found." << std::endl;
+
+
+                if(metavario.getInfoData().z_name.compare("Unknown") != 0)
+                    readCoordinate(l + "/data/" + metavario.getInfoData().z_name + ".dat", zCoord);
+                else
+                {
+                    zCoord.resize(xCoord.size());
+                    std::fill(zCoord.begin(), zCoord.end(), 0.0);
+
+                    std::cerr << "ERROR reading Z coordinate: " << l + "/data/" + metavario.getInfoData().z_name + ".dat" << " NOT found." << std::endl;
+                    std::cout << "\033[0;33mWARNING: Z coordinate is Unknown. Set -z --name <variable> for setting the variable.\033[0;0m" << std::endl;
+                }
+            }
+            else
+            {
+                exit(1);
+                //TO ENABLE ...
+                std::cout << "\033[0;33mWARNING: Stratigraphic transformation is set on " << metavario.getManipulate().stratigraphic_transf << ". Variogram is computed in stratigraphic coordinate system.\033[0m" << std::endl;
+
+                std::cout << "Stratigraphic coordinates are located in " << out_man + "/" << std::endl;
+                //load_xyzfile(out_man + "/" + metavario.getManipulate().filename + ".xyz", xCoord, yCoord, zCoord);
+            }
+
+            metacompute.setInfoData(metavario.getInfoData());
+
+
+
+            // String to double Conversion
+            std::vector<std::string> corr_id;
+            std::vector<double> conv_values, corr_x, corr_y, corr_z; //sampled data
+
+            if(metavario.getManipulate().stratigraphic_transf.compare("NO") == 0) //Se non sono in coordinate stratigr
+            {
+                if(setRotAxis.isSet())
+                {
+                    MUSE::Rotation dataRotation_vario;
+
+                    dataRotation_vario.rotation = true;
+                    dataRotation_vario.rotation_axis = setRotAxis.getValue();
+                    dataRotation_vario.rotation_center_x = setRotCenterX.getValue();
+                    dataRotation_vario.rotation_center_y = setRotCenterY.getValue();
+                    dataRotation_vario.rotation_center_z = setRotCenterZ.getValue();
+                    dataRotation_vario.rotation_angle = setRotAngle.getValue();
+
+                    std::cout << std::endl;
+                    std::cout << "Rotation is activate on data ... " << dataRotation_vario.rotation << std::endl;
+                    std::cout << "Rotation axis: " << dataRotation_vario.rotation_axis << std::endl;
+                    std::cout << "Rotation center: [" << dataRotation_vario.rotation_center_x << "; " << dataRotation_vario.rotation_center_y << "; " << dataRotation_vario.rotation_center_z << "]" <<  std::endl;
+                    std::cout << "Rotation angle (degree): " << dataRotation_vario.rotation_angle << std::endl;
+                    std::cout << std::endl;
+
+                    for(uint i=0; i< xCoord.size(); i++)
+                    {
+                        //rotazione coordinate all'inidice i
+                        cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
+                        cinolib::vec3d axis = set_rotation_axis(dataRotation_vario.rotation_axis);
+                        cinolib::vec3d c (dataRotation_vario.rotation_center_x, dataRotation_vario.rotation_center_y, dataRotation_vario.rotation_center_z);
+                        sample = point_rotation(sample, axis, dataRotation_vario.rotation_angle, c);
+
+                        xCoord.at(i) = sample.x();
+                        yCoord.at(i) = sample.y();
+                        zCoord.at(i) = sample.z();
+                    }
+                    metacompute.setRotation(dataRotation_vario);
+                    std::cout << FGRN("Rotation on data ... COMPLETED.") << std::endl;
+                }
+
+                //Dopo aver caricato i dati grezzi, posso considerare un sottodataset o la totalità
+                if(subDataset.isSet()) //sotto dataset da manipulate
+                {
+                    exit(1);
+                    //TO ENABLE ...
+
+                    // if(subDataset.getValue().compare(metavario.getManipulate().domain) != 0)
+                    // {
+                    //     std::cerr << "ERROR: vario is compute for another subdataset!" << std::endl;
+                    //     exit(1);
+                    // }
+
+                    // MUSE::ExtractionMeta extrmeta;
+                    // extrmeta.read(out_man + "/" + metavario.getManipulate().domain + ".json");
+                    // std::cout << "Extraction sub-dataset is set. Reading ... " << out_man + "/" + metavario.getManipulate().domain + ".json" << std::endl;
+
+                    // //1) VERIFICARE ROTAZIONE DATI
+                    // MUSE::Rotation dataRotation = extrmeta.getRotation();
+                    // if(dataRotation.rotation == true)
+                    // {
+                    //     std::cout << std::endl;
+                    //     std::cout << "Rotation is activate on data ... " << dataRotation.rotation << std::endl;
+                    //     std::cout << "Rotation axis: " << dataRotation.rotation_axis << std::endl;
+                    //     std::cout << "Rotation center: [" << dataRotation.rotation_center_x << "; " << dataRotation.rotation_center_y << "; " << dataRotation.rotation_center_z << "]" <<  std::endl;
+                    //     std::cout << "Rotation angle (degree): " << dataRotation.rotation_angle << std::endl;
+                    //     std::cout << std::endl;
+
+                    //     for(uint i=0; i< xCoord.size(); i++)
+                    //     {
+                    //         //rotazione coordinate all'inidice i
+                    //         cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
+                    //         cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
+                    //         cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
+                    //         sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
+
+                    //         xCoord.at(i) = sample.x();
+                    //         yCoord.at(i) = sample.y();
+                    //         zCoord.at(i) = sample.z();
+                    //     }
+
+                    //     metacompute.setRotation(dataRotation);
+                    //     std::cout << FGRN("Rotation on data ... COMPLETED.") << std::endl;
+                    // }
+
+                    // //2) ESTRARRE SOTTODATASET DA INDICI
+                    // if(extrmeta.getDataExtraction().id_points.size() == 0)
+                    // {
+                    //     std::cout << FRED("Vector of index is empty.") << std::endl;
+                    //     exit(1);
+                    // }
+
+                    // string_to_double_conversion_vectors(extrmeta.getDataExtraction().id_points, data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
+                    // std::cout << FGRN("Extraction sub-dataset ... COMPLETED.") << std::endl;
+                }
+                else
+                    string_to_double_conversion_vectors(data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
+            }
+            else
+            {
+                if(setRotAxis.isSet())
+                {
+                    std::cout << FRED("Data rotation from cmdline is not active!") << std::endl;
+                    exit(1);
+                }
+
+                if(subDataset.isSet()) //sotto dataset da manipulate
+                {
+                    exit(1);
+                    //TO ENABLE ...
+
+                    // if(subDataset.getValue().compare(metavario.getManipulate().domain) != 0)
+                    // {
+                    //     std::cerr << "ERROR: vario is compute for another subdataset!" << std::endl;
+                    //     exit(1);
+                    // }
+
+                    // MUSE::ExtractionMeta extrmeta;
+                    // extrmeta.read(out_man + "/" + metavario.getManipulate().domain + ".json");
+                    // std::cout << "Extraction sub-dataset is set. Reading ... " << out_man + "/" + metavario.getManipulate().domain + ".json" << std::endl;
+
+                    // //1) VERIFICARE ROTAZIONE DATI
+                    // MUSE::Rotation dataRotation = extrmeta.getRotation();
+                    // if(dataRotation.rotation == true)
+                    // {
+                    //     std::cout << std::endl;
+                    //     std::cout << "Rotation is activate on data ... " << dataRotation.rotation << std::endl;
+                    //     std::cout << "Rotation axis: " << dataRotation.rotation_axis << std::endl;
+                    //     std::cout << "Rotation center: [" << dataRotation.rotation_center_x << "; " << dataRotation.rotation_center_y << "; " << dataRotation.rotation_center_z << "]" <<  std::endl;
+                    //     std::cout << "Rotation angle (degree): " << dataRotation.rotation_angle << std::endl;
+                    //     std::cout << std::endl;
+
+                    //     //NON DEVO RUOTARE I DATI DI NUOVO, MA SOLO COPIARE NEL JSON LE INFORMAZIONI DI ROTAZIONE DA MANIPULATE
+                    //     metacompute.setRotation(dataRotation);
+                    // }
+
+                    // //2) ESTRARRE SOTTODATASET DA INDICI
+                    // if(extrmeta.getDataExtraction().id_points.size() == 0)
+                    // {
+                    //     std::cout << FRED("Vector of index is empty.") << std::endl;
+                    //     exit(1);
+                    // }
+
+                    // for(uint i:extrmeta.getDataExtraction().id_points)
+                    // {
+                    //     std::string val_tmp = data.text_values.at(i);
+                    //     if(!val_tmp.empty() && val_tmp.compare("nd")!=0)
+                    //     {
+                    //         if(val_tmp.compare("*")!=0)
+                    //         {
+                    //             double val = std::stod(val_tmp);
+                    //             conv_values.push_back(val);
+
+                    //             if(id.size() > 0)
+                    //                 corr_id.push_back(id.at(i));
+                    //         }
+                    //     }
+                    // }
+
+                    // corr_x = xCoord;
+                    // corr_y = yCoord;
+                    // corr_z = zCoord;
+
+                    // std::cout << FGRN("Extraction sub-dataset ... COMPLETED.") << std::endl;
+                }
+                else
+                    string_to_double_conversion_vectors(data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
+            }
+
+
+            int n_conv_samples = conv_values.size(); //numero campioni convertiti da stringa a double
+            if(n_conv_samples == 0)
+            {
+                std::cerr << "ERROR: All values are invalid!" << std::endl;
+                exit(1);
+            }
+            else
+            {
+                std::cout << "Data Statistical Summary ..." << std::endl;
+                summary(conv_values);
+                vec_csv.push_back(to_string(mean(conv_values)));
+                vec_csv.push_back(to_string(variance(conv_values)));
+            }
+
+            std::cout << "\033[0;32mReading MUSE format and data analysis... COMPLETED.\033[0m" << std::endl;
+            std::cout << std::endl;
+
+            ComputeMeta::Processing infovar;
+            infovar.v_name = Variable.getValue();
+            infovar.normal_score = metavario.getProcessing().normal_score;
+            infovar.declustering = metavario.getProcessing().declustering;
+            metacompute.setProcessing(infovar);
+
+            switch (data.type)
+            {
+            case varType::CATEGORIC_TEXT:
+            {
+                std::cout << std::endl;
+                std::cout << FGRN("### VARTYPE CHECK: The variable is categoric (textual).") << std::endl;
+                std::cout << std::endl;
+
+                std::cout << FRED("ERROR: THE IMPLEMENTATION IS NOT COMPLETED!") << std::endl;
+                exit(1);
+
+                // ................................................... TO DO
+
+                break;
+            }
+            case varType::CATEGORIC:
+            {
+                std::cout << std::endl;
+                std::cout << FGRN("### VARTYPE CHECK: The variable is categoric.") << std::endl;
+                std::cout << "### Only Indicator Kriging is active for categoric variables" << std::endl;
+                std::cout << FMAG("### RICORDA - In questo caso mi aspetto più file json, uno per ogni categoria") << std::endl;
+                std::cout << std::endl;
+
+
+                std::cout << FRED("ERROR: THE IMPLEMENTATION IS NOT COMPLETED!") << std::endl;
+                exit(1);
+
+                // ................................................... TO DO
+
+                break;
+            }
+            case varType::NUMBER: //VARIABILE CONTINUA
+            {
+                //4. Starting simulations (CHOSEN THE INTERPOLATION METHOD: KRIGING, SGS??)
+                if(setCRIT.getValue().compare("SGS") != 0)
+                {
+                    std::cerr << "ERROR. Algorithm "<< setCRIT.getValue() << " is not available for continous variable. Set --crit SGS to interpolate continuous variable." << std::endl;
+                    exit(1);
+                }
+
+                //NORMALSCORE
+                normalscore normal_values;
+                if(metavario.getProcessing().declustering.compare("YES") == 0)
+                {
+                    std::cout << "2D declustering ..." << std::endl;
+                    std::cout << "### Cell size for declustering is set on " << setCellSize.getValue() << std::endl;
+                    std::cout << "### Number of step for declustering (grid translation) is set on " << setNStep.getValue() << std::endl;
+                    std::vector<double> decl_weight = decluster2d(corr_x, corr_y, setCellSize.getValue(), setNStep.getValue());
+                    std::cout << "2D declustering ... COMPLETED." << std::endl;
+
+                    normal_values = normal_score(conv_values, decl_weight); //RICORDA!! c'è un terzo parametro da considerare nella normal score, settato di default su false
+                    export1d_xyz(app_folder + "/" + Variable.getValue() + "_weight.dat", decl_weight);
+                }
+                else
+                    normal_values = normal_score(conv_values);
+
+                vec_csv.push_back(to_string(mean(normal_values.values)));
+                vec_csv.push_back(to_string(variance(normal_values.values)));
+
+                export1d_xyz(app_folder + "/" + Variable.getValue() + "_convval.dat", conv_values);
+                export3d_xyz(app_folder + "/" + Variable.getValue() + "_nscore.dat", normal_values.values, normal_values.x, normal_values.nsco);
+
+                std::cout << "### Computing normal score for variable: " << Variable.getValue() << " ... COMPLETED." << std::endl;
+
+
+
+                // 2. Read fitted variogram model from json (into vario folder)
+
+                VarioDirection dir;
+                convert_from_str(metavario.getInfoVariogram().direction, dir);
+
+                ComputeMeta::InfoVariogram info_vario;
+                info_vario.dimension = metavario.getInfoVariogram().dimension;
+                info_vario.direction = metavario.getInfoVariogram().direction;
+                metacompute.setInfoVariogram(info_vario);
+
+
+                Variogram fvm;
+                MUSE::variogram_methods fitvariov;
+                switch (dir)
+                {
+                case VarioDirection::OMNI:
+                {
+                    fvm.set_range(metavario.getFitExpVariog(0).range);
+                    fvm.nugget = metavario.getFitExpVariog(0).nugget;
+
+                    //MODIFICATO COME 1 - NUGGET!!!!!!!!!!!!!!!!!
+                    fvm.sill = metavario.getFitExpVariog(0).sill - fvm.nugget;
+
+                    variogram_type type;
+                    convert_from_str(metavario.getFitExpVariog(0).type, type);
+                    fvm.type = type;
+
+                    //for json
+                    fitvariov.setNugget(fvm.nugget);
+                    fitvariov.setSill(fvm.sill);
+                    fitvariov.set_range(metavario.getFitExpVariog(0).range);
+                    fitvariov.setType(metavario.getFitExpVariog(0).type);
+
+                    break;
+                }
+                case VarioDirection::DIR:
+                {
+                    std::cout << "Range min is set on: " << metavario.getSummary().min_semiaxis << std::endl;
+                    std::cout << "Range max is set on: " << metavario.getSummary().max_semiaxis << std::endl;
+
+                    if(setZRange.isSet())
+                    {
+                        std::cout << "Range in Z direction is set on: " << setZRange.getValue() << std::endl;
+                        fvm.set_range(metavario.getSummary().min_semiaxis, metavario.getSummary().max_semiaxis, setZRange.getValue());
+                    }
+                    else
+                        fvm.set_range(metavario.getSummary().min_semiaxis, metavario.getSummary().max_semiaxis);
+
+
+                    fvm.set_azimuth(metavario.getSummary().max_direction);
+                    std::cout << "Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North" << std::endl;
+
+                    //Settati sulla massima direzione, ma non cambiano (per costruzione -> calcolo automatico del vario direzionale)
+                    fvm.nugget = metavario.getFitExpVariog(0).nugget;
+                    std::cout << "Nugget is set on: " << fvm.nugget << std::endl;
+
+                    //MODIFICATO COME 1 - NUGGET!!!!!!!!!!!!!!!!!
+                    fvm.sill = metavario.getFitExpVariog(0).sill - fvm.nugget; //che deve essere ovviamente = 1
+                    std::cout << "Sill is set on: " << fvm.sill << std::endl;
+
+                    //anche il tipo è uguale tra tutti, quindi prendo quello a modello in dir 0
+                    variogram_type type;
+                    convert_from_str(metavario.getFitExpVariog(0).type, type);
+                    fvm.type = type;
+                    std::cout << "Type is set on: " << metavario.getFitExpVariog(0).type << std::endl;
+                    std::cout << std::endl;
+
+
+
+                    //for json
+                    fitvariov.setNugget(fvm.nugget);
+                    fitvariov.setSill(fvm.sill);
+                    fitvariov.range_max = fvm.get_maxrange();
+                    fitvariov.range_min = fvm.get_minrange();
+                    fitvariov.setRangeZ(fvm.get_zrange());
+                    fitvariov.setType(metavario.getFitExpVariog(0).type);
+
+                    break;
+                }
+                }
+                metacompute.setFitExpVariog(fitvariov);
+
+                vec_csv.push_back(fitvariov.type);
+                vec_csv.push_back(to_string(fitvariov.nugget));
+                vec_csv.push_back(to_string(1.0));
+                vec_csv.push_back(to_string(fitvariov.sill));
+                vec_csv.push_back(to_string(fitvariov.range));
+                vec_csv.push_back(to_string(fitvariov.range_max));
+                vec_csv.push_back(to_string(fitvariov.range_min));
+                vec_csv.push_back(to_string(fitvariov.getRangeZ()));
+
+
+                // 3. Load geometry model
+                std::string geom_name = geomModel.getValue().substr(geomModel.getValue().find_last_of("/")+1, geomModel.getValue().length());
+                std::string ext_mesh = get_extension(geom_name);
+
+
+                SGSResults sgs_output;
+                std::vector<std::vector<point3d>> sgs;
+
+                ComputeMeta::Simulation sim;
+                sim.geometry = geom_name;
+                sim.sim_criterion = setCRIT.getValue();
+                sim.n_iterations = setNsim.getValue();
+
+
+                std::cout << "#########################"<< std::endl;
+                std::cout << "### SGS Output type is set on " << setSGSoutput.getValue() << std::endl;
+
+                bool back_normal_score_inSGS = false; //SGSresults non terranno in conto della back normal score (farla a posteriori)
+                if(setBackNormalScore.isSet())
+                {
+                    back_normal_score_inSGS = true;
+                    std::cout << "### Back Normal Score trasformation is performed into parallel_sgs algorithm." << std::endl;
+                }
+                else
+                {
+                    std::cout << "### Back Normal Score transformation is not performed into parallel_sgs algorithm." << std::endl;
+                    std::cout << "### Simulation results have a normal distribution!" << std::endl;
+                }
+                std::cout << std::endl;
+
+                std::cout << "### Number of input samples is set on " << setInputSamples.getValue() << std::endl;
+                std::cout << "### Number of simulated points in SGS algorithm is set on " << setSimulatedPoints.getValue() << std::endl;
+                std::cout << "### Scale factor for search radius is set on " << setScaleRadius.getValue() << std::endl;
+                std::cout << "### Search by octant is set on " << doOctantSearch.getValue() << std::endl;
+                std::cout << std::endl;
+                std::cout << "######################### START SIMULATIONS ..."<< std::endl;
+
+                //APPLICARE LA BACK NORMAL SCORE (SE NECESSARIO)
+                if(!back_normal_score_inSGS)
+                    sim.back_normal_score = false;
+                else
+                    sim.back_normal_score = true;
+
+                sim.extrapolation_type = setExtrType.getValue();
+                sim.min_extrapolation_value = setMinExtr.getValue();
+                sim.max_extrapolation_value = setMaxExtr.getValue();
+                // sim.est_mean_zscore = mean(normal_values.values);
+                // sim.est_var_zscore = variance(normal_values.values);
+
+                //std::vector<MUSE::Data> vec_encode_output;
+                MUSE::Metadata meta_output;
+                std::vector<MUSE::Data> multi_output;
+
+                //Distinguo le mesh surf/vol in base all'estensione
+                if(ext_mesh.compare(".off") == 0 || ext_mesh.compare(".obj") == 0)
+                {
+                    std::cout << "Mesh is surface." << std::endl;
+
+                    MUSE::SurfaceMesh<> surf_mesh;
+                    surf_mesh.load(geomModel.getValue().c_str());
+
+                    sim.n_elements = surf_mesh.num_polys();
+
+                    std::cout << std::endl;
+                    std::cout << FMAG("############################################################") << std::endl;
+                    std::cout << FMAG("PER CONTROLLO (PRIMA DELLE SIMULAZIONI):") << std::endl;
+                    std::cout << FMAG("La funzione delle SGS considera il VARIO DIREZIONALE con i seguenti parametri: ") << std::endl;
+                    std::string string_type;
+                    convert_to_str(string_type, fvm.type);
+                    std::cout << "Type = " << string_type << std::endl;
+                    std::cout << "Dir max (azimuth) = " << fvm.get_azimuth() << " degree from North." << std::endl;
+                    std::cout << "Range max = " << fvm.get_maxrange() << std::endl;
+                    std::cout << "Range min = " << fvm.get_minrange() << std::endl;
+                    std::cout << "Range z = " << fvm.get_zrange() << std::endl;
+                    std::cout << "Nugget = " << fvm.nugget << std::endl;
+                    std::cout << "Sill = " << fvm.sill << std::endl;
+                    std::cout << FMAG("############################################################") << std::endl;
+                    std::cout << std::endl;
+
+
+                    if(setSGSoutput.getValue().compare("VECSIM") == 0)
+                    {
+                        std::cout << std::endl;
+                        std::cout << FMAG("### SGS OUTPUT - VECSIM: vector of simulation results in the normal space -> a CSV file for each simulation") << std::endl;
+                        std::cout << FMAG("### Back normal score is managed by using the command -B") << std::endl;
+                        std::cout << std::endl;
+
+                        app_folder += "/_normspace";
+                        if(!filesystem::exists(app_folder))
+                            filesystem::create_directory(app_folder);
+
+                        sgs = parallel_sgs2 (surf_mesh, normal_values.values, corr_x, corr_y, corr_z, fvm, setNsim.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue(), doOctantSearch.getValue());
+
+                        std::cout << std::endl;
+                        for(uint it=0; it< setNsim.getValue(); it++)
+                        {
+                            std::vector<double> results_per_sim;
+
+                            for(uint pid=0; pid < surf_mesh.num_polys(); pid++)
+                            {
+                                double v = sgs.at(it).at(pid).get_value(0);
+                                results_per_sim.push_back(v);
+                            }
+
+                            stringstream filename_sim;
+                            filename_sim << std::setw(4) << std::setfill('0') << it;
+                            //filename_sim << data.name << "_sgs_" << std::setw(4) << std::setfill('0') << it;
+                            //filename_sim << data.name << "_" << std::setw(4) << std::setfill('0') << it;
+                            export1d_xyz (app_folder + "/" + data.getName() + "_" + filename_sim.str() + ".csv", results_per_sim);
+
+                            if(setFormat.getValue().compare("YES") == 0) //se è settato, insieme da ogni file di output, restituisci la codifica in data format (JSON)
+                            {
+                                MUSE::Data encode_output = data;
+                                encode_output.setFlag("R");
+                                encode_output.setDescription(filename_sim.str());
+                                encode_output.setComments(app_name + "OUTPUT-SIM");
+
+                                multi_output.push_back(encode_output);
+                            }
+                            std::cout << FGRN("### Saving files for simulation ... ") << it << FGRN(" COMPLETED.") << std::endl;
+                        }
+
+                        std::string out_filename = app_folder + "/" + data.name;
+                        if(subDataset.isSet())
+                            out_filename += "_" + subDataset.getValue();
+
+                        metacompute.setSimulation(sim);
+                        metacompute.write(out_filename + ".json");
+
+                        std::vector<std::string> deps_sgs;
+                        filesystem::path realpath_sgs = filesystem::relative(out_filename + ".json", abspath);
+                        deps_sgs.push_back(realpath_sgs);
+                        meta_output.setDependencies(deps_sgs);
+                    }
+                    else if(setSGSoutput.getValue().compare("MEAN") == 0)
+                    {
+                        std::cout << std::endl;
+                        std::cout << FMAG("### SGS OUTPUT - MEAN: mean of estimates in the variable space -> unique CSV file") << std::endl;
+                        std::cout << FMAG("### Back normal score is managed in the SGS algorithm") << std::endl;
+                        std::cout << std::endl;
+
+                        sgs_output = parallel_sgs2 (surf_mesh, normal_values.values, corr_x, corr_y, corr_z, fvm, setNsim.getValue(), normal_values,
+                                                   back_normal_score_inSGS, setExtrType.getValue(), setMinExtr.getValue(), setMaxExtr.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue(), doOctantSearch.getValue());
+
+
+
+                        std::string out_filename = app_folder + "/" + data.name;
+                        if(subDataset.isSet())
+                            out_filename += "_" + subDataset.getValue();
+
+                        export1d_xyz (out_filename + ".csv", sgs_output.estimates);
+                        export1d_xyz (out_filename + "_unc.csv", sgs_output.uncertainties);
+
+                        metacompute.setSimulation(sim);
+                        metacompute.write(out_filename + ".json");
+
+                        double max_unc =  -DBL_MAX;
+                        uint id_max = 0;
+                        for(uint pid=0; pid<surf_mesh.num_polys(); pid++)
+                        {
+                            if(sgs_output.uncertainties.at(pid) >= max_unc)
+                            {
+                                max_unc = sgs_output.uncertainties.at(pid);
+                                id_max = pid;
+                            }
+                        }
+                        std::cout << "### Max uncertainty: " << max_unc << "at point " << surf_mesh.poly_centroid(id_max) << std::endl;
+
+
+
+                        //MESH IN COORDINATE STRATIGRAFICHE
+                        if(!filesystem::exists(app_folder + "/_fordebug"))
+                            filesystem::create_directory(app_folder + "/_fordebug");
+
+                        std::ofstream file_out1;
+                        file_out1.open(app_folder + "/_fordebug/" + Variable.getValue() + "centr_sim" + to_string(setNsim.getValue()) + ".dat", std::fstream::out);
+                        if(!file_out1.is_open())
+                        {
+                            std::cerr << "\033[0;31mError in file opening: \033[0m" << std::endl;
+                            exit(1);
+                        }
+
+                        else
+                        {
+                            for(uint pid = 0; pid < surf_mesh.num_polys(); pid++)
+                            {
+                                cinolib::vec3d centroid = surf_mesh.poly_centroid(pid);
+                                file_out1 << std::setprecision(4) << centroid.x() << " " << centroid.y() << " " << centroid.z() << " " << sgs_output.estimates.at(pid) << std::endl;
+                            }
+                            file_out1.close();
+                        }
+                        std::cout << FGRN("Saving files in _fordebug folder ... COMPLETED.") << std::endl;
+
+                        if (metavario.getManipulate().stratigraphic_transf.compare("NO") != 0)
+                        {
+                            //MESH IN COORDINATE CARTESIANE
+                            //cinolib::Trimesh<> surf_mesh_piega;
+                            MUSE::SurfaceMesh<> surf_mesh_piega;
+                            std::string surf_name = geom_name.substr(geom_name.find_first_of("_")+1, Project.folder.length()); //nome progetto
+                            std::string surf_filename = out_folder + "/geometry/surf/" + surf_name;
+                            surf_mesh_piega.load(surf_filename.c_str());
+
+                            std::ofstream file_out2;
+                            file_out2.open(app_folder + "/_fordebug/" + Variable.getValue() + "centr_sim" + to_string(setNsim.getValue()) + "_original.dat", std::fstream::out);
+                            if(!file_out2.is_open())
+                            {
+                                std::cerr << "\033[0;31mError in file opening: \033[0m" << std::endl;
+                                exit(1);
+                            }
+
+                            else
+                            {
+                                for(uint pid = 0; pid < surf_mesh_piega.num_polys(); pid++)
+                                {
+                                    cinolib::vec3d centroid = surf_mesh_piega.poly_centroid(pid);
+                                    file_out2 << std::setprecision(4) << centroid.x() << " " << centroid.y() << " " << centroid.z() << " " << sgs_output.estimates.at(pid) << std::endl;
+                                }
+                                file_out2.close();
+                            }
+                            std::cout << FGRN("Saving files (stratigraphic condition - original model) in _fordebug folder ... COMPLETED.") << std::endl;
+                        }
+                    }
+                }
+
+
+                else if (ext_mesh.compare(".mesh") == 0 || ext_mesh.compare(".vtk") == 0)
+                {
+                    std::cout << std::endl;
+                    std::cout << FMAG("############################################################") << std::endl;
+                    std::cout << FMAG("PER CONTROLLO (PRIMA DELLE SIMULAZIONI):") << std::endl;
+                    std::cout << FMAG("La funzione delle SGS considera il VARIO DIREZIONALE con i seguenti parametri: ") << std::endl;
+                    std::string string_type;
+                    convert_to_str(string_type, fvm.type);
+                    std::cout << "Type = " << string_type << std::endl;
+                    std::cout << "Dir max (azimuth) = " << fvm.get_azimuth() << " degree from North." << std::endl;
+                    std::cout << "Range max = " << fvm.get_maxrange() << std::endl;
+                    std::cout << "Range min = " << fvm.get_minrange() << std::endl;
+                    std::cout << "Range z = " << fvm.get_zrange() << std::endl;
+                    std::cout << "Nugget = " << fvm.nugget << std::endl;
+                    std::cout << "Sill = " << fvm.sill << std::endl;
+                    std::cout << FMAG("############################################################") << std::endl;
+                    std::cout << std::endl;
+
+                    std::cout << "Mesh is volumetric." << std::endl;
+
+                    MUSE::VolumeMesh<> vol_mesh;
+                    vol_mesh.load(geomModel.getValue().c_str());
+
+                    sim.n_elements = vol_mesh.num_polys();
+
+
+                    if(setSGSoutput.getValue().compare("VECSIM") == 0)
+                    {
+                        std::cout << std::endl;
+                        std::cout << FMAG("### SGS OUTPUT - VECSIM: vector of simulation results in the normal space -> a CSV file for each simulation") << std::endl;
+                        std::cout << FMAG("### Back normal score is managed by using the command -B") << std::endl;
+                        std::cout << std::endl;
+
+                        app_folder += "/_normspace";
+                        if(!filesystem::exists(app_folder))
+                            filesystem::create_directory(app_folder);
+
+                        sgs = parallel_sgs2 (vol_mesh, normal_values.values, corr_x, corr_y, corr_z, fvm, setNsim.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue(), doOctantSearch.getValue());
+
+                        for(uint it=0; it< setNsim.getValue(); it++)
+                        {
+                            std::vector<double> results_per_sim;
+
+                            for(uint pid=0; pid < vol_mesh.num_polys(); pid++)
+                            {
+                                double v = sgs.at(it).at(pid).get_value(0);
+                                results_per_sim.push_back(v);
+                            }
+
+                            stringstream filename_sim;
+                            filename_sim << std::setw(4) << std::setfill('0') << it;
+                            export1d_xyz (app_folder + "/" + data.getName() + "_" + filename_sim.str() + ".csv", results_per_sim);
+
+                            if(setFormat.getValue().compare("YES") == 0) //se è settato, insieme da ogni file di output, restituisci la codifica in data format (JSON)
+                            {
+                                MUSE::Data encode_output = data;
+                                encode_output.setFlag("R");
+                                encode_output.setDescription(filename_sim.str());
+                                encode_output.setComments(app_name + "OUTPUT-SIM");
+
+                                multi_output.push_back(encode_output);
+                            }
+                            std::cout << FGRN("### Saving files for simulation ... ") << it << FGRN(" COMPLETED.") << std::endl;
+                        }
+
+                        std::string out_filename = app_folder + "/" + data.name;
+                        if(subDataset.isSet())
+                            out_filename += "_" + subDataset.getValue();
+
+                        metacompute.setSimulation(sim);
+                        metacompute.write(out_filename + ".json");
+
+                        std::vector<std::string> deps_sgs;
+                        filesystem::path realpath_sgs = filesystem::relative(out_filename + ".json", abspath);
+                        deps_sgs.push_back(realpath_sgs);
+                        meta_output.setDependencies(deps_sgs);
+
+                    }
+                    else if(setSGSoutput.getValue().compare("MEAN") == 0)
+                    {
+                        std::cout << std::endl;
+                        std::cout << FMAG("### SGS OUTPUT - MEAN: mean of estimates in the variable space -> unique CSV file") << std::endl;
+                        std::cout << FMAG("### Back normal score is managed in the SGS algorithm") << std::endl;
+                        std::cout << std::endl;
+
+                        sgs_output = parallel_sgs2 (vol_mesh, normal_values.values, corr_x, corr_y, corr_z, fvm, setNsim.getValue(), normal_values,
+                                                   back_normal_score_inSGS, setExtrType.getValue(), setMinExtr.getValue(), setMaxExtr.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue(), doOctantSearch.getValue());
+
+                        std::string out_filename = app_folder + "/" + data.name;
+                        if(subDataset.isSet())
+                            out_filename += "_" + subDataset.getValue();
+
+                        export1d_xyz (out_filename + ".csv", sgs_output.estimates);
+                        export1d_xyz (out_filename + "_unc.csv", sgs_output.uncertainties);
+
+                        metacompute.setSimulation(sim);
+                        metacompute.write(out_filename + ".json");
+
+
+                        //MESH IN COORDINATE STRATIGRAFICHE
+                        if(!filesystem::exists(app_folder + "/_fordebug"))
+                            filesystem::create_directory(app_folder + "/_fordebug");
+
+                        std::ofstream file_out1;
+                        file_out1.open(app_folder + "/_fordebug/" + Variable.getValue() + "centr_sim" + to_string(setNsim.getValue()) + ".dat", std::fstream::out);
+                        if(!file_out1.is_open())
+                        {
+                            std::cerr << "\033[0;31mError in file opening: \033[0m" << std::endl;
+                            exit(1);
+                        }
+                        else
+                        {
+                            for(uint pid = 0; pid < vol_mesh.num_polys(); pid++)
+                            {
+                                cinolib::vec3d centroid = vol_mesh.poly_centroid(pid);
+                                file_out1 << std::setprecision(4) << centroid.x() << " " << centroid.y() << " " << centroid.z() << " " << sgs_output.estimates.at(pid) << std::endl;
+                            }
+                            file_out1.close();
+                        }
+                        std::cout << FGRN("Saving files in _fordebug folder ... COMPLETED.") << std::endl;
+
+                        if (metavario.getManipulate().stratigraphic_transf.compare("NO") != 0)
+                        {
+                            std::cout << FYEL("SAVE fordebug file for model in stratigraphic coordinate ... TO DO!!") << std::endl;
+
+                            //MESH IN COORDINATE CARTESIANE
+                            MUSE::VolumeMesh<> vol_mesh_piega;
+                            std::string surf_name = geom_name.substr(geom_name.find_first_of("_")+1, Project.folder.length()); //nome progetto
+                            std::string surf_filename = out_folder + "/geometry/volume/" + surf_name;
+                            vol_mesh_piega.load(surf_filename.c_str());
+
+                            std::ofstream file_out2;
+                            file_out2.open(app_folder + "/_fordebug/" + Variable.getValue() + "centr_sim" + to_string(setNsim.getValue()) + "_original.dat", std::fstream::out);
+                            if(!file_out2.is_open())
+                            {
+                                std::cerr << "\033[0;31mError in file opening: \033[0m" << std::endl;
+                                exit(1);
+                            }
+
+                            else
+                            {
+                                for(uint pid = 0; pid < vol_mesh_piega.num_polys(); pid++)
+                                {
+                                    cinolib::vec3d centroid = vol_mesh_piega.poly_centroid(pid);
+                                    file_out2 << std::setprecision(4) << centroid.x() << " " << centroid.y() << " " << centroid.z() << " " << sgs_output.estimates.at(pid) << std::endl;
+                                }
+                                file_out2.close();
+                            }
+                            std::cout << FGRN("Saving files (stratigraphic condition - original model) in _fordebug folder ... COMPLETED.") << std::endl;
+                        }
+                    }
+                }
+                else
+                {
+                    std::cerr << "ERROR: Mesh format is not supported." << std::endl;
+                    exit(1);
+                }
+
+                meta_output.setProject(Project);
+                //meta_output.setDependencies(deps);
+                meta_output.setCommands(excommands);
+                meta_output.setMultiData(multi_output);
+                meta_output.write(app_folder + "/_" + data.name + ".json");
+
+                for(uint col =0; col < vec_csv.size(); col++)
+                {
+                    file_summary << vec_csv.at(col);
+                    if(col != vec_csv.size() - 1)
+                        file_summary << delimiter; // No comma at end of line
+                }
+                file_summary << "\n";
+
+                break;
+
+
+            }
+            case COORDINATE:
+            case ERROR:
+            case ID:
+            case TEXT:
+                break;
+            }
+        }
+        file_summary.close();// Close the file
+        std::cout << FGRN("Save summary of multi-frame variography analysis ... COMPLETED.") << std::endl;
+    }
 
     } catch (ArgException &e)  // catch exceptions
     { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; }

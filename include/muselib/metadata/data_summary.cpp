@@ -13,10 +13,12 @@ void DataSummary::setSummary(const MUSE::Data &data)
     this->n_samples = data.text_values.size();
 
     std::cout << std::endl;
+    std::cout << "===========================================" << std::endl;
     std::cout << "Name: " << data.getName() << "; Unit: " << data.getUnit() << "; Flag: " << data.getFlag() << "; Description: " << data.getDescription() << std::endl;
     std::cout << std::endl;
 
-    std::cout << "Data summary ..." << std::endl;
+    std::cout << "===========================================" << std::endl;
+    std::cout << "Print report for: " << data.getName() << std::endl;
     std::cout << "Number of samples: " << this->n_samples << std::endl;
 
     this->n_nd_values = count_ndvalues(data.text_values);
@@ -42,7 +44,8 @@ void DataSummary::setSummary(const MUSE::Data &data)
         this->n_valid_values = this->n_samples - this->n_na_values - this->n_nd_values - this->n_empty - this->n_allowed_symbols - this->n_negative_values;
 
     std::cout << "Number of valid values: " << this->n_valid_values << std::endl;
-    std::cout << "###################################" << std::endl;
+    std::cout << "===========================================" << std::endl;
+    std::cout << std::endl;
 }
 
 bool DataSummary::read(const std::string filename)
