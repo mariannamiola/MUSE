@@ -1,0 +1,53 @@
+{
+  "work_folder": "MUSE_test",
+  "project_name": "14_sec_3D_4000_tet_sGs_sis_wells",
+
+  "samples": "samples.csv",
+  "varname": "phi",
+  "units": "-",
+
+  "geometry": {
+    "name": "sec_box_rot_wells",
+    "sub": "",
+    "ext": "vtk"
+  },
+
+  "vario": {
+    "dir": "DIR",
+    "dim": "3Dxy"
+  },
+
+  "compute": {
+    "space": "_varspace",
+    "where": "_stats",
+    "var": "mean",
+    "units": "-",
+    "geom": "sec_box_rot_wells_rot"
+  },
+
+  "columns": {
+    "samples": {
+      "x": "X",
+      "y": "Y",
+      "z": "Z",
+      "value": "phi",
+      "cat": false,
+      "n_cat": 0
+    },
+
+    "scalarfield": {
+      "x": "Field 0",
+      "y": "Field 0",
+      "z": "Field 0",
+      "value": "Field 0",
+      "cat": false,
+      "n_cat": 0
+    }
+  },
+
+  "output": {
+    "save": true,
+    "dir": "_fig",
+    "format": "png"
+  }
+}
