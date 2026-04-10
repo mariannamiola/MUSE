@@ -230,6 +230,7 @@ cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
 muse_data -S -p ${WP} --setX 1 --setY 2 --setZ 3
 muse_data -C -p ${WP}
 
+read -p "GEOMETRY ... Press any key to continue ... " -n1 -s
 
 #geometry:
 ##########  GEOMETRY  ###########
@@ -246,10 +247,11 @@ mv ${OUTSURF}/${GEOM}_absz.obj ${OUTSURF}/${GEOM}_absz-5.0.obj
 muse_geometry -T -p ${WP} -m ${OUTSURF}/${GEOM}_absz-0.0.obj -m ${OUTSURF}/${GEOM}_absz-5.0.obj --obj
 mv ${OUTSURF}/${GEOM}_absz-0.0-${GEOM}_absz-5.0.obj ${OUTSURF}/${GEOM}_box.obj
 
-#muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --tet --vtk --opt ${OPT_TET}
-muse_geometry -L -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --rotaxis X --rotangle -270 --obj ##only for visualization
+read -p "CREATING TETMESH ... Press any key to continue ... " -n1 -s
 
-muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj --tet --vtk --opt q
+muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --tet --vtk --opt q
+muse_geometry -Z -p ${WP} -m ${OUTVOL}/${GEOM}_box.vtk --rotaxis X --rotangle -270 --vtk ##only for visualization
+#muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj --tet --vtk --opt q
 
 ####### computing mesh with wells ...
 #wells:
@@ -269,13 +271,20 @@ muse_geometry -M -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj --tet --vtk --opt q
 
 ############################## INDICATOR VARIOGRAM AND SIS COMPUTATION ##############################
 
+read -p "VARIOGRAM - INDICATOR ... Press any key to continue ... " -n1 -s
+
 #variosis:
 ##########  VARIO  ###########
 muse_vario -V -p ${WP} -v ${VAR0} --vario MODEL --dir ${DIR} --dim ${DIM} --dirs 0,70,80,90,110 --degtol 15 --vclean 10 --rotaxis X --rotangle 270 --itype SPHERICAL!6 --itype SPHERICAL!8 --inugget 0!1 --inugget 0!2 --inugget 0!3 --inugget 0!4 --inugget 0!5 --inugget 0!6 --inugget 0!7 --inugget 0!8
 
+
+
 #computesis:
 ##########  COMPUTE  ###########
-export GMOD=${GEOM}_box_rot
+export GMOD=${GEOM}_box
+printf "GMOD: %s\n" ${GMOD}
+
+read -p "SIS ... Press any key to continue ... " -n1 -s
 
 ## decomment if you want to simulate with wells
 muse_compute -C -p ${WP} -v ${VAR0} --dir ${DIR} --dim ${DIM} -m ${OUTVOL}/${GMOD}.vtk --crit SISIM --nsim ${NSIM} --rotaxis X --rotangle 270 --scaleradius 1.5 --octant --simulated 7 --input 3
@@ -291,11 +300,14 @@ do
     rm ${SCRIPT_DIR}/${PDF_NAME}${i}.txt
 done 
 
+read -p "VARIOGRAM - CONTINUOUS ... Press any key to continue ... " -n1 -s
 
 ############################## (CONTINUOUS) VARIOGRAM AND SGS COMPUTATION ##############################
 
 #variosgs:
 muse_vario -V -p ${WP} -v ${VAR1} --rotaxis X --rotangle 270 --nscore YES --dir ${DIR} --dim ${DIM} --vario MODEL --dirs 0,70,80,90,110 --degtol 15 --vclean 10 --eps 5.0 --nugget 0.18
+
+read -p "SGS ... Press any key to continue ... " -n1 -s
 
 #computesgs:
 muse_compute -C -p ${WP} -v ${VAR1} --rotaxis X --rotangle 270 -m ${OUTVOL}/${GMOD}.vtk --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --scaleradius 1.4 --octant --simulated 5 --input 10
@@ -325,9 +337,6 @@ else
   done
   rm ${SCRIPT_DIR}/sgs_output_data
 fi
-
-
-
 
 
 

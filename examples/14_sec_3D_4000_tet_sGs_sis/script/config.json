@@ -22,7 +22,7 @@
     "where": "_stats",
     "var": "mean",
     "units": "-",
-    "geom": "sec_box_rot"
+    "geom": "sec_box"
   },
 
   "columns": {
