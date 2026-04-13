@@ -197,7 +197,7 @@ jumpto $start
 
 #project:
 ##########  PROJECT  ###########
-muse_project -N -p ${WORK} --name ${PROJ}
+muse_project -N -p ${WORK} --name ${PROJ} --overwrite
 
 ##########  DATA  ###########
 muse_data -N -p ${WP}

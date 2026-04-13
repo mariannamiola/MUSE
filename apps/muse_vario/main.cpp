@@ -110,6 +110,14 @@ int main(int argc, char** argv)
     SwitchArg varioCompute                  ("V", "variogram", "Compute variogram", cmd, false); //booleano
 
     /**
+     * @brief Set debug mode to save additional support files
+     * @param debug Flag to enable debug mode
+     * @note When debug mode is enabled, additional support files are saved during computation for troubleshooting and analysis. This may include intermediate results, logs, and diagnostic information. Use this flag when you want to investigate the computation process in more detail or when encountering issues.
+     * @example muse_vario -V --pdir /path/to/project --var T --debug
+     */
+    SwitchArg setDebug ("", "debug", "Set debug mode to save additional support files", cmd, false); //booleano
+
+    /**
      * @brief Project directory 
      * @param pdir Path to project directory
      */
@@ -317,30 +325,27 @@ int main(int argc, char** argv)
      */
 
     ValueArg<double> setVertTol             ("", "zdegtol", "Set vertical tolerance (in degree)", false, 22.5, "degree", cmd);
+
     /**
-
      * @brief Load discrete directions (in degree)
-
      * @param dirs Path to load discrete directions (in degree)
-
      */
-
     ValueArg<std::string> loadDirs          ("", "dirs", "Load discrete directions (in degree)", false, "dir0,dir1", "string", cmd);
+
     /**
      * @brief Set bandwidth
      * @param bandw bandwidth
      * @note Used with --dir DIR for directional variogram computation
      * Often used together with --vertbandw for 3D directional analysis
      */
-
     ValueArg<double> setBandwidth           ("", "bandw", "Set bandwidth", false, DBL_MAX, "double", cmd);
+    
     /**
      * @brief Set vertical bandwidth
      * @param vertbandw vertical bandwidth
      * @note Used with --dir DIR for directional variogram computation
      * Often used together with --bandw for 3D directional analysis
      */
-
     ValueArg<double> setVertBandwidth       ("", "vertbandw", "Set vertical bandwidth", false, DBL_MAX, "double", cmd);
 
 
@@ -766,6 +771,16 @@ int main(int argc, char** argv)
                 exit(1);
             }
 
+            if(setDebug.isSet())
+            {
+                std::cout << "=== Debug: Check loaded coordinates points (x,y,z) ... " << std::endl;
+                for(size_t i=0; i< 10 && i< xCoord.size(); i++)
+                {
+                    std::cout << "Point " << i << ": (" << xCoord.at(i) << ", " << yCoord.at(i) << ", " << zCoord.at(i) << ")" << std::endl;
+                }
+                std::cout << "=== Debug: Check loaded coordinates points (x,y,z) ... COMPLETED." << std::endl;
+            }
+
             VarioMeta::Manipulate processingData;
             processingData.stratigraphic_transf = stratCondition.getValue();
             processingData.filename = filenameStrat.getValue();
@@ -891,6 +906,7 @@ int main(int argc, char** argv)
                 else //no stratigraphic transformation, quindi le coordinate non sono state ancora filtrate e ordinate secondo il vettore 'indices'
                 {
                     //1) VERIFICARE ROTAZIONE DATI
+                    std::cout << "=== Checking rotation on data for sub-dataset extraction ... " << std::endl;
                     MUSE::Rotation dataRotation = extrmeta.getRotation();
                     if(dataRotation.rotation == true)
                     {
@@ -901,7 +917,8 @@ int main(int argc, char** argv)
                         std::cout << "Rotation angle (degree): " << dataRotation.rotation_angle << std::endl;
                         std::cout << std::endl;
 
-                        //NON DEVO RUOTARE I DATI DI NUOVO, MA SOLO COPIARE NEL JSON LE INFORMAZIONI DI ROTAZIONE DA MANIPULATE
+                        // Applicare la rotazione ai dati originali prima di filtrare con gli indici
+                        apply_rotation(dataRotation);
                         metavario.setRotation(dataRotation);
                     }
 
@@ -972,6 +989,15 @@ int main(int argc, char** argv)
             yCoord.clear();
             zCoord.clear();
 
+            if(setDebug.isSet())
+            {
+                std::cout << "=== Debug: Check loaded coordinates points (x,y,z) to pass at variogram computation ... " << std::endl;
+                for(size_t i=0; i< 10 && i< corr_x.size(); i++)
+                {
+                    std::cout << "Point " << i << ": (" << corr_x.at(i) << ", " << corr_y.at(i) << ", " << corr_z.at(i) << ")" << std::endl;
+                }
+                std::cout << "=== Debug: Check loaded coordinates points (x,y,z) to pass at variogram computation ... COMPLETED." << std::endl;
+            }
 
             // ================================
             // STARTING VARIO COMPUTATION
