@@ -238,45 +238,47 @@ int main(int argc, char** argv)
     // Option: set types of variograms
     std::vector<std::string> allowedVarioType = {"EXPERIMENTAL","MODEL"};
     ValuesConstraint<std::string> allowedValsVT(allowedVarioType);
+
     /**
-
-     * @brief type of variogram
-
-     * @param vario Name of type of variogram
-
+     * @brief Set between computing experimental or model variogram
+     * @param vario type of variogram to compute (EXPERIMENTAL, MODEL)
+     * @note When computing variograms, use --vario to specify the type of variogram to compute. Available options are:
+     * - EXPERIMENTAL: Computes the experimental variogram directly from the data. This is the default option.
+     * - MODEL: Fits a theoretical variogram model to the experimental variogram. 
+     * @example --vario MODEL
      */
-
-    ValueArg<std::string> varioType         ("", "vario", "type of variogram", false, "EXPERIMENTAL", &allowedValsVT, cmd);
+    ValueArg<std::string> varioType         ("", "vario", "Set between computing experimental or model variogram", false, "EXPERIMENTAL", &allowedValsVT, cmd);
 
     // Option: types of variogram directions
     std::vector<std::string> allowedVarioDir = {"OMNI","DIR"};
     ValuesConstraint<std::string> allowedValsVD(allowedVarioDir);
     /**
-     * @brief type of variogram direction
-     * @param dir Path to type of variogram direction
-     * @note When using DIR (directional), directional parameters become important:
-     * - --deg: Degree step (default: 45°)
-     * - --degtol: Tolerance (default: 45°)
-     * - --zdegtol: Vertical tolerance (default: 22.5°)
-     * - --bandw: Bandwidth (optional)
-     * - --vertbandw: Vertical bandwidth (optional)
+     * @brief Set variogram direction type (omnidirectional or directional)
+     * @param dir type of variogram direction (OMNI, DIR)
+     * @note When computing variograms, use --dir to specify the type of variogram analysis. Available options are:
+     * - OMNI: Computes the omnidirectional variogram, which considers all pairs of points regardless of their direction. This is the default option.
+     * - DIR: Computes directional variograms, which analyze spatial continuity in specific directions. When using DIR for directional variogram computation, additional parameters become important to define the directional analysis. These parameters include:
+     * - --deg: Degree step (default: 45°) - This parameter defines the angular step size for directional analysis. For example, a degree step of 30° would compute variograms at 0°, 30°, 60°, etc.
+     * - --degtol: Tolerance (default: 45°) - This parameter specifies the angular tolerance for including point pairs in the directional variogram. For example, with a tolerance of 15°, point pairs that are within 15° of the specified direction would be included in the analysis.
+     * - --zdegtol: Vertical tolerance (default: 22.5°) - This parameter is used for 3D directional variogram analysis to specify the vertical angular tolerance for including point pairs.
      * @example --dir DIR --deg 30 --degtol 15 --zdegtol 10
      */
-
     ValueArg<std::string> varioDirection    ("", "dir", "type of variogram direction", false, "OMNI", &allowedValsVD, cmd);
 
     // Option: types of variogram dimensions
     std::vector<std::string> allowedVarioDim = {"3D","3Dxy","3Dz","2D","1Dz","1D"};
     ValuesConstraint<std::string> allowedValsVDm(allowedVarioDim);
     /**
-
-     * @brief type of variogram dimension
-
+     * @brief Set variogram dimension type (3D, 3Dxy, 3Dz, 2D, 1Dz)
      * @param dim type of variogram dimension
-
+     * @note When computing variograms, use --dim to specify the dimension type for variogram analysis. Available options are:
+     * - 3D: Computes the variogram considering all three spatial dimensions (X, Y, Z). This is the default option.
+     * - 3Dxy: Computes the variogram considering only the horizontal dimensions (X and Y), ignoring vertical differences. This is useful for analyzing spatial continuity in the horizontal plane.
+     * - 3Dz: Computes the variogram considering only the vertical dimension (Z), ignoring horizontal differences. This is useful for analyzing spatial continuity in the vertical direction.
+     * - 2D: Computes the variogram in a two-dimensional space, typically in the horizontal plane (X and Y), without considering vertical differences. This is commonly used for surface data or when vertical continuity is not of interest.
+     * - 1Dz: Computes the variogram in a one-dimensional vertical space (Z), ignoring horizontal differences. This is useful for analyzing vertical continuity, such as in stratigraphic or depth-related analyses.
      */
-
-    ValueArg<std::string> varioDimension    ("", "dim", "type of variogram dimension", false, "3D", &allowedValsVDm, cmd);
+    ValueArg<std::string> varioDimension    ("", "dim", "Set variogram dimension type", false, "3D", &allowedValsVDm, cmd);
 
     // Option: compute variogram with variable/constant lag spacing
     std::vector<std::string> allowedLag = {"VARIABLE","CONSTANT","FIXED"};
@@ -468,10 +470,17 @@ int main(int argc, char** argv)
     ValueArg<double> setToleranceFactor     ("", "tolfac", "Set tolerance factor for computing experimental variogram", false, 2.0, "double", cmd);
 
     /**
-     * @brief Set multiplier factor for computing variable lag spacing for experimental variogram
-     * @param fac multiplier factor for computing variable lag spacing for experimental variogram
+     * @brief Set lag growth factor (lgf) for computing variable lag spacing for experimental variogram. 
+     * When using variable lag spacing, this parameter can be used to set a lag growth factor (lgf) that controls how the lag spacing increases with distance. 
+     * A higher lgf will result in a more rapid increase in lag spacing, while a lower lgf will result in a more gradual increase. 
+     * Adjusting this parameter can help to achieve a more robust variogram estimation by managing the trade-off between detail and noise in the variogram points, especially at larger distances where data may be sparser.
+     * @param lgf lag growth factor for computing variable lag spacing for experimental variogram
+     * @note Optional parameter used for experimental variogram computation with variable lag spacing. 
+     * Default value is 1.0, which means that the lag spacing will increase linearly with distance. 
+     * Setting lgf to a value greater than 1.0 will result in a more rapid increase in lag spacing, while setting it to a value less than 1.0 will result in a more gradual increase.
+     * @example --lgf 1.5
      */
-    ValueArg<double> setFactor              ("", "fac", "Set multiplier factor for computing variable lag spacing for experimental variogram", false, 1.0, "double", cmd);
+    ValueArg<double> setFactor              ("", "lgf", "Set lag growth factor (lgf) for computing variable lag spacing for experimental variogram", false, 1.0, "double", cmd);
 
     /**
      * @brief Set weight on nugget to compute directional variogram
@@ -492,6 +501,16 @@ int main(int argc, char** argv)
      */
     ValueArg<double> setEps_y               ("", "epsy", "Set eps_y for plot on y axis", false, 0.05, "double", cmd);
 
+    /**
+     * @brief Set number of points for variogram model plot - only for visualization purposes, it does not affect the variogram computation. 
+     * This parameter can be used to set the number of points used for plotting the variogram model, which can help to achieve a smoother or more detailed visualization of the fitted model. 
+     * A higher number of points will result in a smoother curve, while a lower number of points may result in a more jagged curve that follows the experimental variogram more closely.
+     * @param setN number of points for variogram model plot
+     * @note Optional parameter used for plotting the variogram model. Default value is 100. 
+     * This parameter does not affect the variogram computation, but only the visualization of the fitted model.
+     * @example --n 500
+     */
+    ValueArg<size_t> setNxvis ("", "vm-npoints", "Set number of points for variogram model plot (only for visualization purposes)", false, 100, "size_t", cmd);
     
     /**
      * @brief Set flag to compute variogram diagnostics. When set, this flag enables the computation of variogram diagnostics, which can include various analyses to assess the quality and characteristics of the computed variogram.
@@ -1441,7 +1460,7 @@ int main(int argc, char** argv)
                                 gamma_h.x.push_back(exp_var.h.at(i));          //distanze
                                 gamma_h.y.push_back(exp_var.gamma.at(i));      //gamma (variogramma)
                             }
-                            variogram_plot(gamma_h, fitted_exp_var, "Fitted Experimental Variogram Model", "Lag distance", "Semivariogram", setEps_y.getValue());
+                            variogram_plot(gamma_h, fitted_exp_var, "Fitted Experimental Variogram Model", "Lag distance", "Semivariogram", setNxvis.getValue());
 
 
 
@@ -2200,7 +2219,7 @@ int main(int argc, char** argv)
                                 gamma_h.x.push_back(exp_var.h.at(i));          //distanze
                                 gamma_h.y.push_back(exp_var.gamma.at(i));      //gamma (variogramma)
                             }
-                            variogram_plot(gamma_h, fitted_exp_var, plot_title, "Lag distance", "Semivariogram", setEps_y.getValue());
+                            variogram_plot(gamma_h, fitted_exp_var, plot_title, "Lag distance", "Semivariogram", setNxvis.getValue());
 
 
                             if(subDataset.isSet())
@@ -2461,7 +2480,7 @@ int main(int argc, char** argv)
                                     dir_gamma_h.y.push_back(v.gamma.at(j));      //gamma (variogramma)
                                 }
 
-                                variogram_plot(dir_gamma_h, vv.at(i_dir), "Fitted Directional Variogram Model", "Lag distance", "Semivariogram", setEps_y.getValue());
+                                variogram_plot(dir_gamma_h, vv.at(i_dir), "Fitted Directional Variogram Model", "Lag distance", "Semivariogram", setNxvis.getValue());
 
                                 matplot::save(app_folder + "/" + data.getName() + "_dir" + std::to_string(i_dir), "jpeg");
                                 matplot::cla();
