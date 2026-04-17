@@ -101,39 +101,51 @@ void color_map (const MUSE::PlotStruct &dataplot, const std::string &title, cons
 }
 
 
-void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, const std::string &title, const std::string &x_label, const std::string &y_label, const double &eps_y)
+void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, const std::string &title, const std::string &x_label, const std::string &y_label, const size_t &N)
 {
+    auto fig = matplot::figure(true);
+    fig->size(800, 600);   // golden ratio
+
     auto p1 = matplot::scatter(dataplot.x, dataplot.y);
 
     matplot::title(title);
     matplot::xlabel(x_label);
     matplot::ylabel(y_label);
+    //matplot::grid(matplot::on);
+
+    //p1->display_name("Experimental variogram");
+
+    // --- STILE DATI SPERIMENTALI ---
+    p1->marker_style(matplot::line_spec::marker_style::point);
+    p1->marker_size(10);
+    p1->marker_face(true); 
+    //p1->color("blue");
+    p1->display_name("Experimental");
+
+    // --- ASSI E LABEL ---
+    matplot::xlabel(x_label);
+    matplot::ylabel(y_label);
+    matplot::title(""); // meglio lasciare vuoto per paper
+
+    // --- GRIGLIA LEGGERA ---
     matplot::grid(matplot::on);
+    //matplot::gca()->grid_line_style(matplot::line_spec::line_style::dashed_line);
+    //matplot::gca()->grid_alpha(0.25);
 
-    p1->marker_style(matplot::line_spec::marker_style::asterisk);
-    p1->display_name("Experimental variogram");
-
+    // --- HOLD ---
     matplot::hold(matplot::on);
 
     //punto in corrispondenza di h=0 -> gamma è pari al nugget
     std::vector<double> model_gamma, model_h;
+    
     model_h.push_back(0.0);
     model_gamma.push_back(model.nugget);
 
     variogram_type type;
     convert_from_str(model.type, type);
 
-//    for(size_t i=0; i< dataplot.x.size(); i++)
-//    {
-//        model_h.push_back(dataplot.x.at(i));
-
-//        //double g = get_gamma (dataplot.x.at(i), model.range, model.nugget, 1-model.nugget, type);
-//        double g = get_gamma (dataplot.x.at(i), model.range, model.nugget, model.sill - model.nugget, type);
-//        model_gamma.push_back(g);
-//    }
-
-    double delta = dataplot.x.at(dataplot.x.size()-1)/(100-1);
-    for(size_t i=1; i<= 100; i++)
+    double delta = dataplot.x.at(dataplot.x.size()-1)/(N-1);
+    for(size_t i=1; i<= N; i++)
     {
         double h = model_h.at(i-1) + delta;
         model_h.push_back(h);
@@ -143,15 +155,137 @@ void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, co
         model_gamma.push_back(g);
     }
 
+    // --- MODELLO ---
+    auto p2 = matplot::plot(model_h, model_gamma);
+    p2->line_style("-");
+    //p2->color("red");   // rosso elegante
+    p2->line_width(4);
+    p2->display_name("Model");
+
+    // --- LIMITI ASSI ---
+    double x_max = dataplot.x.back() * 1.08;
+    double y_max = model.sill * 1.20;
+    matplot::xlim({0, x_max});
+    matplot::ylim({0, y_max});
+
+    //matplot::ylim({0, model.sill + eps_y}); //0.05
+
+    // --- LEGENDA ---
+    //auto leg = matplot::legend();
+    //leg->location(matplot::legend::general_alignment::bottomright);
+    //leg->box(true);
+    //matplot::gca()->legend()->font_size(3);
+    //leg->font_size(6);
+    
+    // // --- BOX ---
+    // std::string param_text =
+    // "Model: " + model.type + "\n" +
+    // "sill = "   + std::to_string(model.sill)   + "\n" +
+    // "nugget = " + std::to_string(model.nugget) + "\n" +
+    // "range = "  + std::to_string(model.range)  + "\n";
+
+    // auto t = matplot::text(0.02, 0.95, param_text);
+    // t->font_size(9);
+} 
+
+/* void variogram_plot(const MUSE::PlotStruct &dataplot, const variogram model,
+                    const std::string &title, const std::string &x_label,
+                    const std::string &y_label, const double &eps_y)
+{
+    auto fig = matplot::figure(true);
+    fig->size(900, 556);   // golden ratio
+
+    // ── 1. CURVA MODELLO ─────────────────────────────────────────────────
+    std::vector<double> model_h, model_gamma;
+    model_h.push_back(0.0);
+    model_gamma.push_back(model.nugget);
+
+    variogram_type type;
+    convert_from_str(model.type, type);
+
+    const size_t N = 300;
+    double delta = (dataplot.x.back() * 1.08) / static_cast<double>(N);
+    for (size_t i = 1; i <= N; i++) {
+        double h = i * delta;
+        model_h.push_back(h);
+        model_gamma.push_back(
+            get_gamma(h, model.range, model.nugget, model.sill - model.nugget, type));
+    }
 
     auto p2 = matplot::plot(model_h, model_gamma);
-    p2->display_name("Model variogram - " + model.type);
+    p2->color({0.12, 0.47, 0.71});   // rosso Tableau {0.84, 0.15, 0.16}
+    p2->line_width(3.0);             // ← più spesso
+    p2->line_style("-");
+    p2->display_name("Model (" + model.type + ")");
+
     matplot::hold(matplot::on);
 
-    //matplot::legend();
+    // ── 2. PUNTI SPERIMENTALI ────────────────────────────────────────────
+    auto p1 = matplot::scatter(dataplot.x, dataplot.y);
+    p1->marker_style(matplot::line_spec::marker_style::cross);
+    p1->marker_size(14);             // ← più grandi
+    p1->color({0.84, 0.15, 0.16});   // blu Tableau — niente più giallo
+    p1->display_name("Experimental");
 
-    matplot::ylim({0, model.sill + eps_y}); //0.05
-}
+    // ── 3. ASSI ───────────────────────────────────────────────────────────
+    matplot::xlabel("Lag distance");
+    matplot::ylabel("Semivariogram");
+
+    double x_max = dataplot.x.back() * 1.08;
+    double y_max = model.sill * 1.20;
+    matplot::xlim({0.0, x_max});
+    matplot::ylim({0.0, y_max});
+
+    // ── 4. GRIGLIA LEGGERISSIMA ───────────────────────────────────────────
+    //matplot::grid(matplot::on);
+    //matplot::gca()->grid_alpha(0.08);   // ← quasi impercettibile
+
+    // ── 5. BORDO PULITO ───────────────────────────────────────────────────
+    matplot::gca()->box(false);
+    matplot::gca()->font_size(13);
+
+    // ── 6. LEGENDA CON PARAMETRI ─────────────────────────────────────────
+    // Formattiamo i parametri del modello con precisione ragionevole
+    auto fmt = [](double v, int dec) -> std::string {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(dec) << v;
+        return ss.str();
+    };
+
+    std::string model_label = "Model (" + model.type + ")"
+                            + "  |  sill = "   + fmt(model.sill,   3)
+                            + "  nugget = "     + fmt(model.nugget, 3)
+                            + "  range = "      + fmt(model.range,  1);
+
+    p2->display_name("Model");
+    p1->display_name("Experimental");
+
+    auto leg = matplot::legend();
+    leg->location(matplot::legend::general_alignment::bottomright);
+    leg->box(false);
+    leg->font_size(11);
+
+    // ── 6. BOX ─────────────────────────────────────────
+    std::string param_text =
+    "Model: " + model.type + "\n" +
+    "sill = "   + fmt(model.sill, 3)   + "\n" +
+    "nugget = " + fmt(model.nugget, 3) + "\n" +
+    "range = "  + fmt(model.range, 1);
+
+    double x_text = x_max * 0.05;
+    double y_text = y_max * 0.95;
+
+    auto t = matplot::text(x_text, y_text, param_text);
+    t->font_size(11);
+
+    //t->background_color(1,1,1);  // bianco
+    //t->edge_color({0.7, 0.7, 0.7});   // grigio chiaro
+    //t->margin(5);
+
+    // ── 7. SALVATAGGIO ────────────────────────────────────────────────────
+    //matplot::save("variogram_" + model.type + ".svg");
+    //matplot::save("variogram_" + model.type + ".pdf");
+} */
 
 void x_err_plot (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label)
 {

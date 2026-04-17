@@ -33,7 +33,7 @@ void hist_plot      (const MUSE::PlotStruct &dataplot, const std::string &title,
 void biv_plot       (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label);
 void biv_plot_leg   (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label, bool set_legend, std::string legend);
 
-void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, const std::string &title, const std::string &x_label, const std::string &y_label, const double &eps_y=0.05);
+void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, const std::string &title, const std::string &x_label, const std::string &y_label, const size_t &N = 100);
 void ellipse_plot   (const MUSE::EllipseParameter &ellipse_par, const double &eps);
 
 void x_err_plot     (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label);
