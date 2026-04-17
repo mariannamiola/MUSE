@@ -236,12 +236,15 @@ renderView1.ResetCamera()
 
 # To save a specific target resolution, rather than using the
 # the current view (or layout) size, and override the color palette.
+viewsize = [1000, 1000]
+renderView1.ViewSize = viewsize
+
 if config["output"]["save"]:
     directory = os.path.join(script_dir, '..', '..', project_folder, config["output"]["dir"])
     if not os.path.exists(directory): 
 	    os.mkdir(directory)
 
-    SaveScreenshot(os.path.join(directory, sim_name + '.' + config["output"]["format"]), renderView1, ImageResolution=[3000, 3000], FontScaling=True, OverrideColorPalette='WhiteBackground', TransparentBackground=False)
+    SaveScreenshot(os.path.join(directory, sim_name + '.' + config["output"]["format"]), renderView1, ImageResolution=viewsize, FontScaling=True, OverrideColorPalette='WhiteBackground', TransparentBackground=False)
     #SaveScreenshot(os.path.join(directory, sim_name + '.png'), renderView1, FontScaling=True, OverrideColorPalette='WhiteBackground', TransparentBackground=False)
 
 

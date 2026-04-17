@@ -19,6 +19,14 @@ help()
 (
 set -e	#exit if an error occours
 
+######################################################
+################ PROJECT NAME ########################
+
+export setPROJECT_NAME=02_gslib_2D_grid
+
+######################################################
+######################################################
+
 SHORT=d:,D:,p:,r:,s:,w:,h
 LONG=data:,data_source:,proj:,repl:,sim:,work:,help
 OPTS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
@@ -264,8 +272,7 @@ muse_manipulate -E -p ${WP} --geom ${OUTSURF}/area.obj
 
 #vario:
 ##########  VARIO  ###########
-muse_vario -V -p ${WP} -v ${VAR0} --nscore YES --vario MODEL --eps 5.0 --decl --csize 2 --nstep 5 --lagspac CONSTANT --type SPHERICAL
-
+muse_vario -V -p ${WP} -v ${VAR0} --nscore YES --vario MODEL --decl --csize 2 --nstep 5 --lagspac CONSTANT #--type SPHERICAL --vm-npoints 500
 #muse_vario -V -p ${WP} -v ${VAR0} --dir ${DIR} --dim ${DIM} --dirs 0,45,80,110,135 --nscore YES --vario MODEL --degtol 25 --eps 5.0 --decl --csize 2 --nstep 5 --maxdist 11 #--type SPHERICAL --maxdist 11 --vclean 10 --weight
 
 #compute:

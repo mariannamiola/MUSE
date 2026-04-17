@@ -1,0 +1,53 @@
+{
+  "work_folder": "MUSE_test",
+  "project_name": "02_gslib_2D_grid",
+
+  "samples": "samples.csv",
+  "varname": "p_c",
+  "units": "-",
+
+  "geometry": {
+    "name": "area",
+    "sub": "",
+    "ext": "obj"
+  },
+
+  "vario": {
+    "dir": "OMNI",
+    "dim": "3D"
+  },
+
+  "compute": {
+    "space": "_varspace",
+    "where": "_stats",
+    "var": "mean",
+    "units": "-",
+    "geom": "area"
+  },
+
+  "columns": {
+    "samples": {
+      "x": "e",
+      "y": "n",
+      "z": "z",
+      "value": "p_c",
+      "cat": false,
+      "n_cat": 8
+    },
+
+    "scalarfield": {
+      "x": "Field 0",
+      "y": "Field 0",
+      "z": "Field 0",
+      "value": "Field 0",
+      "cat": false,
+      "n_cat": 8
+    }
+  },
+
+  "output": {
+    "save": true,
+    "dir": "_fig",
+    "format": "png"
+  }
+}
