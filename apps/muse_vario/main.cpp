@@ -4,7 +4,6 @@
 #include <limits.h>
 
 #include <tclap/CmdLine.h>
-//#include <json.hpp>
 
 #include "muselib/utils.h"
 #include "muselib/colors.h"
@@ -28,8 +27,6 @@
 #include "muselib/plot/plots.h"
 #include "muselib/interpolation/plane.h"
 
-//#include "muselib/interpolation/ellipse.h"
-
 #include "geostatslib/statistics/data_structures.h"
 #include "geostatslib/statistics/normal_score.h"
 #include "geostatslib/statistics/variogram.h"
@@ -46,8 +43,6 @@
 #include "muselib/stratigraphic_trasformation/coord_transf.h"
 
 
-
-//TO DO: VARIO 1D + VARIO2D
 
 #include "ellipse_fit.h"
 
@@ -96,9 +91,9 @@ int main(int argc, char** argv)
 
     // Option 0. Compute varioagram for a variable
     /**
-     * @brief Compute variogram
+     * @brief Compute variogram for a specified variable
      * @param variogram Flag to compute variogram
-     * @note MANDATORY when computing variograms. Requires:
+     * @note When computing variograms, the following parameters are mandatory:
      * - --pdir: Project directory (mandatory)
      * - --var: Variable name (mandatory)
      * OPTIONAL but commonly used:
@@ -107,154 +102,165 @@ int main(int argc, char** argv)
      * - --dim: Dimension (3D, 2D, 1Dz, etc.)
      * @example muse_vario -V --pdir /path/to/project --var T --vario MODEL --dir OMNI --dim 3D
      */
-    SwitchArg varioCompute                  ("V", "variogram", "Compute variogram", cmd, false); //booleano
+    SwitchArg varioCompute                  ("V", "variogram", "Compute variogram for a specified variable", cmd, false); //booleano
 
     /**
-     * @brief Set debug mode to save additional support files
+     * @brief Project directory containing the data for variogram computation
+     * @param pdir Path to project directory (mandatory)
+     * @note Required when using --variogram flag. The specified directory must contain the necessary data for variogram computation, including the variable specified with --var.
+     * @example --pdir /path/to/project
+     */
+    ValueArg<std::string> projectFolder     ("p", "pdir", "Project directory containing the data for variogram computation", true, "Directory", "path", cmd);
+
+    /**
+     * @brief Set variable name to compute variogram
+     * @param var variable name to compute variogram (mandatory)
+     * @note Required when using --variogram flag. The specified variable must exist in the project data for successful variogram computation. Use this flag to specify the variable for which you want to compute the variogram. The variable name should match one of the variables present in the project data.
+     * @example --var T
+     */
+    ValueArg<std::string> Variable          ("v", "var", "Variable", true, "Set variable name to compute variogram", "name", cmd);
+
+    /**
+     * @brief Set debug mode to save additional support files. When debug mode is enabled, additional support files are saved during computation for troubleshooting and analysis. This may include intermediate results, logs, and diagnostic information. Use this flag when you want to investigate the computation process in more detail or when encountering issues.
      * @param debug Flag to enable debug mode
-     * @note When debug mode is enabled, additional support files are saved during computation for troubleshooting and analysis. This may include intermediate results, logs, and diagnostic information. Use this flag when you want to investigate the computation process in more detail or when encountering issues.
      * @example muse_vario -V --pdir /path/to/project --var T --debug
      */
     SwitchArg setDebug ("", "debug", "Set debug mode to save additional support files", cmd, false); //booleano
 
     /**
-     * @brief Project directory 
-     * @param pdir Path to project directory
+     * @brief Set extracted sub-dataset referring to specified geometry domain from project data. This option allows you to specify a sub-dataset that corresponds to a particular geometry domain within the project data (derived from muse-manipulate).
+     * @param sub Flag to set extracted sub-dataset referring to specified geometry domain from project data
+     * @note Optional parameter. When using this flag, ensure that the specified sub-dataset is properly extracted (by muse-manipulate) and corresponds to the geometry domain you want to analyze. This allows for more targeted variogram computation based on specific spatial domains within the project data.
+     * @example --sub subdataset-name
      */
-    ValueArg<std::string> projectFolder     ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
+    ValueArg<std::string> subDataset        ("", "sub", "Set extracted sub-dataset referring to specified geometry domain", false, "subdataset-name", "string", cmd);
 
     /**
-     * @brief Set variable to analyse variography
-     * @param var variable name to analyse variography
-     * @note Mandatory when computing variograms. The variable must exist in the project data. Use --var to specify the variable name for variogram analysis. The specified variable must be present in the project data for successful variogram computation.
-     * @example --var T
+     * @brief Set rotation axis for data rotation. This option allows you to specify the axis around which the data will be rotated. The rotation can be applied to the spatial coordinates of the data, which may be useful for aligning the data with a particular orientation or for performing certain types of analyses that require a specific coordinate system.
+     * @param rotaxis Flag to set rotation axis for data rotation (X, Y, Z)
+     * @note Default is NO (no rotation is applied). When using this flag, you typically need to specify the rotation angle (with --rotangle) and the rotation center coordinates (with --rotcx, --rotcy, --rotcz) to fully define the rotation transformation. The rotation axis can be set to X, Y, or Z depending on the desired rotation direction.
+     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
-    ValueArg<std::string> Variable          ("v", "var", "Variable", true, "variable to analyse", "name", cmd);
-
-    // Option: set third coordinate (z), if necessary
-    //ValueArg<std::string> setZcoord         ("z", "setZ", "Set Z Coordinate", false, "Unknown", "Name Z coordinate", cmd);
-
-    // Option: use subdataset (related to a specified domain)
-    /**
-     * @brief Set extracted sub-dataset referring to specified geometry domain
-     * @param sub extracted sub-dataset referring to specified geometry domain
-     */
-    ValueArg<std::string> subDataset        ("", "sub", "Set extracted sub-dataset referring to specified geometry domain", false, "Directory", "path", cmd);
-
-    // Option: set data rotation
-    /**
-     * @brief Set rotation axis
-     * @param rotaxis rotation axis
-     * @note When using rotation, these flags work together:
-     * - --rotaxis: Rotation axis (X, Y, Z)
-     * - --rotangle: Rotation angle (required if rotaxis != NO)
-     * - --rotcx, --rotcy, --rotcz: Rotation center coordinates
-     * @example For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
-     */
-
-    ValueArg<std::string> setRotAxis        ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
-    /**
-     * @brief Set rotation angle (clockwise)
-     * @param rotangle rotation angle (clockwise)
-     * @note Used together with --rotaxis flag. Required when rotaxis != NO
-     */
-
-    ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
-    /**
-     * @brief Set rotation center x
-     * @param rotcx rotation center x
-     */
-    ValueArg<double> setRotCenterX          ("", "rotcx", "Set rotation center x", false, 0.0, "double", cmd);
+    ValueArg<std::string> setRotAxis        ("", "rotaxis", "Set rotation axis for data rotation (X, Y, Z)", false, "NO", "string", cmd);
     
     /**
-     * @brief Set rotation center y
-     * @param rotcy rotation center y
+     * @brief Set rotation angle (clockwise) for data rotation. This option allows you to specify the angle by which the data will be rotated in a clockwise direction. The rotation is applied around the axis specified with --rotaxis and centered at the coordinates specified with --rotcx, --rotcy, and --rotcz.
+     * @param rotangle Flag to set rotation angle (clockwise) for data rotation
+     * @note Default is 0.0 (no rotation). When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation center coordinates (with --rotcx, --rotcy, --rotcz) to fully define the rotation transformation. The rotation angle should be provided in degrees, and the rotation will be applied in a clockwise direction based on the specified axis and center.
+     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
-    ValueArg<double> setRotCenterY          ("", "rotcy", "Set rotation center y", false, 0.0, "double", cmd);
+    ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise) for data rotation", false, 0.0, "double", cmd);
     
     /**
-     * @brief Set rotation center z
-     * @param rotcz rotation center z
+     * @brief Set rotation center x coordinate for data rotation. This option allows you to specify the x-coordinate of the center point around which the data will be rotated. The rotation is applied based on the axis specified with --rotaxis and the angle specified with --rotangle.
+     * @param rotcx Flag to set rotation center x coordinate for data rotation
+     * @note Default is 0.0 (rotation around the origin). When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation angle (with --rotangle) to fully define the rotation transformation. The rotation center coordinates (rotcx, rotcy, rotcz) define the point in space around which the rotation will occur. The x-coordinate (rotcx) is used in conjunction with the y and z coordinates (rotcy, rotcz) to specify the full rotation center.
+     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
-    ValueArg<double> setRotCenterZ          ("", "rotcz", "Set rotation center z", false, 0.0, "double", cmd);
+    ValueArg<double> setRotCenterX          ("", "rotcx", "Set rotation center x coordinate for data rotation", false, 0.0, "double", cmd);
+    
+    /**
+     * @brief Set rotation center y coordinate for data rotation. This option allows you to specify the y-coordinate of the center point around which the data will be rotated. The rotation is applied based on the axis specified with --rotaxis and the angle specified with --rotangle.
+     * @param rotcy Flag to set rotation center y coordinate for data rotation
+     * @note Default is 0.0 (rotation around the origin). When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation angle (with --rotangle) to fully define the rotation transformation. The rotation center coordinates (rotcx, rotcy, rotcz) define the point in space around which the rotation will occur. The y-coordinate (rotcy) is used in conjunction with the x and z coordinates (rotcx, rotcz) to specify the full rotation center.
+     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
+     */
+    ValueArg<double> setRotCenterY          ("", "rotcy", "Set rotation center y coordinate for data rotation", false, 0.0, "double", cmd);
+    
+    /**
+     * @brief Set rotation center z coordinate for data rotation. This option allows you to specify the z-coordinate of the center point around which the data will be rotated. The rotation is applied based on the axis specified with --rotaxis and the angle specified with --rotangle.
+     * @param rotcz Flag to set rotation center z coordinate for data rotation
+     * @note Default is 0.0 (rotation around the origin). When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation angle (with --rotangle) to fully define the rotation transformation. The rotation center coordinates (rotcx, rotcy, rotcz) define the point in space around which the rotation will occur. The z-coordinate (rotcz) is used in conjunction with the x and y coordinates (rotcx, rotcy) to specify the full rotation center.
+     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
+     */
+    ValueArg<double> setRotCenterZ          ("", "rotcz", "Set rotation center z coordinate for data rotation", false, 0.0, "double", cmd);
 
     /**
-     * @brief Set performing normal score transformation on continuous variables
-     * @param nscore Performing normal score transformation on continuous variables
-     * @note Default is NO. When using normal score transformation, requires:
+     * @brief Set performing normal score transformation on continuous variables. This option allows you to specify whether to apply a normal score transformation to continuous variables before computing the variogram. Normal score transformation is a common technique used in geostatistics to transform data to follow a normal distribution, which can improve the performance of variogram modeling and kriging.
+     * @param nscore Flag to enable normal score transformation on continuous variables
+     * @note Default is NO (no normal score transformation is applied). When using normal score transformation, requires:
      * - --var: Variable name (mandatory)
      * @example --var T --nscore YES
      */
-    ValueArg<std::string> setNormalScore    ("", "nscore", "Set normal score transformation", false, "NO", "string", cmd);
+    ValueArg<std::string> setNormalScore    ("", "nscore", "Set normal score transformation (only for continuous variables)", false, "NO", "string", cmd);
 
     /**
-     * @brief Set 2D declustering
-     * @param decl Enable set 2d declustering
-     * @note When using declustering, requires:
-     * - --csize: Cell size for declustering (mandatory)
-     * - --nstep: Number of grid translation steps (mandatory)
+     * @brief Set 2D declustering for variogram computation. This option allows you to specify whether to apply 2D declustering to the data before computing the variogram. Declustering is a technique used to reduce the influence of clustered data points in variogram computation by assigning weights to data points based on their spatial distribution. When 2D declustering is enabled, additional parameters such as cell size and number of grid translation steps can be specified to control the declustering process.
+     * @param decl Flag to enable 2D declustering for variogram computation
+     * @note When using declustering (--decl), requires:
+     * - --csize: Cell size for declustering 
+     * - --nstep: Number of grid translation steps for declustering
      * @example --decl --csize 100 --nstep 5
      */
-    SwitchArg setDeclustering2d             ("", "decl", "Set 2D declustering", cmd, false); //booleano
+    SwitchArg setDeclustering2d             ("", "decl", "Set 2D declustering for variogram computation", cmd, false); //booleano
 
     /**
-     * @brief Set cell size for 2D declustering
-     * @param csize cell size for 2d declustering
-     * @note Used together with --decl flag for 2D declustering
+     * @brief Set cell size for 2D declustering. This option allows you to specify the cell size to be used for 2D declustering when computing the variogram. The cell size defines the spatial resolution of the grid used for declustering, where data points within the same cell are considered part of the same cluster. Choosing an appropriate cell size is important for effective declustering, as it can influence the weights assigned to data points and ultimately affect the variogram results.
+     * @param csize Flag to set cell size for 2D declustering
+     * @note Required when using --decl flag for 2D declustering. 
+     * The specified cell size should be chosen based on the spatial characteristics of the data and the desired level of declustering. 
+     * It is often recommended to experiment with different cell sizes to find the optimal value for your specific dataset and analysis goals.
+     * Default is 0.0. When using declustering, the cell size should be provided in the same units as the spatial coordinates of the data (e.g., meters) to ensure proper declustering based on the spatial distribution of the data points.
+     * @example --decl --csize 100 --nstep 5 
      */
     ValueArg<double> setCellSize            ("", "csize", "Set cell size for 2D declustering", false, 0.0, "double", cmd);
 
     /**
-     * @brief Set n steps for 2D declustering (grid translation)
-     * @param nstep Number of set n steps for 2d declustering (grid translation)
-     * @note Used together with --decl flag for 2D declustering
+     * @brief Set number of grid translation steps for 2D declustering. This option allows you to specify the number of grid translation steps to be used for 2D declustering when computing the variogram. Grid translation is a technique used in declustering to reduce the influence of clustered data points by translating the grid multiple times and averaging the results. The number of steps determines how many times the grid will be translated, which can help to further mitigate the effects of clustering in the data.
+     * @param nstep Flag to set number of grid translation steps for 2D declustering
+     * @note Required when using --decl flag for 2D declustering. 
+     * The specified number of steps should be chosen based on the level of declustering desired and the computational resources available, as increasing the number of steps can lead to more effective declustering but also increases the computational time required for variogram computation.
+     * Default is 0. When using declustering, the number of grid translation steps should be a positive integer, and it is often recommended to experiment with different values to find the optimal number of steps for your specific dataset and analysis goals.
+     * @example --decl --csize 100 --nstep 5
      */
-    ValueArg<int> setNStep                  ("", "nstep", "Set n steps for 2D declustering (grid translation)", false, 0, "int", cmd);
+    ValueArg<int> setNStep                  ("", "nstep", "Set number of grid translation steps for 2D declustering", false, 0, "int", cmd);
 
 
     // Option: variography on stratigraphic coordinates model (ref. manipulate)
     std::vector<std::string> allowedStratigraphicCondition = {"PROPORTIONAL","TRUNCATION","ONLAP","COMBINATION"};
     ValuesConstraint<std::string> allowedValsSC(allowedStratigraphicCondition);
     /**
-     * @brief Set stratigraphic condition for coordinate transformation
-     * @param sttype stratigraphic condition for coordinate transformation
-     * @note When using stratigraphic transformation, requires:
-     * - --filestrat: Filename of samples in stratigraphic coordinates (mandatory)
-     * Available conditions: PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION
+     * @brief Set stratigraphic condition for coordinate transformation. This option allows you to specify the stratigraphic condition type (PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION) to be used when performing variography on stratigraphic coordinates.
+     * @param sttype Flag to set stratigraphic condition for coordinate transformation (PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION)
+     * @note Default is "NO" (no stratigraphic coordinate transformation is performed -- in muse-manipulate). When using stratigraphic transformation, requires
+     * - --filestrat: filename containing samples converted in stratigraphic coordinate system (from muse-manipulate)
+     * Available conditions, derived from reservoir modeling: PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION
+     * - PROPORTIONAL: The stratigraphic coordinates are computed proportionally to the original spatial coordinates, preserving the relative distances between points while transforming them into a stratigraphic framework.
+     * - TRUNCATION: The stratigraphic coordinates are computed by truncating the original spatial coordinates based on stratigraphic boundaries, resulting in a transformation that reflects the stratigraphic layering of the data.
+     * - ONLAP: The stratigraphic coordinates are computed by considering the onlap relationships between stratigraphic layers, where points are transformed based on their position relative to the onlapping layers in the stratigraphic sequence.
+     * - COMBINATION: No correlation surface can be explicity defined. The coordinate transformation is not possible.
      * @example --sttype PROPORTIONAL --filestrat /path/to/strat_coords.dat
      */
-
     ValueArg<std::string> stratCondition    ("", "sttype", "Set stratigraphic condition for coordinate transformation", false, "NO", &allowedValsSC, cmd);
+    
     /**
-     * @brief Set filename of samples in stratigraphic coordinates
-     * @param filestrat Path to set filename of samples in stratigraphic coordinates
-     * @note Required when using --sttype flag for stratigraphic transformation
+     * @brief Set filename of samples in stratigraphic coordinates. This option allows you to specify the path to the file containing the samples that have been converted into stratigraphic coordinates. This file is generated from muse-manipulate and is required when performing variography on stratigraphic coordinates using the --sttype flag.
+     * @param filestrat Flag to set filename of samples converted in stratigraphic coordinate system (from muse-manipulate)
+     * @note Required when using --sttype flag for stratigraphic transformation.
+     * @example --sttype PROPORTIONAL --filestrat /path/to/samples-strat.dat
      */
-
-    ValueArg<std::string> filenameStrat     ("f", "filestrat", "Set filename of samples in stratigraphic coordinates", false, "filename", "path", cmd);
-
+    ValueArg<std::string> filenameStrat     ("f", "filestrat", "Set filename containing samples converted in stratigraphic coordinate system (generated by muse-manipulate)", false, "path/to/samples-strat.dat", "string", cmd);
 
 
-    // Option: set types of variograms
     std::vector<std::string> allowedVarioType = {"EXPERIMENTAL","MODEL"};
     ValuesConstraint<std::string> allowedValsVT(allowedVarioType);
-
     /**
-     * @brief Set between computing experimental or model variogram
-     * @param vario type of variogram to compute (EXPERIMENTAL, MODEL)
-     * @note When computing variograms, use --vario to specify the type of variogram to compute. Available options are:
-     * - EXPERIMENTAL: Computes the experimental variogram directly from the data. This is the default option.
-     * - MODEL: Fits a theoretical variogram model to the experimental variogram. 
+     * @brief Set variogram type to compute (experimental or model). This option allows you to specify the type of variogram step to compute, either experimental or model. The experimental variogram is computed directly from the data, while the model variogram involves fitting a theoretical variogram model to the experimental variogram.
+     * @param vario Flag to set variogram type to compute (EXPERIMENTAL, MODEL)
+     * @note Default is EXPERIMENTAL. When using this flag, requires:
+     * - --var: Variable name (mandatory)
+     * - --dir: Direction type (OMNI, DIR)
+     * - --dim: Dimension type (3D, 2D, 1Dz, etc.) 
      * @example --vario MODEL
      */
-    ValueArg<std::string> varioType         ("", "vario", "Set between computing experimental or model variogram", false, "EXPERIMENTAL", &allowedValsVT, cmd);
+    ValueArg<std::string> varioType         ("", "vario", "Set variogram type to compute (EXPERIMENTAL, MODEL)", false, "EXPERIMENTAL", &allowedValsVT, cmd);
 
     // Option: types of variogram directions
     std::vector<std::string> allowedVarioDir = {"OMNI","DIR"};
     ValuesConstraint<std::string> allowedValsVD(allowedVarioDir);
     /**
      * @brief Set variogram direction type (omnidirectional or directional)
-     * @param dir type of variogram direction (OMNI, DIR)
+     * @param dir Flag to set type of variogram direction (OMNI, DIR)
      * @note When computing variograms, use --dir to specify the type of variogram analysis. Available options are:
      * - OMNI: Computes the omnidirectional variogram, which considers all pairs of points regardless of their direction. This is the default option.
      * - DIR: Computes directional variograms, which analyze spatial continuity in specific directions. When using DIR for directional variogram computation, additional parameters become important to define the directional analysis. These parameters include:
@@ -270,7 +276,7 @@ int main(int argc, char** argv)
     ValuesConstraint<std::string> allowedValsVDm(allowedVarioDim);
     /**
      * @brief Set variogram dimension type (3D, 3Dxy, 3Dz, 2D, 1Dz)
-     * @param dim type of variogram dimension
+     * @param dim Flag to set type of variogram dimension
      * @note When computing variograms, use --dim to specify the dimension type for variogram analysis. Available options are:
      * - 3D: Computes the variogram considering all three spatial dimensions (X, Y, Z). This is the default option.
      * - 3Dxy: Computes the variogram considering only the horizontal dimensions (X and Y), ignoring vertical differences. This is useful for analyzing spatial continuity in the horizontal plane.
@@ -284,128 +290,158 @@ int main(int argc, char** argv)
     std::vector<std::string> allowedLag = {"VARIABLE","CONSTANT","FIXED"};
     ValuesConstraint<std::string> allowedValsLag(allowedLag);
     /**
-
-     * @brief Set lag spacing type
-
-     * @param lagspac lag spacing type
-
+     * @brief Set lag spacing type (variable, constant or fixed). This option allows you to specify the type of lag spacing to be used when computing the experimental variogram. Lag spacing refers to the distance intervals at which the experimental variogram points are computed, and different types of lag spacing can be used depending on the characteristics of the data and the analysis goals.
+     * @param lagspac Flag to set lag spacing type (VARIABLE, CONSTANT, FIXED)
+     * @note Default is VARIABLE. When computing the experimental variogram, use --lagspac to specify the type of lag spacing. Available options are:
+     * - VARIABLE: The lag spacing is variable, meaning that the distance intervals between variogram points can vary based on the distribution of data pairs. This approach can provide a more detailed variogram in areas with dense data and a broader overview in areas with sparse data.
+     * - CONSTANT: The lag spacing is constant, meaning that the distance intervals between variogram points are fixed and uniform across the variogram. This approach provides a consistent spacing of variogram points, which can be useful for comparing variograms across different datasets or for fitting theoretical models.
+     * - FIXED: The lag spacing is fixed, meaning that the distance intervals between variogram points are predetermined and do not change based on the data distribution. This approach is similar to constant lag spacing but emphasizes that the intervals are set in advance and are not influenced by the data. This can be useful for specific applications where a predefined set of lag distances is required for analysis or model fitting.
+     * @example --lagspac CONSTANT
      */
-
     ValueArg<std::string> setLagType        ("", "lagspac", "Set lag spacing type", false, "VARIABLE", &allowedValsLag, cmd);
+    
     /**
-
-     * @brief Set spacing samples for vertical variogram
-
-     * @param spac spacing samples for vertical variogram
-
+     * @brief Set lag spacing samples for vertical variogram computation, combined with --lagspac FIXED. This option allows you to specify the spacing of samples in the vertical direction when computing the variogram, particularly for 3D or 1Dz variogram analyses. The spacing of samples can influence the resolution and accuracy of the variogram, especially in the vertical dimension where data may be more sparse or have different spatial characteristics compared to the horizontal dimensions.
+     * @param spac Flag to set lag spacing samples for vertical variogram computation
+     * @note Default is 0.0. Used in combination with --lagspac FIXED for vertical variogram computation. When using this option, the specified spacing should be provided in the same units as the spatial coordinates of the data (e.g., meters) to ensure proper spacing of variogram points in the vertical direction. This can help to improve the representation of spatial continuity in the vertical dimension, especially when analyzing stratigraphic or depth-related data.
+     * @example --lagspac FIXED --spac 10
      */
-
-    ValueArg<double> setSpacingSamples      ("", "spac", "Set spacing samples for vertical variogram", false, 0.0, "meters", cmd);
+    ValueArg<double> setSpacingSamples      ("", "spac", "Set lag spacing samples for vertical variogram computation", false, 0.0, "double", cmd);
 
     // Option: set parameters for directional variogram computation
     /**
-     * @brief Set degree step (in degree)
-     * @param deg degree step (in degree)
-     * @note Used with --dir DIR for directional variogram computation
-     * Works together with --degtol and --zdegtol
+     * @brief Set degree step (in degree) for directional variogram computation. This option allows you to specify the angular step size in degrees for computing directional variograms when using the --dir DIR option. The degree step defines the angles at which the directional variograms will be computed, allowing for analysis of spatial continuity in specific directions.
+     * @param deg Flag to set degree step (in degree) for directional variogram computation
+     * @note Default is 45.0 degrees. Used with --dir DIR for directional variogram computation to specify the angular step size for directional analysis. 
+     * For example, a degree step of 30° would compute variograms at 0°, 30°, 60°, etc., in counter-clockwise from north, allowing for a more detailed analysis of spatial continuity in specific directions. 
+     * The choice of degree step can influence the resolution of the directional variogram and should be selected based on the spatial characteristics of the data and the analysis goals.
+     * @example --dir DIR --deg 30
      */
-
-    ValueArg<double> setDegree              ("", "deg", "Set degree step (in degree)", false, 45.0, "degree", cmd);
-    /**
-     * @brief Set tolerance (in degree)
-     * @param degtol tolerance (in degree)
-     * @note Used with --dir DIR for directional variogram computation
-     * Works together with --deg and --zdegtol for direction tolerance
-     */
-
-    ValueArg<double> setTol                 ("", "degtol", "Set tolerance (in degree)", false, 45.0, "degree", cmd);
-    /**
-     * @brief Set vertical tolerance (in degree)
-     * @param zdegtol vertical tolerance (in degree)
-     * @note Used with --dir DIR for directional variogram computation
-     * Works together with --deg and --degtol for vertical direction tolerance
-     */
-
-    ValueArg<double> setVertTol             ("", "zdegtol", "Set vertical tolerance (in degree)", false, 22.5, "degree", cmd);
-
-    /**
-     * @brief Load discrete directions (in degree)
-     * @param dirs Path to load discrete directions (in degree)
-     */
-    ValueArg<std::string> loadDirs          ("", "dirs", "Load discrete directions (in degree)", false, "dir0,dir1", "string", cmd);
-
-    /**
-     * @brief Set bandwidth
-     * @param bandw bandwidth
-     * @note Used with --dir DIR for directional variogram computation
-     * Often used together with --vertbandw for 3D directional analysis
-     */
-    ValueArg<double> setBandwidth           ("", "bandw", "Set bandwidth", false, DBL_MAX, "double", cmd);
+    ValueArg<double> setDegree              ("", "deg", "Set degree step (in degree) for directional variogram computation", false, 45.0, "double", cmd);
     
     /**
-     * @brief Set vertical bandwidth
-     * @param vertbandw vertical bandwidth
-     * @note Used with --dir DIR for directional variogram computation
-     * Often used together with --bandw for 3D directional analysis
+     * @brief Set tolerance (in degree) for directional variogram computation. This option allows you to specify the angular tolerance in degrees for including point pairs in the directional variogram analysis when using the --dir DIR option. The tolerance defines the angular range around the specified direction within which point pairs will be included in the computation of the directional variogram.
+     * @param degtol tolerance (in degree) for directional variogram computation
+     * @note Default is 45.0 degrees. Used with --dir DIR for directional variogram computation to specify the angular tolerance for including point pairs in the directional variogram analysis. 
+     * For example, with a tolerance of 15°, point pairs that are within 15° of the specified direction would be included in the analysis, allowing for a more flexible and inclusive approach to directional variogram computation. 
+     * The choice of tolerance can influence the results of the directional variogram and should be selected based on the spatial characteristics of the data and the desired level of directional specificity in the analysis.
      */
-    ValueArg<double> setVertBandwidth       ("", "vertbandw", "Set vertical bandwidth", false, DBL_MAX, "double", cmd);
+    ValueArg<double> setTol                 ("", "degtol", "Set tolerance (in degree) for directional variogram computation", false, 45.0, "double", cmd);
+    
+    /**
+     * @brief Set vertical tolerance (in degree) for directional variogram computation. This option allows you to specify the vertical angular tolerance in degrees for including point pairs in the directional variogram analysis when using the --dir DIR option, particularly for 3D directional variogram computation. The vertical tolerance defines the angular range in the vertical direction within which point pairs will be included in the computation of the directional variogram, allowing for a more comprehensive analysis of spatial continuity in three-dimensional space.
+     * @param zdegtol Flag to set vertical tolerance (in degree) for directional variogram computation
+     * @note Default is 22.5 degrees. Used with --dir DIR for directional variogram computation. This parameter is particularly important for 3D directional variogram analysis, as it allows for the inclusion of point pairs that are within a specified vertical angular range, providing a more complete representation of spatial continuity in three-dimensional space.
+     * @example --dir DIR --zdegtol 15
+     */
+    ValueArg<double> setVertTol             ("", "zdegtol", "Set vertical tolerance (in degree) for directional variogram computation", false, 22.5, "double", cmd);
 
+    /**
+     * @brief Set discrete directions (in degree) for directional variogram computation. This option allows you to specify a list of discrete directions in degrees for computing directional variograms when using the --dir DIR option. Instead of using a fixed degree step, you can provide specific angles at which the directional variograms will be computed, allowing for a more customized analysis of spatial continuity in specific directions.
+     * @param dirs Flag to set discrete directions (in degree) for directional variogram computation
+     * @note Used with --dir DIR for directional variogram computation. When using this option, you can provide a comma-separated list of angles in degrees (e.g., "0,45,90") to specify the discrete directions for which the directional variograms will be computed. This allows for a more targeted analysis of spatial continuity in specific directions that may be of particular interest based on the spatial characteristics of the data or the analysis goals. 
+     * The specified directions should be provided in degrees and will be used to compute the directional variograms at those specific angles, providing insights into the spatial continuity in those directions.
+     * @example --dir DIR --dirs 0,45,90
+     */
+    ValueArg<std::string> loadDirs          ("", "dirs", "Set discrete directions (in degree) for directional variogram computation", false, "dir0,dir1", "string", cmd);
 
+    /**
+     * @brief Set bandwidth for directional variogram computation. This option allows you to specify the bandwidth for directional variogram computation when using the --dir DIR option. The bandwidth defines the spatial range within which point pairs will be included in the computation of the directional variogram, allowing for a more flexible analysis of spatial continuity in specific directions.
+     * @param bandw Flag to set bandwidth for directional variogram computation
+     * @note Default value is DBL_MAX. Used with --dir DIR for directional variogram computation to specify the bandwidth for including point pairs in the directional variogram analysis. 
+     * The bandwidth is typically provided in the same units as the spatial coordinates of the data (e.g., meters) and defines the maximum distance between point pairs that will be included in the computation of the directional variogram.
+     * A smaller bandwidth can help to focus the analysis on more local spatial continuity, while a larger bandwidth can provide a broader overview of spatial continuity in the specified directions.
+     * @example --dir DIR --bandw 100
+     */
+    ValueArg<double> setBandwidth           ("", "bandwidth", "Set bandwidth for directional variogram computation", false, DBL_MAX, "double", cmd);
+    
+    /**
+     * @brief Set vertical bandwidth for directional variogram computation. This option allows you to specify the vertical bandwidth for directional variogram computation when using the --dir DIR option, particularly for 3D directional variogram analysis. The vertical bandwidth defines the spatial range in the vertical direction within which point pairs will be included in the computation of the directional variogram, allowing for a more comprehensive analysis of spatial continuity in three-dimensional space.
+     * @param vertbandw Flag to set vertical bandwidth for directional variogram computation
+     * @note Default value is DBL_MAX. Used with --dir DIR for directional variogram computation to specify the vertical bandwidth for including point pairs in the directional variogram analysis.
+     * The vertical bandwidth is typically provided in the same units as the spatial coordinates of the data (e.g., meters) and defines the maximum vertical distance between point pairs that will be included in the computation of the directional variogram.
+     * A smaller vertical bandwidth can help to focus the analysis on more local spatial continuity in the vertical direction, while a larger vertical bandwidth can provide a broader overview of spatial continuity in the vertical dimension, especially when analyzing stratigraphic or depth-related data.
+     * @example --dir DIR --vertbandw 50
+     */
+    ValueArg<double> setVertBandwidth       ("", "vertical-bandwidth", "Set vertical bandwidth for directional variogram computation", false, DBL_MAX, "double", cmd);
 
     // Option: types of permissible models
     std::vector<std::string> allowedModel = {"AUTO","SPHERICAL","GAUSSIAN","EXPONENTIAL","LINEAR","DEFAULT"};
     ValuesConstraint<std::string> allowedValsMl(allowedModel);
     /**
-     * @brief Set type of model variogram
-     * @param type type of model variogram
-     * @note When using --vario MODEL, this flag becomes important
-     * For model fitting, use together with:
-     * - --nugget: Nugget value (optional)
-     * - --sill: Sill value (optional, not fully enabled)
-     * Available models: AUTO, SPHERICAL, GAUSSIAN, EXPONENTIAL, LINEAR, DEFAULT
-     * @example --vario MODEL --type SPHERICAL --nugget 0.1
+     * @brief Set type of model variogram to fit to the experimental variogram. This option allows you to specify the type of theoretical variogram model to be fitted to the experimental variogram when using the --vario MODEL option.
+     * @param type Flag to set type of model variogram
+     * @note Default value is "AUTO". When using --vario MODEL, this flag becomes important for fitting a theoretical variogram model to the experimental variogram. Available model types include:
+     * - AUTO: The model type is automatically selected based on the characteristics of the experimental variogram. The fitting process will evaluate different model types and select the one that best fits the experimental variogram based on the specified MSE criterion (with --mse).
+     * - SPHERICAL: Fits a spherical variogram model to the experimental variogram.
+     * - GAUSSIAN: Fits a Gaussian variogram model to the experimental variogram.
+     * - EXPONENTIAL: Fits an exponential variogram model to the experimental variogram.
+     * - LINEAR: Fits a linear variogram model to the experimental variogram.
+     * - DEFAULT: Uses a default variogram model (which may be predefined in the software) for fitting to the experimental variogram.
+     * @example --vario MODEL --type SPHERICAL
      */
-
-    ValueArg<std::string> setModel          ("", "type", "Set type of model variogram", false, "AUTO", &allowedValsMl, cmd);
+    ValueArg<std::string> setModel          ("", "type", "Set type of model variogram to fit to the experimental variogram", false, "AUTO", &allowedValsMl, cmd);
 
     // Option: set model parameters
     /**
-     * @brief Nugget
-     * @param nugget Number of nugget
-     * @note Used with --vario MODEL and --type for model fitting
-     * Often used together with --sill for complete model specification
+     * @brief Set nugget for model variogram fitting. This option allows you to specify the nugget parameter for fitting a theoretical variogram model to the experimental variogram when using the --vario MODEL option. The nugget represents the variance at zero distance and can account for measurement error or short-scale variability in the data.
+     * @param nugget Flag to set nugget for model variogram fitting
+     * @note Default value is 0.0. When using --vario MODEL, this flag becomes important for fitting a theoretical variogram model to the experimental variogram. The nugget parameter can influence the shape of the fitted variogram model and is often used in conjunction with the sill and range parameters to fully specify the variogram model.
+     * @example --vario MODEL --nugget 0.1
      */
+    ValueArg<double> setNugget              ("", "nugget", "Set nugget for model variogram fitting", false, 0.0, "double", cmd);
 
-    ValueArg<double> setNugget              ("", "nugget", "Nugget", false, 0.0, "double", cmd);
     /**
-     * @brief Sill (NOT ENABLE)
-     * @param sill sill (not enable)
-     * @note Used with --vario MODEL and --type for model fitting
-     * Often used together with --nugget for complete model specification
-     * WARNING: This parameter is not fully enabled in current version
+     * @brief Set sill for model variogram fitting. This option allows you to specify the sill parameter for fitting a theoretical variogram model to the experimental variogram when using the --vario MODEL option. The sill represents the variance at large distances and is often used in conjunction with the nugget and range parameters to fully specify the variogram model.
+     * @param sill Flag to set sill for model variogram fitting (NOT ENABLED)
      */
-
-    ValueArg<double> setSill                ("", "sill", "Sill (NOT ENABLE)", false, 0.0, "double", cmd);
-    //ValueArg<double> setRange               ("", "range", "Range (NOT ENABLE)", false, 0.0, "double", cmd);
+    ValueArg<double> setSill                ("", "sill", "Set sill for model variogram fitting (NOT ENABLED)", false, 0.0, "double", cmd);
+   
+    //ValueArg<double> setRange               ("", "range", "Set range for model variogram fitting", false, 0.0, "double", cmd);
 
 
     // Option: set model parameters - INDICATOR VARIOGRAMS
+    /**
+     * @brief Set type of model variogram for indicators. This option allows you to specify the type of theoretical variogram model to be fitted to the experimental variogram for indicator variables when using the --vario MODEL option. The category for indicators is specified by its value (it must be an integer), which allows for fitting different variogram models for different categories of indicator variables.
+     * @param itype Flag to set type of model variogram for indicators. The category is specified by its value (it must be an integer).
+     * @note When using --vario MODEL for indicator variables, this flag becomes important for fitting a theoretical variogram model to the experimental variogram for each category of indicator variables. 
+     * The category is specified by its value (it must be an integer), allowing for the fitting of different variogram models for different categories of indicator variables, which can be useful for capturing the spatial continuity of different classes or categories in the data.
+     * @example --vario MODEL --itype SPHERICAL!1 --itype GAUSSIAN!2
+     */
     MultiArg<std::string> setIndModel       ("", "itype", "Set type of model variogram for indicators. The category is specified by its value (it must be an integer).", false, "type!valcat", cmd);
+    
+    /**
+     * @brief Set nugget for indicators. This option allows you to specify the nugget parameter for fitting a theoretical variogram model to the experimental variogram for indicator variables when using the --vario MODEL option. The category for indicators is specified by its value (it must be an integer), which allows for fitting different nugget values for different categories of indicator variables.
+     * @param indnugget Flag to set nugget for indicators. The category is specified by its value (it must be an integer).
+     * @note When using --vario MODEL for indicator variables, this flag becomes important for fitting a theoretical variogram model to the experimental variogram for each category of indicator variables. The category is specified by its value (it must be an integer), allowing for the fitting of different nugget values for different categories of indicator variables, which can be useful for capturing the spatial continuity and variability of different classes or categories in the data, especially when different categories may have different levels of measurement error or short-scale variability that can be accounted for with different  nugget values.
+     * @example --vario MODEL --indnugget 0.1!1 --indnugget 0.2!2
+     */
     MultiArg<std::string> setIndNugget      ("", "inugget", "Set nugget for indicators. The category is specified by its value (it must be an integer).", false, "0.0!valcat", cmd);
+    
+    /**
+     * @brief Set max distance for computing variogram for indicators. This option allows you to specify the maximum distance to be considered when computing the experimental variogram for indicator variables when using the --vario MODEL option. The category for indicators is specified by its value (it must be an integer), which allows for setting different maximum distances for different categories of indicator variables.
+     * @param indmaxdist Flag to set max distance for computing variogram for indicators. The category is specified by its value (it must be an integer).
+     * @note When using --vario MODEL for indicator variables, this flag becomes important for computing the experimental variogram for each category of indicator variables. The category is specified by its value (it must be an integer), allowing for setting different maximum distances for different categories of indicator variables, which can be useful for managing the variogram coverage and ensuring that the variogram is computed over a meaningful spatial range for each category, especially when different categories may have different spatial distributions or ranges of influence in the data.        
+     * @example --vario MODEL --indmaxdist 100!1 --indmaxdist 200!2
+     */
     MultiArg<std::string> setIndMaxDistance ("", "imaxdist", "Set max distance for computing variogram for indicators (NOT ENABLE)", false, "-DBL_MAX!namecat", cmd);
+    
     //MultiArg<std::string> setIndSill        ("", "isill", "Set sull for indicators", false, "0.0|ncat", cmd);
 
 
-    /**
-     * @brief Set criterion for fitting variogram models for mse computation (active only for continuous variables)
-     * @param mse criterion for fitting variogram models for mse computation (active only for continuous variables)
-     * @note When using --vario MODEL for continuous variables, this flag becomes important
-     * Available criteria: CRESSIE, CRESSIE_WEIGHTED, CRESSIE_WEIGHTED_MODIFIED, UNIFORM
-     * @example --vario MODEL --mse CRESSIE
-     */
     // Option: different criteria for fitting variogram models for mse computation (active only for continuous variables)
     std::vector<std::string> allowedMSEcrit = {"CRESSIE","CRESSIE_WEIGHTED","CRESSIE_WEIGHTED_MODIFIED","DEFAULT"};
     ValuesConstraint<std::string> allowedValsMSE(allowedMSEcrit);
+    /**
+     * @brief Set criterion for fitting variogram models for mse computation (active only for continuous variables). This option allows you to specify the criterion to be used for fitting theoretical variogram models to the experimental variogram based on mean squared error (MSE) computation when using the --vario MODEL option for continuous variables. The choice of criterion can influence the selection of the best-fitting variogram model and can help to achieve a more accurate representation of spatial continuity in the data.
+     * @param mse Flag to set criterion for fitting variogram models for mse computation (active only for continuous variables)
+     * @note When using --vario MODEL for continuous variables, this flag becomes important for fitting theoretical variogram models to the experimental variogram based on mean squared error (MSE) computation. Available criteria include:
+     * - CRESSIE: Uses the Cressie criterion for fitting variogram models, which is a commonly used approach that weights the squared differences between the experimental and model variogram values by the number of point pairs contributing to each variogram point, providing a more robust fitting that accounts for the variability in the number of point pairs across different lag distances.
+     * - CRESSIE_WEIGHTED: Uses a weighted version of the Cressie criterion for fitting variogram models, which further emphasizes the influence of variogram points with a higher number of point pairs, providing an even more robust fitting that can help to mitigate the influence of noisy variogram points that are computed with a low number of point pairs.
+     * - CRESSIE_WEIGHTED_MODIFIED: Uses a modified weighted version of the Cressie criterion for fitting variogram models, which incorporates additional adjustments to the weighting scheme to further enhance the robustness of the fitting process, particularly in cases where the experimental variogram may have a high level of noise or variability in the number of point pairs across different lag distances.
+     * - DEFAULT: Uses a default criterion for fitting variogram models based on MSE computation, which may be predefined in the software and can provide a standard approach to variogram model fitting without requiring the user to specify a particular criterion, allowing for a more streamlined analysis when the specific choice of criterion is not a primary concern for the user.
+     * @example --vario MODEL --mse CRESSIE_WEIGHTED
+     */
     ValueArg<std::string> setMSEcriterion ("", "mse", "Set mse criterion for fitting variogram. (Active only for continuos variables).", false, "CRESSIE_WEIGHTED_MODIFIED", &allowedValsMSE, cmd);
 
 
