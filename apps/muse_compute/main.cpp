@@ -79,236 +79,299 @@ int main(int argc, char** argv)
 
     // Option 0. New project creation
     /**
-     * @brief Enable computation mode for MUSE
-     * @param compute Flag to enable computation mode
-     * @note When using -C/--compute, these flags work together:
-     *       REQUIRED flags:
-     *       - --var: Variable name is mandatory
-     *       - --geom: Geometry model is mandatory
-     *       OPTIONAL but commonly used:
-     *       - --mode: Computation mode (AUTO, MANUAL)
-     *       - --pdir: Project directory
-     *       - --sub: Sub-dataset extraction
-     * @example muse_compute -C --var temperature --geom mesh_model --mode AUTO
+     * @brief Enable computation mode for MUSE-compute application. This flag activates the computation mode of the MUSE-compute application, allowing you to perform geostatistical computations and analyses based on the specified parameters and configurations. When this flag is set, the application will execute the computational workflow defined by the provided options and parameters, enabling you to generate results such as simulations, and statistical analyses based on your project data, variogram models and settings.
+     * @note When using this flag, the following parameters become important for defining the computation workflow:
+     * - --var: Specify the variable name to analyze (mandatory)
+     * - --geom: Specify the geometry model name (mandatory)
+     * @example muse_compute -C -p /path/to/project_directory --var temperature --geom mesh_model
      */
     SwitchArg interpolationCompute      ("C", "compute", "Enable computation mode", cmd, false); //booleano
+
+    /**
+     * @brief Set project directory for MUSE-compute application. This option allows you to specify the path to the project directory for the MUSE-compute application, which is where the application will look for input data, variogram models, geometry models, and where it will save output results and logs. The project directory should contain the necessary files and subdirectories for the computation process, and specifying this path correctly is important for ensuring that the application can access the required resources and save results in the appropriate location.
+     * @required true (this parameter is mandatory for the computation process).
+     * @format string (path to the project directory)
+     * @default "path/to/project_directory" (placeholder value, should be replaced with an actual path to the project directory).
+     * @example muse_compute -C -p /path/to/project_directory --var temperature --geom mesh_model
+     */
+    ValueArg<std::string> projectFolder ("p", "pdir", "Set project directory", false, "path/to/project_directory", "path", cmd);
     
     /**
-     * @brief Set debug mode to save additional support files
-     * @param debug Flag to enable debug mode
-     * @note When debug mode is enabled, additional support files are saved during computation for troubleshooting and analysis. This may include intermediate results, logs, and diagnostic information. Use this flag when you want to investigate the computation process in more detail or when encountering issues.
-     * @example muse_compute -C --var temperature --geom mesh_model --debug
+     * @brief Set debug mode for MUSE-compute application. This flag enables debug mode in the MUSE-compute application, which allows for saving additional support files during the computation process for troubleshooting and analysis purposes. When this flag is set, the application will generate and save intermediate results, logs, and diagnostic information that can be useful for investigating the computation process in more detail or when encountering issues. This can help users to understand the internal workings of the computation, identify potential problems, and analyze the results more effectively.
+     * @default false (debug mode is disabled by default).
+     * @format boolean flag
+     * @example muse_compute -C -p /path/to/project_directory --var temperature --geom mesh_model --debug
      */
     SwitchArg setDebug ("", "debug", "Set debug mode to save additional support files", cmd, false); //booleano
 
-
     /**
-     * @brief Set computation mode
-     * @param mode Computation mode setting (default: AUTO)
-     * @note Used in combination with -C/--compute flag
-     *       Available modes: AUTO, MANUAL
+     * @brief Set computation mode for MUSE-compute application. This option allows you to specify the computation mode for the MUSE-compute application, which can influence how the computations are performed and how parameters are selected.
+     * @default "AUTO" (automatic parameter selection is applied by default).
+     * @format string
+     * @values AUTO, MANUAL
+     * @note When using this option, the following modes are available for selection:
      *       - AUTO: Automatic parameter selection
      *       - MANUAL: Manual parameter configuration required
+     * @example muse_compute -C -p /path/to/project_directory --var temperature --geom mesh_model --mode AUTO
      */
-    ValueArg<std::string> modeCompute   ("", "mode", "Set mode for compute", false, "string", "AUTO", cmd);
+    ValueArg<std::string> modeCompute   ("", "mode", "Set computation mode", false, "AUTO", "string", cmd);
     
     /**
-     * @brief Specify project directory
-     * @param pdir Path to the project directory
+     * @brief Set variable name for MUSE-compute application. This option allows you to specify the name of the variable to be processed in the MUSE-compute application. The variable name should correspond to a variable that exists in the project data, and it is mandatory when using the -C/--compute flag to ensure that the application knows which variable to analyze and perform computations on. Specifying the correct variable name is crucial for the computation process, as it determines which data will be used for variogram modeling, simulations, and other geostatistical analyses.
+     * @default "name_var" (placeholder value, should be replaced with the actual variable name from the project data).
+     * @format string (name of the variable)
+     * @required true (this parameter is mandatory when using the -C/--compute flag).
+     * @example muse_compute -C -p /path/to/project_directory --var temperature --geom mesh_model
      */
-    ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", false, "Directory", "path", cmd);
+    ValueArg<std::string> Variable      ("v", "var", "Set variable name to perform computations", false, "variable-name", "string", cmd);
     
     /**
-     * @brief Specify variable name to analyze
-     * @param var Name of the variable to process
-     * @note MANDATORY when using -C/--compute flag
-     *       The variable must exist in the project data
+     * @brief Set geometry model for MUSE-compute application. This option allows you to specify the name of the geometry model to be used in the MUSE-compute application. The geometry model should be defined in the project and can be a surface mesh, volume mesh, or any other type of geometric representation that is compatible with the application. Specifying the geometry model is mandatory when using the -C/--compute flag, as it defines the spatial framework for the computations and analyses that will be performed on the specified variable. The geometry model must be available in the project for the application to access and utilize it during the computation process.
+     * @default "name_geometry" (placeholder value, should be replaced with the actual name of the geometry model from the project).
+     * @format string (name of the geometry model)  
+     * @required true (this parameter is mandatory when using the -C/--compute flag).
+     * @example muse_compute -C -p /path/to/project_directory --var temperature --geom mesh_model
      */
-    ValueArg<std::string> Variable      ("v", "var", "Variable", false, "name_var", "string", cmd);
-    
-    /**
-     * @brief Specify geometry model name
-     * @param geom Name of the geometry model to use
-     * @note MANDATORY when using -C/--compute flag
-     *       The geometry model must be available in the project
-     */
-    ValueArg<std::string> geomModel     ("m", "geom", "Geometry model", false, "name_geometry", "string", cmd);
+    ValueArg<std::string> geomModel     ("m", "geom", "Set geometry model name to perform computations", false, "geometry-name", "string", cmd);
 
     /**
-     * @brief Extract sub-dataset based on geometry
-     * @param sub Path to sub-dataset extraction directory
+     * @brief Set extracted sub-dataset referring to specified geometry domain from project data. This option allows you to specify a sub-dataset that corresponds to a particular geometry domain within the project data (derived from muse-manipulate).
+     * @default false
+     * @format string value (name of the sub-dataset)
+     * @note When using this flag, ensure that the specified sub-dataset is properly extracted (by muse-manipulate) and corresponds to the geometry domain you want to analyze. This allows for more targeted variogram computation based on specific spatial domains within the project data.
+     * @example --sub subdataset-name
      */
-    ValueArg<std::string> subDataset    ("", "sub", "Extraction sub dataset basing on geometry", false, "Directory", "path", cmd);
+    ValueArg<std::string> subDataset        ("", "sub", "Set extracted sub-dataset referring to specified geometry domain", false, "subdataset-name", "string", cmd);
 
-    // Option 0a. Data rotation
     /**
-     * @brief Set rotation axis for data transformation
-     * @param rotaxis Axis for rotation (default: NO)
-     * @note When using rotation, these flags work together:
-     *       - --rotaxis: Rotation axis (X, Y, Z)
-     *       - --rotangle: Rotation angle (required if rotaxis != NO)
-     *       - --rotcx, --rotcy, --rotcz: Rotation center coordinates
-     * @example --rotaxis Z --rotangle 45.0 --rotcx 0.0 --rotcy 0.0
+     * @brief Set rotation axis for data rotation. This option allows you to specify the axis around which the data will be rotated. The rotation can be applied to the spatial coordinates of the data, which may be useful for aligning the data with a particular orientation or for performing certain types of analyses that require a specific coordinate system.
+     * @default NO (no rotation is applied)
+     * @format string value (X, Y, Z)
+     * @note When using this flag, you typically need to specify the rotation angle (with --rotangle) and the rotation center coordinates (with --rotcx, --rotcy, --rotcz) to fully define the rotation transformation. The rotation axis can be set to X, Y, or Z depending on the desired rotation direction.
+     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
-    ValueArg<std::string> setRotAxis    ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
+    ValueArg<std::string> setRotAxis        ("", "rotaxis", "Set rotation axis for data rotation (X, Y, Z)", false, "NO", "string", cmd);
     
     /**
-     * @brief Set rotation angle in degrees (clockwise)
-     * @param rotangle Rotation angle in degrees
-     * @note Used together with --rotaxis flag. Required when rotaxis != NO
+     * @brief Set rotation angle (clockwise) for data rotation. This option allows you to specify the angle by which the data will be rotated in a clockwise direction. The rotation is applied around the axis specified with --rotaxis and centered at the coordinates specified with --rotcx, --rotcy, and --rotcz.
+     * @default 0.0 (no rotation)
+     * @format double value (rotation angle in degrees)
+     * @note When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation center coordinates (with --rotcx, --rotcy, --rotcz) to fully define the rotation transformation. The rotation angle should be provided in degrees, and the rotation will be applied in a clockwise direction based on the specified axis and center.
+     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
-    ValueArg<double> setRotAngle        ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
+    ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise) for data rotation", false, 0.0, "double", cmd);
     
     /**
-     * @brief Set X coordinate of rotation center
-     * @param rotcx X coordinate of rotation center
-     * @note Used together with --rotaxis and --rotangle for data rotation
+     * @brief Set rotation center x coordinate for data rotation. This option allows you to specify the x-coordinate of the center point around which the data will be rotated. The rotation is applied based on the axis specified with --rotaxis and the angle specified with --rotangle.
+     * @default 0.0 (rotation around the origin)
+     * @format double value (x coordinate of rotation center)
+     * @note Default is 0.0 (rotation around the origin). When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation angle (with --rotangle) to fully define the rotation transformation. The rotation center coordinates (rotcx, rotcy, rotcz) define the point in space around which the rotation will occur. The x-coordinate (rotcx) is used in conjunction with the y and z coordinates (rotcy, rotcz) to specify the full rotation center.
+     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
-    ValueArg<double> setRotCenterX      ("", "rotcx", "Set rotation center x", false, 0.0, "double", cmd);
+    ValueArg<double> setRotCenterX          ("", "rotcx", "Set rotation center x coordinate for data rotation", false, 0.0, "double", cmd);
     
     /**
-     * @brief Set Y coordinate of rotation center
-     * @param rotcy Y coordinate of rotation center
+     * @brief Set rotation center y coordinate for data rotation. This option allows you to specify the y-coordinate of the center point around which the data will be rotated. The rotation is applied based on the axis specified with --rotaxis and the angle specified with --rotangle.
+     * @default 0.0 (rotation around the origin)
+     * @format double value (y coordinate of rotation center)
+     * @note Default is 0.0 (rotation around the origin). When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation angle (with --rotangle) to fully define the rotation transformation. The rotation center coordinates (rotcx, rotcy, rotcz) define the point in space around which the rotation will occur. The y-coordinate (rotcy) is used in conjunction with the x and z coordinates (rotcx, rotcz) to specify the full rotation center.
+     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
-    ValueArg<double> setRotCenterY      ("", "rotcy", "Set rotation center y", false, 0.0, "double", cmd);
+    ValueArg<double> setRotCenterY          ("", "rotcy", "Set rotation center y coordinate for data rotation", false, 0.0, "double", cmd);
     
     /**
-     * @brief Set Z coordinate of rotation center
-     * @param rotcz Z coordinate of rotation center
+     * @brief Set rotation center z coordinate for data rotation. This option allows you to specify the z-coordinate of the center point around which the data will be rotated. The rotation is applied based on the axis specified with --rotaxis and the angle specified with --rotangle.
+     * @default 0.0 (rotation around the origin)
+     * @format double value (z coordinate of rotation center)
+     * @note Default is 0.0 (rotation around the origin). When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation angle (with --rotangle) to fully define the rotation transformation. The rotation center coordinates (rotcx, rotcy, rotcz) define the point in space around which the rotation will occur. The z-coordinate (rotcz) is used in conjunction with the x and y coordinates (rotcx, rotcy) to specify the full rotation center.
+     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
-    ValueArg<double> setRotCenterZ      ("", "rotcz", "Set rotation center z", false, 0.0, "double", cmd);
-
-
-    //ValueArg<std::string> filenameStrat ("f", "filestrat", "Set filename of samples in stratigraphic coordinates", false, "filename", "path", cmd);
+    ValueArg<double> setRotCenterZ          ("", "rotcz", "Set rotation center z coordinate for data rotation", false, 0.0, "double", cmd);
     
     /**
-     * @brief Set fixed variogram parameters
-     * @param vario Path to variogram configuration file
+     * @brief Set loading of variogram configuration from file. This option allows you to specify a path to a variogram configuration file that contains predefined settings for variogram modeling and computation. The configuration file can include parameters such as variogram type, direction, dimension, range, and other relevant settings that can be loaded into the application to streamline the variogram setup process. Using a configuration file can help to ensure consistency in variogram settings across different projects or analyses and can save time by allowing you to reuse predefined configurations.
+     * @default "none" (no configuration file is loaded)
+     * @format string value (path to the variogram configuration file)
+     * @example --vario path/to/variogram_config.txt
      */
-    ValueArg<std::string> setVario      ("", "vario", "Set fixed variogram", false, "string", "path", cmd);
-
+    ValueArg<std::string> setVario      ("", "vario", "Set loading of variogram configuration from file", false, "none", "string", cmd);
 
     // Option: types of variogram directions
     std::vector<std::string> allowedVarioDir = {"OMNI","DIR"};
     ValuesConstraint<std::string> allowedValsVD(allowedVarioDir);
-    
     /**
-     * @brief Set variogram direction type
-     * @param dir Type of variogram direction (OMNI or DIR)
+     * @brief Set variogram direction type related to variogram configuration. This option allows you to specify the type of variogram direction to be used in the variogram modeling and computation process. The direction type can influence how the variogram is computed and interpreted, especially in cases where anisotropy is present in the data.
+     * @default "OMNI" (omnidirectional variogram)
+     * @format string value (type of variogram direction)
+     * @values OMNI, DIR
+     * @note When using this flag, the following direction types are available for selection:   
+     * - OMNI: An omnidirectional variogram is computed, which does not consider any specific directionality in the spatial data. This type of variogram is useful when the spatial continuity is assumed to be the same in all directions.
+     * - DIR: A directional variogram is computed, which considers specific directions in the spatial data. This type of variogram is useful when anisotropy is present, meaning that the spatial continuity varies with direction. When using DIR, you typically need to specify the direction angles and tolerances to define the directional variogram computation.
+     * @example --dir DIR
      */
-    ValueArg<std::string> varioDirection ("", "dir", "type of variogram direction", false, "OMNI", &allowedValsVD, cmd);
+    ValueArg<std::string> varioDirection ("", "dir", "Set variogram direction type", false, "OMNI", &allowedValsVD, cmd);
 
     // Option: types of variogram dimensions
     std::vector<std::string> allowedVarioDim = {"3D","3Dxy","3Dz","2D","1Dz","1D"};
     ValuesConstraint<std::string> allowedValsVDm(allowedVarioDim);
-    
     /**
-     * @brief Set variogram dimension type
-     * @param dim Type of variogram dimension (3D, 3Dxy, 3Dz, 2D, 1Dz, 1D)
+     * @brief Set variogram dimension type related to variogram configuration. This option allows you to specify the type of variogram dimension to be used in the variogram modeling and computation process. The dimension type can influence how the variogram is computed and interpreted, especially in cases where the spatial data has different characteristics in different dimensions.
+     * @default "3D" (three-dimensional variogram)
+     * @format string value (type of variogram dimension)
+     * @values 3D, 3Dxy, 3Dz, 2D, 1Dz, 1D
      * @note Variogram configuration flags work together:
      *       - --dir: Direction type (OMNI, DIR)
      *       - --dim: Dimension type
      *       - --zrange: Z direction range (used with 3D dimensions)
      * @example --dir OMNI --dim 3D --zrange 50.0
      */
-    ValueArg<std::string> varioDimension ("", "dim", "type of variogram dimension", false, "3D", &allowedValsVDm, cmd);
+    ValueArg<std::string> varioDimension ("", "dim", "Set variogram dimension type", false, "3D", &allowedValsVDm, cmd);
     
     /**
-     * @brief Set range in Z direction
-     * @param zrange Range value in Z direction
+     * @brief Set range in Z direction. This option allows you to specify the range value in the Z direction for variogram computation when using three-dimensional variogram dimensions (3Dxy). The Z range can influence how the variogram is computed and interpreted in cases where there is significant variability in the vertical direction. Setting an appropriate Z range can help to capture the spatial continuity and variability in the Z direction more effectively, especially when the data exhibits different characteristics in the vertical dimension compared to the horizontal dimensions.
+     * @default 1.0 (default Z range value)
+     * @format double value (range in Z direction)
+     * @note This flag is used in conjunction with the variogram configuration flags --dir and --dim. When using three-dimensional variogram dimensions (3Dxy), this flag becomes important for defining the Z direction range, which can help to manage the influence of vertical variability in the variogram computation and ensure that the variogram captures the spatial continuity in the Z direction appropriately.
+     * @example --dir OMNI --dim 3Dxy --zrange 50.0
      */
-    ValueArg<double> setZRange           ("", "zrange", "Set range in Z direction", false, 1, "double", cmd);
+    ValueArg<double> setZRange           ("", "zrange", "Set range in Z direction", false, 1.0, "double", cmd);
 
     // Option: set interpolation criteria
     std::vector<std::string> allowedCRIT = {"SGS","IK","SISIM"};
     ValuesConstraint<std::string> allowedValsCRIT(allowedCRIT);
-    
     /**
-     * @brief Set interpolation algorithm
-     * @param crit Interpolation algorithm (SGS, IK, or SISIM)
+     * @brief Set interpolation algorithm for geostatistical computations. This option allows you to specify the interpolation algorithm to be used in the geostatistical computations and analyses performed by the MUSE-compute application. The choice of interpolation algorithm can influence the results of simulations, predictions, and other analyses based on the spatial data and variogram models.
+     * @default "SGS" (sequential Gaussian simulation)
+     * @format string value (type of interpolation algorithm)
+     * @values SGS, IK, SISIM
+     * @note When using this flag, the following interpolation algorithms are available for selection:
+     *   - SGS: Sequential Gaussian Simulation, a geostatistical simulation method that generates realizations of spatial variables based on a Gaussian distribution and the variogram model.
+     *   - IK: Indicator Kriging, a geostatistical interpolation method that estimates the probability of a variable exceeding a certain threshold based on indicator variables and the variogram model.
+     *   - SISIM: Sequential Indicator Simulation, a geostatistical simulation method that generates realizations of spatial variables based on indicator variables and the variogram model, often used for categorical or non-Gaussian data.
+     * @example --crit IK
      */
-    ValueArg<std::string> setCRIT       ("", "crit", "Set interpolation algorithm", false, "SGS", &allowedValsCRIT, cmd);
+    ValueArg<std::string> setCRIT       ("", "crit", "Set interpolation algorithm for geostatistical computations", false, "SGS", &allowedValsCRIT, cmd);
 
     // Option 0b. Parameters for simulations
     /**
-     * @brief Enable back normal score transformation integrated into SGS
-     * @param bnscore Flag to enable back normal score transformation
+     * @brief Enable back normal score transformation integrated into SGS. This flag allows you to enable the back normal score transformation as part of the sequential Gaussian simulation (SGS) process. When this flag is set, the application will perform a back normal score transformation on the data after the SGS computations. The back normal score transformation can be particularly useful when dealing with skewed or non-normal data distributions, as it can help to normalize the data and make it more suitable for geostatistical modeling and simulation.
+     * @default false (back normal score transformation is disabled by default).
+     * @format boolean flag
+     * @note When using this flag, it is typically applied in conjunction with the --crit SGS option, as it is specifically designed to work with the sequential Gaussian simulation method. Enabling this flag can help to improve the quality of simulations and predictions when the data exhibits non-normal characteristics, by transforming the data back to a normal distribution after the SGS computations.
+     * @example --crit SGS --bnscore
      */
-    SwitchArg setBackNormalScore        ("", "bnscore", "Set to do back normal score integrated into SGS", cmd, false); //booleano
+    SwitchArg setBackNormalScore        ("", "bnscore", "Enable back normal score transformation (integrated into SGS algorithm)", cmd, false); //booleano
     
     /**
-     * @brief Set extrapolation type
+     * @brief Set extrapolation type in back normal score transformation. This option allows you to specify the type of extrapolation to be applied in the back normal score transformation process. Extrapolation can be used to manage values that fall outside the range of the original data distribution, especially when performing transformations on skewed or non-normal data. The choice of extrapolation type can influence how the back normal score transformation handles extreme values and can help to ensure that the transformed data remains within a reasonable range, which can be important for maintaining the integrity of the geostatistical modeling and simulation process.
+     * @default "none" (no extrapolation is applied)
+     * @format string value (type of extrapolation)
+     * @values none, Extr
      * @param extr Type of extrapolation (default: none)
-     * @note When using extrapolation (extr != "none"), these flags work together:
-     *       - --minextr: Minimum extrapolation value
-     *       - --maxextr: Maximum extrapolation value
-     * @example --extr linear --minextr 0.0 --maxextr 100.0
+     * @note When using this flag, the following extrapolation types are available for selection:
+     *       - none: No extrapolation is applied in the back normal score transformation.
+     *      - Extr: Extrapolation is applied in the back normal score transformation, and the specific method of extrapolation can be defined based on the requirements of the data and analysis. When using extrapolation, you typically need to specify the minimum and maximum extrapolation values (with --minextr and --maxextr) to define the range of extrapolation for values that fall outside the original data distribution.
+     * @example --extr Extr --minextr 10.0 --maxextr 70.0
      */
-    ValueArg<std::string> setExtrType   ("", "extr", "Set extrapolation type", false, "none", "string", cmd); //di default settata su "none"
+    ValueArg<std::string> setExtrType   ("", "extr", "Set extrapolation type in back normal score transformation", false, "none", "string", cmd); //di default settata su "none"
     
     /**
-     * @brief Set minimum value for extrapolation
-     * @param minextr Minimum extrapolation value
+     * @brief Set minimum value for extrapolation in back normal score transformation. This option allows you to specify the minimum value to be used for extrapolation in the back normal score transformation process. When extrapolation is enabled (with --extr Extr), this minimum value defines the lower bound for extrapolating values that fall outside the original data distribution. Setting an appropriate minimum extrapolation value can help to manage extreme values and ensure that the transformed data remains within a reasonable range, which can be important for maintaining the integrity of geostatistical modeling and simulation.
+     * @default 0.0 (default minimum extrapolation value)
+     * @format double value (minimum extrapolation value)
+     * @required false (this parameter is optional and only relevant when extrapolation is enabled)
+     * @note This flag is used in conjunction with the --extr flag when extrapolation is enabled. When using extrapolation, you typically need to specify both the minimum and maximum extrapolation values (with --minextr and --maxextr) to define the range of extrapolation for values that fall outside the original data distribution. Setting appropriate minimum and maximum extrapolation values can help to ensure that the back normal score transformation handles extreme values effectively and maintains the quality of the geostatistical modeling and simulation process.
+     * @example --extr Extr --minextr 10.0
      */
-    ValueArg<double> setMinExtr         ("", "minextr", "Min value for extrapolation", false, 0.0, "double", cmd); //n. di simulazioni = 10 di default
+    ValueArg<double> setMinExtr         ("", "minextr", "Set minimum value for extrapolation in back normal score transformation", false, 0.0, "double", cmd); //n. di simulazioni = 10 di default
     
     /**
-     * @brief Set maximum value for extrapolation
-     * @param maxextr Maximum extrapolation value
+     * @brief Set maximum value for extrapolation in back normal score transformation. This option allows you to specify the maximum value to be used for extrapolation in the back normal score transformation process. When extrapolation is enabled (with --extr Extr), this maximum value defines the upper bound for extrapolating values that fall outside the original data distribution. Setting an appropriate maximum extrapolation value can help to manage extreme values and ensure that the transformed data remains within a reasonable range, which can be important for maintaining the integrity of geostatistical modeling and simulation.
+     * @default 100000.0 (default maximum extrapolation value)
+     * @format double value (maximum extrapolation value)
+     * @required false (this parameter is optional and only relevant when extrapolation is enabled)
+     * @note This flag is used in conjunction with the --extr flag when extrapolation is enabled. When using extrapolation, you typically need to specify both the minimum and maximum extrapolation values (with --minextr and --maxextr) to define the range of extrapolation for values that fall outside the original data distribution. Setting appropriate minimum and maximum extrapolation values can help to ensure that the back normal score transformation handles extreme values effectively and maintains the quality of the geostatistical modeling and simulation process.
+     * @example --extr Extr --maxextr 70.0
      */
-    ValueArg<double> setMaxExtr         ("", "maxextr", "Max value for extrapolation", false, 100000.0, "double", cmd); //n. di simulazioni = 10 di default
+    ValueArg<double> setMaxExtr         ("", "maxextr", "Set maximum value for extrapolation in back normal score transformation", false, 100000.0, "double", cmd); //n. di simulazioni = 10 di default
 
     /**
-     * @brief Set number of simulation iterations
-     * @param nsim Number of simulation iterations (default: 10)
+     * @brief Set number of simulation iterations. This option allows you to specify the number of iterations to be performed during the simulation process. The number of iterations can influence the quality and stability of the simulation results, as well as the computational time required to complete the simulations. Setting an appropriate number of iterations can help to ensure that the simulations converge to a stable solution and that the results are reliable for analysis and decision-making.
+     * @default 10 (default number of simulation iterations)
+     * @format unsigned integer value (number of simulation iterations)
+     * @required false (this parameter is optional and can be adjusted based on the desired balance between simulation quality and computational time)
+     * @note When setting the number of simulation iterations, consider the complexity of the spatial data, the variogram model, and the computational resources available. In general, a higher number of iterations can lead to more stable and reliable simulation results, but it may also increase the computational time required to complete the simulations. It is often recommended to start with a moderate number of iterations (e.g., 10) and adjust based on the observed results and computational performance.
+     * @example --nsim 20
      */
-    ValueArg<uint> setNsim              ("", "nsim", "Number of iterations", false, 10, "uint", cmd); //n. di simulazioni = 10 di default
+    ValueArg<uint> setNsim              ("", "nsim", "Set number of iterations of simulation process", false, 10, "uint", cmd); //n. di simulazioni = 10 di default
 
     // Option: set 2D declustering on data
     /**
-     * @brief Set cell size for 2D declustering
-     * @param csize Cell size for 2D declustering
-     * @note When using 2D declustering, these flags work together:
-     *       - --csize: Cell size (required for declustering)
-     *       - --nstep: Number of steps for grid translation
-     * @example --csize 10.0 --nstep 5
+     * @brief Set cell size for 2D declustering. This option allows you to specify the cell size to be used for 2D declustering when computing the variogram. The cell size defines the spatial resolution of the grid used for declustering, where data points within the same cell are considered part of the same cluster. Choosing an appropriate cell size is important for effective declustering, as it can influence the weights assigned to data points and ultimately affect the variogram results.
+     * @default 0.0 (no cell size specified).
+     * @format double value (cell size)
+     * @required Must be specified when using --decl flag for 2D declustering.
+     * @note The specified cell size should be chosen based on the spatial characteristics of the data and the desired level of declustering. 
+     * It is often recommended to experiment with different cell sizes to find the optimal value for your specific dataset and analysis goals.
+     * When using declustering, the cell size should be provided in the same units as the spatial coordinates of the data (e.g., meters) to ensure proper declustering based on the spatial distribution of the data points.
+     * @example --decl --csize 100 --nstep 5 
      */
     ValueArg<double> setCellSize            ("", "csize", "Set cell size for 2D declustering", false, 0.0, "double", cmd);
-    
-    /**
-     * @brief Set number of steps for 2D declustering grid translation
-     * @param nstep Number of steps for 2D declustering
-     */
-    ValueArg<int> setNStep                  ("", "nstep", "Set n steps for 2D declustering (grid translation)", false, 0, "int", cmd);
 
-    // Option 1. Statistical analysis on simulation results
     /**
-     * @brief Enable statistical analysis on simulation results
-     * @param stats Flag to compute statistical analysis
+     * @brief Set number of grid translation steps for 2D declustering. This option allows you to specify the number of grid translation steps to be used for 2D declustering when computing the variogram. Grid translation is a technique used in declustering to reduce the influence of clustered data points by translating the grid multiple times and averaging the results. The number of steps determines how many times the grid will be translated, which can help to further mitigate the effects of clustering in the data.
+     * @param nstep Flag to set number of grid translation steps for 2D declustering
+     * @default 0 (no grid translation). 
+     * @format positive integer
+     * @required Must be specified when using --decl flag for 2D declustering.
+     * @note The specified number of steps should be chosen based on the level of declustering desired and the computational resources available, as increasing the number of steps can lead to more effective declustering but also increases the computational time required for variogram computation.
+     * When using declustering, the number of grid translation steps should be a positive integer, and it is often recommended to experiment with different values to find the optimal number of steps for your specific dataset and analysis goals.
+     * @example --decl --csize 100 --nstep 5
+     */
+    ValueArg<int> setNStep                  ("", "nstep", "Set number of grid translation steps for 2D declustering", false, 0, "int", cmd);
+
+    /**
+     * @brief Enable statistical analysis on simulation results. This flag allows you to enable the computation of statistical analysis on the results generated from the simulations. When this flag is set, the application will perform various statistical analyses on the simulated data, which can include mean, variance, quantiles, and other relevant statistics that can help to summarize and interpret the simulation results. Enabling statistical analysis can provide valuable insights into the characteristics of the simulated data and can assist in making informed decisions based on the simulation outcomes.
+     * @default false (statistical analysis is disabled by default).
+     * @format boolean flag
+     * @note When using this flag, the application will automatically compute and save the statistical analysis results based on the simulations performed on the _stats folder within the project directory. 
+     * It requires the following parameters to be specified for the computation process:
+     * - --var: Specify the variable name to analyze (mandatory)
+     * - --geom: Specify the geometry model name (mandatory)
+     * - --dir: Specify the directory for the simulation results (mandatory)
+     * - --dim: Specify the dimensionality of the analysis (mandatory)
+     * - --space: Specify the space type for analysis (optional, default: NORMAL)
+     * @example -S -p /path/to/project_directory --var temperature --geom mesh_model --dir DIR --dim 2D --space VAR
      */
     SwitchArg statisticalAnalysis       ("S", "stats", "Compute statistical analysis on simulation results", cmd, false); //booleano
     
     // Option: set interpolation criteria
     std::vector<std::string> allowedSPACE = {"NORMAL","VAR"};
     ValuesConstraint<std::string> allowedValsSPACE(allowedSPACE);
-    
     /**
-     * @brief Set space type for analysis
-     * @param space Space type (NORMAL or VAR)
+     * @brief Set space type for statistical analysis on simulation results. This option allows you to specify the type of space to be used for the statistical analysis of simulation results. The space type can influence how the statistical analysis is performed and interpreted, especially in cases where the spatial characteristics of the data play a significant role in the analysis.
+     * @default "NORMAL" (normal space is used by default).
+     * @format string value (type of space)
+     * @values NORMAL, VAR
+     * @note When using this flag, the following space types are available for selection:
+     *       - NORMAL: The statistical analysis is performed in the normal data space (after normal score transformation).
+     *       - VAR: The statistical analysis is performed in the original variable space (after back normal score transformation).
+     * @example -S -p /path/to/project_directory --var temperature --geom mesh_model --dir DIR --dim 2D --space VAR
      */
-    ValueArg<std::string> setSpace      ("", "space", "Set space", false, "NORMAL", &allowedValsSPACE, cmd);
-
+    ValueArg<std::string> setSpace      ("", "space", "Set space type for statistical analysis", false, "NORMAL", &allowedValsSPACE, cmd);
 
     // Option 2. Back normal score
     /**
-     * @brief Enable back normal score transformation
-     * @param bns Flag to perform back normal score transformation
+     * @brief Enable back normal score transformation after SGS computations. This flag allows you to enable the back normal score transformation after saving the results of the sequential Gaussian simulation (SGS) process. When this flag is set, the application will perform a back normal score transformation on the data after the SGS computations. 
+     * @default false (back normal score transformation is disabled by default).
+     * @format boolean flag
+     * @note When using this flag, it is typically applied in conjunction with the --crit SGS option, as it is specifically designed to work with the sequential Gaussian simulation method. Enabling this flag can help to improve the quality of simulations and predictions when the data exhibits non-normal characteristics, by transforming the data back to a normal distribution after the SGS computations. The back normal score transformation can be particularly useful for managing skewed or non-normal data distributions, ensuring that the transformed data is more suitable for geostatistical modeling and simulation.
+     * @example -B -p /path/to/project_directory --var temperature --geom mesh_model --crit SGS --extr Extr --minextr 10.0 --maxextr 70.0
      */
-    SwitchArg doBackNormalScore         ("B", "bns", "Do back normal score", cmd, false); //booleano
+    SwitchArg doBackNormalScore         ("B", "back-normalscore", "Enable back normal score transformation", cmd, false); //booleano
     
     /**
      * @brief Set input file path
-     * @param file Path to input file
      */
     ValueArg<std::string> setFile       ("f", "file", "Set file", false, "Directory", "path", cmd);
 
@@ -317,8 +380,7 @@ int main(int argc, char** argv)
 
     // Option 3. Database creation to store simulation results
     /**
-     * @brief Enable database creation from simulations
-     * @param db Flag to create database from simulation results
+     * @brief Enable database creation from simulations (preliminary version of database implementation). This flag allows you to enable the creation of a database to store the results generated from the simulations. When this flag is set, the application will create a database structure to organize and manage the simulation results, which can facilitate data retrieval, and analysis. The database can be designed to store various types of information related to the simulations, such as input parameters, variogram models, simulation outputs, and statistical analyses.
      */
     SwitchArg createDatabase            ("D", "db", "Create database from simulations", cmd, false); //booleano
 
@@ -327,47 +389,67 @@ int main(int argc, char** argv)
     // ADDITIONAL FUNCTIONALITIES:
 
     /**
-     * @brief Set number of input samples
-     * @param input Number of input samples to use (default: 4)
+     * @brief Set number of input samples. This option allows you to specify the number of input samples to be used in the nearest neighbor search for the SGS algorithm. The number of input samples can influence the quality and accuracy of the simulations, as it determines how many neighboring data points are considered when performing the simulation process. Setting an appropriate number of input samples can help to ensure that the simulations capture the spatial variability of the data effectively while also managing computational resources.
+     * @default 4 (default number of input samples)
+     * @format unsigned integer value (number of input samples)
+     * @required false (this parameter is optional and can be adjusted based on the desired balance between simulation quality and computational time)
+     * @note When setting the number of input samples, consider the spatial density of the data and the variogram model, as well as the computational resources available. In general, a higher number of input samples can lead to more accurate simulations by capturing more spatial variability, but it may also increase the computational time required to complete the simulations. It is often recommended to start with a moderate number of input samples (e.g., 4) and adjust based on the observed results and computational performance.
+     * @example --input 6
      */
     ValueArg<uint> setInputSamples      ("", "input", "Set number of input samples", false, 4, "int", cmd);
     
     /**
-     * @brief Set number of simulated points
-     * @param simulated Number of points to simulate (default: 3)
+     * @brief Set number of simulated points. This option allows you to specify the number of points to be simulated during the simulation process. The number of simulated points can influence the quality and stability of the simulation results, as well as the computational time required to complete the simulations. Setting an appropriate number of simulated points can help to ensure that the simulations capture the spatial variability of the data effectively while also managing computational resources.
+     * @default 3 (default number of simulated points)
+     * @format unsigned integer value (number of simulated points)
+     * @required false (this parameter is optional and can be adjusted based on the desired balance between simulation quality and computational time)
+     * @note When setting the number of simulated points, consider the spatial density of the data and the variogram model, as well as the computational resources available. In general, a higher number of simulated points can lead to more accurate simulations by capturing more spatial variability, but it may also increase the computational time required to complete the simulations. It is often recommended to start with a moderate number of simulated points (e.g., 3) and adjust based on the observed results and computational performance.
+     * @example --simulated 5
      */
     ValueArg<uint> setSimulatedPoints   ("", "simulated", "Set number of simulated points", false, 3, "int", cmd);
     
     /**
-     * @brief Set scale factor of search radius
-     * @param scaleradius Scale factor for search radius (default: 1.0)
+     * @brief Set scale factor of search radius. This option allows you to specify a scale factor for the search radius used in the nearest neighbor search during the simulation algorithm. The search radius determines how far the algorithm looks for neighboring data points when performing simulations, and the scale factor can be used to adjust the size of this search radius based on the spatial characteristics of the data and the variogram model. Setting an appropriate scale factor can help to ensure that the simulations capture the spatial variability of the data effectively while also managing computational resources.
+     * @default 1.0 (default scale factor for search radius)
+     * @format double value (scale factor for search radius)
+     * @required false (this parameter is optional and can be adjusted based on the desired balance between simulation quality and computational time)
+     * @note When setting the scale factor for the search radius, consider the spatial density of the data and the variogram model, as well as the computational resources available. In general, a higher scale factor can lead to more accurate simulations by capturing more spatial variability, but it may also increase the computational time required to complete the simulations. It is often recommended to start with a moderate scale factor (e.g., 1.0) and adjust based on the observed results and computational performance.
+     * @example --scaleradius 1.5
      */
     ValueArg<double> setScaleRadius     ("", "scaleradius", "Set scale factor of search radius", false, 1.0, "double", cmd);
     
     /**
-     * @brief Enable octant search in SGS algorithm
-     * @param octant Flag to enable octant search
+     * @brief Set octant search in simulation algorithm. This flag allows you to enable the octant search method in the simulation algorithm, which can be used to optimize the nearest neighbor search process. When this flag is set, the algorithm will divide the search space into octants (in 3D) or quadrants (in 2D) and perform the search within these subdivisions, which can help to reduce the computational time required for finding neighboring data points during simulations. Enabling octant search can be particularly beneficial when dealing with large datasets or complex variogram models, as it can improve the efficiency of the simulation process while still capturing the spatial variability of the data effectively.
+     * @default false (octant search is disabled by default).
+     * @format boolean flag
+     * @example --octant
      */
-    SwitchArg doOctantSearch            ("", "octant", "Do octant search in SGS algorithm", cmd, false); //booleano
+    SwitchArg doOctantSearch            ("", "octant", "Set octant search in simulation algorithm", cmd, false); //booleano
 
     /**
-     * @brief Enable CSV format for output files
-     * @param csv Flag to save files in CSV format
+     * @brief Set CSV format for output files. This flag allows you to specify that the output files generated by the application should be saved in CSV (Comma-Separated Values) format. When this flag is set, the application will format the output data as CSV, which can be easily opened and analyzed using spreadsheet software or other data analysis tools. Saving output files in CSV format can facilitate data sharing and further analysis, as CSV is a widely supported format for tabular data.
+     * @default false (CSV format is disabled by default)
+     * @format boolean flag
+     * @example --csv
      */
-    SwitchArg csvConversion             ("", "csv", "Saving file as csv", cmd, false); //booleano
+    SwitchArg csvConversion             ("", "csv", "Set CSV format for output files", cmd, false); //booleano
 
     std::vector<std::string> allowedSGS = {"MEAN","VECSIM"};
     ValuesConstraint<std::string> allowedValsSGS(allowedSGS);
-    
     /**
-     * @brief Set type of SGS output
-     * @param out Type of SGS output (MEAN or VECSIM)
+     * @brief Set type of SGS output. This option allows you to specify the type of output to be generated from the sequential Gaussian simulation (SGS) process (due to dual version of SGS algorithm in geostatslib).
+     * @default "MEAN" (mean of simulations is used as default SGS output)
+     * @format string value (type of SGS output)
+     * @values MEAN, VECSIM
+     * @example --crit SGS --out VECSIM
      */
-    ValueArg<std::string> setSGSoutput  ("", "out", "Set type of SGS output", false, "MEAN", &allowedValsSGS, cmd); //di default settata su "none"
+    ValueArg<std::string> setSGSoutput  ("", "out", "Set type of SGS output (due to dual version of SGS algorithm in geostatslib)", false, "MEAN", &allowedValsSGS, cmd); //di default settata su "none"
 
     /**
-     * @brief Set data format encoding for output
-     * @param format Enable data format encoding (default: YES)
+     * @brief Set flag to json output for data format encoding. This flag allows you to specify whether the output data should be encoded in JSON format, which can be useful for structured data representation and interoperability with other applications. When this flag is set, the application will format the output data as JSON, which can facilitate data sharing and further analysis, as JSON is a widely supported format for structured data.
+     * @default YES (JSON format encoding is enabled by default)
+     * @format string value (YES or NO for JSON format encoding)
+     * @example --format NO
      */
     ValueArg<std::string> setFormat     ("", "format", "Set for encoding output by data format", false, "YES", "string", cmd);
 
