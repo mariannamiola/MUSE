@@ -34,7 +34,7 @@ geom_folder=project_folder+'/out/geometry/volume'
 
 compute_folder=project_folder+'/out/compute'
 
-sim_name='sisim'
+sim_name='/_stats/cat_best'
 pdf_name='pdf_cat_'
 
 csv_file=script_dir+'/../../'+compute_folder+'/'+compute_sim+'/'+sim_name+'.csv'

@@ -258,6 +258,8 @@ export GEOMNAME=${DEM}-${DEM}_dz
 muse_vario -V -p ${WP} -v ${VAR} --sttype PROPORTIONAL -f samples_${GEOMNAME} --sub ${GEOMNAME} --vario MODEL --dir ${DIR} --dim ${DIM} --eps 5.0 --lagspac CONSTANT --zdegtol 5 --itype SPHERICAL!4 --inugget 0.04!4 --itype SPHERICAL!5 --inugget 0.06!5 --itype SPHERICAL!6 --inugget 0.12!6 --imaxdist 2000!5 ##--inugget 0.07!4
 muse_vario -V -p ${WP} -v ${VAR} --sttype PROPORTIONAL -f samples_${GEOMNAME} --sub ${GEOMNAME} --vario MODEL --dir ${DIR} --dim 3Dz --lagspac CONSTANT --zdegtol 5 --eps 5.0
 
+
+
 #compute:
 ##########  COMPUTE  ###########
 export GEOMNAME=${DEM}-${DEM}_dz
