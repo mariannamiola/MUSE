@@ -85,7 +85,8 @@ MUSE_test
 
 # folder
 apps/data/output
-docs/
+docs/html/*
+docs/md/*
 
 # example 12_pianPadana_3D_hex_top
 examples/12_pianPadana_3D_hex_top/_fig_1Dprofile
