@@ -44,6 +44,11 @@
       "n_cat": 8
     }
   },
+  
+  "view": {
+    "plane": "XZ",
+    "distance_factor": 1.5
+  },  
 
   "output": {
     "save": true,

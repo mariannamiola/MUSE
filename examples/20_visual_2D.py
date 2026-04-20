@@ -230,9 +230,28 @@ ColorBy(appendAttributes1Display, ('CELLS', config["columns"]["scalarfield"]["va
 
 # reset view to fit data bounds
 renderView1.ResetCamera()
-#renderView1.CameraPosition = [23.673108484339377, 26.10432893807473, 136.60254037844388]
-#renderView1.CameraFocalPoint = [23.673108484339377, 26.10432893807473, 0.0]
-#renderView1.CameraFocalDisk = 1.0
+
+view_plane = config.get("view", {}).get("plane", "XY").upper()
+dist_factor = config.get("view", {}).get("distance_factor", 1.5)
+
+bounds = appendAttributes1.GetDataInformation().GetBounds()
+cx = (bounds[0] + bounds[1]) / 2.0
+cy = (bounds[2] + bounds[3]) / 2.0
+cz = (bounds[4] + bounds[5]) / 2.0
+extent = max(bounds[1]-bounds[0], bounds[3]-bounds[2], bounds[5]-bounds[4])
+distance = extent * dist_factor
+
+camera_settings = {
+    "XY": {"pos": [cx, cy, cz + distance], "up": [0, 1, 0]},
+    "XZ": {"pos": [cx, cy + distance, cz], "up": [0, 0, 1]},
+    "YZ": {"pos": [cx - distance, cy, cz], "up": [0, 0, 1]},
+}
+
+cam = camera_settings.get(view_plane, camera_settings["XY"])
+renderView1.CameraFocalPoint = [cx, cy, cz]
+renderView1.CameraPosition   = cam["pos"]
+renderView1.CameraViewUp     = cam["up"]
+renderView1.CameraParallelProjection = 1
 
 # To save a specific target resolution, rather than using the
 # the current view (or layout) size, and override the color palette.
