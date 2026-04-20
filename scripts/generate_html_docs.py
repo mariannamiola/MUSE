@@ -33,7 +33,7 @@ def markdown_to_html(md_content: str) -> str:
     html = re.sub(r'^<strong>Type:</strong>(.+)$', r'<p><strong>Type:</strong>\1</p>', html, flags=re.MULTILINE)
     html = re.sub(r'^<strong>Description:</strong>(.+)$', r'<p><strong>Description:</strong>\1</p>', html, flags=re.MULTILINE)
     
-    # Special formatting for Dependencies and Examples
+    # Special formatting for Dependencies, Examples, and Required
     html = re.sub(r'<strong>Dependencies:</strong>\s*(.+?)(?=\n\n|\n<strong>|\n$)', 
                   r'<div class="dependencies"><strong>Dependencies:</strong> \1</div>', html, flags=re.DOTALL)
     html = re.sub(r'<strong>Example:</strong>\s*`(.+?)`', 
@@ -352,6 +352,16 @@ def create_html_template(title: str, content: str, is_index: bool = False) -> st
         }}
         .example strong {{
             color: var(--success-color);
+        }}
+        .required {{
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--danger-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }}
+        .required strong {{
+            color: var(--danger-color);
         }}
         .footer {{
             margin-top: 40px;

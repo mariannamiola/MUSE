@@ -59,8 +59,8 @@ class TCLAPParser:
         options = []
         
         # Find all doxygen comments followed by Arg declarations
-        # Pattern: /** ... */ followed by (Switch|Value)Arg
-        pattern = r'(\/\*\*.*?\*\/\s*\n\s*)([SV]\w+Arg[^;]+;)'
+        # Pattern: /** ... */ followed by any *Arg declaration (Switch, Value, Multi, Unlabeled*)
+        pattern = r'(\/\*\*.*?\*\/\s*\n\s*)(\w+Arg\s*(?:<[^>]+>)?\s*\w+[^;]+;)'
         
         matches = re.finditer(pattern, self.content, re.DOTALL)
         
@@ -84,34 +84,42 @@ class TCLAPParser:
             option['brief'] = brief_match.group(1).strip()
         
         # Extract short flag, long flag, and type from declaration
-        # Pattern: SwitchArg("X", "long_name", "desc", cmd, default)
-        # Pattern: ValueArg<type>("X", "long_name", "desc", required, default, type_name, cmd)
-        
-        type_match = re.search(r'(Switch|Value)Arg', declaration)
+        # Supports: SwitchArg, ValueArg<T>, MultiArg<T>, MultiSwitchArg,
+        #           UnlabeledValueArg<T>, UnlabeledMultiArg<T>
+        type_match = re.search(r'(MultiSwitch|Multi|UnlabeledMulti|UnlabeledValue|Switch|Value)Arg', declaration)
         if type_match:
-            option['type'] = 'Switch' if type_match.group(1) == 'Switch' else 'Value'
+            raw = type_match.group(1)
+            if raw in ('Switch', 'MultiSwitch'):
+                option['type'] = 'Switch'
+            else:
+                option['type'] = 'Value'
+            option['is_multi']   = raw in ('Multi', 'MultiSwitch', 'UnlabeledMulti')
+            option['positional'] = raw in ('UnlabeledValue', 'UnlabeledMulti')
+
+        # Extract C++ template type parameter, e.g. ValueArg<float> -> 'float'
+        template_match = re.search(r'Arg\s*<\s*([^>]+?)\s*>', declaration)
+        if template_match:
+            option['value_type'] = template_match.group(1).strip()
         
         # Extract flags
         flags_match = re.search(r'\("([^"]*)",\s*"([^"]+)"', declaration)
         if flags_match:
             option['short_flag'] = flags_match.group(1) if flags_match.group(1) else None
             option['long_flag'] = flags_match.group(2)
+
+        # Extract description: always the 3rd quoted string in the declaration
+        # Signature: Arg("short", "long", "desc", ...)
+        all_strings = re.findall(r'"([^"]*)"', declaration)
+        if len(all_strings) >= 3:
+            option['desc'] = all_strings[2]
         
-        # Extract description from declaration
-        desc_match = re.search(r',\s*"([^"]+)"', declaration)
-        if desc_match:
-            option['desc'] = desc_match.group(1)
-        
-        # Extract detailed documentation from Doxygen comment
-        # Look for @param and extract only clean lines
-        param_match = re.search(r'@param\s+\w+\s+(.+?)(?:@\w+|\*\/)', doc, re.DOTALL)
-        if param_match:
-            details = param_match.group(1).strip()
-            # Clean up comment markers and extra whitespace
-            details = re.sub(r'\s*\*\s*', '\n', details)
-            details = re.sub(r'\n\s*\n', '\n', details)
-            option['details'] = details.strip()
-        
+        # Extract @required section — replaces @param, only for mandatory flags
+        required_match = re.search(r'@required\s+(.+?)(?:@\w+|\*\/)', doc, re.DOTALL)
+        if required_match:
+            required_text = required_match.group(1).strip()
+            required_text = re.sub(r'\s*\*\s*', ' ', required_text)
+            option['required_note'] = required_text.strip()
+
         # Extract @note section for dependency information
         note_match = re.search(r'@note\s+(.+?)(?:@\w+|\*\/)', doc, re.DOTALL)
         if note_match:
@@ -128,6 +136,28 @@ class TCLAPParser:
             # Clean up comment markers and extra whitespace
             example_text = re.sub(r'\s*\*\s*', ' ', example_text)
             option['example'] = example_text.strip()
+
+        # Extract @format section for value format description
+        format_match = re.search(r'@format\s+(.+?)(?:@\w+|\*\/)', doc, re.DOTALL)
+        if format_match:
+            format_text = format_match.group(1).strip()
+            format_text = re.sub(r'\s*\*\s*', ' ', format_text)
+            option['format'] = format_text.strip()
+
+        # Extract @default section for default value
+        default_match = re.search(r'@default\s+(.+?)(?:@\w+|\*\/)', doc, re.DOTALL)
+        if default_match:
+            default_text = default_match.group(1).strip()
+            default_text = re.sub(r'\s*\*\s*', ' ', default_text)
+            option['default'] = default_text.strip()
+
+        # Extract @values section for allowed/enumerated values
+        values_match = re.search(r'@values\s+(.+?)(?:@\w+|\*\/)', doc, re.DOTALL)
+        if values_match:
+            values_text = values_match.group(1).strip()
+            values_text = re.sub(r'\s*\*\s*', ' ', values_text)
+            # Split on commas and clean each value
+            option['allowed_values'] = [v.strip() for v in values_text.split(',') if v.strip()]
         
         return option if 'long_flag' in option else None
     
@@ -138,9 +168,12 @@ class TCLAPParser:
 
 class MarkdownGenerator:
     """Generate Markdown documentation from parsed TCLAP options"""
-    
-    def __init__(self):
+
+    TOC_THRESHOLD = 8  # Auto-generate TOC when an app has >= this many documented flags
+
+    def __init__(self, toc_threshold: int = None):
         self.apps = {}
+        self.toc_threshold = toc_threshold if toc_threshold is not None else self.TOC_THRESHOLD
     
     def _read_header_file(self, header_file: str = None) -> str:
         """Read header content from external file"""
@@ -242,10 +275,11 @@ class MarkdownGenerator:
                 switches.append(flag_repr)
             elif opt_type == 'Value':
                 value_name = flag_name.upper().replace('-', '_')
+                suffix = '...' if opt.get('is_multi') else ''
                 if is_required:
-                    required_args.append(f"{flag_repr} <{value_name}>")
+                    required_args.append(f"{flag_repr} <{value_name}{suffix}>")
                 else:
-                    optional_args.append(f"[{flag_repr} <{value_name}>]")
+                    optional_args.append(f"[{flag_repr} <{value_name}{suffix}>]")
         
         # Add required arguments first
         if required_args:
@@ -287,6 +321,22 @@ class MarkdownGenerator:
         
         return " ".join(usage_parts)
     
+    def _generate_toc(self, options: List[Dict]) -> str:
+        """Generate a Table of Contents from the list of documented options"""
+        toc = "### Options Index\n\n"
+        for opt in options:
+            long_flag = opt.get('long_flag', '')
+            anchor_id = long_flag.replace('_', '-')
+            short = f"`-{opt['short_flag']}`, " if opt.get('short_flag') else ''
+            brief = opt.get('desc') or opt.get('brief') or ''
+            label = f"{short}`--{long_flag}`"
+            toc += f"- [{label}](#{anchor_id})"
+            if brief:
+                toc += f" — {brief}"
+            toc += "\n"
+        toc += "\n"
+        return toc
+
     def _generate_app_section(self, app_name: str, app_info: Dict) -> str:
         """Generate documentation section for one application"""
         md = f"## {app_name}\n\n"
@@ -305,7 +355,11 @@ class MarkdownGenerator:
         
         md += "### Usage\n\n"
         md += f"```bash\n{usage_string}\n```\n\n"
-        
+
+        # Auto-generate TOC if the app has enough documented flags
+        if len(app_info['options']) >= self.toc_threshold:
+            md += self._generate_toc(app_info['options'])
+
         md += "### Options\n\n"
         
         for opt in app_info['options']:
@@ -331,26 +385,63 @@ class MarkdownGenerator:
         anchor_id = opt['long_flag'].replace('_', '-')
         
         md += f"#### {flag_str} {{#{anchor_id}}}\n"
-        md += f"**Type:** {opt['type']} (flag)\n"
-        md += "\n"  # Add blank line between Type and Description
-        
+
+        # 1. Required — first thing the user needs to know
+        if opt.get('required_note'):
+            md += f'\n<div class="required"><strong>⚠ Required:</strong> {opt["required_note"]}</div>\n'
+
+        # 2. Type
+        base_type = opt.get('type', 'Value')
+        value_type = opt.get('value_type', '')
+        is_multi   = opt.get('is_multi', False)
+        positional = opt.get('positional', False)
+
+        if base_type == 'Switch':
+            type_label = 'Switch | repeatable' if is_multi else 'Switch'
+        else:
+            parts = []
+            if value_type:
+                parts.append(f'`{value_type}`')
+            if positional:
+                parts.append('positional')
+            if is_multi:
+                parts.append('repeatable')
+            type_label = 'Value'
+            if parts:
+                type_label += ' | ' + ', '.join(parts)
+
+        md += f"\n**Type:** {type_label}\n"
+
+        # 3. Format + Allowed values inline
+        if opt.get('format') and opt.get('allowed_values'):
+            values_str = ', '.join(f'`{v}`' for v in opt['allowed_values'])
+            md += f"\n**Format:** `{opt['format']}` ({values_str})\n"
+        elif opt.get('format'):
+            md += f"\n**Format:** `{opt['format']}`\n"
+        elif opt.get('allowed_values'):
+            values_str = ', '.join(f'`{v}`' for v in opt['allowed_values'])
+            md += f"\n**Allowed values:** {values_str}\n"
+
+        # 4. Description
+        md += "\n"
         if opt.get('brief'):
             md += f"**Description:** {opt['brief']}\n"
         elif opt.get('desc'):
             md += f"**Description:** {opt['desc']}\n"
-        
-        if opt.get('details'):
-            md += f"\n{opt['details']}\n"
-        
-        # Add dependency information from @note with flag linking
+
+        # 6. Default
+        if opt.get('default'):
+            md += f"\n**Default:** `{opt['default']}`\n"
+
+        # 7. Dependencies
         if opt.get('note'):
             linked_dependencies = self._convert_flag_references_to_links(opt['note'])
             md += f"\n**Dependencies:** {linked_dependencies}\n"
-        
-        # Add usage examples from @example
+
+        # 8. Example
         if opt.get('example'):
             md += f"\n**Example:** `{opt['example']}`\n"
-        
+
         md += "\n"
         return md
     
@@ -403,10 +494,16 @@ def main():
     # Check for optional arguments
     header_file = None
     single_file_mode = False
-    
+    toc_threshold = None
+
     for i in range(3, len(sys.argv)):
         if sys.argv[i] == '--single-file':
             single_file_mode = True
+        elif sys.argv[i].startswith('--toc-threshold='):
+            try:
+                toc_threshold = int(sys.argv[i].split('=')[1])
+            except ValueError:
+                print("Warning: invalid --toc-threshold value, using default", file=sys.stderr)
         else:
             header_file = sys.argv[i]
     
@@ -421,7 +518,7 @@ def main():
         print(f"Warning: No main*.cpp files found in {apps_dir}", file=sys.stderr)
     
     # Parse each file
-    generator = MarkdownGenerator()
+    generator = MarkdownGenerator(toc_threshold=toc_threshold)
     
     for main_file in main_files:
         parser = TCLAPParser(main_file)
