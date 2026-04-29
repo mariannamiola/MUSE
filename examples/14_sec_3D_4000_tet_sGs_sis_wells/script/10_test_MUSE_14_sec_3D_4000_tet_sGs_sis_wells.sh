@@ -136,8 +136,8 @@ export VAR1=phi ##continuous variable
 # 2. Export flags
 #######################################################################
 #For geometry
-export OPT=qa0.5
-export OPT_TET=q
+export OPT=qa1.0
+export OPT_TET=qp
 export RESX=0.5
 export RESY=0.5
 export RESZ=1.0
@@ -258,8 +258,8 @@ read -p "CREATING TETMESH ... Press any key to continue ... " -n1 -s
 muse_geometry -L -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --rotaxis X --rotangle -270 --obj ##only for visualization
 
 muse_geometry -W -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj -o ${GEOM}_box_rot_wells.off \
-                                                            -w "XYHR:25,-2.5,-7,0.25,-6.5" \
-                                                            -w "XYHR:75,-2.5,-7,0.25,-6.5" --save-no-wells -v --tet --vtk --opt qp
+                                                            -w "XYHR:25,-2.5,-8,0.25,-2,-3,-4,-5,-6,-7" \
+                                                            -w "XYHR:75,-2.5,-8,0.25,-2,-3,-4,-5,-6,-7" --save-no-wells --save-only-wells -v --tet --vtk --opt ${OPT_TET}
 
 muse_geometry -Z -p ${WP} -m ${OUTVOL}/${GEOM}_box_rot_wells.vtk --rotaxis X --rotangle 270 --vtk ##only for visualization
 
@@ -343,6 +343,20 @@ else
   rm ${SCRIPT_DIR}/sgs_output_data
 fi
 
+## rename folder $WP by appending the meshing options used in this run
+OPT_SUFFIX="__opt_${OPT}"
+#if [ -n "${OPT_TET}" ]; then
+#  OPT_SUFFIX="${OPT_SUFFIX}_${OPT_TET}"
+#fi
+
+WP_OPT="${WP}_${OPT_SUFFIX}"
+if [ -d "${WP}" ] && [ "${WP}" != "${WP_OPT}" ]; then
+  if [ -e "${WP_OPT}" ]; then
+    rm -rf "${WP_OPT}"
+  fi
+  mv "${WP}" "${WP_OPT}"
+  echo "Renamed project folder to: ${WP_OPT}"
+fi
 
 
 ####################################################################### MUSE END
