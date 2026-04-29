@@ -502,10 +502,14 @@ static bool triangleIntersectsDiskXY(const cinolib::vec3d& v0,
         return true;
     }
 
-    // Keep patch selection local: avoid selecting far elongated triangles whose
-    // edges happen to cross the disk, as they can create non-local holes.
-    const cinolib::vec2d centroid = (p0 + p1 + p2) / 3.0;
-    return (centroid - center).dot(centroid - center) <= radius_sq;
+    if (pointSegmentDistanceSquared2D(center, p0, p1) <= radius_sq ||
+        pointSegmentDistanceSquared2D(center, p1, p2) <= radius_sq ||
+        pointSegmentDistanceSquared2D(center, p2, p0) <= radius_sq)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 static bool triangleMatchesSurfaceSheet(const cinolib::Trimesh<>& surface,
@@ -1123,6 +1127,8 @@ static cinolib::Trimesh<> embedRingIntoSurfacePatch(const cinolib::Trimesh<>& su
         }
     }
 
+    patch_triangles = selectConnectedPatchComponent(surface, patch_triangles, center);
+
     if (patch_triangles.empty())
     {
         throw std::runtime_error("Could not find a surface patch to remesh around the well ring");
@@ -1585,6 +1591,20 @@ static cinolib::Trimesh<> attachCylinderWalls(cinolib::Trimesh<>& surface_mesh,
 
     append_ring_cap(top_ring_vids, false);
     append_ring_cap(bottom_ring_for_caps, true);
+
+    // For wells with an explicit H, the classifier is closed by the synthetic
+    // bottom cap above, but TetGen only sees facets added to surface_mesh.
+    // Add the same bottom plane to the PLC so extracted well tets conform to a
+    // planar bottom instead of being reconstructed later by centroid labeling.
+    if (!bottom_ring_vids && bottom_ring_for_caps.size() >= 3)
+    {
+        const uint bottom_center_vid = surface_mesh.vert_add(cinolib::vec3d(well.x, well.y, bottom_z));
+        for (int i = 0; i < radial_segments; ++i)
+        {
+            const int next_i = (i + 1) % radial_segments;
+            surface_mesh.poly_add(bottom_center_vid, bottom_ring_for_caps[next_i], bottom_ring_for_caps[i]);
+        }
+    }
 
     // Add internal horizontal caps at user-provided z levels so TetGen can honor
     // internal layer boundaries inside each well.
