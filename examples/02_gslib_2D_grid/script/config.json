@@ -4,7 +4,7 @@
 
   "samples": "samples.csv",
   "varname": "p_c",
-  "units": "-",
+  "units": "ppm",
 
   "geometry": {
     "name": "area",
@@ -21,7 +21,7 @@
     "space": "_varspace",
     "where": "_stats",
     "var": "mean",
-    "units": "-",
+    "units": "ppm",
     "geom": "area"
   },
 
@@ -45,8 +45,14 @@
     }
   },
 
+  "view": {
+    "plane": "XY",
+    "distance_factor": 1.0
+  },  
+
   "output": {
     "save": true,
+    "resolution": 1000,
     "dir": "_fig",
     "format": "png"
   }
