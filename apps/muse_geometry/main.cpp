@@ -524,7 +524,7 @@ int main(int argc, char** argv)
 
     ValueArg<std::string> output_mesh_arg("o", "output", "Output triangle mesh file (.off format)", false, "", "string", cmd);
 
-    MultiArg<std::string> wells_arg("w", "well", "Well specification: x,y,z,height,radius[,z_sub1,z_sub2,...] (can be used multiple times)", false, "string", cmd);
+    MultiArg<std::string> wells_arg("w", "well", "Well specification: CYL:XYZHR:x,y,z,height,radius | CYL:XYHR:x,y,height,radius | CYL:XYR:x,y,radius | BOX:XYZHR:x,y,z,height,diag_x,diag_y | BOX:XYHR:x,y,height,diag_x,diag_y | BOX:XYR:x,y,diag_x,diag_y (can be used multiple times)", false, "string", cmd);
 
     ValueArg<double> edge_length_arg("e", "edge-length", "Target edge length for remeshing (default: auto from input mesh)", false, -1.0, "double", cmd);
 
