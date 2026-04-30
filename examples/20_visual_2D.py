@@ -255,10 +255,12 @@ renderView1.CameraParallelProjection = 1
 
 # To save a specific target resolution, rather than using the
 # the current view (or layout) size, and override the color palette.
-viewsize = [1000, 1000]
-renderView1.ViewSize = viewsize
+
 
 if config["output"]["save"]:
+    viewsize = [config["output"]["resolution"], config["output"]["resolution"]]
+    renderView1.ViewSize = viewsize
+    
     directory = os.path.join(script_dir, '..', '..', project_folder, config["output"]["dir"])
     if not os.path.exists(directory): 
 	    os.mkdir(directory)

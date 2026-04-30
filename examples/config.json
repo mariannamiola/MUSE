@@ -52,6 +52,7 @@
 
   "output": {
     "save": true,
+    "resolution": 3000,
     "dir": "_fig",
     "format": "png"
   }
