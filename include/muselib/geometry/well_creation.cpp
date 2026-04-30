@@ -1614,17 +1614,16 @@ static WellSpec parseWellString(const std::string& well_str,
         throw std::runtime_error("Well height must be non-zero");
     }
 
-    // z_subdivisions are absolute z coordinates and must lie strictly inside the well z-interval
-    double z0 = well.z;
-    double z1 = well.z + well.height;
-    double z_min = std::min(z0, z1);
-    double z_max = std::max(z0, z1);
-    for (double z_sub : well.z_subdivisions)
+    // z_subdivisions are offsets relative to the top z and must lie strictly inside the signed height interval.
+    double h_min = std::min(0.0, well.height);
+    double h_max = std::max(0.0, well.height);
+    for (double &z_sub : well.z_subdivisions)
     {
-        if (z_sub <= z_min || z_sub >= z_max)
+        if (z_sub <= h_min || z_sub >= h_max)
         {
-            throw std::runtime_error("Z subdivision must be between " + std::to_string(z_min) + " and " + std::to_string(z_max) + ": " + std::to_string(z_sub));
+            throw std::runtime_error("Relative z subdivision must be between " + std::to_string(h_min) + " and " + std::to_string(h_max) + ": " + std::to_string(z_sub));
         }
+        z_sub = well.z + z_sub;
     }
 
     std::sort(well.z_subdivisions.begin(), well.z_subdivisions.end());
@@ -1782,12 +1781,12 @@ static cinolib::Trimesh<> attachExtrudedWalls(cinolib::Trimesh<>& surface_mesh,
         std::cout << "  - Using " << ring_segments << " footprint segments" << std::endl;
         if (!well.z_subdivisions.empty())
         {
-            std::cout << "  - Internal subdivisions at z: [";
+            std::cout << "  - Internal subdivisions relative to top: [";
             for (size_t i = 0; i < well.z_subdivisions.size(); ++i)
             {
                 if (i > 0)
                     std::cout << ", ";
-                std::cout << well.z_subdivisions[i];
+                std::cout << (well.z_subdivisions[i] - well.z);
             }
             std::cout << "]" << std::endl;
         }
@@ -1938,8 +1937,9 @@ static cinolib::Trimesh<> attachExtrudedWalls(cinolib::Trimesh<>& surface_mesh,
         }
     }
 
-    append_ring_cap(top_ring_vids, false);
-    append_ring_cap(bottom_ring_for_caps, true);
+    const bool positive_height = (well.height > 0.0);
+    append_ring_cap(top_ring_vids, positive_height);
+    append_ring_cap(bottom_ring_for_caps, !positive_height);
 
     // For wells with an explicit H, the classifier is closed by the synthetic
     // bottom cap above, but TetGen only sees facets added to surface_mesh.
@@ -1951,7 +1951,14 @@ static cinolib::Trimesh<> attachExtrudedWalls(cinolib::Trimesh<>& surface_mesh,
         for (int i = 0; i < ring_segments; ++i)
         {
             const int next_i = (i + 1) % ring_segments;
-            surface_mesh.poly_add(bottom_center_vid, bottom_ring_for_caps[next_i], bottom_ring_for_caps[i]);
+            if (positive_height)
+            {
+                surface_mesh.poly_add(bottom_center_vid, bottom_ring_for_caps[i], bottom_ring_for_caps[next_i]);
+            }
+            else
+            {
+                surface_mesh.poly_add(bottom_center_vid, bottom_ring_for_caps[next_i], bottom_ring_for_caps[i]);
+            }
         }
     }
 
