@@ -136,8 +136,8 @@ export VAR1=phi ##continuous variable
 # 2. Export flags
 #######################################################################
 #For geometry
-export OPT=qa1.0
-export OPT_TET=qp
+export OPT=qa0.75
+export OPT_TET=qpY
 export RESX=0.5
 export RESY=0.5
 export RESZ=1.0
@@ -257,14 +257,30 @@ read -p "CREATING TETMESH ... Press any key to continue ... " -n1 -s
 #wells:
 muse_geometry -L -p ${WP} -m ${OUTSURF}/${GEOM}_box.obj --rotaxis X --rotangle -270 --obj ##only for visualization
 
-muse_geometry -W -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj -o ${GEOM}_box_rot_wells.off \
-                                                            -w "XYHR:25,-2.5,-8,0.25,-2,-3,-4,-5,-6,-7" \
-                                                            -w "XYHR:75,-2.5,-8,0.25,-2,-3,-4,-5,-6,-7" --save-no-wells --save-only-wells -v --tet --vtk --opt ${OPT_TET}
+#muse_geometry -W -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj -o ${GEOM}_box_rot_wells.off \
+#                                                            -w "CYL:XYH:25,-2.5,-8,0.25,-2,-3,-4,-5,-6,-7" \
+#                                                            -w "CYL:XYH:75,-2.5,-8,0.25,-2,-3,-4,-5,-6,-7" --save-no-wells --save-only-wells -v --tet --vtk --opt ${OPT_TET}
+
+## B: extrude from the projected top down to the bottom surface.
+muse_geometry -W -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj -o ${GEOM}_box_rot_box_wells.off \
+                                                            -w "POLY:XYH:10,5,34,-3.5,33,-2.5,35,-1.5,32,-1.5,31,-3.0,2,5" \
+                                                            -w "CYL:XYHR:75,-2.5,-8,0.25,-2,-3,-4,-5,-6,-7" \
+                                                            -w "CYL:XYHR:25,-2.5,-8,0.25,-2,-3,-4,-5,-6,-7" \
+                                                            -w "BOX:XYHR:55,-2.5,6,1,2" \
+                                                            -v --tet --vtk --opt ${OPT_TET} --save-no-wells --save-only-wells
+
+## With H: an extruded well volume is created.
+#muse_geometry -W -p ${WP} -m ${OUTSURF}/${GEOM}_box_rot.obj -o ${GEOM}_box_rot_box_to_bottom_wells.off \
+#                                                            -w "BOX:XYH:25,-2.5,-8,1,1" \
+#                                                            -w "CYL:XYH:75,-2.5,-8,0.25" --save-no-wells --save-only-wells -v --tet --vtk --opt ${OPT_TET}
 
 muse_geometry -Z -p ${WP} -m ${OUTVOL}/${GEOM}_box_rot_wells.vtk --rotaxis X --rotangle 270 --vtk ##only for visualization
 
 ##-m ${OUTSURF}/${GEOM}_box.obj -o ${GEOM}_box_tmp.off -w "0,0,-2,4,0.5" -v --tet ##--opt ... to complete with correct coordinate of wells in tetrahedral section model
-###string for testing: #--generate-box "10,5,8" -o test_box.off -w "0,0,-2,4,0.5" -v --generate-tet
+###string for testing cylindrical well: #--generate-box "10,5,8" -o test_box.off -w "CYL:XYH:0,0,-2,0.5" -v --generate-tet
+###string for testing BOX well with explicit height: #--generate-box "10,5,8" -o test_box.off -w "BOX:XYH:0,0,-2,4,2" -v --generate-tet
+###string for testing BOX well to bottom: #--generate-box "10,5,8" -o test_box.off -w "BOX:XYB:0,0,4,2" -v --generate-tet
+###string for testing POLY well with projected top: #--generate-box "10,5,8" -o test_box.off -w "POLY:XYH:4,4,-2,-1,2,-1,2,1,-2,1" -v --generate-tet
  
 #### clean up geometry files from script folder and move to output geometry folder (volume/tmp)
 #mkdir -p ${OUTVOL}/tmp

@@ -524,7 +524,7 @@ int main(int argc, char** argv)
 
     ValueArg<std::string> output_mesh_arg("o", "output", "Output triangle mesh file (.off format)", false, "", "string", cmd);
 
-    MultiArg<std::string> wells_arg("w", "well", "Well specification: CYL:XYZHR:x,y,z,height,radius[,rel_z_sub,...] | CYL:XYHR:x,y,height,radius[,rel_z_sub,...] | CYL:XYR:x,y,radius | BOX:XYZHR:x,y,z,height,diag_x,diag_y[,rel_z_sub,...] | BOX:XYHR:x,y,height,diag_x,diag_y[,rel_z_sub,...] | BOX:XYR:x,y,diag_x,diag_y | POLY:XYZH:z,height,num_vertices,x1,y1,...,xn,yn[,rel_z_sub,...] | POLY:XYH:height,num_vertices,x1,y1,...,xn,yn[,rel_z_sub,...] | POLY:XY:num_vertices,x1,y1,...,xn,yn (height is signed length from top z; rel_z_sub values are relative to that top)", false, "string", cmd);
+    MultiArg<std::string> wells_arg("w", "well", "Well specification: CYL:XYZH:x,y,z,height,radius[,rel_z_sub,...] | CYL:XYZB:x,y,z,radius | CYL:XYH:x,y,height,radius[,rel_z_sub,...] | CYL:XYB:x,y,radius | CYL:XY:x,y,radius | BOX:XYZH:x,y,z,height,diag_x,diag_y[,rel_z_sub,...] | BOX:XYZB:x,y,z,diag_x,diag_y | BOX:XYH:x,y,height,diag_x,diag_y[,rel_z_sub,...] | BOX:XYB:x,y,diag_x,diag_y | BOX:XY:x,y,diag_x,diag_y | POLY:XYZH:z,height,num_vertices,x1,y1,...,xn,yn[,rel_z_sub,...] | POLY:XYZB:z,num_vertices,x1,y1,...,xn,yn | POLY:XYH:height,num_vertices,x1,y1,...,xn,yn[,rel_z_sub,...] | POLY:XYB:num_vertices,x1,y1,...,xn,yn | POLY:XY:num_vertices,x1,y1,...,xn,yn (H = numeric signed height, B = extrude to bottom surface, formats without H/B only embed the top cap ring on the surface; rel_z_sub values are relative to the top z)", false, "string", cmd);
 
     ValueArg<double> edge_length_arg("e", "edge-length", "Target edge length for remeshing (default: auto from input mesh)", false, -1.0, "double", cmd);
 

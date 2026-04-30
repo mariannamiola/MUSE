@@ -42,6 +42,7 @@ struct WellSpec {
     double radius;
     double half_size_x = 0.0;
     double half_size_y = 0.0;
+    bool extrude_volume = false;
     bool project_bottom_to_surface = false;
     std::vector<double> z_subdivisions;
     std::vector<cinolib::vec2d> polygon_xy;
@@ -57,11 +58,10 @@ struct WellParseDefaults {
 };
 
 enum class WellFormat {
-    XYZHR,
-    XYHR,
-    XYR,
     XYZH,
+    XYZB,
     XYH,
+    XYB,
     XY
 };
 
@@ -143,32 +143,28 @@ static WellFormat parseWellFormat(const std::string& format_str)
 {
     std::string format = normalizeWellFormatString(format_str);
 
-    if (format == "XYZHR")
-    {
-        return WellFormat::XYZHR;
-    }
-    if (format == "XYHR")
-    {
-        return WellFormat::XYHR;
-    }
-    if (format == "XYR")
-    {
-        return WellFormat::XYR;
-    }
-    if (format == "XYZH")
+    if (format == "XYZHR" || format == "XYZH")
     {
         return WellFormat::XYZH;
     }
-    if (format == "XYH")
+    if (format == "XYZB")
+    {
+        return WellFormat::XYZB;
+    }
+    if (format == "XYHR" || format == "XYH")
     {
         return WellFormat::XYH;
     }
-    if (format == "XY")
+    if (format == "XYB")
+    {
+        return WellFormat::XYB;
+    }
+    if (format == "XYR" || format == "XY")
     {
         return WellFormat::XY;
     }
 
-    throw std::runtime_error("Unsupported well format: " + format_str + ". Supported formats are XYZHR, XYHR, XYR, XYZH, XYH, XY");
+    throw std::runtime_error("Unsupported well format: " + format_str + ". Supported formats are XY, XYH, XYB, XYZH, XYZB");
 }
 
 static ParsedWellSpec parseWellSpecifier(const std::string& well_str)
@@ -262,27 +258,43 @@ static double parseWellRadius(const std::string& well_str)
     {
         switch (parsed.format)
         {
-            case WellFormat::XYZHR:
+            case WellFormat::XYZH:
             {
                 if (values.size() < 5)
                 {
-                    throw std::runtime_error("Cylinder XYZHR must have at least 5 values: x,y,z,height,radius[,z_sub1,z_sub2,...]");
+                    throw std::runtime_error("Cylinder XYZH must have at least 5 values: x,y,z,height,radius[,z_sub1,z_sub2,...]");
                 }
                 return values[4];
             }
-            case WellFormat::XYHR:
+            case WellFormat::XYZB:
             {
-                if (values.size() < 4)
+                if (values.size() != 4)
                 {
-                    throw std::runtime_error("Cylinder XYHR must have at least 4 values: x,y,height,radius[,z_sub1,z_sub2,...]");
+                    throw std::runtime_error("Cylinder XYZB must have exactly 4 values: x,y,z,radius");
                 }
                 return values[3];
             }
-            case WellFormat::XYR:
+            case WellFormat::XYH:
+            {
+                if (values.size() < 4)
+                {
+                    throw std::runtime_error("Cylinder XYH must have at least 4 values: x,y,height,radius[,z_sub1,z_sub2,...]");
+                }
+                return values[3];
+            }
+            case WellFormat::XYB:
             {
                 if (values.size() != 3)
                 {
-                    throw std::runtime_error("Cylinder XYR must have exactly 3 values: x,y,radius");
+                    throw std::runtime_error("Cylinder XYB must have exactly 3 values: x,y,radius");
+                }
+                return values[2];
+            }
+            case WellFormat::XY:
+            {
+                if (values.size() != 3)
+                {
+                    throw std::runtime_error("Cylinder XY must have exactly 3 values: x,y,radius");
                 }
                 return values[2];
             }
@@ -293,22 +305,34 @@ static double parseWellRadius(const std::string& well_str)
     {
         switch (parsed.format)
         {
-            case WellFormat::XYZHR:
+            case WellFormat::XYZH:
                 if (values.size() < 6)
                 {
-                    throw std::runtime_error("Box XYZHR must have at least 6 values: x,y,z,height,diag_x,diag_y[,z_sub1,z_sub2,...]");
+                    throw std::runtime_error("Box XYZH must have at least 6 values: x,y,z,height,diag_x,diag_y[,z_sub1,z_sub2,...]");
                 }
                 return 0.5 * std::min(std::abs(values[4]), std::abs(values[5]));
-            case WellFormat::XYHR:
-                if (values.size() < 5)
+            case WellFormat::XYZB:
+                if (values.size() != 5)
                 {
-                    throw std::runtime_error("Box XYHR must have at least 5 values: x,y,height,diag_x,diag_y[,z_sub1,z_sub2,...]");
+                    throw std::runtime_error("Box XYZB must have exactly 5 values: x,y,z,diag_x,diag_y");
                 }
                 return 0.5 * std::min(std::abs(values[3]), std::abs(values[4]));
-            case WellFormat::XYR:
+            case WellFormat::XYH:
+                if (values.size() < 5)
+                {
+                    throw std::runtime_error("Box XYH must have at least 5 values: x,y,height,diag_x,diag_y[,z_sub1,z_sub2,...]");
+                }
+                return 0.5 * std::min(std::abs(values[3]), std::abs(values[4]));
+            case WellFormat::XYB:
                 if (values.size() != 4)
                 {
-                    throw std::runtime_error("Box XYR must have exactly 4 values: x,y,diag_x,diag_y");
+                    throw std::runtime_error("Box XYB must have exactly 4 values: x,y,diag_x,diag_y");
+                }
+                return 0.5 * std::min(std::abs(values[2]), std::abs(values[3]));
+            case WellFormat::XY:
+                if (values.size() != 4)
+                {
+                    throw std::runtime_error("Box XY must have exactly 4 values: x,y,diag_x,diag_y");
                 }
                 return 0.5 * std::min(std::abs(values[2]), std::abs(values[3]));
             default:
@@ -340,6 +364,28 @@ static double parseWellRadius(const std::string& well_str)
             }
             return radius;
         }
+        case WellFormat::XYZB:
+        {
+            if (values.size() < 4)
+            {
+                throw std::runtime_error("Polygon XYZB must have at least 4 values: z,num_vertices,x1,y1,...,xn,yn");
+            }
+            const size_t vertex_count = static_cast<size_t>(std::llround(values[1]));
+            const std::vector<cinolib::vec2d> polygon_xy = parsePolygonVertices(values, 2, vertex_count, "XYZB");
+            cinolib::vec2d center(0.0, 0.0);
+            for (const cinolib::vec2d& point : polygon_xy)
+            {
+                center += point;
+            }
+            center /= static_cast<double>(polygon_xy.size());
+            double radius = 0.0;
+            for (const cinolib::vec2d& point : polygon_xy)
+            {
+                const cinolib::vec2d delta = point - center;
+                radius = std::max(radius, std::sqrt(delta.dot(delta)));
+            }
+            return radius;
+        }
         case WellFormat::XYH:
         {
             if (values.size() < 4)
@@ -348,6 +394,28 @@ static double parseWellRadius(const std::string& well_str)
             }
             const size_t vertex_count = static_cast<size_t>(std::llround(values[1]));
             const std::vector<cinolib::vec2d> polygon_xy = parsePolygonVertices(values, 2, vertex_count, "XYH");
+            cinolib::vec2d center(0.0, 0.0);
+            for (const cinolib::vec2d& point : polygon_xy)
+            {
+                center += point;
+            }
+            center /= static_cast<double>(polygon_xy.size());
+            double radius = 0.0;
+            for (const cinolib::vec2d& point : polygon_xy)
+            {
+                const cinolib::vec2d delta = point - center;
+                radius = std::max(radius, std::sqrt(delta.dot(delta)));
+            }
+            return radius;
+        }
+        case WellFormat::XYB:
+        {
+            if (values.size() < 3)
+            {
+                throw std::runtime_error("Polygon XYB must have at least 3 values: num_vertices,x1,y1,...,xn,yn");
+            }
+            const size_t vertex_count = static_cast<size_t>(std::llround(values[0]));
+            const std::vector<cinolib::vec2d> polygon_xy = parsePolygonVertices(values, 1, vertex_count, "XYB");
             cinolib::vec2d center(0.0, 0.0);
             for (const cinolib::vec2d& point : polygon_xy)
             {
@@ -1813,16 +1881,17 @@ static WellSpec parseWellString(const std::string& well_str,
     {
         switch (parsed.format)
         {
-            case WellFormat::XYZHR:
+            case WellFormat::XYZH:
             {
                 if (values.size() < 5)
                 {
-                    throw std::runtime_error("Cylinder XYZHR must have at least 5 values: x,y,z,height,radius[,z_sub1,z_sub2,...]");
+                    throw std::runtime_error("Cylinder XYZH must have at least 5 values: x,y,z,height,radius[,z_sub1,z_sub2,...]");
                 }
                 well.x = values[0];
                 well.y = values[1];
                 well.z = values[2];
                 well.height = values[3];
+                well.extrude_volume = true;
                 well.radius = values[4];
                 for (size_t i = 5; i < values.size(); ++i)
                 {
@@ -1830,16 +1899,32 @@ static WellSpec parseWellString(const std::string& well_str,
                 }
                 break;
             }
-            case WellFormat::XYHR:
+            case WellFormat::XYZB:
+            {
+                if (values.size() != 4)
+                {
+                    throw std::runtime_error("Cylinder XYZB must have exactly 4 values: x,y,z,radius");
+                }
+                well.x = values[0];
+                well.y = values[1];
+                well.z = values[2];
+                well.radius = values[3];
+                well.height = projectWellSpanToSurface(input_surface, surface_octree, well.x, well.y).second - well.z;
+                well.extrude_volume = true;
+                well.project_bottom_to_surface = true;
+                break;
+            }
+            case WellFormat::XYH:
             {
                 if (values.size() < 4)
                 {
-                    throw std::runtime_error("Cylinder XYHR must have at least 4 values: x,y,height,radius[,z_sub1,z_sub2,...]");
+                    throw std::runtime_error("Cylinder XYH must have at least 4 values: x,y,height,radius[,z_sub1,z_sub2,...]");
                 }
                 well.x = values[0];
                 well.y = values[1];
                 well.z = projectWellZToSurface(input_surface, surface_octree, well.x, well.y);
                 well.height = values[2];
+                well.extrude_volume = true;
                 well.radius = values[3];
                 for (size_t i = 4; i < values.size(); ++i)
                 {
@@ -1847,18 +1932,30 @@ static WellSpec parseWellString(const std::string& well_str,
                 }
                 break;
             }
-            case WellFormat::XYR:
+            case WellFormat::XYB:
             {
                 if (values.size() != 3)
                 {
-                    throw std::runtime_error("Cylinder XYR must have exactly 3 values: x,y,radius");
+                    throw std::runtime_error("Cylinder XYB must have exactly 3 values: x,y,radius");
                 }
                 well.x = values[0];
                 well.y = values[1];
-                const auto span = projectWellSpanToSurface(input_surface, surface_octree, well.x, well.y);
-                well.z = span.first;
-                well.height = span.second - span.first;
+                well.z = projectWellZToSurface(input_surface, surface_octree, well.x, well.y);
+                well.height = projectWellSpanToSurface(input_surface, surface_octree, well.x, well.y).second - well.z;
+                well.extrude_volume = true;
                 well.project_bottom_to_surface = true;
+                well.radius = values[2];
+                break;
+            }
+            case WellFormat::XY:
+            {
+                if (values.size() != 3)
+                {
+                    throw std::runtime_error("Cylinder XY must have exactly 3 values: x,y,radius");
+                }
+                well.x = values[0];
+                well.y = values[1];
+                well.z = projectWellZToSurface(input_surface, surface_octree, well.x, well.y);
                 well.radius = values[2];
                 break;
             }
@@ -1868,16 +1965,17 @@ static WellSpec parseWellString(const std::string& well_str,
     {
         switch (parsed.format)
         {
-            case WellFormat::XYZHR:
+            case WellFormat::XYZH:
             {
                 if (values.size() < 6)
                 {
-                    throw std::runtime_error("Box XYZHR must have at least 6 values: x,y,z,height,diag_x,diag_y[,z_sub1,z_sub2,...]");
+                    throw std::runtime_error("Box XYZH must have at least 6 values: x,y,z,height,diag_x,diag_y[,z_sub1,z_sub2,...]");
                 }
                 well.x = values[0];
                 well.y = values[1];
                 well.z = values[2];
                 well.height = values[3];
+                well.extrude_volume = true;
                 well.half_size_x = 0.5 * std::abs(values[4]);
                 well.half_size_y = 0.5 * std::abs(values[5]);
                 for (size_t i = 6; i < values.size(); ++i)
@@ -1886,16 +1984,33 @@ static WellSpec parseWellString(const std::string& well_str,
                 }
                 break;
             }
-            case WellFormat::XYHR:
+            case WellFormat::XYZB:
+            {
+                if (values.size() != 5)
+                {
+                    throw std::runtime_error("Box XYZB must have exactly 5 values: x,y,z,diag_x,diag_y");
+                }
+                well.x = values[0];
+                well.y = values[1];
+                well.z = values[2];
+                well.height = projectWellSpanToSurface(input_surface, surface_octree, well.x, well.y).second - well.z;
+                well.extrude_volume = true;
+                well.project_bottom_to_surface = true;
+                well.half_size_x = 0.5 * std::abs(values[3]);
+                well.half_size_y = 0.5 * std::abs(values[4]);
+                break;
+            }
+            case WellFormat::XYH:
             {
                 if (values.size() < 5)
                 {
-                    throw std::runtime_error("Box XYHR must have at least 5 values: x,y,height,diag_x,diag_y[,z_sub1,z_sub2,...]");
+                    throw std::runtime_error("Box XYH must have at least 5 values: x,y,height,diag_x,diag_y[,z_sub1,z_sub2,...]");
                 }
                 well.x = values[0];
                 well.y = values[1];
                 well.z = projectWellZToSurface(input_surface, surface_octree, well.x, well.y);
                 well.height = values[2];
+                well.extrude_volume = true;
                 well.half_size_x = 0.5 * std::abs(values[3]);
                 well.half_size_y = 0.5 * std::abs(values[4]);
                 for (size_t i = 5; i < values.size(); ++i)
@@ -1904,18 +2019,31 @@ static WellSpec parseWellString(const std::string& well_str,
                 }
                 break;
             }
-            case WellFormat::XYR:
+            case WellFormat::XYB:
             {
                 if (values.size() != 4)
                 {
-                    throw std::runtime_error("Box XYR must have exactly 4 values: x,y,diag_x,diag_y");
+                    throw std::runtime_error("Box XYB must have exactly 4 values: x,y,diag_x,diag_y");
                 }
                 well.x = values[0];
                 well.y = values[1];
-                const auto span = projectWellSpanToSurface(input_surface, surface_octree, well.x, well.y);
-                well.z = span.first;
-                well.height = span.second - span.first;
+                well.z = projectWellZToSurface(input_surface, surface_octree, well.x, well.y);
+                well.height = projectWellSpanToSurface(input_surface, surface_octree, well.x, well.y).second - well.z;
+                well.extrude_volume = true;
                 well.project_bottom_to_surface = true;
+                well.half_size_x = 0.5 * std::abs(values[2]);
+                well.half_size_y = 0.5 * std::abs(values[3]);
+                break;
+            }
+            case WellFormat::XY:
+            {
+                if (values.size() != 4)
+                {
+                    throw std::runtime_error("Box XY must have exactly 4 values: x,y,diag_x,diag_y");
+                }
+                well.x = values[0];
+                well.y = values[1];
+                well.z = projectWellZToSurface(input_surface, surface_octree, well.x, well.y);
                 well.half_size_x = 0.5 * std::abs(values[2]);
                 well.half_size_y = 0.5 * std::abs(values[3]);
                 break;
@@ -1935,12 +2063,28 @@ static WellSpec parseWellString(const std::string& well_str,
                 const size_t vertex_count = static_cast<size_t>(std::llround(values[2]));
                 well.z = values[0];
                 well.height = values[1];
+                well.extrude_volume = true;
                 well.polygon_xy = parsePolygonVertices(values, 3, vertex_count, "XYZH");
                 finalizePolygonFootprint(well);
                 for (size_t i = 3 + 2 * vertex_count; i < values.size(); ++i)
                 {
                     well.z_subdivisions.push_back(values[i]);
                 }
+                break;
+            }
+            case WellFormat::XYZB:
+            {
+                if (values.size() < 4)
+                {
+                    throw std::runtime_error("Polygon XYZB must have at least 4 values: z,num_vertices,x1,y1,...,xn,yn");
+                }
+                const size_t vertex_count = static_cast<size_t>(std::llround(values[1]));
+                well.z = values[0];
+                well.polygon_xy = parsePolygonVertices(values, 2, vertex_count, "XYZB");
+                finalizePolygonFootprint(well);
+                well.height = projectWellSpanToSurface(input_surface, surface_octree, well.x, well.y).second - well.z;
+                well.extrude_volume = true;
+                well.project_bottom_to_surface = true;
                 break;
             }
             case WellFormat::XYH:
@@ -1951,6 +2095,7 @@ static WellSpec parseWellString(const std::string& well_str,
                 }
                 const size_t vertex_count = static_cast<size_t>(std::llround(values[1]));
                 well.height = values[0];
+                well.extrude_volume = true;
                 well.polygon_xy = parsePolygonVertices(values, 2, vertex_count, "XYH");
                 finalizePolygonFootprint(well);
                 well.z = projectWellZToSurface(input_surface, surface_octree, well.x, well.y);
@@ -1958,6 +2103,21 @@ static WellSpec parseWellString(const std::string& well_str,
                 {
                     well.z_subdivisions.push_back(values[i]);
                 }
+                break;
+            }
+            case WellFormat::XYB:
+            {
+                if (values.size() < 3)
+                {
+                    throw std::runtime_error("Polygon XYB must have at least 3 values: num_vertices,x1,y1,...,xn,yn");
+                }
+                const size_t vertex_count = static_cast<size_t>(std::llround(values[0]));
+                well.polygon_xy = parsePolygonVertices(values, 1, vertex_count, "XYB");
+                finalizePolygonFootprint(well);
+                well.z = projectWellZToSurface(input_surface, surface_octree, well.x, well.y);
+                well.height = projectWellSpanToSurface(input_surface, surface_octree, well.x, well.y).second - well.z;
+                well.extrude_volume = true;
+                well.project_bottom_to_surface = true;
                 break;
             }
             case WellFormat::XY:
@@ -1969,14 +2129,11 @@ static WellSpec parseWellString(const std::string& well_str,
                 const size_t vertex_count = static_cast<size_t>(std::llround(values[0]));
                 well.polygon_xy = parsePolygonVertices(values, 1, vertex_count, "XY");
                 finalizePolygonFootprint(well);
-                const auto span = projectWellSpanToSurface(input_surface, surface_octree, well.x, well.y);
-                well.z = span.first;
-                well.height = span.second - span.first;
-                well.project_bottom_to_surface = true;
+                well.z = projectWellZToSurface(input_surface, surface_octree, well.x, well.y);
                 break;
             }
             default:
-                throw std::runtime_error("Polygon wells support only XYZH, XYH, and XY formats");
+                throw std::runtime_error("Polygon wells support only XY, XYH, XYB, XYZH, and XYZB formats");
         }
     }
 
@@ -2000,21 +2157,29 @@ static WellSpec parseWellString(const std::string& well_str,
         throw std::runtime_error("Polygon well must contain at least 3 XY vertices");
     }
 
-    if (std::abs(well.height) <= std::numeric_limits<double>::epsilon())
+    if (well.extrude_volume && std::abs(well.height) <= std::numeric_limits<double>::epsilon())
     {
         throw std::runtime_error("Well height must be non-zero");
     }
 
-    // z_subdivisions are offsets relative to the top z and must lie strictly inside the signed height interval.
-    double h_min = std::min(0.0, well.height);
-    double h_max = std::max(0.0, well.height);
-    for (double &z_sub : well.z_subdivisions)
+    if (!well.extrude_volume && !well.z_subdivisions.empty())
     {
-        if (z_sub <= h_min || z_sub >= h_max)
+        throw std::runtime_error("Relative z subdivisions require an explicit well height");
+    }
+
+    if (well.extrude_volume)
+    {
+        // z_subdivisions are offsets relative to the top z and must lie strictly inside the signed height interval.
+        double h_min = std::min(0.0, well.height);
+        double h_max = std::max(0.0, well.height);
+        for (double &z_sub : well.z_subdivisions)
         {
-            throw std::runtime_error("Relative z subdivision must be between " + std::to_string(h_min) + " and " + std::to_string(h_max) + ": " + std::to_string(z_sub));
+            if (z_sub <= h_min || z_sub >= h_max)
+            {
+                throw std::runtime_error("Relative z subdivision must be between " + std::to_string(h_min) + " and " + std::to_string(h_max) + ": " + std::to_string(z_sub));
+            }
+            z_sub = well.z + z_sub;
         }
-        z_sub = well.z + z_sub;
     }
 
     std::sort(well.z_subdivisions.begin(), well.z_subdivisions.end());
@@ -2293,31 +2458,156 @@ static cinolib::Trimesh<> attachExtrudedWalls(cinolib::Trimesh<>& surface_mesh,
     }
 
     // Close the classifier mesh used by winding-number queries.
-    auto append_ring_cap = [&](const std::vector<uint>& ring_vids, const bool invert_orientation, const bool add_to_surface_mesh)
+    auto append_ring_cap = [&](const std::vector<uint>& ring_vids,
+                               const bool invert_orientation,
+                               const bool add_to_classifier_mesh,
+                               const bool add_to_surface_mesh)
     {
         if (ring_vids.size() < 3)
         {
             return;
         }
 
-        std::vector<cinolib::vec2d> ring_xy;
-        ring_xy.reserve(ring_vids.size());
+        std::vector<std::pair<cinolib::vec2d, uint>> ring_points;
+        ring_points.reserve(ring_vids.size());
         for (uint ring_vid : ring_vids)
         {
             const cinolib::vec3d& vertex = surface_mesh.vert(ring_vid);
-            ring_xy.emplace_back(vertex.x(), vertex.y());
+            ring_points.emplace_back(cinolib::vec2d(vertex.x(), vertex.y()), ring_vid);
         }
 
-        const auto triangles = triangulateSimplePolygonXY(ring_xy);
+        const double simplify_eps = 1e-9;
+        auto same_xy = [&](const cinolib::vec2d& a, const cinolib::vec2d& b)
+        {
+            return (a - b).dot(a - b) <= simplify_eps * simplify_eps;
+        };
+
+        auto sanitize_ring_points = [&](std::vector<std::pair<cinolib::vec2d, uint>> points)
+        {
+            std::vector<std::pair<cinolib::vec2d, uint>> deduped;
+            deduped.reserve(points.size());
+            for (const auto& point : points)
+            {
+                if (deduped.empty() || !same_xy(deduped.back().first, point.first))
+                {
+                    deduped.push_back(point);
+                }
+            }
+            if (deduped.size() >= 2 && same_xy(deduped.front().first, deduped.back().first))
+            {
+                deduped.pop_back();
+            }
+
+            bool removed = true;
+            while (removed && deduped.size() >= 3)
+            {
+                removed = false;
+                for (size_t i = 0; i < deduped.size(); ++i)
+                {
+                    const cinolib::vec2d& prev = deduped[(i + deduped.size() - 1) % deduped.size()].first;
+                    const cinolib::vec2d& curr = deduped[i].first;
+                    const cinolib::vec2d& next = deduped[(i + 1) % deduped.size()].first;
+
+                    const double cross = (curr.x() - prev.x()) * (next.y() - prev.y()) -
+                                         (curr.y() - prev.y()) * (next.x() - prev.x());
+                    if (std::abs(cross) <= simplify_eps && pointOnSegmentXY(curr, prev, next))
+                    {
+                        deduped.erase(deduped.begin() + static_cast<std::ptrdiff_t>(i));
+                        removed = true;
+                        break;
+                    }
+                }
+            }
+
+            return deduped;
+        };
+
+        ring_points = sanitize_ring_points(std::move(ring_points));
+        if (ring_points.size() < 3)
+        {
+            throw std::runtime_error("Well cap ring collapsed to fewer than 3 unique XY vertices");
+        }
+
+        auto extract_xy = [](const std::vector<std::pair<cinolib::vec2d, uint>>& points)
+        {
+            std::vector<cinolib::vec2d> xy;
+            xy.reserve(points.size());
+            for (const auto& point : points)
+            {
+                xy.push_back(point.first);
+            }
+            return xy;
+        };
+
+        auto build_convex_fan = [](const std::vector<std::pair<cinolib::vec2d, uint>>& points)
+        {
+            std::vector<std::array<uint, 3>> fan;
+            if (points.size() < 3)
+            {
+                return fan;
+            }
+
+            fan.reserve(points.size() - 2);
+            for (size_t i = 1; i + 1 < points.size(); ++i)
+            {
+                fan.push_back({ 0u, static_cast<uint>(i), static_cast<uint>(i + 1) });
+            }
+            return fan;
+        };
+
+        std::vector<std::array<uint, 3>> triangles;
+        try
+        {
+            triangles = triangulateSimplePolygonXY(extract_xy(ring_points));
+        }
+        catch (const std::runtime_error&)
+        {
+            if (well.shape == WellSpec::Shape::Polygon)
+            {
+                throw;
+            }
+
+            cinolib::vec2d center(0.0, 0.0);
+            for (const auto& point : ring_points)
+            {
+                center = center + point.first;
+            }
+            center = center / static_cast<double>(ring_points.size());
+
+            std::sort(ring_points.begin(), ring_points.end(), [&](const auto& lhs, const auto& rhs)
+            {
+                return std::atan2(lhs.first.y() - center.y(), lhs.first.x() - center.x()) <
+                       std::atan2(rhs.first.y() - center.y(), rhs.first.x() - center.x());
+            });
+
+            ring_points = sanitize_ring_points(std::move(ring_points));
+            try
+            {
+                triangles = triangulateSimplePolygonXY(extract_xy(ring_points));
+            }
+            catch (const std::runtime_error&)
+            {
+                const std::vector<cinolib::vec2d> ordered_xy = extract_xy(ring_points);
+                if (ring_points.size() < 3 || std::abs(signedArea2D(ordered_xy)) <= simplify_eps)
+                {
+                    throw;
+                }
+                triangles = build_convex_fan(ring_points);
+            }
+        }
+
         for (const auto& tri : triangles)
         {
-            std::vector<uint> face = { ring_vids[tri[0]], ring_vids[tri[1]], ring_vids[tri[2]] };
+            std::vector<uint> face = { ring_points[tri[0]].second, ring_points[tri[1]].second, ring_points[tri[2]].second };
             if (invert_orientation)
             {
                 std::swap(face[1], face[2]);
             }
 
-            wall_faces.push_back(face);
+            if (add_to_classifier_mesh)
+            {
+                wall_faces.push_back(face);
+            }
             if (add_to_surface_mesh)
             {
                 surface_mesh.poly_add(face[0], face[1], face[2]);
@@ -2345,8 +2635,8 @@ static cinolib::Trimesh<> attachExtrudedWalls(cinolib::Trimesh<>& surface_mesh,
     }
 
     const bool positive_height = (well.height > 0.0);
-    append_ring_cap(top_ring_vids, positive_height, false);
-    append_ring_cap(bottom_ring_for_caps, !positive_height, false);
+    append_ring_cap(top_ring_vids, positive_height, true, false);
+    append_ring_cap(bottom_ring_for_caps, !positive_height, true, false);
 
     // For wells with an explicit H, the classifier is closed by the synthetic
     // bottom cap above, but TetGen only sees facets added to surface_mesh.
@@ -2354,7 +2644,7 @@ static cinolib::Trimesh<> attachExtrudedWalls(cinolib::Trimesh<>& surface_mesh,
     // planar bottom instead of being reconstructed later by centroid labeling.
     if (!bottom_ring_vids && bottom_ring_for_caps.size() >= 3)
     {
-        append_ring_cap(bottom_ring_for_caps, !positive_height, true);
+        append_ring_cap(bottom_ring_for_caps, !positive_height, false, true);
     }
 
     // Add internal horizontal caps at user-provided z levels so TetGen can honor
@@ -2383,7 +2673,7 @@ static cinolib::Trimesh<> attachExtrudedWalls(cinolib::Trimesh<>& surface_mesh,
         {
             level_ring_vids.push_back(ring_vertex_map[{ level, i }]);
         }
-        append_ring_cap(level_ring_vids, false, true);
+        append_ring_cap(level_ring_vids, false, false, true);
         internal_cap_faces += static_cast<int>(level_ring_vids.size()) - 2;
     }
 
@@ -2470,6 +2760,11 @@ static bool isPointInsideCylinderWindingNumber(const cinolib::vec3d& point, cons
 
 static int getWellRegion(const cinolib::vec3d& point, const WellSpec& well)
 {
+    if (!well.extrude_volume)
+    {
+        return 0;
+    }
+
     const double eps = 1e-9;
     double z_min = std::min(well.z, well.z + well.height);
     double z_max = std::max(well.z, well.z + well.height);
@@ -2492,9 +2787,128 @@ static int getWellRegion(const cinolib::vec3d& point, const WellSpec& well)
     return static_cast<int>(well.z_subdivisions.size());
 }
 
+static bool pointMatchesSurfaceSheet(const cinolib::vec3d& point,
+                                     const cinolib::Trimesh<>& reference_surface,
+                                     const cinolib::Octree& reference_octree,
+                                     const SurfaceSheet sheet,
+                                     const double tolerance)
+{
+    try
+    {
+        const double projected_z = projectPointZToSurfaceSheet(reference_surface, reference_octree, point.x(), point.y(), sheet);
+        return std::abs(point.z() - projected_z) <= tolerance;
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
+}
+
+static bool pointInsideWellFootprintXY(const cinolib::vec2d& point, const WellSpec& well)
+{
+    if (well.shape == WellSpec::Shape::Cylinder)
+    {
+        const double dx = point.x() - well.x;
+        const double dy = point.y() - well.y;
+        return dx * dx + dy * dy <= well.radius * well.radius;
+    }
+
+    if (well.shape == WellSpec::Shape::Box)
+    {
+        return std::abs(point.x() - well.x) <= well.half_size_x &&
+               std::abs(point.y() - well.y) <= well.half_size_y;
+    }
+
+    return pointInPolygonXY(point, well.polygon_xy);
+}
+
+static bool tetHasSurfaceFaceInsideWellFootprint(const cinolib::Tetmesh<>& tet_mesh,
+                                                 const uint pid,
+                                                 const cinolib::Trimesh<>& reference_surface,
+                                                 const cinolib::Octree& reference_octree,
+                                                 const SurfaceSheet sheet,
+                                                 const double tolerance,
+                                                 const WellSpec& well)
+{
+    for (uint fid : tet_mesh.adj_p2f(pid))
+    {
+        if (!tet_mesh.face_is_on_srf(fid))
+        {
+            continue;
+        }
+
+        cinolib::vec3d face_centroid(0, 0, 0);
+        for (uint vid : tet_mesh.face_verts_id(fid))
+        {
+            face_centroid += tet_mesh.vert(vid);
+        }
+        face_centroid /= 3.0;
+
+        if (pointMatchesSurfaceSheet(face_centroid, reference_surface, reference_octree, sheet, tolerance) &&
+            pointInsideWellFootprintXY(toXY(face_centroid), well))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+struct TetWellClassification {
+    int well_id = -1;
+    int region_id = -1;
+};
+
+static TetWellClassification classifyTetWell(const cinolib::Tetmesh<>& tet_mesh,
+                                             const uint pid,
+                                             const std::vector<cinolib::Trimesh<>>& cylinder_meshes,
+                                             const std::vector<WellSpec>& wells,
+                                             const cinolib::Trimesh<>& reference_surface,
+                                             const cinolib::Octree& reference_octree,
+                                             const double sheet_tolerance)
+{
+    std::vector<uint> tet_verts = tet_mesh.poly_verts_id(pid);
+    cinolib::vec3d centroid(0, 0, 0);
+    for (uint vid : tet_verts)
+    {
+        centroid += tet_mesh.vert(vid);
+    }
+    centroid /= static_cast<double>(tet_verts.size());
+
+    TetWellClassification classification;
+    size_t volume_well_index = 0;
+    for (size_t i = 0; i < wells.size(); ++i)
+    {
+        if (wells[i].extrude_volume)
+        {
+            if (volume_well_index < cylinder_meshes.size() &&
+                isPointInsideCylinderWindingNumber(centroid, cylinder_meshes[volume_well_index]))
+            {
+                classification.well_id = static_cast<int>(i) + 1;
+                classification.region_id = getWellRegion(centroid, wells[i]);
+                return classification;
+            }
+            ++volume_well_index;
+            continue;
+        }
+
+        if (tetHasSurfaceFaceInsideWellFootprint(tet_mesh, pid, reference_surface, reference_octree, SurfaceSheet::Top, sheet_tolerance, wells[i]))
+        {
+            classification.well_id = static_cast<int>(i) + 1;
+            classification.region_id = 0;
+            return classification;
+        }
+    }
+
+    return classification;
+}
+
 static bool saveTetWellIdField(const cinolib::Tetmesh<>& tet_mesh,
                                const std::vector<cinolib::Trimesh<>>& cylinder_meshes,
                                const std::vector<WellSpec>& wells,
+                               const cinolib::Trimesh<>& reference_surface,
+                               const cinolib::Octree& reference_octree,
+                               const double sheet_tolerance,
                                const std::string& filename,
                                bool verbose)
 {
@@ -2505,7 +2919,7 @@ static bool saveTetWellIdField(const cinolib::Tetmesh<>& tet_mesh,
     }
 
     int outside_count = 0;
-    std::vector<int> inside_counts(cylinder_meshes.size(), 0);
+    std::vector<int> inside_counts(wells.size(), 0);
     std::vector<std::vector<int>> region_counts(wells.size());
     for (size_t i = 0; i < wells.size(); ++i)
     {
@@ -2514,36 +2928,31 @@ static bool saveTetWellIdField(const cinolib::Tetmesh<>& tet_mesh,
 
     for (uint pid = 0; pid < tet_mesh.num_polys(); ++pid)
     {
-        std::vector<uint> tet_verts = tet_mesh.poly_verts_id(pid);
-        cinolib::vec3d centroid(0, 0, 0);
-        for (uint vid : tet_verts)
-        {
-            centroid += tet_mesh.vert(vid);
-        }
-        centroid /= static_cast<double>(tet_verts.size());
+        const TetWellClassification classification = classifyTetWell(
+            tet_mesh,
+            pid,
+            cylinder_meshes,
+            wells,
+            reference_surface,
+            reference_octree,
+            sheet_tolerance);
 
-        int well_id = -1;
-        for (size_t i = 0; i < cylinder_meshes.size(); ++i)
-        {
-            if (isPointInsideCylinderWindingNumber(centroid, cylinder_meshes[i]))
-            {
-                well_id = static_cast<int>(i) + 1;
-                inside_counts[i]++;
-                int region_id = getWellRegion(centroid, wells[i]);
-                if (region_id >= 0)
-                {
-                    region_counts[i][region_id]++;
-                }
-                break;
-            }
-        }
-
-        if (well_id == -1)
+        if (classification.well_id == -1)
         {
             outside_count++;
         }
+        else
+        {
+            const size_t well_index = static_cast<size_t>(classification.well_id - 1);
+            inside_counts[well_index]++;
+            if (classification.region_id >= 0 &&
+                static_cast<size_t>(classification.region_id) < region_counts[well_index].size())
+            {
+                region_counts[well_index][classification.region_id]++;
+            }
+        }
 
-        file << well_id << "\n";
+        file << classification.well_id << "\n";
     }
 
     file.close();
@@ -2576,6 +2985,9 @@ static bool saveTetWellIdField(const cinolib::Tetmesh<>& tet_mesh,
 static bool saveTetRegionIdField(const cinolib::Tetmesh<>& tet_mesh,
                                  const std::vector<cinolib::Trimesh<>>& cylinder_meshes,
                                  const std::vector<WellSpec>& wells,
+                                 const cinolib::Trimesh<>& reference_surface,
+                                 const cinolib::Octree& reference_octree,
+                                 const double sheet_tolerance,
                                  const std::string& filename,
                                  bool verbose)
 {
@@ -2587,28 +2999,16 @@ static bool saveTetRegionIdField(const cinolib::Tetmesh<>& tet_mesh,
 
     for (uint pid = 0; pid < tet_mesh.num_polys(); ++pid)
     {
-        std::vector<uint> tet_verts = tet_mesh.poly_verts_id(pid);
-        cinolib::vec3d centroid(0, 0, 0);
-        for (uint vid : tet_verts)
-        {
-            centroid += tet_mesh.vert(vid);
-        }
-        centroid /= static_cast<double>(tet_verts.size());
+        const TetWellClassification classification = classifyTetWell(
+            tet_mesh,
+            pid,
+            cylinder_meshes,
+            wells,
+            reference_surface,
+            reference_octree,
+            sheet_tolerance);
 
-        int well_id = -1;
-        int region_id = -1;
-
-        for (size_t i = 0; i < cylinder_meshes.size(); ++i)
-        {
-            if (isPointInsideCylinderWindingNumber(centroid, cylinder_meshes[i]))
-            {
-                well_id = static_cast<int>(i) + 1;
-                region_id = getWellRegion(centroid, wells[i]);
-                break;
-            }
-        }
-
-        file << well_id << " " << region_id << "\n";
+        file << classification.well_id << " " << classification.region_id << "\n";
     }
 
     file.close();
@@ -2624,6 +3024,10 @@ static bool saveTetRegionIdField(const cinolib::Tetmesh<>& tet_mesh,
 
 static void removeTetsInsideWells(cinolib::Tetmesh<>& tet_mesh,
                                   const std::vector<cinolib::Trimesh<>>& cylinder_meshes,
+                                  const std::vector<WellSpec>& wells,
+                                  const cinolib::Trimesh<>& reference_surface,
+                                  const cinolib::Octree& reference_octree,
+                                  const double sheet_tolerance,
                                   bool verbose)
 {
     if (verbose)
@@ -2635,25 +3039,16 @@ static void removeTetsInsideWells(cinolib::Tetmesh<>& tet_mesh,
 
     for (uint pid = 0; pid < tet_mesh.num_polys(); ++pid)
     {
-        std::vector<uint> tet_verts = tet_mesh.poly_verts_id(pid);
-        cinolib::vec3d centroid(0, 0, 0);
-        for (uint vid : tet_verts)
-        {
-            centroid += tet_mesh.vert(vid);
-        }
-        centroid /= tet_verts.size();
+        const TetWellClassification classification = classifyTetWell(
+            tet_mesh,
+            pid,
+            cylinder_meshes,
+            wells,
+            reference_surface,
+            reference_octree,
+            sheet_tolerance);
 
-        bool tet_inside_well = false;
-        for (size_t i = 0; i < cylinder_meshes.size(); ++i)
-        {
-            if (isPointInsideCylinderWindingNumber(centroid, cylinder_meshes[i]))
-            {
-                tet_inside_well = true;
-                break;
-            }
-        }
-
-        if (tet_inside_well)
+        if (classification.well_id != -1)
         {
             removed_tets.push_back(pid);
         }
@@ -2677,6 +3072,10 @@ static void removeTetsInsideWells(cinolib::Tetmesh<>& tet_mesh,
 
 static void removeTetsOutsideWells(cinolib::Tetmesh<>& tet_mesh,
                                    const std::vector<cinolib::Trimesh<>>& cylinder_meshes,
+                                   const std::vector<WellSpec>& wells,
+                                   const cinolib::Trimesh<>& reference_surface,
+                                   const cinolib::Octree& reference_octree,
+                                   const double sheet_tolerance,
                                    bool verbose)
 {
     if (verbose)
@@ -2688,25 +3087,16 @@ static void removeTetsOutsideWells(cinolib::Tetmesh<>& tet_mesh,
 
     for (uint pid = 0; pid < tet_mesh.num_polys(); ++pid)
     {
-        std::vector<uint> tet_verts = tet_mesh.poly_verts_id(pid);
-        cinolib::vec3d centroid(0, 0, 0);
-        for (uint vid : tet_verts)
-        {
-            centroid += tet_mesh.vert(vid);
-        }
-        centroid /= tet_verts.size();
+        const TetWellClassification classification = classifyTetWell(
+            tet_mesh,
+            pid,
+            cylinder_meshes,
+            wells,
+            reference_surface,
+            reference_octree,
+            sheet_tolerance);
 
-        bool tet_inside_well = false;
-        for (size_t i = 0; i < cylinder_meshes.size(); ++i)
-        {
-            if (isPointInsideCylinderWindingNumber(centroid, cylinder_meshes[i]))
-            {
-                tet_inside_well = true;
-                break;
-            }
-        }
-
-        if (!tet_inside_well)
+        if (classification.well_id == -1)
         {
             removed_tets.push_back(pid);
         }
@@ -2927,13 +3317,25 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
         std::cout << "Remeshed surface saved to: " << remeshed_surface_filename << std::endl;
     }
 
+    const double well_id_sheet_tolerance = std::max(1e-6, target_edge_length * 0.25);
+
     std::vector<cinolib::Trimesh<>> cylinder_meshes;
     
     for (size_t i = 0; i < wells.size(); ++i)
     {
+        if (!wells[i].extrude_volume)
+        {
+            if (verbose)
+            {
+                std::cout << "Skipping volume generation for well " << (i + 1)
+                          << " because no explicit height was provided; only the top cap ring is embedded on the surface." << std::endl;
+            }
+            continue;
+        }
+
         if (verbose)
         {
-            std::cout << "Generating cylinder mesh for well " << (i + 1) << "..." << std::endl;
+            std::cout << "Generating well volume mesh for well " << (i + 1) << "..." << std::endl;
         }
 
         double cylinder_edge_length = target_edge_length;
@@ -3052,9 +3454,15 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
             }
             
             std::string region_id_filename = output_file.substr(0, output_file.find_last_of('.')) + "_region_id.txt";
-            if (!saveTetRegionIdField(tet_mesh, cylinder_meshes, wells, region_id_filename, verbose))
+            if (!saveTetRegionIdField(tet_mesh, cylinder_meshes, wells, input_surface, surface_octree, well_id_sheet_tolerance, region_id_filename, verbose))
             {
                 std::cerr << "Warning: Failed to save tet region id field" << std::endl;
+            }
+
+            std::string well_id_filename = output_file.substr(0, output_file.find_last_of('.')) + "_well_id.txt";
+            if (!saveTetWellIdField(tet_mesh, cylinder_meshes, wells, input_surface, surface_octree, well_id_sheet_tolerance, well_id_filename, verbose))
+            {
+                std::cerr << "Warning: Failed to save tet well id field" << std::endl;
             }
             
             if (save_no_wells)
@@ -3062,7 +3470,7 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
                 try
                 {
                     cinolib::Tetmesh<> no_wells_mesh = tet_mesh;
-                    removeTetsInsideWells(no_wells_mesh, cylinder_meshes, verbose);
+                    removeTetsInsideWells(no_wells_mesh, cylinder_meshes, wells, input_surface, surface_octree, well_id_sheet_tolerance, verbose);
 
                     std::string no_wells_filename = output_file.substr(0, output_file.find_last_of('.')) + "_no_wells" + volmesh_format;
                     no_wells_mesh.save(no_wells_filename.c_str());
@@ -3084,7 +3492,7 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
                 try
                 {
                     cinolib::Tetmesh<> only_wells_mesh = tet_mesh;
-                    removeTetsOutsideWells(only_wells_mesh, cylinder_meshes, verbose);
+                    removeTetsOutsideWells(only_wells_mesh, cylinder_meshes, wells, input_surface, surface_octree, well_id_sheet_tolerance, verbose);
 
                     std::string only_wells_filename = output_file.substr(0, output_file.find_last_of('.')) + "_only_wells" + volmesh_format;
                     only_wells_mesh.save(only_wells_filename.c_str());
