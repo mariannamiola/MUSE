@@ -408,6 +408,107 @@ static bool pointOnSegment2D(const cinolib::vec2d& p,
     return (p - projection).dot(p - projection) <= tolerance_sq;
 }
 
+static bool pointStrictlyOnSegment3D(const cinolib::vec3d& p,
+                                     const cinolib::vec3d& a,
+                                     const cinolib::vec3d& b,
+                                     const double tolerance_sq,
+                                     const double endpoint_tolerance,
+                                     double& t_out)
+{
+    const cinolib::vec3d ab = b - a;
+    const double denom = ab.dot(ab);
+    if (denom <= std::numeric_limits<double>::epsilon())
+    {
+        t_out = 0.0;
+        return false;
+    }
+
+    const double t = (p - a).dot(ab) / denom;
+    t_out = t;
+    if (t <= endpoint_tolerance || t >= 1.0 - endpoint_tolerance)
+    {
+        return false;
+    }
+
+    const cinolib::vec3d projection = a + ab * t;
+    return (p - projection).dot(p - projection) <= tolerance_sq;
+}
+
+static size_t splitEdgesPassingThroughExistingVertices(cinolib::Trimesh<>& mesh,
+                                                       const double tolerance,
+                                                       const bool verbose)
+{
+    const double tolerance_sq = tolerance * tolerance;
+    size_t split_count = 0;
+    const size_t max_passes = std::max<size_t>(1, mesh.num_edges()) * 8;
+
+    for (size_t pass = 0; pass < max_passes; ++pass)
+    {
+        bool changed = false;
+
+        for (uint eid = 0; eid < mesh.num_edges(); ++eid)
+        {
+            const uint vid0 = mesh.edge_vert_id(eid, 0);
+            const uint vid1 = mesh.edge_vert_id(eid, 1);
+            const cinolib::vec3d a = mesh.vert(vid0);
+            const cinolib::vec3d b = mesh.vert(vid1);
+            const cinolib::vec3d ab = b - a;
+            const double edge_length_sq = ab.dot(ab);
+            if (edge_length_sq <= std::numeric_limits<double>::epsilon())
+            {
+                continue;
+            }
+
+            const double edge_length = std::sqrt(edge_length_sq);
+            const double endpoint_tolerance = std::min(0.25, tolerance / edge_length);
+
+            int split_vid = -1;
+            double split_t = std::numeric_limits<double>::max();
+            for (uint candidate_vid = 0; candidate_vid < mesh.num_verts(); ++candidate_vid)
+            {
+                if (candidate_vid == vid0 || candidate_vid == vid1)
+                {
+                    continue;
+                }
+
+                double t = 0.0;
+                if (!pointStrictlyOnSegment3D(mesh.vert(candidate_vid), a, b, tolerance_sq, endpoint_tolerance, t))
+                {
+                    continue;
+                }
+
+                if (t < split_t)
+                {
+                    split_t = t;
+                    split_vid = static_cast<int>(candidate_vid);
+                }
+            }
+
+            if (split_vid < 0)
+            {
+                continue;
+            }
+
+            mesh.edge_split(eid, static_cast<uint>(split_vid));
+            ++split_count;
+            changed = true;
+            if (verbose)
+            {
+                std::cout << "Split PLC edge [" << vid0 << "," << vid1 << "] with existing vertex "
+                          << split_vid << " before TetGen." << std::endl;
+            }
+            break;
+        }
+
+        if (!changed)
+        {
+            break;
+        }
+    }
+
+    return split_count;
+}
+
 static std::vector<cinolib::vec3d> augmentRingBoundaryWithExistingVertices(const std::vector<cinolib::vec3d>& ring_boundary,
                                                                            const std::vector<cinolib::vec3d>& original_patch_points,
                                                                            const double merge_tol)
@@ -2491,6 +2592,16 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
     }
 
     cinolib::Trimesh<> result_mesh = remeshed_surface;
+    const size_t plc_edge_splits = splitEdgesPassingThroughExistingVertices(
+        result_mesh,
+        std::max(1e-8, target_edge_length * 1e-4),
+        verbose);
+    if (verbose && plc_edge_splits > 0)
+    {
+        std::cout << "Resolved " << plc_edge_splits
+                  << " PLC vertex-on-edge conflicts before TetGen." << std::endl;
+    }
+
     if (saveMesh(result_mesh, output_file) && verbose)
     {
         std::cout << "Combined mesh saved to: " << output_file << std::endl;
