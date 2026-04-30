@@ -56,7 +56,7 @@ else:
     compute_sim=f"{var_name}_{sub}_{vario}_{comp_geom}"
 
 
-geom_folder=os.path.join(project_folder, "out", "geometry", "surf")
+geom_folder=os.path.join(project_folder, "out", "geometry", "volume")
 compute_folder=os.path.join(project_folder, "out", "compute")
 print(geom_folder)
 print(compute_folder)
@@ -70,11 +70,11 @@ print(space)
 sim_name=var_name + '_'+ config["compute"]["var"]
 
 csv_file = os.path.join(script_dir, "..", "..", compute_folder, compute_sim, space, f"{sim_name}.csv")
-obj_file = os.path.join(script_dir, "..", "..", geom_folder, f"{geom_name}.{geom_ext}")
+vtk_file = os.path.join(script_dir, "..", "..", geom_folder, f"{geom_name}.{geom_ext}")
 samplescsv_file = os.path.join(script_dir, "..", "data", sample_csv)
 
 print("CSV: ", csv_file)
-print("MESH: ", obj_file)
+print("MESH: ", vtk_file)
 print("Samples CSV: ", samplescsv_file)
 
 
@@ -114,23 +114,23 @@ tableToPoints2.YColumn = config["columns"]["scalarfield"]["y"]
 tableToPoints2.ZColumn = config["columns"]["scalarfield"]["z"]
 tableToPoints2.KeepAllDataArrays = 1
 
-# create a new 'Triangulate'
-triangulate1 = Triangulate(registrationName='Triangulate1', Input=tableToPoints2)
+# create a new 'Tetrahedralize'
+tetrahedralize1 = Tetrahedralize(registrationName='Tetrahedralize1', Input=tableToPoints2)
 
 # create a new 'Point Data to Cell Data'
-pointDatatoCellData1 = PointDatatoCellData(registrationName='PointDatatoCellData1', Input=triangulate1)
+pointDatatoCellData1 = PointDatatoCellData(registrationName='PointDatatoCellData1', Input=tetrahedralize1)
 pointDatatoCellData1.PointDataArraytoprocess = config["columns"]["scalarfield"]["value"]
 pointDatatoCellData1.PassPointData = 1
 
 # ----------------------------------------------------------------
-# OBJ Reader
+# VTK Reader
 # ----------------------------------------------------------------
 
-# create a new 'Wavefront OBJ Reader'
-areaobj = WavefrontOBJReader(registrationName=geom_name, FileName=obj_file)
+# create a new 'Legacy VTK Reader'
+areavtk = LegacyVTKReader(registrationName=geom_name, FileNames=[vtk_file])
 
 # create a new 'Append Attributes'
-appendAttributes1 = AppendAttributes(registrationName='AppendAttributes1', Input=[areaobj, pointDatatoCellData1])
+appendAttributes1 = AppendAttributes(registrationName='AppendAttributes1', Input=[areavtk, pointDatatoCellData1])
 
 
 # ----------------------------------------------------------------
@@ -230,32 +230,14 @@ ColorBy(appendAttributes1Display, ('CELLS', config["columns"]["scalarfield"]["va
 
 # reset view to fit data bounds
 renderView1.ResetCamera()
-
-view_plane = config.get("view", {}).get("plane", "XY").upper()
-dist_factor = config.get("view", {}).get("distance_factor", 1.5)
-
-bounds = appendAttributes1.GetDataInformation().GetBounds()
-cx = (bounds[0] + bounds[1]) / 2.0
-cy = (bounds[2] + bounds[3]) / 2.0
-cz = (bounds[4] + bounds[5]) / 2.0
-extent = max(bounds[1]-bounds[0], bounds[3]-bounds[2], bounds[5]-bounds[4])
-distance = extent * dist_factor
-
-camera_settings = {
-    "XY": {"pos": [cx, cy, cz + distance], "up": [0, 1, 0]},
-    "XZ": {"pos": [cx, cy + distance, cz], "up": [0, 0, 1]},
-    "YZ": {"pos": [cx - distance, cy, cz], "up": [0, 0, 1]},
-}
-
-cam = camera_settings.get(view_plane, camera_settings["XY"])
-renderView1.CameraFocalPoint = [cx, cy, cz]
-renderView1.CameraPosition   = cam["pos"]
-renderView1.CameraViewUp     = cam["up"]
-renderView1.CameraParallelProjection = 1
+#renderView1.CameraPosition = [23.673108484339377, 26.10432893807473, 136.60254037844388]
+#renderView1.CameraFocalPoint = [23.673108484339377, 26.10432893807473, 0.0]
+#renderView1.CameraFocalDisk = 1.0
 
 # To save a specific target resolution, rather than using the
 # the current view (or layout) size, and override the color palette.
-
+#viewsize = [1000, 1000]
+#renderView1.ViewSize = viewsize
 
 if config["output"]["save"]:
     viewsize = [config["output"]["resolution"], config["output"]["resolution"]]
@@ -265,7 +247,7 @@ if config["output"]["save"]:
     if not os.path.exists(directory): 
 	    os.mkdir(directory)
 
-    SaveScreenshot(os.path.join(directory, sim_name + '.' + config["output"]["format"]), renderView1, ImageResolution=viewsize, FontScaling=False, OverrideColorPalette='WhiteBackground', TransparentBackground=False)
+    SaveScreenshot(os.path.join(directory, sim_name + '.' + config["output"]["format"]), renderView1, ImageResolution=viewsize, FontScaling=True, OverrideColorPalette='WhiteBackground', TransparentBackground=False)
     #SaveScreenshot(os.path.join(directory, sim_name + '.png'), renderView1, FontScaling=True, OverrideColorPalette='WhiteBackground', TransparentBackground=False)
 
 
