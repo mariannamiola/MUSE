@@ -7,6 +7,7 @@
 #include "geostatslib/statistics/decluster.h"
 #include "muselib/metadata/extraction_meta.h"
 #include "muselib/utils.h"
+#include "muselib/utils_timing.h"
 #include "muselib/colors.h"
 
 #include "muselib/data_structures/project.h"
@@ -68,6 +69,10 @@ int main(int argc, char** argv)
     std::string app_vario = "vario"; //app vario name
     std::string app_data = "data"; //app data name
     std::string app_manipulate = "manipulate";
+
+    // Timing logger
+    MUSE::TimingLogger timing_logger("muse-" + app_name);
+                    
 
 
     try {
@@ -371,11 +376,13 @@ int main(int argc, char** argv)
     SwitchArg doBackNormalScore         ("B", "back-normalscore", "Enable back normal score transformation", cmd, false); //booleano
     
     /**
-     * @brief Set input file path
+     * @brief Set input file path. This option allows you to specify the path to an input file that contains data to be used in the MUSE-compute application. The input file can include various types of data relevant to the computations and analyses performed by the application, such as back normal score transformation. The file should be formatted according to the requirements of the application: a column of estimates in normal space is accepted.
+     * @default "/path/to/file" (placeholder value, should be replaced with the actual path to the input file).
+     * @format string value (path to the input file)
+     * @example --file /path/to/input_file.txt
      */
-    ValueArg<std::string> setFile       ("f", "file", "Set file", false, "Directory", "path", cmd);
+    ValueArg<std::string> setFile       ("f", "file", "Set input file path to apply back normal score transformation", false, "/path/to/file", "string", cmd);
 
-    //ValueArg<std::string> setJSON       ("", "json", "Set JSON file", false, "Directory", "path", cmd);
 
 
     // Option 3. Database creation to store simulation results
@@ -516,6 +523,17 @@ int main(int argc, char** argv)
     std::string out_vario = out_folder + "/" + app_vario;
     std::string out_man = out_folder + "/" + app_manipulate;
 
+    std::string debug_folder = "";
+    std::string prefix_timing = "";
+    if(setDebug.isSet())
+    {
+        debug_folder = app_folder + "/_debug";
+        std::cout << FYEL("=== WARNING. Debug mode is ON!") << std::endl;
+            
+        timing_logger.set_output_folder(debug_folder);
+    }
+    timing_logger.start();
+
 
     // ---------------------------------------------------------------------------------------------------------
     // STARTS:
@@ -543,6 +561,11 @@ int main(int argc, char** argv)
 
         if(!filesystem::exists(app_folder))
             filesystem::create_directory(app_folder);
+        if(setDebug.isSet())
+        {
+            if(!filesystem::exists(debug_folder))
+                filesystem::create_directory(debug_folder);
+        }
 
         /////////////////////////////
         //////////SUMMARY CSV FOR FRAMES
@@ -679,6 +702,8 @@ int main(int argc, char** argv)
             deps.push_back(get_basename(rel_geompath) + ".json");
             metacompute.setDependencies(deps);
 
+            timing_logger.stop("inizialization");
+
 
             // ================================
             // 0. LOAD VALUES
@@ -714,7 +739,7 @@ int main(int argc, char** argv)
                 }
             }
 
-
+            
             VarioMeta metavario;
             metavario.read(vario_files.at(0));
 
@@ -995,6 +1020,8 @@ int main(int argc, char** argv)
             yCoord.clear();
             zCoord.clear();
 
+            timing_logger.stop("data_loading");
+
 
             // ================================
             // STARTING COMPUTATION
@@ -1078,6 +1105,8 @@ int main(int argc, char** argv)
                     exit(1);
                 }
 
+                timing_logger.stop("mesh_loading");
+
                 std::vector<Variogram> variograms;
 
                 VarioDirection dir;
@@ -1097,8 +1126,8 @@ int main(int argc, char** argv)
 
                 for(uint c=0; c<categ.size(); c++)
                 {
-                    std::cout << "### Category ID: " << c << std::endl;
-                    std::cout << "### Category VALUE: " << categ.at(c) << std::endl;
+                    std::cout << "=== Category ID: " << c << std::endl;
+                    std::cout << "=== Category VALUE: " << categ.at(c) << std::endl;
 
                     std::string vario_name = out_vario + "/" + Variable.getValue() + std::to_string(categ.at(c));
                     if(subDataset.isSet())
@@ -1106,7 +1135,7 @@ int main(int argc, char** argv)
                     else
                         vario_name += ".json";
 
-                    std::cout << "### JSON: " << vario_name << std::endl;
+                    std::cout << "=== Metadata file: " << vario_name << std::endl;
 
                     VarioMeta metavario_cat;
                     metavario_cat.read(vario_name);
@@ -1137,15 +1166,12 @@ int main(int argc, char** argv)
                     }
                     case VarioDirection::DIR:
                     {
-                        //std::cout << FRED("ERROR: DIRECTIONAL CASE - TO BE IMPLEMENTED!") << std::endl;
-
-                        std::cout << "Range min is set on: " << metavario_cat.getSummary().min_semiaxis << std::endl;
-                        std::cout << "Range max is set on: " << metavario_cat.getSummary().max_semiaxis << std::endl;
-                        //fvm_cat.set_range(metavario_cat.getSummary().min_semiaxis, metavario_cat.getSummary().max_semiaxis);
+                        //std::cout << "Range min is set on: " << metavario_cat.getSummary().min_semiaxis << std::endl;
+                        //std::cout << "Range max is set on: " << metavario_cat.getSummary().max_semiaxis << std::endl;
 
                         if(setZRange.isSet())
                         {
-                            std::cout << "Range in Z direction is set on: " << setZRange.getValue() << std::endl;
+                            //std::cout << "Range in Z direction is set on: " << setZRange.getValue() << std::endl;
                             fvm_cat.set_range(metavario_cat.getSummary().min_semiaxis, metavario_cat.getSummary().max_semiaxis, setZRange.getValue());
                         }
                         else
@@ -1153,22 +1179,22 @@ int main(int argc, char** argv)
 
 
                         fvm_cat.set_azimuth(metavario_cat.getSummary().max_direction);
-                        std::cout << "Azimuth is set on max continuity direction: " << fvm_cat.get_azimuth() << " degree from North" << std::endl;
+                        //std::cout << "Azimuth is set on max continuity direction: " << fvm_cat.get_azimuth() << " degree from North" << std::endl;
 
                         //Settati sulla massima direzione, ma non cambiano (per costruzione -> calcolo automatico del vario direzionale)
                         fvm_cat.nugget = metavario_cat.getFitExpVariog(0).nugget;
-                        std::cout << "Nugget is set on: " << fvm_cat.nugget << std::endl;
+                        //std::cout << "Nugget is set on: " << fvm_cat.nugget << std::endl;
 
                         //MODIFICATO COME 1 - NUGGET!!!!!!!!!!!!!!!!!
                         fvm_cat.sill = metavario_cat.getFitExpVariog(0).sill - fvm_cat.nugget;
-                        std::cout << "Sill is set on: " << fvm_cat.sill << std::endl;
+                        //std::cout << "Sill is set on: " << fvm_cat.sill << std::endl;
 
                         //anche il tipo è uguale tra tutti, quindi prendo quello a modello in dir 0
                         variogram_type type;
                         convert_from_str(metavario_cat.getFitExpVariog(0).type, type);
                         fvm_cat.type = type;
-                        std::cout << "Type is set on: " << metavario_cat.getFitExpVariog(0).type << std::endl;
-                        std::cout << std::endl;
+                        //std::cout << "Type is set on: " << metavario_cat.getFitExpVariog(0).type << std::endl;
+                        //std::cout << std::endl;
 
 
                         //for json
@@ -1182,22 +1208,41 @@ int main(int argc, char** argv)
                     }
                     }
 
+                    std::cout << std::endl;
+                    std::cout << "==========================================" << std::endl;
+                    std::cout << FMAG("=== (Prior to simulation) Check variogram parameters ... ") << std::endl;
+                    std::string string_type;
+                    convert_to_str(string_type, fvm_cat.type);
+                    std::cout << " | Azimuth is set on max continuity direction: " << fvm_cat.get_azimuth() << " degree from North" << std::endl;
+                    std::cout << " | Type = " << string_type << std::endl;
+                    std::cout << " | Dir max (azimuth) = " << fvm_cat.get_azimuth() << " degree from North." << std::endl;
+                    std::cout << " | Range max = " << fvm_cat.get_maxrange() << std::endl;
+                    std::cout << " | Range min = " << fvm_cat.get_minrange() << std::endl;
+                    std::cout << " | Range z = " << fvm_cat.get_zrange() << std::endl;
+                    std::cout << " | Nugget = " << fvm_cat.nugget << std::endl;
+                    std::cout << " | Partial sill = " << fvm_cat.sill << std::endl;
+                    std::cout << " | Sill = " << fvm_cat.sill + fvm_cat.nugget << std::endl;
+                    
                     if(fvm_cat.type == GAUSSIAN)
                     {
-                        std::cout << "### Check on nugget for gaussian model ..." << std::endl;
+                        std::cout << "=== Check on nugget for Gaussian model ..." << std::endl;
                         if(fvm_cat.nugget == 0.0)
                         {
-                            std::cout << "Instability problems are encountered with a Gaussian model with no nugget effect." << std::endl;
+                            std::cout << "=== Instability problems are encountered with a Gaussian model with no nugget effect." << std::endl;
                             fvm_cat.nugget = fvm_cat.nugget + 0.001;
                             fvm_cat.sill = fvm_cat.sill - 0.001;
 
-                            std::cout << "Nugget value is perturbed as: " << fvm_cat.nugget << std::endl;
-                            std::cout << "Updating sill value as: " << fvm_cat.sill << std::endl;
+                            std::cout << "=== Nugget value is perturbed as: " << fvm_cat.nugget << std::endl;
+                            std::cout << "=== Updating sill value as: " << fvm_cat.sill << std::endl;
                         }
                     }
 
+                    std::cout << "==========================================" << std::endl;
+                    std::cout << std::endl;
+
                     variograms.push_back(fvm_cat);
                 }
+                timing_logger.stop("variogram_loading");
 
 
                 //4. Starting simulations (CHOSEN THE INTERPOLATION METHOD: KRIGING, SGS??)
@@ -1223,6 +1268,10 @@ int main(int argc, char** argv)
                 std::string indicator_json = app_folder + "/" + data.name;
                 if(subDataset.isSet())
                     indicator_json += "_" + subDataset.getValue();
+
+                // Start timing
+                //timing_logger.start();
+                //timing_logger.set_output_folder(app_folder);
                     
                 if(setCRIT.getValue().compare("IK") == 0)
                 {
@@ -1260,6 +1309,10 @@ int main(int argc, char** argv)
                     std::cerr << "=== Please set --crit IK for Indicator Kriging or --crit SISIM for Indicator Simulation." << std::endl;
                     exit(1);
                 }
+
+                // Record SGS simulation time
+                prefix_timing = setCRIT.getValue() + "_simulation";
+                timing_logger.stop(prefix_timing);
 
                 std::vector<double> results_x, results_y, results_z, results_v;
                 for(uint n=0; n < nodes.size(); n++)
@@ -1336,12 +1389,12 @@ int main(int argc, char** argv)
                 }
                 case VarioDirection::DIR:
                 {
-                    std::cout << "Range min is set on: " << metavario.getSummary().min_semiaxis << std::endl;
-                    std::cout << "Range max is set on: " << metavario.getSummary().max_semiaxis << std::endl;
+                    //std::cout << "Range min is set on: " << metavario.getSummary().min_semiaxis << std::endl;
+                    //std::cout << "Range max is set on: " << metavario.getSummary().max_semiaxis << std::endl;
 
                     if(setZRange.isSet())
                     {
-                        std::cout << "Range in Z direction is set on: " << setZRange.getValue() << std::endl;
+                        //std::cout << "Range in Z direction is set on: " << setZRange.getValue() << std::endl;
                         fvm.set_range(metavario.getSummary().min_semiaxis, metavario.getSummary().max_semiaxis, setZRange.getValue());
                     }
                     else
@@ -1349,24 +1402,22 @@ int main(int argc, char** argv)
 
 
                     fvm.set_azimuth(metavario.getSummary().max_direction);
-                    std::cout << "Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North" << std::endl;
+                    //std::cout << "Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North" << std::endl;
 
                     //Settati sulla massima direzione, ma non cambiano (per costruzione -> calcolo automatico del vario direzionale)
                     fvm.nugget = metavario.getFitExpVariog(0).nugget;
-                    std::cout << "Nugget is set on: " << fvm.nugget << std::endl;
+                    //std::cout << "Nugget is set on: " << fvm.nugget << std::endl;
 
                     //MODIFICATO COME 1 - NUGGET!!!!!!!!!!!!!!!!!
                     fvm.sill = metavario.getFitExpVariog(0).sill - fvm.nugget; //che deve essere ovviamente = 1
-                    std::cout << "Sill is set on: " << fvm.sill << std::endl;
+                    //std::cout << "Sill is set on: " << fvm.sill << std::endl;
 
                     //anche il tipo è uguale tra tutti, quindi prendo quello a modello in dir 0
                     variogram_type type;
                     convert_from_str(metavario.getFitExpVariog(0).type, type);
                     fvm.type = type;
-                    std::cout << "Type is set on: " << metavario.getFitExpVariog(0).type << std::endl;
-                    std::cout << std::endl;
-
-
+                    //std::cout << "Type is set on: " << metavario.getFitExpVariog(0).type << std::endl;
+                    //std::cout << std::endl;
 
                     //for json
                     fitvariov.setNugget(fvm.nugget);
@@ -1389,6 +1440,39 @@ int main(int argc, char** argv)
                 vec_csv.push_back(to_string(fitvariov.range_max));
                 vec_csv.push_back(to_string(fitvariov.range_min));
                 vec_csv.push_back(to_string(fitvariov.getRangeZ()));
+
+                std::cout << std::endl;
+                std::cout << "==========================================" << std::endl;
+                std::cout << FMAG("=== (Prior to simulation) Check variogram parameters ... ") << std::endl;
+                std::string string_type;
+                convert_to_str(string_type, fvm.type);
+                std::cout << " | Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North" << std::endl;
+                std::cout << " | Type = " << string_type << std::endl;
+                std::cout << " | Dir max (azimuth) = " << fvm.get_azimuth() << " degree from North." << std::endl;
+                std::cout << " | Range max = " << fvm.get_maxrange() << std::endl;
+                std::cout << " | Range min = " << fvm.get_minrange() << std::endl;
+                std::cout << " | Range z = " << fvm.get_zrange() << std::endl;
+                std::cout << " | Nugget = " << fvm.nugget << std::endl;
+                std::cout << " | Partial sill = " << fvm.sill << std::endl;
+                std::cout << " | Sill = " << fvm.sill + fvm.nugget << std::endl;
+
+                if(fvm.type == GAUSSIAN)
+                {
+                    std::cout << "=== Check on nugget for Gaussian model ..." << std::endl;
+                    if(fvm.nugget == 0.0)
+                    {
+                        std::cout << "=== Instability problems are encountered with a Gaussian model with no nugget effect." << std::endl;
+                        fvm.nugget = fvm.nugget + 0.001;
+                        fvm.sill = fvm.sill - 0.001;
+
+                        std::cout << "=== Nugget value is corrected as: " << fvm.nugget << std::endl;
+                        std::cout << "=== Partial sill value is updated as: " << fvm.sill << std::endl;
+                    }
+                }
+                std::cout << "==========================================" << std::endl;
+                std::cout << std::endl;
+
+                timing_logger.stop("variogram_loading");
 
 
                 // 3. Load geometry model
@@ -1463,80 +1547,55 @@ int main(int argc, char** argv)
                 {
                     std::cout << "=== Mesh is surface." << std::endl;
 
-
                     MUSE::SurfaceMesh<> surf_mesh;
                     surf_mesh.load(geomModel.getValue().c_str());
-
                     sim.n_elements = surf_mesh.num_polys();
 
+                    timing_logger.stop("mesh_loading");
 
-                    //Funzione vecchia a cui gli passo il range!
-                    //Anche sfruttando le funzioni sul range che tengono conto di min/max, NON va bene, perchè all'interno c'è il set_range(range), ovvero unico valore di range!
-                    //VARIO FUNZIONANTE:
-    //                fvm.set_range(3.1, 23.5);
-    //                fvm.set_azimuth(88);
-    //                fvm.nugget = 0.51;
-    //                fvm.type = SPHERIC;
+                    
+                    // std::cout << std::endl;
+                    // std::cout << "==========================================" << std::endl;
+                    // std::cout << FMAG("=== Check used variogram parameters ... ") << std::endl;
+                    // std::string string_type;
+                    // convert_to_str(string_type, fvm.type);
+                    // std::cout << " | Type = " << string_type << std::endl;
+                    // std::cout << " | Dir max (azimuth) = " << fvm.get_azimuth() << " degree from North." << std::endl;
+                    // std::cout << " | Range max = " << fvm.get_maxrange() << std::endl;
+                    // std::cout << " | Range min = " << fvm.get_minrange() << std::endl;
+                    // std::cout << " | Range z = " << fvm.get_zrange() << std::endl;
+                    // std::cout << " | Nugget = " << fvm.nugget << std::endl;
+                    // std::cout << " | Sill = " << fvm.sill << std::endl;
+                    // std::cout << "==========================================" << std::endl;
+                    // std::cout << std::endl;
+
+                    // if(fvm.type == GAUSSIAN)
+                    // {
+                    //     std::cout << "### Check on nugget for gaussian model ..." << std::endl;
+                    //     if(fvm.nugget == 0.0)
+                    //     {
+                    //         std::cout << "Instability problems are encountered with a Gaussian model with no nugget effect." << std::endl;
+                    //         fvm.nugget = fvm.nugget + 0.001;
+                    //         fvm.sill = fvm.sill - 0.001;
+
+                    //         std::cout << "Nugget value is perturbed as: " << fvm.nugget << std::endl;
+                    //         std::cout << "Updating sill value as: " << fvm.sill << std::endl;
+                    //     }
+                    // }
 
 
-                    /*std::cout << std::endl;
-                    std::cout << FMAG("############################################################") << std::endl;
-                    std::cout << FMAG("PER CONTROLLO (PRIMA DELLE SIMULAZIONI):") << std::endl;
-                    std::cout << FMAG("La funzione delle SGS considera il VARIO OMNIDIREZIONALE con i seguenti parametri: ") << std::endl;
-                    std::string string_type;
-                    convert_to_str(string_type, fvm.type);
-                    std::cout << "Type = " << string_type << std::endl;
-                    std::cout << "Dir max = " << fvm.get_azimuth() << " degree from North." << std::endl;
-                    std::cout << "Range max = " << fvm.get_range(fvm.get_radians(fvm.get_azimuth())) << std::endl;
-                    std::cout << "Nugget = " << fvm.nugget << std::endl;
-                    std::cout << "Sill = " << fvm.sill << std::endl;
-                    std::cout << FMAG("############################################################") << std::endl;
-                    std::cout << std::endl;
-
-                    sgs_output = parallel_sgs2 (surf_mesh, normal_values.values, corr_x, corr_y, corr_z,
-                                                                fvm.get_range(fvm.get_radians(fvm.get_azimuth())), fvm.sill, fvm.nugget, fvm.type,
-                                                                setNsim.getValue(), normal_values,
-                                                                back_normal_score_inSGS, setExtrType.getValue(), setMinExtr.getValue(), setMaxExtr.getValue());*/
-
-
-
-                    std::cout << std::endl;
-                    std::cout << FMAG("############################################################") << std::endl;
-                    std::cout << FMAG("PER CONTROLLO (PRIMA DELLE SIMULAZIONI):") << std::endl;
-                    std::cout << FMAG("La funzione delle SGS considera il VARIO DIREZIONALE con i seguenti parametri: ") << std::endl;
-                    std::string string_type;
-                    convert_to_str(string_type, fvm.type);
-                    std::cout << "Type = " << string_type << std::endl;
-                    std::cout << "Dir max (azimuth) = " << fvm.get_azimuth() << " degree from North." << std::endl;
-                    std::cout << "Range max = " << fvm.get_maxrange() << std::endl;
-                    std::cout << "Range min = " << fvm.get_minrange() << std::endl;
-                    std::cout << "Range z = " << fvm.get_zrange() << std::endl;
-                    std::cout << "Nugget = " << fvm.nugget << std::endl;
-                    std::cout << "Sill = " << fvm.sill << std::endl;
-                    std::cout << FMAG("############################################################") << std::endl;
-                    std::cout << std::endl;
-
-                    if(fvm.type == GAUSSIAN)
-                    {
-                        std::cout << "### Check on nugget for gaussian model ..." << std::endl;
-                        if(fvm.nugget == 0.0)
-                        {
-                            std::cout << "Instability problems are encountered with a Gaussian model with no nugget effect." << std::endl;
-                            fvm.nugget = fvm.nugget + 0.001;
-                            fvm.sill = fvm.sill - 0.001;
-
-                            std::cout << "Nugget value is perturbed as: " << fvm.nugget << std::endl;
-                            std::cout << "Updating sill value as: " << fvm.sill << std::endl;
-                        }
-                    }
-
+                    // Start timing
+                    //timing_logger.start();
+                    //timing_logger.set_output_folder(app_folder);
 
                     if(setSGSoutput.getValue().compare("VECSIM") == 0)
                     {
+                        #ifdef DEBUG
                         std::cout << std::endl;
                         std::cout << FMAG("### SGS OUTPUT - VECSIM: vector of simulation results in the normal space -> a CSV file for each simulation") << std::endl;
                         std::cout << FMAG("### Back normal score is managed by using the command -B") << std::endl;
                         std::cout << std::endl;
+                        #endif
 
                         app_folder += "/_normspace";
                         if(!filesystem::exists(app_folder))
@@ -1679,36 +1738,42 @@ int main(int argc, char** argv)
                 }
                 else if (ext_mesh.compare(".mesh") == 0 || ext_mesh.compare(".vtk") == 0)
                 {
-                    std::cout << std::endl;
-                    std::cout << FMAG("############################################################") << std::endl;
-                    std::cout << FMAG("PER CONTROLLO (PRIMA DELLE SIMULAZIONI):") << std::endl;
-                    std::cout << FMAG("La funzione delle SGS considera il VARIO DIREZIONALE con i seguenti parametri: ") << std::endl;
-                    std::string string_type;
-                    convert_to_str(string_type, fvm.type);
-                    std::cout << "Type = " << string_type << std::endl;
-                    std::cout << "Dir max (azimuth) = " << fvm.get_azimuth() << " degree from North." << std::endl;
-                    std::cout << "Range max = " << fvm.get_maxrange() << std::endl;
-                    std::cout << "Range min = " << fvm.get_minrange() << std::endl;
-                    std::cout << "Range z = " << fvm.get_zrange() << std::endl;
-                    std::cout << "Nugget = " << fvm.nugget << std::endl;
-                    std::cout << "Sill = " << fvm.sill << std::endl;
-                    std::cout << FMAG("############################################################") << std::endl;
-                    std::cout << std::endl;
+                    // std::cout << std::endl;
+                    // std::cout << "==========================================" << std::endl;
+                    // std::cout << FMAG("=== (Prior to simulations) Check variogram parameters ... ") << std::endl;
+                    // std::cout << FMAG("PER CONTROLLO (PRIMA DELLE SIMULAZIONI):") << std::endl;
+                    // std::cout << FMAG("La funzione delle SGS considera il VARIO DIREZIONALE con i seguenti parametri: ") << std::endl;
+                    // std::string string_type;
+                    // convert_to_str(string_type, fvm.type);
+                    // std::cout << "Type = " << string_type << std::endl;
+                    // std::cout << "Dir max (azimuth) = " << fvm.get_azimuth() << " degree from North." << std::endl;
+                    // std::cout << "Range max = " << fvm.get_maxrange() << std::endl;
+                    // std::cout << "Range min = " << fvm.get_minrange() << std::endl;
+                    // std::cout << "Range z = " << fvm.get_zrange() << std::endl;
+                    // std::cout << "Nugget = " << fvm.nugget << std::endl;
+                    // std::cout << "Sill = " << fvm.sill << std::endl;
+                    // std::cout << "==========================================" << std::endl;
+                    // std::cout << std::endl;
 
-                    std::cout << "Mesh is volumetric." << std::endl;
+                    std::cout << "=== Mesh is volumetric." << std::endl;
 
                     MUSE::VolumeMesh<> vol_mesh;
                     vol_mesh.load(geomModel.getValue().c_str());
 
                     sim.n_elements = vol_mesh.num_polys();
+                    timing_logger.stop("mesh_loading");
 
-
+                    // Start timing
+                    //timing_logger.start();
+                    //timing_logger.set_output_folder(app_folder);
                     if(setSGSoutput.getValue().compare("VECSIM") == 0)
                     {
+                        #ifdef DEBUG
                         std::cout << std::endl;
                         std::cout << FMAG("### SGS OUTPUT - VECSIM: vector of simulation results in the normal space -> a CSV file for each simulation") << std::endl;
                         std::cout << FMAG("### Back normal score is managed by using the command -B") << std::endl;
                         std::cout << std::endl;
+                        #endif
 
                         app_folder += "/_normspace";
                         if(!filesystem::exists(app_folder))
@@ -1835,6 +1900,10 @@ int main(int argc, char** argv)
                     exit(1);
                 }
 
+                // Record SGS simulation time
+                prefix_timing = setCRIT.getValue() + "_simulation";
+                timing_logger.stop(prefix_timing);
+
 
                 meta_output.setProject(Project);
                 meta_output.setDependencies(deps);
@@ -1885,39 +1954,6 @@ int main(int argc, char** argv)
             std::cout << FRED("ERROR. Geometry support is NOT set!") << std::endl;
             //exit(1);
         }
-
-        // /////////////////////////////
-        // //////////SUMMARY CSV FOR FRAMES
-        // ///
-        // ///
-        // std::cout << "Save summary of multi-frame variography analysis ... " << std::endl;
-
-        // std::ofstream file_statssummary(out_folder + "/" + app_name + "/" + Variable.getValue() + "_" + setSpace.getValue() + "summary.csv");
-        // std::string delimiter = ";";
-
-        // std::vector<std::string> vec_csv;
-        // vec_csv.push_back("frame_name");
-        // vec_csv.push_back("domain");
-        // if(setSpace.getValue().compare("NORMAL") == 0)
-        // {
-        //     vec_csv.push_back("est_mean_zscore");
-        //     vec_csv.push_back("est_var_zscore");
-        // }
-        // else
-        // {
-        //     vec_csv.push_back("est_mean");
-        //     vec_csv.push_back("est_var");
-        // }
-
-        // for(uint col =0; col < vec_csv.size(); col++)
-        // {
-        //     file_statssummary << vec_csv.at(col);
-        //     if(col != vec_csv.size() - 1)
-        //         file_statssummary << delimiter; // No comma at end of line
-        // }
-        // file_statssummary << "\n";
-        // ///////////////////////////////////////////////////////////////////////
-
 
         std::string abs_datadir = out_folder + "/" + app_data;
         std::vector<std::string> list_dir = get_directories(abs_datadir);
@@ -1990,15 +2026,17 @@ int main(int argc, char** argv)
                     // Check if the filename matches the pattern "name_XXXX.csv"
                     if (filename.find(search_string) == 0 && filename.substr(filename.size() - 4) == ".csv") {
                         file_list.push_back(filename);
-                        std::cout << filename << std::endl;
+                        std::cout << "=== Found simulation file ... " << filename << std::endl;
                     }
                 }
             }
             if (file_list.size() == 0)
             {
-                std::cerr << "ERROR: " << app_folder << " is empty!" << std::endl;
+                std::cerr << "=== ERROR: " << app_folder << " is empty!" << std::endl;
                 exit(1);
             }
+            std::cout << "=== Number of simulation files found in " << app_folder << " is: " << file_list.size() << std::endl;
+            std::cout << std::endl;
 
             // Sort the files based on the numeric part extracted from the filenames
             std::sort(file_list.begin(), file_list.end(), [](const std::string& a, const std::string& b) {
@@ -2258,18 +2296,10 @@ int main(int argc, char** argv)
 
             std::cout << FGRN("Statistics on values ... COMPLETED.") << std::endl;
 
-
-            //     file_statssummary.is_open();
-            //     for(uint col =0; col < vec_csv.size(); col++)
-            //     {
-            //         file_statssummary << vec_csv.at(col);
-            //         if(col != vec_csv.size() - 1)
-            //             file_statssummary << delimiter; // No comma at end of line
-            //     }
-            //     file_statssummary << "\n";
+            // Record statistics computation time
+            prefix_timing = "stats_"+setSpace.getValue();
+            timing_logger.stop(prefix_timing);
         }
-        // file_statssummary.close();// Close the file
-        // std::cout << FGRN("Save summary of multi-frame variography analysis ... COMPLETED.") << std::endl;
     }
 
 
@@ -2438,11 +2468,32 @@ int main(int argc, char** argv)
             }
             else
             {
+                timing_logger.start();
+
                 std::cout << norm_path << std::endl;
-                std::vector<std::string> list_csv = get_files(norm_path, ext, true);
-                if(list_csv.size() == 0)
+                std::vector<std::string> list_csv_all = get_files(norm_path, ext, true);
+                if(list_csv_all.empty())
                 {
-                    std::cerr << "ERROR: Only .CSV or .DAT are accepted." << std::endl;
+                    std::cerr << "== ERROR. Searching file with extension " << ext << ": No valid files found." << std::endl;
+                    exit(1);
+                }
+
+                // Check su file list nella cartella di compute con nome variabile + "_" + subdataset (riferito alle simulazioni) e se non esistono, prendi tutti i file con nome variabile + "_" (riferito alle simulazioni effettuate in varspace)
+                std::vector<std::string> list_csv;
+                for(const std::string &f : list_csv_all)
+                {
+                    std::string basename = get_basename(get_filename(f));
+                    // Deve iniziare con il prefisso e finire con _DDDD (4 cifre)
+                    if(basename.rfind(Variable.getValue() + "_", 0) == 0)
+                    {
+                        std::string suffix = basename.substr(Variable.getValue().size() + 1); // parte dopo "variabile_"
+                        if(!suffix.empty() && std::all_of(suffix.begin(), suffix.end(), ::isdigit))
+                            list_csv.push_back(f);
+                    }
+                }
+                if(list_csv.empty())
+                {
+                    std::cerr << "== ERROR. Searching simulation file with following format name: " << Variable.getValue() << "_<xxxx>. No valid files found." << std::endl;
                     exit(1);
                 }
 
@@ -2494,6 +2545,9 @@ int main(int argc, char** argv)
 
             std::cout << FGRN("Back Normal Score transformation ... COMPLETED.") << std::endl;
         }
+
+        prefix_timing = "back_normalscore";
+        timing_logger.stop(prefix_timing);
     }
 
 
@@ -2602,6 +2656,11 @@ int main(int argc, char** argv)
         std::cout << FGRN("Database creation ... COMPLETED.") << std::endl;
     }
 
+    // Print and export timing summary
+    timing_logger.print_summary();
+    if(setDebug.isSet())
+        timing_logger.export_to_csv(prefix_timing + "-timing.csv");
+
 
 
 
@@ -2631,6 +2690,10 @@ int main(int argc, char** argv)
 
         if(!filesystem::exists(app_folder))
             filesystem::create_directory(app_folder);
+
+        // Start timing
+        timing_logger.start();
+        timing_logger.set_output_folder(app_folder);
 
         /////////////////////////////
         //////////SUMMARY CSV FOR FRAMES
@@ -3271,16 +3334,22 @@ int main(int argc, char** argv)
 
                     if(setSGSoutput.getValue().compare("VECSIM") == 0)
                     {
+                        #ifdef DEBUG
                         std::cout << std::endl;
                         std::cout << FMAG("### SGS OUTPUT - VECSIM: vector of simulation results in the normal space -> a CSV file for each simulation") << std::endl;
                         std::cout << FMAG("### Back normal score is managed by using the command -B") << std::endl;
                         std::cout << std::endl;
+                        #endif
 
                         app_folder += "/_normspace";
                         if(!filesystem::exists(app_folder))
                             filesystem::create_directory(app_folder);
 
                         sgs = parallel_sgs2 (surf_mesh, normal_values.values, corr_x, corr_y, corr_z, fvm, setNsim.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue(), doOctantSearch.getValue());
+
+                        // Record SGS simulation time
+                        prefix_timing = "SGS_simulation";
+                        timing_logger.stop(prefix_timing);
 
                         std::cout << std::endl;
                         for(uint it=0; it< setNsim.getValue(); it++)
@@ -3332,6 +3401,10 @@ int main(int argc, char** argv)
 
                         sgs_output = parallel_sgs2 (surf_mesh, normal_values.values, corr_x, corr_y, corr_z, fvm, setNsim.getValue(), normal_values,
                                                    back_normal_score_inSGS, setExtrType.getValue(), setMinExtr.getValue(), setMaxExtr.getValue(), setInputSamples.getValue(), setSimulatedPoints.getValue(), setScaleRadius.getValue(), doOctantSearch.getValue());
+
+                        // Record SGS simulation time
+                        prefix_timing = "SGS_simulation";
+                        timing_logger.stop(prefix_timing);
 
 
 
@@ -3442,10 +3515,12 @@ int main(int argc, char** argv)
 
                     if(setSGSoutput.getValue().compare("VECSIM") == 0)
                     {
+                        #ifdef DEBUG
                         std::cout << std::endl;
                         std::cout << FMAG("### SGS OUTPUT - VECSIM: vector of simulation results in the normal space -> a CSV file for each simulation") << std::endl;
                         std::cout << FMAG("### Back normal score is managed by using the command -B") << std::endl;
                         std::cout << std::endl;
+                        #endif
 
                         app_folder += "/_normspace";
                         if(!filesystem::exists(app_folder))
