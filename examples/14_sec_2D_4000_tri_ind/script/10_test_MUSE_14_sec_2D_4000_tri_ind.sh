@@ -214,7 +214,7 @@ muse_vario -V -p ${WP} -v ${VAR0} --sub ${GEOM} --vario MODEL --dir ${DIR} --dim
 
 #compute:
 ##########  COMPUTE  ###########
-muse_compute -C -p ${WP} -v ${VAR0} --sub ${GEOM} --dir ${DIR} --dim ${DIM} -m ${OUTSURF}/${GEOM}.obj --crit SISIM --nsim ${NSIM}
+muse_compute -C -p ${WP} -v ${VAR0} --sub ${GEOM} --dir ${DIR} --dim ${DIM} -m ${OUTSURF}/${GEOM}.obj --crit SISIM --nsim ${NSIM} --simulated 4 --input 2 --scaleradius 1.2 --octant
 
 
 ################################

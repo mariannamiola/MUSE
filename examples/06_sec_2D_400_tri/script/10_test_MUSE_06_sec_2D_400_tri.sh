@@ -256,7 +256,7 @@ fi
 
 #vario:
 ##########  VARIO  ###########
-muse_vario -V -p ${WP} -v ${VAR} --rotaxis X --rotangle 270 --nscore YES --dir ${DIR} --dim ${DIM} --vario MODEL --dirs 0,70,80,90,110 --degtol 15 --vclean 5 --eps 5.0 #--weight #--lagspac CONSTANT --pstep 0.5
+muse_vario -V -p ${WP} -v ${VAR} --rotaxis X --rotangle 270 --nscore YES --dir ${DIR} --dim ${DIM} --vario MODEL --dirs 0,30,70,80,90,110 --degtol 15 --vclean 5 --eps 5.0 #--weight #--lagspac CONSTANT --pstep 0.5
 
 
 #compute:

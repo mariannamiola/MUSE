@@ -1,6 +1,8 @@
 #include <iostream>
 #include <filesystem>
 #include <utility>
+#include <algorithm>
+#include <cstdlib>
 #include <limits.h>
 
 #include <tclap/CmdLine.h>
@@ -34,6 +36,7 @@
 #include "geostatslib/statistics/normal_score.h"
 #include "geostatslib/statistics/variogram.h"
 #include "geostatslib/statistics/decluster.h"
+#include "geostatslib/statistics/histogram_smoothing.h"
 
 #include "muselib/geostatistics/utils.h"
 #include "muselib/geostatistics/vario.h"
@@ -61,6 +64,49 @@
 
 using namespace MUSE;
 using namespace TCLAP;
+
+namespace
+{
+void ensure_nested_variogram(variogram &model,
+                             const std::string &context)
+{
+    if (model.has_nested_structures())
+    {
+        model.sync_legacy_fields();
+        return;
+    }
+
+    const double major_range = std::max(model.range_max, model.range);
+    const double minor_range = (model.range_min > 0.0) ? model.range_min : major_range;
+    const double partial_sill = model.sill - model.nugget;
+
+    if (model.type.empty())
+    {
+        std::cerr << "ERROR: nested-only variogram requires a valid model type [" << context << "]" << std::endl;
+        std::exit(1);
+    }
+    if (major_range <= 0.0 || minor_range <= 0.0)
+    {
+        std::cerr << "ERROR: nested-only variogram requires positive ranges [" << context << "]" << std::endl;
+        std::exit(1);
+    }
+    if (partial_sill <= 0.0)
+    {
+        std::cerr << "ERROR: nested-only variogram requires positive partial sill [" << context << "]" << std::endl;
+        std::exit(1);
+    }
+
+    variogram_structure component;
+    component.type = model.type;
+    component.sill = partial_sill;
+    component.set_range(minor_range, major_range);
+    component.set_azimuth(model.get_azimuth());
+
+    model.clear_structures();
+    model.structures.push_back(component);
+    model.sync_legacy_fields();
+}
+}
 
 
 int main(int argc, char** argv)
@@ -188,6 +234,7 @@ int main(int argc, char** argv)
 
     ValueArg<double> setRangeStep           ("", "rangestep", "Set range step", false, 100.0, "double", cmd);
     ValueArg<double> setNuggetStep          ("", "nugstep", "Set nugget step", false, 100.0, "double", cmd);
+    ValueArg<int> setNestedStructures       ("", "nstruct", "Set fixed number of nested structures for directional nested fitting (1..3)", false, 2, "int", cmd);
 
     ValueArg<double> setMaxDistance         ("", "maxdist", "Set maximum distance between points for computing experimental variogram", false, -DBL_MAX, "double", cmd);
     ValueArg<double> setToleranceFactor     ("", "tolfac", "Set tolerance factor for computing experimental variogram", false, 2.0, "double", cmd);
@@ -1091,6 +1138,8 @@ int main(int argc, char** argv)
                                 fitted_exp_var = fit_ind_variogram(exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), var_cat);
                             }
 
+                            ensure_nested_variogram(fitted_exp_var, "vario/categorical/OMNI");
+
                             std::vector<MUSE::variogram_methods> fitvario;
 
                             MUSE::variogram_methods fitvariov;
@@ -1100,6 +1149,7 @@ int main(int argc, char** argv)
                             fitvariov.setSill(fitted_exp_var.sill);
                             fitvariov.set_range(fitted_exp_var.range);
                             fitvariov.setType(fitted_exp_var.type);
+                            fitvariov.setNestedStructures(fitted_exp_var.structures);
 
                             fitvario.push_back(fitvariov);
 
@@ -1327,10 +1377,14 @@ int main(int argc, char** argv)
                                 }
                             }
 
-                            catch (exception e)
+                            catch (const std::exception &e)
                             {
                                 std::cerr << "ERROR Directional variogram " << e.what() << std::endl;
+                                exit(1);
                             }
+
+                            for (size_t i = 0; i < vv.size(); ++i)
+                                ensure_nested_variogram(vv.at(i), "vario/categorical/DIR");
 
 
 
@@ -1348,6 +1402,7 @@ int main(int argc, char** argv)
                                 fitvariov.setSill(v.sill);
                                 fitvariov.set_range(v.range);
                                 fitvariov.setType(v.type);
+                                fitvariov.setNestedStructures(v.structures);
 
                                 fitvario.push_back(fitvariov);
                             }
@@ -1382,11 +1437,18 @@ int main(int argc, char** argv)
                                 {
                                     variogram v = vv.at(i);
 
-                                    h_plot.x.push_back(get_rangex(v.range, directions.at(i)));
-                                    h_plot.y.push_back(get_rangey(v.range, directions.at(i)));
+                                    double composite_range = 0.0;
+                                    if (v.has_nested_structures())
+                                        for (const auto &s : v.structures)
+                                            composite_range += s.range_max;
+                                    else
+                                        composite_range = v.range;
 
-                                    h_plot.x.push_back(get_rangex(v.range, 180 + directions.at(i)));
-                                    h_plot.y.push_back(get_rangey(v.range, 180 + directions.at(i)));
+                                    h_plot.x.push_back(get_rangex(composite_range, directions.at(i)));
+                                    h_plot.y.push_back(get_rangey(composite_range, directions.at(i)));
+
+                                    h_plot.x.push_back(get_rangex(composite_range, 180 + directions.at(i)));
+                                    h_plot.y.push_back(get_rangey(composite_range, 180 + directions.at(i)));
                                 }
 
 
@@ -1402,8 +1464,7 @@ int main(int argc, char** argv)
                                 if(summary.min_direction < 0)
                                     summary.min_direction = 180 + summary.min_direction;
 
-                                                            std::cout << "Computing: MAX direction "<< summary.max_direction << " degree from North; MIN direction "<< summary.min_direction << " degree from North."<< std::endl;
-                                std::cout << FMAG("NOTA BENE: Questa soluzione sottostima il range massimo!!") << std::endl;
+                                std::cout << "Computing: MAX direction "<< summary.max_direction << " degree from North; MIN direction "<< summary.min_direction << " degree from North."<< std::endl;
                                 std::cout << std::endl;
 
                                 biv_plot_leg(h_plot, "Rose Diagram of Ranges", "hx", "hy", false, "Dir degree");
@@ -1472,8 +1533,16 @@ int main(int argc, char** argv)
                         std::cout << "### Number of step for declustering (grid translation) is set on " << setNStep.getValue() << std::endl;
                         std::vector<double> decl_weight = decluster2d(corr_x, corr_y, setCellSize.getValue(), setNStep.getValue());
                         std::cout << "2D declustering ... COMPLETED." << std::endl;
+                           
+                        // HISTOGRAM SMOOTHING
+                        double min = *min_element(conv_values.begin(), conv_values.end());
+                        double max = *max_element(conv_values.begin(), conv_values.end());
+                        vector<double> p, z;
 
-                        normal_values = normal_score(conv_values, decl_weight); //RICORDA!! c'è un terzo parametro da considerare nella normal score, settato di default su false
+                        vector<double> smoothed_cdf = hist_smooth(conv_values, decl_weight, z, p, min, max, 300, 1000);
+                        
+                        normal_values = normal_score(conv_values, smoothed_cdf,true); // RICORDA!! c'è un terzo parametro da considerare nella normal score, settato di default su false
+                        //normal_values = normal_score(conv_values, decl_weight); //RICORDA!! c'è un terzo parametro da considerare nella normal score, settato di default su false
                         export1d_xyz(app_folder + "/" + Variable.getValue() + "_weight.dat", decl_weight);
                     }
                     else
@@ -1494,10 +1563,25 @@ int main(int argc, char** argv)
                         std::cout << BOLD(FMAG("#################################")) << std::endl;
                         std::cout << std::endl;
 
-                        normal_values = normal_score(conv_values);
+                          // HISTOGRAM SMOOTHING
+                        double min = *min_element(conv_values.begin(), conv_values.end());
+                        double max = *max_element(conv_values.begin(), conv_values.end());
+                        vector<double> p, z;
+
+                        
+                        vector<double> unit_weight(conv_values.size(), 1.0);
+                        vector<double> smoothed_cdf = hist_smooth(conv_values, unit_weight, z, p, min, max, 300, 1000);
+                        
+                        normal_values = normal_score(conv_values, smoothed_cdf,true); // RICORDA!! c'è un terzo parametro da considerare nella normal score, settato di default su false
+
+                        
+                       // normal_values = normal_score(conv_values);
                         //normal_values = normal_score2(conv_values);
                         //normal_values = normal_score3(conv_values);
+
                     }
+                    
+                    
 
                     export1d_xyz(app_folder + "/" + Variable.getValue() + "_convval.dat", conv_values);
                     export3d_xyz(app_folder + "/" + Variable.getValue() + "_nscore.dat", normal_values.values, normal_values.x, normal_values.nsco);
@@ -1822,12 +1906,12 @@ int main(int argc, char** argv)
                                 variogram_type model_type;
                                 convert_from_str(setModel.getValue(), model_type);
 
-                                fitted_exp_var = fit_variogram (exp_var, setRangeStep.getValue(), model_type, setNugget.getValue(), true);
+                                fitted_exp_var = fit_variogram_nested_fixed_model_nugget(exp_var, setRangeStep.getValue(), model_type, setNugget.getValue(), true);
                             }
                             else if(setNugget.isSet())
                             {
                                 std::cout << "Fit variogram with fixed nugget: " << setNugget.getValue() << std::endl;
-                                fitted_exp_var = fit_variogram_1par (exp_var, setRangeStep.getValue(), setNugget.getValue());
+                                fitted_exp_var = fit_variogram_nested_fixed_nugget(exp_var, setRangeStep.getValue(), setNugget.getValue(), true);
                             }
                             else if(setModel.isSet())
                             {
@@ -1835,7 +1919,7 @@ int main(int argc, char** argv)
                                 variogram_type model_type;
                                 convert_from_str(setModel.getValue(), model_type);
 
-                                fitted_exp_var = fit_variogram (exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), model_type);
+                                fitted_exp_var = fit_variogram_nested_fixed_model(exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), model_type, true);
                             }
                             else if (setSill.isSet())
                             {
@@ -1846,8 +1930,10 @@ int main(int argc, char** argv)
                             else
                             {
                                 std::cout << "Automatic fitting of experimental variogram ... " << std::endl;
-                                fitted_exp_var = fit_variogram(exp_var, setRangeStep.getValue(), setNuggetStep.getValue());
+                                fitted_exp_var = fit_variogram_nested_auto(exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), true);
                             }
+
+                            ensure_nested_variogram(fitted_exp_var, "vario/numeric/OMNI");
 
 
 
@@ -1861,6 +1947,7 @@ int main(int argc, char** argv)
                             fitvariov.setSill(fitted_exp_var.sill);
                             fitvariov.set_range(fitted_exp_var.range);
                             fitvariov.setType(fitted_exp_var.type);
+                            fitvariov.setNestedStructures(fitted_exp_var.structures);
 
                             fitvario.push_back(fitvariov);
 
@@ -2053,6 +2140,13 @@ int main(int argc, char** argv)
 
 
                             vector<variogram> vv;
+                            const int nested_structure_count = setNestedStructures.getValue();
+                            if (nested_structure_count < 1 || nested_structure_count > 3)
+                            {
+                                std::cerr << "ERROR: --nstruct must be in [1,3]." << std::endl;
+                                exit(1);
+                            }
+                            std::cout << "Directional nested fitting uses fixed number of structures: " << nested_structure_count << std::endl;
                             try
                             {
                                 if (setModel.isSet() && setNugget.isSet())
@@ -2063,14 +2157,14 @@ int main(int argc, char** argv)
                                     variogram_type model_type;
                                     convert_from_str(setModel.getValue(), model_type);
 
-                                    vv = fit_dir_variogram (dir_ex_var, directions, setRangeStep.getValue(), model_type, setNugget.getValue(), true);
+                                    vv = fit_directional_variogram_nested_fixed_model_nugget(dir_ex_var, directions, setRangeStep.getValue(), model_type, setNugget.getValue(), true, static_cast<uint>(nested_structure_count));
                                 }
                                 else if(setNugget.isSet())
                                 {
                                     std::cout << "Fit variogram with fixed nugget: " << setNugget.getValue() << std::endl;
                                     std::cout << FRED("Weight on nugget is not active!") << std::endl;
                                     std::cout << FMAG("Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd") << std::endl;
-                                    vv = fit_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNugget.getValue(), true);
+                                    vv = fit_directional_variogram_nested_fixed_nugget(dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNugget.getValue(), true, static_cast<uint>(nested_structure_count));
                                 }
                                 else if(setModel.isSet())
                                 {
@@ -2078,7 +2172,7 @@ int main(int argc, char** argv)
                                     variogram_type model_type;
                                     convert_from_str(setModel.getValue(), model_type);
 
-                                    vv = fit_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), model_type, weight, true);
+                                    vv = fit_directional_variogram_nested_model_weighted(dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), model_type, weight, true, static_cast<uint>(nested_structure_count));
                                 }
                                 else if (setSill.isSet())
                                 {
@@ -2094,13 +2188,17 @@ int main(int argc, char** argv)
                                 else
                                 {
                                     std::cout << "Automatic fitting of directional variograms is set ..." << std::endl;
-                                    vv = fit_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), weight, true);
+                                    vv = fit_directional_variogram_nested_auto_weighted(dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), weight, true, static_cast<uint>(nested_structure_count));
                                 }
                             }
-                            catch (exception e)
+                            catch (const std::exception &e)
                             {
                                 std::cerr << "ERROR Directional variogram " << e.what() << std::endl;
+                                exit(1);
                             }
+
+                            for (size_t i = 0; i < vv.size(); ++i)
+                                ensure_nested_variogram(vv.at(i), "vario/numeric/DIR");
 
 
 
@@ -2121,6 +2219,7 @@ int main(int argc, char** argv)
                                 fitvariov.setRangeZ(v.range);
 
                                 fitvariov.setType(v.type);
+                                fitvariov.setNestedStructures(v.structures);
 
                                 fitvario.push_back(fitvariov);
                             }
@@ -2154,11 +2253,18 @@ int main(int argc, char** argv)
                                 {
                                     variogram v = vv.at(i);
 
-                                    h_plot.x.push_back(get_rangex(v.range, directions.at(i)));
-                                    h_plot.y.push_back(get_rangey(v.range, directions.at(i)));
+                                    double composite_range = 0.0;
+                                    if (v.has_nested_structures())
+                                        for (const auto &s : v.structures)
+                                            composite_range += s.range_max;
+                                    else
+                                        composite_range = v.range;
 
-                                    h_plot.x.push_back(get_rangex(v.range, 180 + directions.at(i)));
-                                    h_plot.y.push_back(get_rangey(v.range, 180 + directions.at(i)));
+                                    h_plot.x.push_back(get_rangex(composite_range, directions.at(i)));
+                                    h_plot.y.push_back(get_rangey(composite_range, directions.at(i)));
+
+                                    h_plot.x.push_back(get_rangex(composite_range, 180 + directions.at(i)));
+                                    h_plot.y.push_back(get_rangey(composite_range, 180 + directions.at(i)));
                                 }
 
 

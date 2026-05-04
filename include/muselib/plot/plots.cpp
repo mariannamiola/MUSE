@@ -121,7 +121,8 @@ void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, co
     model_gamma.push_back(model.nugget);
 
     variogram_type type;
-    convert_from_str(model.type, type);
+    if (!model.has_nested_structures())
+        convert_from_str(model.type, type);
 
 //    for(size_t i=0; i< dataplot.x.size(); i++)
 //    {
@@ -138,19 +139,27 @@ void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, co
         double h = model_h.at(i-1) + delta;
         model_h.push_back(h);
 
-        //double g = get_gamma (dataplot.x.at(i), model.range, model.nugget, 1-model.nugget, type);
-        double g = get_gamma (h, model.range, model.nugget, model.sill - model.nugget, type);
+        double g = 0.0;
+        if (model.has_nested_structures())
+            g = give_gamma_from_lag(model, h);
+        else
+            g = get_gamma(h, model.range, model.nugget, model.sill - model.nugget, type);
+
         model_gamma.push_back(g);
     }
 
 
     auto p2 = matplot::plot(model_h, model_gamma);
-    p2->display_name("Model variogram - " + model.type);
+    if (model.has_nested_structures())
+        p2->display_name("Model variogram - structured (" + std::to_string(model.structures.size()) + " structures)");
+    else
+        p2->display_name("Model variogram - " + model.type);
     matplot::hold(matplot::on);
 
     //matplot::legend();
 
-    matplot::ylim({0, model.sill + eps_y}); //0.05
+    const double y_upper = model.has_nested_structures() ? model.total_sill() + eps_y : model.sill + eps_y;
+    matplot::ylim({0, y_upper}); //0.05
 }
 
 void x_err_plot (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label)
