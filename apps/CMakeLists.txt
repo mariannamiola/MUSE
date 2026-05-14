@@ -218,8 +218,9 @@ find_package(OpenMP REQUIRED)
 
 #####
 # Flann
-#find_package(FLANN REQUIRED)
-#include_directories(${FLANN_INCLUDE_DIR})
+#find_package(FLANN REQUIRED PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../external/GeoStatsLib/external/flann-lib/installed NO_DEFAULT_PATH)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../external/GeoStatsLib/external/flann-lib/installed/include)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../external/GeoStatsLib/external/flann-lib/installed/lib)
 
 #####
 # Armadillo
@@ -248,7 +249,7 @@ include_directories(BEFORE "../external/ellipse-fitting")
 
 #####
 # database
-include_directories(BEFORE "../external/muse_database/include")
+#include_directories(BEFORE "../external/muse_database/include")
 
 
 #####

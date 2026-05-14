@@ -26,11 +26,7 @@
 
 #include "muselib/input/load_xyz.h"
 
-
 #include "muselib/geostatistics/stats.h"
-
-#include "create_db.h"
-#include "insert_db.h"
 
 #include "geostatslib/../utils/geom_utils.h"
 #include "geostatslib/statistics/data_structures.h"
@@ -2553,7 +2549,7 @@ int main(int argc, char** argv)
 
 
 
-    //---------------------------------------------------
+/*     //---------------------------------------------------
     //---------------------------------------------------
     //---------------------------------------------------
     //---> CREATION DATABASE SWITCH ARGUMENT
@@ -2654,7 +2650,7 @@ int main(int argc, char** argv)
         sqlite3_close(db);
 
         std::cout << FGRN("Database creation ... COMPLETED.") << std::endl;
-    }
+    } */
 
     // Print and export timing summary
     timing_logger.print_summary();
