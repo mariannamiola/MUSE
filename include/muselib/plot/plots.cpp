@@ -1,7 +1,5 @@
 #include "plots.h"
 
-#include <matplot/matplot.h>
-
 #include <geostatslib/statistics/data_structures.h>
 #include <geostatslib/statistics/stats.h>
 
@@ -71,25 +69,23 @@ void biv_plot (const MUSE::PlotStruct &dataplot, const std::string &title, const
 }
 
 
-void biv_plot_leg (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label, bool set_legend, std::string legend)
+matplot::figure_handle biv_plot_leg (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label, bool set_legend, std::string legend)
 {
+    auto fig = matplot::figure(true);
+    fig->size(800, 600);   // golden ratio
+
     auto p = matplot::scatter(dataplot.x, dataplot.y);
+    p->marker_style(matplot::line_spec::marker_style::point);
+    p->marker_size(10);
+    p->marker_face(true); 
 
     matplot::title(title);
     matplot::xlabel(x_label);
     matplot::ylabel(y_label);
-    matplot::grid(matplot::on);
-
-    //p->marker_style(matplot::line_spec::marker_style::circle);
 
     if(set_legend == true)
         p->display_name(legend);
-
-
-
-    //matplot::xlim({0, 4000});
-
-    //matplot::show();
+    return fig;
 }
 
 void color_map (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label)
@@ -427,8 +423,10 @@ void tri_plot (const MUSE::PlotStruct &dataplot, const std::string &title, const
 
 
 
-void ellipse_plot (const MUSE::EllipseParameter &ellipse_par, const double &eps)
+void ellipse_plot (matplot::figure_handle fig, const MUSE::EllipseParameter &ellipse_par, const double &eps)
 {
+    fig->size(600, 600);   // golden ratio
+
     //Estrazione punti sull'ellisse
     std::vector<double> x_points, y_points;
 
@@ -451,7 +449,12 @@ void ellipse_plot (const MUSE::EllipseParameter &ellipse_par, const double &eps)
         y_points.push_back(y);
     }
 
-    matplot::plot(x_points, y_points);
+    auto p1 = matplot::plot(x_points, y_points);
+    //p1->marker_style(matplot::line_spec::marker_style::point);
+    //p1->marker_size(10);
+    p1->marker_face(true); 
+    p1->line_width(4);
+    p1->line_style("-");
 
     //Setting limits for axis
     double max_x = *max_element(x_points.begin(), x_points.end()) + eps;
@@ -461,10 +464,9 @@ void ellipse_plot (const MUSE::EllipseParameter &ellipse_par, const double &eps)
     else
         matplot::axis({-max_y, max_y, -max_y, max_y});
 
-//    std::string str = "a = " + to_string(width);
-//    auto [text, arrow] = matplot::textarrow(center_x, center_y, width*cos(M_PI-phi), width*sin(M_PI-phi), str);
-//    //text ->color("red").font_size(100);
-    //arrow ->color("blue");
+    // --- GRIGLIA LEGGERA ---
+    matplot::grid(matplot::on);
+
 }
 
 
