@@ -13,30 +13,18 @@
 [submodule "external/cinolib"]
 	path = external/cinolib
 	url = https://github.com/mlivesu/cinolib.git
-[submodule "external/muse_database"]
-	path = external/muse_database
-	url = git@bitbucket.org:marianna_miola/muse_database.git
-[submodule "external/geostatslib"]
-	path = external/geostatslib
-	url = git@bitbucket.org:DanielaCabiddu/geostatslib.git
 [submodule "external/PROJ"]
 	path = external/PROJ
 	url = https://github.com/OSGeo/PROJ.git
 [submodule "external/gdal"]
 	path = external/gdal
 	url = https://github.com/OSGeo/gdal.git
-[submodule "external/fTetWild"]
-	path = external/fTetWild
-	url = https://github.com/wildmeshing/fTetWild.git
 [submodule "external/matplotplusplus"]
 	path = external/matplotplusplus
 	url = https://github.com/alandefreitas/matplotplusplus.git
 [submodule "external/VTK"]
 	path = external/VTK
 	url = https://github.com/Kitware/VTK.git
-[submodule "external/VolumeMesher"]
-	path = external/VolumeMesher
-	url = https://github.com/MarcoAttene/VolumeMesher.git
 [submodule "external/GeoStatsLib"]
 	path = external/GeoStatsLib
 	url = git@github.com:DanielaCabiddu/GeoStatsLib.git
