@@ -85,56 +85,36 @@ int main(int argc, char** argv)
 
     // Option 0. Index extraction from geometry model
     /**
-     * @brief Extraction data
-     * @param extract Enable extraction data
+     * @brief Extraction data basing on geometry model. This option allows to extract data from a geometry model, such as a surface or volume mesh, based on specified criteria. The extracted data can be used for further analysis or visualization.
      * @note When using -E/--extract, requires:
-     * - --geom: Geometry model (mandatory)
-     * OPTIONAL:
-     * - --zcoord: Z coordinate specification
-     * - --sub: Sub-dataset extraction
-     * @example -E --geom mesh_model --zcoord elevation
+     * - --geom: Geometry model to extract from (mandatory)
+     * - --zcoord: Coordinate Z to use for extraction (optional, used for 3D models)
+     * @example -E -p /path/to/project --geom model.obj
      */
-
-    SwitchArg setExtract                    ("E", "extract", "Extraction data", cmd, false); //booleano
-    /**
-
-     * @brief Project directory
-
-     * @param pdir Path to project directory
-
-     */
-
-    ValueArg<std::string> projectFolder     ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
+    SwitchArg setExtract                    ("E", "extract", "Set extraction data based on geometry model", cmd, false); //booleano
 
     /**
-     * @brief Geometry model
-     * @param geom geometry model
-     * @note Required when using -E/--extract flag
-     * The geometry model must exist in the project
+     * @brief Set project directory. This is the main directory where the project files are located. It is a required argument for running the application, as it specifies the context in which the manipulation will occur. The project directory should contain all necessary data and geometry files for the operations to be performed.
+     * @note This argument is mandatory for running the application. The project directory should be organized according to the expected structure of the MUSE project, with subdirectories for data, geometry, and output as needed.
+     * @example -p /path/to/project
      */
-
-
-    ValueArg<std::string> geomModel         ("", "geom", "Geometry model", false, "name_geometry", "string", cmd);
+    ValueArg<std::string> projectFolder     ("p", "pdir", "Set project directory", true, "path/to/project", "string", cmd);
 
     /**
-
-
-     * @brief Coordinate Z
-
-
-     * @param zcoord coordinate z
-
-
+     * @brief Set geometry model. This argument specifies the geometry model to be used for data extraction when the -E/--extract flag is enabled. The geometry model can be a surface mesh, volume mesh, or any other supported geometric representation. The specified model must exist within the project directory and will be used as the basis for extracting data according to the defined criteria.
+     * @example -E --geom model.obj
      */
+    ValueArg<std::string> geomModel         ("", "geom", "Set geometry model", false, "geometry-name", "string", cmd);
 
-
-    ValueArg<std::string> setZcoord         ("z", "zcoord", "Coordinate Z", false, "z_name", "string", cmd);
-
-
+    /**
+     * @brief Set coordinate Z. This argument specifies the coordinate Z to be used for data extraction when the -E/--extract flag is enabled. It is optional and used for 3D models.
+     * @example -E --geom model.obj --zcoord elevation
+     */
+    ValueArg<std::string> setZcoord         ("z", "zcoord", "Set coordinate Z", false, "z_name", "string", cmd);
 
     // Option 1. Index extraction from interval
     /**
-     * @brief Extraction data from interval
+     * @brief Set extraction data from interval
      * @param intextr Enable extraction data from interval
      * @note When using -I/--intextr, requires:
      * - --sup: Superior interval limit (mandatory)
@@ -142,16 +122,16 @@ int main(int argc, char** argv)
      * - --nvar: Variable name to check (mandatory)
      * @example -I --sup 100 --inf 0 --nvar temperature
      */
+    SwitchArg setIntervalExtraction         ("I", "intextr", "Set extraction data from interval", cmd, false); //booleano
 
-    SwitchArg setIntervalExtraction         ("I", "intextr", "Extraction data from interval", cmd, false); //booleano
     /**
      * @brief Set sup interval
      * @param sup sup interval
      * @note Used with -I/--intextr flag. Required for interval extraction
      * Must be used together with --inf and --nvar
      */
-
     ValueArg<int> supInterval               ("", "sup", "Set sup interval", false, 0, "int", cmd);
+
     /**
      * @brief Set inf interval
      * @param inf inf interval
@@ -167,23 +147,13 @@ int main(int argc, char** argv)
      * @note Used with -I/--intextr flag. Required for interval extraction
      * Must be used together with --sup and --inf
      */
-
-
     ValueArg<std::string> nameVar           ("", "nvar", "Set variable to check", false, "var_name", "string", cmd);
 
     /**
-
-
-     * @brief Extraction sub dataset basing on geometry
-
-
+     * @brief Set sub dataset extraction based on geometry
      * @param sub extraction sub dataset basing on geometry
-
-
      */
-
-
-    ValueArg<std::string> subDataset        ("", "sub", "Extraction sub dataset basing on geometry", false, "name", "path", cmd);
+    ValueArg<std::string> subDataset        ("", "sub", "Set sub dataset extraction based on geometry", false, "name", "path", cmd);
 
 
 
@@ -251,6 +221,7 @@ int main(int argc, char** argv)
      */
 
     SwitchArg setProjectionOnSurface        ("P", "prsurf", "Points projection on surfaces", cmd, false);
+    
     /**
      * @brief Compute points projection on boundary (2D section case).
      * @param prsect Flag to compute points projection on boundary (2d section case).
@@ -259,6 +230,7 @@ int main(int argc, char** argv)
      */
 
     SwitchArg setProjectionOnSection        ("S", "prsect", "Compute points projection on boundary (2D section case).", cmd, false);
+    
     /**
      * @brief Points projection on quads sections
      * @param prqsect Enable points projection on quads sections

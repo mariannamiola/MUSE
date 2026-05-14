@@ -1820,10 +1820,10 @@ int main(int argc, char** argv)
                                 std::cout << FMAG("NOTA BENE: Questa soluzione sottostima il range massimo!!") << std::endl;
                                 std::cout << std::endl;
 
-                                biv_plot_leg(h_plot, "Rose Diagram of Ranges", "hx", "hy", false, "Dir degree");
+                                auto fig = biv_plot_leg(h_plot, "Rose Diagram of Ranges", "hx", "hy", false, "Dir degree");
 
                                 matplot::hold(matplot::on);
-                                ellipse_plot(summary, setEps.getValue());
+                                ellipse_plot(fig, summary, setEps.getValue());
 
                                 matplot::save(app_folder + "/" + data.getName() + std::to_string(categ.at(cat)) + "_RangesDiagram", "jpeg");
                                 matplot::cla();
@@ -2588,10 +2588,10 @@ int main(int argc, char** argv)
                                 //std::cout << FMAG("NOTA BENE: Questa soluzione sottostima il range massimo!!") << std::endl;
                                 std::cout << std::endl;
 
-                                biv_plot_leg(h_plot, "Rose Diagram of Ranges", "hx", "hy", false, "Dir degree");
+                                auto fig = biv_plot_leg(h_plot, "Rose Diagram of Ranges", "hx", "hy", false, "Dir degree");
 
                                 matplot::hold(matplot::on);
-                                ellipse_plot(summary, setEps.getValue());
+                                ellipse_plot(fig, summary, setEps.getValue());
 
                                 matplot::save(app_folder + "/" + data.getName() + "_RangesDiagram", "jpeg");
                                 matplot::cla();
