@@ -52,9 +52,9 @@ build_mplib() {
     mkdir -p build
     cd build
 
-    cmake .. "$@" -DCMAKE_CXX_FLAGS="-O2"
+    cmake .. "$@" -DCMAKE_CXX_FLAGS="-O2" -DCMAKE_INSTALL_PREFIX="${EXTERNAL_DIR}/${NAME}/installed"
     cmake --build . --parallel ${NPROC} --config Release
-    sudo cmake --install .
+    cmake --install .
 }
 
 # ==========================
@@ -97,12 +97,21 @@ build_vtk() {
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 }
 
+build_flann() {
+    build_lib "GeoStatsLib/external/flann-lib" \
+        -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}/GeoStatsLib/external/flann-lib/installed \
+        -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DBUILD_PYTHON_BINDINGS=OFF \
+        -DBUILD_MATLAB_BINDINGS=OFF 
+}
+
 # ==========================
 # ARGUMENT PARSER
 # ==========================
 
 if [[ $# -eq 0 ]]; then
-    echo "Usage: ./00_buildDeps.sh [all|proj|gdal|vtk|matplot]"
+    echo "Usage: ./00_buildDeps.sh [all|proj|gdal|vtk|matplot|flann]"
     exit 1
 fi
 
@@ -113,6 +122,7 @@ for arg in "$@"; do
             build_proj
             build_gdal
             build_vtk
+            build_flann
             ;;
         matplot)
             build_matplot
@@ -125,6 +135,9 @@ for arg in "$@"; do
             ;;
         vtk)
             build_vtk
+            ;;
+        flann)
+            build_flann
             ;;
         *)
             echo "Unknown option: $arg"
