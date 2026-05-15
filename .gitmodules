@@ -28,3 +28,7 @@
 [submodule "external/matplotplusplus"]
 	path = external/matplotplusplus
 	url = https://github.com/alandefreitas/matplotplusplus.git
+[submodule "external/geostatslib"]
+	path = external/geostatslib
+	url = git@github.com:DanielaCabiddu/GeoStatsLib.git
+	branch = nested_variogram
