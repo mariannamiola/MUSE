@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <utility>
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <limits.h>
 
@@ -105,6 +106,88 @@ void ensure_nested_variogram(variogram &model,
     model.clear_structures();
     model.structures.push_back(component);
     model.sync_legacy_fields();
+}
+
+void validate_indicator_variogram_fit(const variogram &model,
+                                      const double indicator_variance,
+                                      const std::string &context)
+{
+    if (!model.has_nested_structures())
+    {
+        std::cerr << "ERROR: indicator fit is not nested [" << context << "]" << std::endl;
+        std::exit(1);
+    }
+
+    const double total_sill = model.total_sill();
+    if (!std::isfinite(model.nugget) || model.nugget < 0.0)
+    {
+        std::cerr << "ERROR: indicator fit has invalid nugget [" << context << "]" << std::endl;
+        std::exit(1);
+    }
+    if (!std::isfinite(total_sill) || total_sill <= 0.0)
+    {
+        std::cerr << "ERROR: indicator fit has invalid total sill [" << context << "]" << std::endl;
+        std::exit(1);
+    }
+    if (model.nugget >= total_sill)
+    {
+        std::cerr << "ERROR: indicator fit has nugget >= total sill [" << context << "]" << std::endl;
+        std::exit(1);
+    }
+
+    if (std::isfinite(indicator_variance) && indicator_variance > 0.0)
+    {
+        const double rel_err = std::abs(total_sill - indicator_variance) / indicator_variance;
+        if (rel_err > 0.15)
+        {
+            std::cerr << "WARNING: indicator fitted total sill (" << total_sill
+                      << ") differs from indicator variance (" << indicator_variance
+                      << ") in [" << context << "]" << std::endl;
+        }
+    }
+}
+
+void check_indicator_experimental_bounds(const exp_variog &exp_var,
+                                         const double indicator_variance,
+                                         const std::string &context)
+{
+    if (!std::isfinite(indicator_variance) || indicator_variance <= 0.0)
+        return;
+
+    size_t valid_points = 0;
+    size_t over_bound_points = 0;
+    double max_gamma = 0.0;
+
+    for (size_t i = 0; i < exp_var.gamma.size(); ++i)
+    {
+        const double gamma = exp_var.gamma.at(i);
+        if (!std::isfinite(gamma) || gamma < 0.0)
+            continue;
+
+        ++valid_points;
+        if (gamma > max_gamma)
+            max_gamma = gamma;
+        if (gamma > indicator_variance)
+            ++over_bound_points;
+    }
+
+    if (valid_points == 0)
+        return;
+
+    if (over_bound_points > 0)
+    {
+        std::cout << FYEL("WARNING: indicator experimental variogram exceeds theoretical sill in ")
+                  << over_bound_points << "/" << valid_points << " points"
+                  << " [" << context << "]"
+                  << ". The fitted model is constrained by indicator variance=" << indicator_variance
+                  << ", max experimental gamma=" << max_gamma << std::endl;
+    }
+    else
+    {
+        std::cout << "Indicator variogram bound check [" << context << "]"
+                  << ": all experimental gamma values are <= indicator variance="
+                  << indicator_variance << std::endl;
+    }
 }
 }
 
@@ -873,6 +956,8 @@ int main(int argc, char** argv)
                                 std::cout << "Clean experimental variogram ... COMPLETED." << std::endl;
                             }
 
+                            check_indicator_experimental_bounds(exp_var, var_cat, "vario/categorical/OMNI");
+
 
                             std::vector<MUSE::exp_variog_methods> variov;
 
@@ -1111,7 +1196,7 @@ int main(int argc, char** argv)
                                 variogram_type model_type;
                                 convert_from_str(fix_mod, model_type);
 
-                                fitted_exp_var = fit_ind_variogram_2par (exp_var, setRangeStep.getValue(), setNugget.getValue(), var_cat, model_type, true);
+                                fitted_exp_var = fit_ind_variogram_2par (exp_var, setRangeStep.getValue(), fix_nug, var_cat, model_type, true);
                             }
                             else if(setIndNugget.isSet() && nug_setcat)
                             {
@@ -1139,6 +1224,7 @@ int main(int argc, char** argv)
                             }
 
                             ensure_nested_variogram(fitted_exp_var, "vario/categorical/OMNI");
+                            validate_indicator_variogram_fit(fitted_exp_var, var_cat, "vario/categorical/OMNI");
 
                             std::vector<MUSE::variogram_methods> fitvario;
 
@@ -1282,6 +1368,13 @@ int main(int argc, char** argv)
                                 zeros.resize(dir_ex_var.size(), 0.0);
                             }
 
+                            for (size_t i = 0; i < dir_ex_var.size(); ++i)
+                            {
+                                check_indicator_experimental_bounds(dir_ex_var.at(i),
+                                                                   var_cat,
+                                                                   "vario/categorical/DIR/dir=" + std::to_string(static_cast<int>(directions.at(i))));
+                            }
+
 
                             std::vector<MUSE::exp_variog_methods> variov;
                             for(size_t i=0; i<dir_ex_var.size(); i++)
@@ -1384,7 +1477,10 @@ int main(int argc, char** argv)
                             }
 
                             for (size_t i = 0; i < vv.size(); ++i)
+                            {
                                 ensure_nested_variogram(vv.at(i), "vario/categorical/DIR");
+                                validate_indicator_variogram_fit(vv.at(i), var_cat, "vario/categorical/DIR");
+                            }
 
 
 
@@ -1485,7 +1581,7 @@ int main(int argc, char** argv)
                                 fvm.set_range(vv.at(0).range);
                             fvm.set_azimuth(metavario.getSummary().max_direction);
                             fvm.nugget = metavario.getFitExpVariog(0).nugget;
-                            fvm.sill = metavario.getFitExpVariog(0).sill - fvm.nugget; //che deve essere ovviamente = 1
+                            fvm.sill = metavario.getFitExpVariog(0).sill;
 
                             MUSE::variogram_methods fitvariov;
                             fitvariov.setNugget(fvm.nugget);
@@ -2303,7 +2399,7 @@ int main(int argc, char** argv)
                                 fvm.set_range(vv.at(0).range);
                             fvm.set_azimuth(metavario.getSummary().max_direction);
                             fvm.nugget = metavario.getFitExpVariog(0).nugget;
-                            fvm.sill = metavario.getFitExpVariog(0).sill - fvm.nugget; //che deve essere ovviamente = 1
+                            fvm.sill = metavario.getFitExpVariog(0).sill;
 
                             MUSE::variogram_methods fitvariov;
                             fitvariov.setNugget(fvm.nugget);

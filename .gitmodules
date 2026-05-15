@@ -16,9 +16,6 @@
 [submodule "external/muse_database"]
 	path = external/muse_database
 	url = git@bitbucket.org:marianna_miola/muse_database.git
-[submodule "external/geostatslib"]
-	path = external/geostatslib
-	url = git@bitbucket.org:DanielaCabiddu/geostatslib.git
 [submodule "external/PROJ"]
 	path = external/PROJ
 	url = https://github.com/OSGeo/PROJ.git
