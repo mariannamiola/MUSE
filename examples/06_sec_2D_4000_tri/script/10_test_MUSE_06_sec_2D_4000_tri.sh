@@ -130,7 +130,8 @@ fi
 #export GEOM1=sec
 export GMOD=sec_xz
 
-export VAR=phi
+export VAR1=phi
+export VAR2=class
 #######################################################################
 
 
@@ -232,7 +233,7 @@ if [[ -d ${WP} ]]; then
        ##########  DATA  ###########
         muse_data -N -p ${WP}
         cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
-        muse_data -S -p ${WP}  --setX 1 --setY 2 --setZ 3
+        muse_data -S -p ${WP} --setX 1 --setY 2 --setZ 3
         muse_data -C -p ${WP}
     
         ##########  GEOMETRY  ###########
@@ -259,7 +260,7 @@ else
     ##########  DATA  ###########
     muse_data -N -p ${WP}
     cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
-    muse_data -S -p ${WP}  --setX 1 --setY 2 --setZ 3
+    muse_data -S -p ${WP} --setX 1 --setY 2 --setZ 3
     muse_data -C -p ${WP}
     
     ##########  GEOMETRY  ###########
@@ -278,29 +279,24 @@ fi
 
 #vario:
 ##########  VARIO  ###########
-muse_vario -V -p ${WP} -v ${VAR} --rotaxis X --rotangle 270 --nscore YES --dir ${DIR} --dim ${DIM} --vario MODEL --dirs 0,70,80,90,110 --degtol 15 --vclean 5 --weight --eps 5.0 --nugget 0.18
+muse_vario -V -p ${WP} -v ${VAR1} --rotaxis X --rotangle 270 --nscore YES --dir ${DIR} --dim ${DIM} --vario MODEL --dirs 0,70,80,90,110 --degtol 15 --vclean 5 --weight --eps 5.0 --nugget 0.18
 
 
 #compute:
 ##########  COMPUTE  ###########
-#export OUTCOM=${OUTWP}/compute/${VAR}_${DIR}${DIM}_${GMOD}
-#export OUTNORMS=${OUTCOM}/_normspace
-#export OUTVARS=${OUTCOM}/_varspace
-
-
 if [[ $OUTSGS == 'MEAN'* ]]; then
-  muse_compute -C -p ${WP} -v ${VAR} --rotaxis X --rotangle 270 -m ${OUTSURF}/${GMOD}.obj --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --bnscore --extr Extr --minextr 0 --maxextr 1 --octant --scaleradius 1.5 --input 10 --simulated 6
+  muse_compute -C -p ${WP} -v ${VAR1} --rotaxis X --rotangle 270 -m ${OUTSURF}/${GMOD}.obj --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --bnscore --extr Extr --minextr 0 --maxextr 1 --octant --scaleradius 1.5 --input 10 --simulated 6
 else
-  muse_compute -C -p ${WP} -v ${VAR} --rotaxis X --rotangle 270 -m ${OUTSURF}/${GMOD}.obj --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --octant --scaleradius 1.5 --input 10 --simulated 6
+  muse_compute -C -p ${WP} -v ${VAR1} --rotaxis X --rotangle 270 -m ${OUTSURF}/${GMOD}.obj --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --octant --scaleradius 1.5 --input 10 --simulated 6
 
   #stats:
-  muse_compute -S -p ${WP} -v ${VAR} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --csv
+  muse_compute -S -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --csv
 
   #back:
-  muse_compute -B -p ${WP} -v ${VAR} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --extr Extr --minextr 0 --maxextr 1 --csv
+  muse_compute -B -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --extr Extr --minextr 0 --maxextr 1 --csv
   
   #statsback:
-  muse_compute -S -p ${WP} -v ${VAR} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --space VAR --csv
+  muse_compute -S -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --space VAR --csv
 fi
 
 
@@ -322,18 +318,25 @@ else
 fi
 
 
-#db:
-##########  DATABASE  ###########
-if [[ $OUTSGS == 'MEAN'* ]]; then
-  echo "Dataset creation for MEAN SGS method ... NOT IMPLEMENTED!"
-else
-  muse_compute -D -p ${WP} -v ${VAR} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --space VAR
-fi
+#variosis:
+##########  VARIO  ###########
+muse_vario -V -p ${WP} -v ${VAR2} --vario MODEL --dir ${DIR} --dim ${DIM} --dirs 0,70,80,90,110 --degtol 15 --vclean 10 --itype SPHERICAL!6 --itype SPHERICAL!8 --inugget 0!1 --inugget 0!2 --inugget 0!3 --inugget 0!4 --inugget 0!5 --inugget 0!6 --inugget 0!7 --inugget 0!8
+
+#computesis:
+##########  COMPUTE  ###########
+muse_compute -C -p ${WP} -v ${VAR2} --dir ${DIR} --dim ${DIM} -m ${OUTSURF}/${GMOD}.obj --crit SISIM --nsim ${NSIM}
+
+################################
+export OUTCOMP=${OUTWP}/compute/${VAR2}_${DIR}${DIM}_${GMOD}
+export PDF_NAME=pdf_cat_
+export NCAT=8
+for ((i=1; i<=${NCAT}; i++))
+do
+    cp ${SCRIPT_DIR}/${PDF_NAME}${i}.txt ${OUTCOMP}/${VAR2}_${i}_pdf.csv
+    rm ${SCRIPT_DIR}/${PDF_NAME}${i}.txt
+done 
 
 
-#plot:
-##########  PLOT  ###########
-#-H -p ${WP} -v <FILE>
 
 ####################################################################### MUSE END
 
