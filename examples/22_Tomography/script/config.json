@@ -2,7 +2,7 @@
   "work_folder": "MUSE_test",
   "project_name": "22_Tomography",
 
-  "samples": "samples.csv",
+  "samples": "cube.csv",
   "varname": "S",
   "units": "m/s",
 
@@ -20,7 +20,7 @@
   "compute": {
     "space": "_varspace",
     "where": "_stats",
-    "var": "best",
+    "var": "mean",
     "units": "m/s",
     "geom": "boundary"
   },

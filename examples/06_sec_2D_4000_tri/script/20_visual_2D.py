@@ -79,11 +79,23 @@ print("Samples CSV: ", samplescsv_file)
 
 
 # ----------------------------------------------------------------
+# Pre processing samples csv file - remove headers 
+# ----------------------------------------------------------------
+with open(samplescsv_file, 'r') as f:
+    lines = f.readlines()
+
+header = lines[0]
+data = [header] + lines[6:]
+samplescsv_file_clean = os.path.join(script_dir, "..", "data", "samples.csv")
+with open(samplescsv_file_clean, 'w') as f:
+    f.writelines(data)
+
+
+# ----------------------------------------------------------------
 # CSV Readers - sample points
 # ----------------------------------------------------------------
-
 # create a new 'CSV Reader'
-samplescsv = CSVReader(registrationName=sample_csv, FileName=[samplescsv_file])
+samplescsv = CSVReader(registrationName=sample_csv, FileName=[samplescsv_file_clean])
 samplescsv.UseStringDelimiter = 0
 samplescsv.HaveHeaders = 1
 samplescsv.FieldDelimiterCharacters = ';'

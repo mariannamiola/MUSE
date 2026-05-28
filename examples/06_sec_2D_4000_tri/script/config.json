@@ -2,7 +2,7 @@
   "work_folder": "MUSE_test",
   "project_name": "06_sec_2D_4000_tri",
 
-  "samples": "samples.csv",
+  "samples": "AMGA_full_may_2026.csv",
   "varname": "phi",
   "units": "-",
 
