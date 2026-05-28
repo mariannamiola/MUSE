@@ -19,6 +19,17 @@ help()
 (
 set -e	#exit if an error occours
 
+######################################################
+################ PROJECT NAME ########################
+
+FILENAME=$(basename "$0")          # prende il nome dello script in esecuzione
+NAME="${FILENAME%.*}"           # rimuove l'estensione .sh
+export setPROJECT_NAME="${NAME#10_test_MUSE_}"
+echo "Project name (automatically) set to: $setPROJECT_NAME"
+
+######################################################
+######################################################
+
 SHORT=d:,D:,p:,r:,s:,w:,h
 LONG=data:,data_source:,proj:,repl:,sim:,work:,help
 OPTS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
@@ -85,7 +96,7 @@ if [ "$OPTDATASOURCE" ]	#if a input data folder is provided
 then
 	export DATA_SOURCE=${OPTDATASOURCE}
 else
-	export DATA_SOURCE=${MUSE}/examples/06_sec_2D_4000_tri/data
+	export DATA_SOURCE=${MUSE}/examples/${setPROJECT_NAME}/data
 fi
 
 if [ "$OPTWORK" ]	#if a working directory is provided
@@ -103,14 +114,14 @@ if [ "$OPTPROJ" ]	#if a project name is provided
 then
 	export PROJ=${OPTPROJ}
 else
-	export PROJ=06_sec_2D_4000_tri
+	export PROJ=${setPROJECT_NAME}
 fi
 
 if [ "$OPTDATA" ]	#if a data filename is provided
 then
 	export DATA=${OPTDATA}
 else
-	export DATA=samples_sec4000.csv
+	export DATA=AMGA_full_may_2026.csv
 fi
 
 
