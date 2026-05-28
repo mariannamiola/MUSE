@@ -32,7 +32,7 @@
       "z": "Z",
       "value": "phi",
       "cat": false,
-      "n_cat": 0
+      "n_cat": 8
     },
 
     "scalarfield": {
@@ -41,7 +41,7 @@
       "z": "Field 0",
       "value": "Field 0",
       "cat": false,
-      "n_cat": 0
+      "n_cat": 8
     }
   },
 

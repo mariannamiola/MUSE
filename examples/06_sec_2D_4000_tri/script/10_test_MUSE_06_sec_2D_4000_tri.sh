@@ -138,7 +138,7 @@ export VAR2=class
 # 2. Export flags
 #######################################################################
 #For geometry
-export OPT=a0.01
+export OPT=a0.1
 
 #For vario
 export DIR=DIR
@@ -320,11 +320,11 @@ fi
 
 #variosis:
 ##########  VARIO  ###########
-muse_vario -V -p ${WP} -v ${VAR2} --vario MODEL --dir ${DIR} --dim ${DIM} --dirs 0,70,80,90,110 --degtol 15 --vclean 10 --itype SPHERICAL!6 --itype SPHERICAL!8 --inugget 0!1 --inugget 0!2 --inugget 0!3 --inugget 0!4 --inugget 0!5 --inugget 0!6 --inugget 0!7 --inugget 0!8
+muse_vario -V -p ${WP} -v ${VAR2} --rotaxis X --rotangle 270 --vario MODEL --dir ${DIR} --dim ${DIM} --dirs 0,70,80,90,110 --degtol 15 --vclean 10 --itype SPHERICAL!6 --itype SPHERICAL!8 --inugget 0!1 --inugget 0!2 --inugget 0!3 --inugget 0!4 --inugget 0!5 --inugget 0!6 --inugget 0!7 --inugget 0!8
 
 #computesis:
 ##########  COMPUTE  ###########
-muse_compute -C -p ${WP} -v ${VAR2} --dir ${DIR} --dim ${DIM} -m ${OUTSURF}/${GMOD}.obj --crit SISIM --nsim ${NSIM}
+muse_compute -C -p ${WP} -v ${VAR2} --rotaxis X --rotangle 270 --dir ${DIR} --dim ${DIM} -m ${OUTSURF}/${GMOD}.obj --crit SISIM --nsim ${NSIM}
 
 ################################
 export OUTCOMP=${OUTWP}/compute/${VAR2}_${DIR}${DIM}_${GMOD}

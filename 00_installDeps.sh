@@ -18,6 +18,7 @@ if [[ "$LIB_EXT" == "so" ]]; then
     sudo apt-get install libarmadillo-dev -y 
     sudo apt-get install libeigen3-dev -y
     sudo apt-get install sqlite3 libsqlite3-dev -y
+    sudo apt-get install gnuplot -y
 else
     # macOS
     brew update

@@ -40,14 +40,6 @@ add_definitions(-DCINOLIB_USES_VTK)
 #set(CINOLIB_USES_VTK    ON )
 
 #####
-# VolumeMesher
-if (WIN32)
-	set(VOLUME_MESHER_EXECUTABLE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../external/VolumeMesher/build/Release/mesh_generator.exe")
-else()
-	set(VOLUME_MESHER_EXECUTABLE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../external/VolumeMesher/build/mesh_generator")
-endif()
-
-#####
 # triangle/tetgen
 set (TRIANGLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../external/triangle)
 set (TETGEN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../external/tetgen)
