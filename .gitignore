@@ -88,6 +88,9 @@ apps/data/output
 docs/html/*
 docs/md/*
 
+#example
+examples/*	
+
 # example 12_pianPadana_3D_hex_top
 examples/12_pianPadana_3D_hex_top/_fig_1Dprofile
 examples/12_pianPadana_3D_hex_top/_1Dprofile
