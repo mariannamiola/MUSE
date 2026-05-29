@@ -1,0 +1,59 @@
+{
+  "work_folder": "MUSE_test",
+  "project_name": "05_prism_3D_tet",
+
+  "samples": "data.csv",
+  "varname": "phi",
+  "units": "-",
+
+  "geometry": {
+    "name": "prism",
+    "sub": "",
+    "ext": "vtk"
+  },
+
+  "vario": {
+    "dir": "DIR",
+    "dim": "3Dxy"
+  },
+
+  "compute": {
+    "space": "_varspace",
+    "where": "_stats",
+    "var": "mean",
+    "units": "",
+    "geom": "prism"
+  },
+
+  "columns": {
+    "samples": {
+      "x": "X",
+      "y": "Y",
+      "z": "Z",
+      "value": "phi",
+      "cat": false,
+      "n_cat": 4
+    },
+
+    "scalarfield": {
+      "x": "Field 0",
+      "y": "Field 0",
+      "z": "Field 0",
+      "value": "Field 0",
+      "cat": false,
+      "n_cat": 4
+    }
+  },
+  
+  "view": {
+    "plane": "XZ",
+    "distance_factor": 1.5
+  },  
+
+  "output": {
+    "save": true,
+    "resolution": 3000,
+    "dir": "_fig",
+    "format": "png"
+  }
+}
