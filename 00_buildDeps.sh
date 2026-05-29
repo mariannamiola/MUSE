@@ -121,7 +121,7 @@ for arg in "$@"; do
             build_matplot
             build_proj
             build_gdal
-            build_vtk
+            #build_vtk
             build_flann
             ;;
         matplot)

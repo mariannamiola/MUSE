@@ -6,9 +6,4 @@ add_executable(${PROJECT_NAME}
   main.cpp
 )
 
-target_link_libraries(${PROJECT_NAME} Threads::Threads
-  VTK::CommonCore
-  VTK::CommonDataModel
-  VTK::IOXML
-  VTK::IOLegacy
-)
+target_link_libraries(${PROJECT_NAME} Threads::Threads)

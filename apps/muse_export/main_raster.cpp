@@ -26,6 +26,8 @@
 
 #include <tclap/CmdLine.h>
 
+#include "muselib/geometry/volume_mesh.h"
+
 using namespace TCLAP;
 
 int sign(const double x)
@@ -178,7 +180,8 @@ int main(int argc, char **argv)
         ////
 
         std::cout << "Reading mesh ..." << std::endl;
-        cinolib::Polyhedralmesh<> m_total(s.c_str());
+        MUSE::VolumeMesh<> m_total;
+        m_total.load(s.c_str());
 
         std::cout << std::endl << "Reading SIS results ..." << std::endl<< std::endl;
         std::ifstream csv_file;
@@ -198,7 +201,7 @@ int main(int argc, char **argv)
         // extract submesh aving only polys with label = input label
 
         std::cout << "Creating submesh with label " << label << " ..." << std::endl;
-        cinolib::Polyhedralmesh<> m;
+        MUSE::VolumeMesh<> m;
         std::unordered_map<uint,uint>      m2subm_vmap;
         std::unordered_map<uint,uint>      subm2m_vmap;
 

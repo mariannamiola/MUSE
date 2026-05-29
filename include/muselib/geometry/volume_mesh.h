@@ -56,9 +56,7 @@ public:
     //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
     void load(const char * filename) override
-    {
-        cinolib::Polyhedralmesh<M,V,E,F,P>::load(filename);
-    }
+    ;
 
     void write_poly_VTK(const char * filename);
 

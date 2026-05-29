@@ -55,6 +55,7 @@
 #include "muselib/input/load_vector.h"
 #include "muselib/input/load_raster.h"
 #include "muselib/input/load_xyz.h"
+#include "muselib/output/save_vtk.h"
 
 #include "muselib/reference_system/coordinate_systems.h"
 
@@ -75,6 +76,16 @@
 
 using namespace MUSE;
 using namespace TCLAP;
+
+template<class VolumeLikeMesh>
+static std::vector<std::vector<uint>> volume_cells_from_poly_verts(const VolumeLikeMesh &mesh)
+{
+    std::vector<std::vector<uint>> cells;
+    cells.reserve(mesh.num_polys());
+    for(uint pid = 0; pid < mesh.num_polys(); ++pid)
+        cells.push_back(mesh.poly_verts_id(pid));
+    return cells;
+}
 
 int main(int argc, char** argv)
 {
@@ -2749,7 +2760,18 @@ int main(int argc, char** argv)
 
             std::string out_mesh = out_volume + "/grid" + ext_vol;
 
-            mesh.save(out_mesh.c_str());
+            if(ext_vol == ".vtk" || ext_vol == ".VTK")
+            {
+                if(save_vtk(out_mesh, mesh.vector_verts(), volume_cells_from_poly_verts(mesh)) != 0)
+                {
+                    std::cerr << "ERROR while writing vtk file: " << out_mesh << std::endl;
+                    exit(1);
+                }
+            }
+            else
+            {
+                mesh.save(out_mesh.c_str());
+            }
 
             MUSE::Volume summary;
             MUSE::Volume::Parameters par;
@@ -3982,7 +4004,18 @@ int main(int argc, char** argv)
             std::cout << "=============================================" << std::endl;
             std::cout << std::endl;
 
-            volmesh.save(out_mesh.c_str());
+            if(ext_vol == ".vtk" || ext_vol == ".VTK")
+            {
+                if(save_vtk(out_mesh, volmesh.vector_verts(), volume_cells_from_poly_verts(volmesh)) != 0)
+                {
+                    std::cerr << "ERROR while writing vtk file: " << out_mesh << std::endl;
+                    exit(1);
+                }
+            }
+            else
+            {
+                volmesh.save(out_mesh.c_str());
+            }
             std::cout << "\033[0;32mExport mesh file: " << out_mesh << " ... COMPLETED.\033[0m" << std::endl;
 
             summary.setSummary(volmesh);
@@ -4006,7 +4039,18 @@ int main(int argc, char** argv)
             cinolib::Hexmesh<> volmesh;
             voxel_grid_to_hexmesh(grid, volmesh, cinolib::VOXEL_INSIDE);
 
-            volmesh.save(out_mesh.c_str());
+            if(ext_vol == ".vtk" || ext_vol == ".VTK")
+            {
+                if(save_vtk(out_mesh, volmesh.vector_verts(), volume_cells_from_poly_verts(volmesh)) != 0)
+                {
+                    std::cerr << "ERROR while writing vtk file: " << out_mesh << std::endl;
+                    exit(1);
+                }
+            }
+            else
+            {
+                volmesh.save(out_mesh.c_str());
+            }
             std::cout << "\033[0;32mExport mesh file: " << out_mesh << " ... COMPLETED.\033[0m" << std::endl;
 
             summary.setSummary(volmesh);
@@ -4023,7 +4067,18 @@ int main(int argc, char** argv)
 
             MUSE::Hexmesh<> hexmesh(setResx.getValue(), setResy.getValue(), setResz.getValue(), mesh);
 
-            hexmesh.save(out_mesh.c_str());
+            if(ext_vol == ".vtk" || ext_vol == ".VTK")
+            {
+                if(save_vtk(out_mesh, hexmesh.vector_verts(), volume_cells_from_poly_verts(hexmesh)) != 0)
+                {
+                    std::cerr << "ERROR while writing vtk file: " << out_mesh << std::endl;
+                    exit(1);
+                }
+            }
+            else
+            {
+                hexmesh.save(out_mesh.c_str());
+            }
             std::cout << "\033[0;32mExport mesh file: " << out_mesh << " ... COMPLETED.\033[0m" << std::endl;
 
             summary.setSummary(hexmesh);
@@ -4140,7 +4195,18 @@ int main(int argc, char** argv)
                     std::cout << "E "<< tetmesh.num_edges() << std::endl;
                     std::cout << "V "<< tetmesh.num_verts() << std::endl;
 
-                    tetmesh.save(out_mesh.c_str());
+                    if(ext_vol == ".vtk" || ext_vol == ".VTK")
+                    {
+                        if(save_vtk(out_mesh, tetmesh.vector_verts(), volume_cells_from_poly_verts(tetmesh)) != 0)
+                        {
+                            std::cerr << "ERROR while writing vtk file: " << out_mesh << std::endl;
+                            exit(1);
+                        }
+                    }
+                    else
+                    {
+                        tetmesh.save(out_mesh.c_str());
+                    }
                 }
                 else
                 {
@@ -4156,7 +4222,18 @@ int main(int argc, char** argv)
                     std::cout << "E "<< tetmesh.num_edges() << std::endl;
                     std::cout << "V "<< tetmesh.num_verts() << std::endl;
 
-                    tetmesh.save(out_mesh.c_str());
+                    if(ext_vol == ".vtk" || ext_vol == ".VTK")
+                    {
+                        if(save_vtk(out_mesh, tetmesh.vector_verts(), volume_cells_from_poly_verts(tetmesh)) != 0)
+                        {
+                            std::cerr << "ERROR while writing vtk file: " << out_mesh << std::endl;
+                            exit(1);
+                        }
+                    }
+                    else
+                    {
+                        tetmesh.save(out_mesh.c_str());
+                    }
                 }
                 std::cout << "\033[0;32mSaving mesh file in : " << out_mesh << " ... COMPLETED.\033[0m" << std::endl;
             }
@@ -4349,7 +4426,18 @@ int main(int argc, char** argv)
             geometa.write(out_volume + "/" + name + "_" + bound_name + ".json");
 
             std::string out_mesh = out_volume +"/" + name + "_" + bound_name + ext_vol;
-            sub_hexmesh.save(out_mesh.c_str());
+            if(ext_vol == ".vtk" || ext_vol == ".VTK")
+            {
+                if(save_vtk(out_mesh, sub_hexmesh.vector_verts(), volume_cells_from_poly_verts(sub_hexmesh)) != 0)
+                {
+                    std::cerr << "ERROR while writing vtk file: " << out_mesh << std::endl;
+                    exit(1);
+                }
+            }
+            else
+            {
+                sub_hexmesh.save(out_mesh.c_str());
+            }
 
             std::cout << std::endl;
             std::cout << "Saving hexmesh: " << out_mesh << std::endl;

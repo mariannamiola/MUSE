@@ -36,7 +36,6 @@ project(muse_geometry LANGUAGES CXX)
 
 #####
 # cinolib
-add_definitions(-DCINOLIB_USES_VTK)
 #set(CINOLIB_USES_VTK    ON )
 
 #####
@@ -65,12 +64,7 @@ add_executable(${PROJECT_NAME}
   #${PROJ_LIB}
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${triangle_lib_file} ${tetgen_lib_file} PROJ::proj GDAL::GDAL
-  VTK::CommonCore
-  VTK::CommonDataModel
-  VTK::IOXML
-  VTK::IOLegacy
-)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${triangle_lib_file} ${tetgen_lib_file} PROJ::proj GDAL::GDAL)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 	VOLUME_MESHER_EXECUTABLE="${VOLUME_MESHER_EXECUTABLE_PATH}"
@@ -86,10 +80,5 @@ add_executable(${TETGEN_GENERATOR}
   ${TETGEN_DIR}/build/libtetgen.a
 )
 
-target_link_libraries(${TETGEN_GENERATOR} PUBLIC ${triangle_lib_file} ${tetgen_lib_file}
-  VTK::CommonCore
-  VTK::CommonDataModel
-  VTK::IOXML
-  VTK::IOLegacy
-)
+target_link_libraries(${TETGEN_GENERATOR} PUBLIC ${triangle_lib_file} ${tetgen_lib_file})
 

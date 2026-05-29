@@ -109,28 +109,11 @@ set(CINOLIB_USES_SHEWCHUK_PREDICATES  ON )
 set(CINOLIB_USES_INDIRECT_PREDICATES  OFF )
 set(CINOLIB_USES_GRAPH_CUT            OFF)
 set(CINOLIB_USES_BOOST                ON )
-set(CINOLIB_USES_VTK                  ON )
+set(CINOLIB_USES_VTK                  OFF )
 set(cinolib_DIR "${PROJECT_SOURCE_DIR}/../external/cinolib")
 message(${cinolib_DIR})
 find_package(cinolib REQUIRED)
 link_libraries(cinolib)
-
-
-#####
-# VTK
-set(VTK_EXTERNAL_PREFIX "${CMAKE_SOURCE_DIR}/../external/VTK/installed/lib/cmake/vtk-9.6")
-message("${VTK_EXTERNAL_PREFIX}")
-if(EXISTS "${VTK_EXTERNAL_PREFIX}")
-  list(APPEND CMAKE_PREFIX_PATH "${VTK_EXTERNAL_PREFIX}")
-endif()
-find_package(VTK CONFIG REQUIRED
-    COMPONENTS
-        CommonCore
-        CommonDataModel
-        IOXML
-        IOLegacy)
-message(STATUS "VTK found: ${VTK_FOUND}")
-
 
 
 #####

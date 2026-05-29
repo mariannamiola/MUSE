@@ -24,6 +24,7 @@
 
 //#include "muselib/geometry/polygon_mesh.h"
 #include "muselib/input/load_xyz.h"
+#include "muselib/input/load_vtk.h"
 
 #include "muselib/colors.h"
 
@@ -3045,7 +3046,7 @@ int main(int argc, char** argv)
                 //     exit(1);
                 // }
 
-                cinolib::Polyhedralmesh<> model;
+                MUSE::VolumeMesh<> model;
                 model.load(meshFiles.getValue().at(0).c_str());
                 std::cout << "\033[0;32mLoading polyhedral mesh file: " << meshFiles.getValue().at(0).c_str() << " ... COMPLETED.\033[0m" << std::endl;
                 std::cout << std::endl;
@@ -3266,7 +3267,7 @@ int main(int argc, char** argv)
                     std::cout << "ERROR set volume mesh --geom <file>"<< std::endl;
                     exit(1);
                 }
-                cinolib::Polyhedralmesh<> model;
+                MUSE::VolumeMesh<> model;
                 model.load(geomModel.getValue().c_str());
                 std::cout << "\033[0;32mLoading polyhedral mesh file: " << geomModel.getValue() << " ... COMPLETED.\033[0m" << std::endl;
                 std::cout << std::endl;
@@ -3675,7 +3676,7 @@ int main(int argc, char** argv)
                     exit(1);
                 }
 
-                cinolib::Polyhedralmesh<> model;
+                MUSE::VolumeMesh<> model;
                 model.load(geomModel.getValue().c_str());
                 std::cout << "\033[0;32mLoading polyhedral mesh file: " << geomModel.getValue() << " ... COMPLETED.\033[0m" << std::endl;
                 std::cout << std::endl;
@@ -3948,7 +3949,7 @@ int main(int argc, char** argv)
                     exit(1);
                 }
 
-                cinolib::Polyhedralmesh<> model;
+                MUSE::VolumeMesh<> model;
                 model.load(geomModel.getValue().c_str());
                 std::cout << "\033[0;32mLoading polyhedral mesh file: " << geomModel.getValue() << " ... COMPLETED.\033[0m" << std::endl;
                 std::cout << std::endl;
@@ -5314,7 +5315,22 @@ int main(int argc, char** argv)
             {
                 // Carico la mesh in input
                 cinolib::Tetmesh<> mesh;
-                mesh.load(files.at(i).c_str());
+                const std::string mesh_ext = get_extension(files.at(i));
+                if(mesh_ext == ".vtk" || mesh_ext == ".VTK")
+                {
+                    std::vector<cinolib::vec3d> verts;
+                    std::vector<std::vector<uint>> polys;
+                    if(load_vtk(files.at(i), verts, polys) != 0)
+                    {
+                        std::cerr << "ERROR while loading vtk file: " << files.at(i) << std::endl;
+                        exit(1);
+                    }
+                    mesh.init(verts, polys);
+                }
+                else
+                {
+                    mesh.load(files.at(i).c_str());
+                }
                 std::cout << "\033[0;32mLoading mesh file: " << files.at(i) << " ... COMPLETED.\033[0m" << std::endl;
 
                 std::string geom_name = files.at(i).substr(files.at(i).find_last_of("/")+1, files.at(i).length());
@@ -5466,7 +5482,22 @@ int main(int argc, char** argv)
             }
 
             cinolib::Tetmesh<> model;
-            model.load(geomModel.getValue().c_str());
+            const std::string model_ext = get_extension(geomModel.getValue());
+            if(model_ext == ".vtk" || model_ext == ".VTK")
+            {
+                std::vector<cinolib::vec3d> verts;
+                std::vector<std::vector<uint>> polys;
+                if(load_vtk(geomModel.getValue(), verts, polys) != 0)
+                {
+                    std::cerr << "ERROR while loading vtk file: " << geomModel.getValue() << std::endl;
+                    exit(1);
+                }
+                model.init(verts, polys);
+            }
+            else
+            {
+                model.load(geomModel.getValue().c_str());
+            }
             std::cout << "\033[0;32mLoading mesh file: " << geomModel.getValue() << " ... COMPLETED.\033[0m" << std::endl;
             std::cout << std::endl;
 
@@ -5481,7 +5512,22 @@ int main(int argc, char** argv)
             for(uint i=0; i<files.size(); i++)
             {
                 cinolib::Tetmesh<> mesh;
-                mesh.load(files.at(i).c_str());
+                const std::string mesh_ext = get_extension(files.at(i));
+                if(mesh_ext == ".vtk" || mesh_ext == ".VTK")
+                {
+                    std::vector<cinolib::vec3d> verts;
+                    std::vector<std::vector<uint>> polys;
+                    if(load_vtk(files.at(i), verts, polys) != 0)
+                    {
+                        std::cerr << "ERROR while loading vtk file: " << files.at(i) << std::endl;
+                        exit(1);
+                    }
+                    mesh.init(verts, polys);
+                }
+                else
+                {
+                    mesh.load(files.at(i).c_str());
+                }
                 std::cout << "\033[0;32mLoading mesh file: " << files.at(i) << " ... COMPLETED.\033[0m" << std::endl;
 
                 std::string geom_name = files.at(i).substr(files.at(i).find_last_of("/")+1, files.at(i).length());
