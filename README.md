@@ -42,7 +42,7 @@ MUSE can be easily built (see __Building__ section).
 
 ## Building
 To build MUSE, use the `00_exe_creation.sh` script available, located in the root directory ROOT (where this README lies). 
-It is set to build the code and some external dependencies (_Triangle, Tetgen, fTetWild_) that need building.
+Triangle and TetGen are managed through cinolib during CMake configuration, so no standalone top-level Triangle/TetGen build is required.
 
 ## Examples
 To guarantee replicability, data of our examples are provided in the _example_ folder. 

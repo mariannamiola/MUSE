@@ -131,22 +131,12 @@ link_libraries(cinolib)
 # triangle
 add_definitions(-DMUSE_USES_TRIANGLE)
 #add_definitions(-DCINOLIB_USES_TRIANGLE)
-add_definitions(-DTRILIBRARY)
-include_directories (BEFORE "../external/triangle")
-set (TRIANGLE_DIR ${CMAKE_SOURCE_DIR}/../external/triangle)
-set (TRIANGLE_LIB ${CMAKE_SOURCE_DIR}/../external/triangle/build)
-set (triangle_lib_file "${TRIANGLE_DIR}/build/libtriangle.a")
 
 
 #####
 # tetgen
 add_definitions(-DMUSE_USES_TETGEN)
 #add_definitions(-DCINOLIB_USES_TETGEN)
-add_definitions(-DTETLIBRARY)
-include_directories (BEFORE "../external/tetgen")
-set (TETGEN_DIR ${CMAKE_SOURCE_DIR}/../external/tetgen)
-set (TETGEN_LIB ${CMAKE_SOURCE_DIR}/../external/tetgen/build)
-set (tetgen_lib_file "${TETGEN_DIR}/build/libtetgen.a")
 
 
 

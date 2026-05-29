@@ -64,8 +64,6 @@ build-apps-Desktop_Qt_6_6_1_GCC_64bit-Release
 build-apps-Qt_6_6_1_for_macOS-Debug
 build-apps-Qt_6_6_1_for_macOS-Release
 
-external/triangle/build
-external/tetgen/build
 apps/build
 bin
 script/bin
