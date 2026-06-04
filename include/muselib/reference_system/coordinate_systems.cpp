@@ -41,7 +41,7 @@ void analyzeSRS(const char* wkt, const std::string& file_path, std::string &epsg
         std::cout << "=== WARNING: Convert data to projected coordinate system (meters) for suitable geoemtric processing!" << std::endl;
 
         // Unità angolari
-        char* angular_units = nullptr;
+        const char* angular_units = nullptr;
         double angular_factor = srs.GetAngularUnits(&angular_units);
         std::cout << "=== Units: " << (angular_units ? angular_units : "unknown")
                   << " (factor: " << angular_factor << ")" << std::endl;
@@ -56,7 +56,7 @@ void analyzeSRS(const char* wkt, const std::string& file_path, std::string &epsg
         }
 
         // Unità lineari
-        char* linear_units = nullptr;
+        const char* linear_units = nullptr;
         double linear_factor = srs.GetLinearUnits(&linear_units);
         std::cout << "=== Units: " << (linear_units ? linear_units : "unknown")
                   << " (factor: " << linear_factor << ")" << std::endl;
