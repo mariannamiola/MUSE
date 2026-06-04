@@ -19,6 +19,8 @@ help()
 (
 set -e	#exit if an error occours
 
+RUN_DIR=$(pwd)
+
 ######################################################
 ################ PROJECT NAME ########################
 
@@ -210,7 +212,7 @@ fi
 function jumpto
 {
     label=$1
-    cmd=$($SED	 -n "/$label:/{:a;n;p;ba};" $0 | grep -v ':$')
+  cmd=$($SED -n "/$label:/{:a;n;p;ba};" "$0" | grep -v ':$' | grep -v '^)$')
     eval "$cmd"
     exit
 }
@@ -304,17 +306,17 @@ fi
 if [[ $OUTSGS == 'MEAN'* ]]; then
   for (( id=0; id<$NSIM; id++ ))
   do
-    rm ${SCRIPT_DIR}/output${id}.dat
+    rm -f "${SCRIPT_DIR}/output${id}.dat" "${RUN_DIR}/output${id}.dat"
   done
-  rm ${SCRIPT_DIR}/sgs_output_data
-  rm ${SCRIPT_DIR}/back_transf_data
+  rm -f "${SCRIPT_DIR}/sgs_output_data" "${RUN_DIR}/sgs_output_data"
+  rm -f "${SCRIPT_DIR}/back_transf_data" "${RUN_DIR}/back_transf_data"
 else
     for (( id=0; id<=$NSIM-1; id++ ))
   do
-    rm ${SCRIPT_DIR}/sgs_output_${id}.dat
-    rm ${SCRIPT_DIR}/output${id}.dat
+    rm -f "${SCRIPT_DIR}/sgs_output_${id}.dat" "${RUN_DIR}/sgs_output_${id}.dat"
+    rm -f "${SCRIPT_DIR}/output${id}.dat" "${RUN_DIR}/output${id}.dat"
   done
-  rm ${SCRIPT_DIR}/sgs_output_data
+  rm -f "${SCRIPT_DIR}/sgs_output_data" "${RUN_DIR}/sgs_output_data"
 fi
 
 
@@ -332,8 +334,12 @@ export PDF_NAME=pdf_cat_
 export NCAT=8
 for ((i=1; i<=${NCAT}; i++))
 do
-    cp ${SCRIPT_DIR}/${PDF_NAME}${i}.txt ${OUTCOMP}/${VAR2}_${i}_pdf.csv
-    rm ${SCRIPT_DIR}/${PDF_NAME}${i}.txt
+  PDF_SRC="${SCRIPT_DIR}/${PDF_NAME}${i}.txt"
+  if [[ -f "${RUN_DIR}/${PDF_NAME}${i}.txt" ]]; then
+    PDF_SRC="${RUN_DIR}/${PDF_NAME}${i}.txt"
+  fi
+  cp "${PDF_SRC}" "${OUTCOMP}/${VAR2}_${i}_pdf.csv"
+  rm -f "${SCRIPT_DIR}/${PDF_NAME}${i}.txt" "${RUN_DIR}/${PDF_NAME}${i}.txt"
 done 
 
 
