@@ -43,7 +43,7 @@ add_executable(${PROJECT_NAME}
   #${PROJ_LIB}
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC cinolib PROJ::proj GDAL::GDAL)
+target_link_libraries(${PROJECT_NAME} PUBLIC muse_cinolib PROJ::proj GDAL::GDAL)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 	VOLUME_MESHER_EXECUTABLE="${VOLUME_MESHER_EXECUTABLE_PATH}"
@@ -57,5 +57,5 @@ add_executable(${TETGEN_GENERATOR}
   main-tetmesh-generator.cpp
 )
 
-target_link_libraries(${TETGEN_GENERATOR} PUBLIC cinolib)
+target_link_libraries(${TETGEN_GENERATOR} PUBLIC muse_cinolib)
 

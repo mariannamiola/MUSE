@@ -18,7 +18,8 @@ include_directories(BEFORE "../muse/external/cinolib/include")
 add_executable(muse_export main.cpp)
 add_executable(muse_export_raster main_raster.cpp)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC GDAL::GDAL)
+target_link_libraries(muse_export PUBLIC muse_cinolib GDAL::GDAL)
+target_link_libraries(muse_export_raster PUBLIC muse_cinolib)
 
 find_package(OpenMP)
 target_link_libraries(muse_export_raster PUBLIC OpenMP::OpenMP_CXX)

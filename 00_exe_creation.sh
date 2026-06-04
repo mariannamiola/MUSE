@@ -35,10 +35,21 @@ mkdir -p build
 export BUILD=${APPS}/build
 cd ${BUILD}
 #cmake ..
+
 cmake -DCMAKE_BUILD_TYPE=Release ..
-#cmake -DCMAKE_BUILD_TYPE=Debug ..
-#make
-cmake --build . #--parallel 8
+
+cmake --build . --parallel "$(nproc)" #--target \
+	#${project} \
+	#${data} \
+	#${plot} \
+	#${utility} \
+	#${geometry} \
+	#${geometry}_tetmesh-generator \
+	#${vario} \
+	#${compute} \
+	#${manipulate} \
+	#${export} \
+	#${export}_raster
 
 # Bin creation
 

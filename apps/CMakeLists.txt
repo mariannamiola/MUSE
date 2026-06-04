@@ -11,6 +11,26 @@ set (USE_ARMADILLO ON)
 
 ENABLE_LANGUAGE(C)
 
+# Reuse FetchContent downloads across rebuilds and avoid network update checks.
+set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/../external/.cache/fetchcontent" CACHE PATH "Shared FetchContent cache directory")
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "Skip remote updates for FetchContent dependencies" FORCE)
+set(FETCHCONTENT_UPDATES_DISCONNECTED_TETGEN ON CACHE BOOL "Skip tetgen remote updates" FORCE)
+set(FETCHCONTENT_UPDATES_DISCONNECTED_TRIANGLE ON CACHE BOOL "Skip triangle remote updates" FORCE)
+option(MUSE_OFFLINE_BUILD "Disallow network access for FetchContent" OFF)
+if(MUSE_OFFLINE_BUILD)
+    set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL "Disable all FetchContent downloads" FORCE)
+else()
+    set(FETCHCONTENT_FULLY_DISCONNECTED OFF CACHE BOOL "Disable all FetchContent downloads" FORCE)
+endif()
+
+# If previous downloads exist in this build tree, force reuse to avoid any fetch step.
+if(EXISTS "${CMAKE_BINARY_DIR}/_deps/tetgen-src/CMakeLists.txt")
+    set(FETCHCONTENT_SOURCE_DIR_TETGEN "${CMAKE_BINARY_DIR}/_deps/tetgen-src" CACHE PATH "Local tetgen source override" FORCE)
+endif()
+if(EXISTS "${CMAKE_BINARY_DIR}/_deps/triangle-src/CMakeLists.txt")
+    set(FETCHCONTENT_SOURCE_DIR_TRIANGLE "${CMAKE_BINARY_DIR}/_deps/triangle-src" CACHE PATH "Local triangle source override" FORCE)
+endif()
+
 include_directories(BEFORE "../include")
 
 #####
@@ -113,7 +133,19 @@ set(CINOLIB_USES_VTK                  OFF )
 set(cinolib_DIR "${PROJECT_SOURCE_DIR}/../external/cinolib")
 message(${cinolib_DIR})
 find_package(cinolib REQUIRED)
-link_libraries(cinolib)
+
+# Keep cinolib as an opt-in dependency so apps that do not use it
+# avoid carrying triangle/tetgen/shewchuk build dependencies.
+add_library(muse_cinolib INTERFACE)
+target_link_libraries(muse_cinolib INTERFACE cinolib)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    # cinolib headers include implementation files that trigger warn_unused_result on fscanf.
+    target_compile_options(muse_cinolib INTERFACE -Wno-unused-result)
+endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # cinolib triangle wrappers may trigger oversized allocation diagnostics under GCC.
+    target_compile_options(muse_cinolib INTERFACE -Wno-alloc-size-larger-than)
+endif()
 
 
 #####
@@ -227,6 +259,7 @@ include_directories(BEFORE "../external/ellipse-fitting")
 
 #####
 # CLI Documentation Generation
+option(MUSE_BUILD_DOCS "Build CLI docs targets during normal build" OFF)
 find_package(Python3 COMPONENTS Interpreter)
 if(Python3_FOUND)
     set(CLI_DOCS_SCRIPT "${CMAKE_SOURCE_DIR}/../scripts/generate_cli_docs.py")
@@ -235,7 +268,7 @@ if(Python3_FOUND)
     set(HTML_DOCS_OUTPUT "${CMAKE_SOURCE_DIR}/../docs/html")
     
     # Generate Markdown documentation
-    add_custom_target(cli-docs-md ALL
+    add_custom_target(cli-docs-md
         COMMAND ${Python3_EXECUTABLE} ${CLI_DOCS_SCRIPT} ${CMAKE_SOURCE_DIR} ${MD_DOCS_OUTPUT}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/..
         COMMENT "Generating CLI markdown documentation from source code..."
@@ -243,7 +276,7 @@ if(Python3_FOUND)
     )
     
     # Generate HTML documentation from Markdown
-    add_custom_target(cli-docs-html ALL
+    add_custom_target(cli-docs-html
         COMMAND ${Python3_EXECUTABLE} ${HTML_DOCS_SCRIPT} ${MD_DOCS_OUTPUT} ${HTML_DOCS_OUTPUT}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/..
         DEPENDS cli-docs-md
@@ -252,10 +285,14 @@ if(Python3_FOUND)
     )
     
     # Combined target for both
-    add_custom_target(cli-docs ALL
+    add_custom_target(cli-docs
         DEPENDS cli-docs-md cli-docs-html
         COMMENT "Generating complete CLI documentation (Markdown + HTML)"
     )
+
+    if(MUSE_BUILD_DOCS)
+        add_custom_target(cli-docs-all ALL DEPENDS cli-docs)
+    endif()
     
     message(STATUS "CLI documentation generation enabled")
     message(STATUS "Markdown output: ${MD_DOCS_OUTPUT}")
