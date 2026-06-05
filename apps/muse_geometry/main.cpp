@@ -77,16 +77,6 @@
 using namespace MUSE;
 using namespace TCLAP;
 
-template<class VolumeLikeMesh>
-static std::vector<std::vector<uint>> volume_cells_from_poly_verts(const VolumeLikeMesh &mesh)
-{
-    std::vector<std::vector<uint>> cells;
-    cells.reserve(mesh.num_polys());
-    for(uint pid = 0; pid < mesh.num_polys(); ++pid)
-        cells.push_back(mesh.poly_verts_id(pid));
-    return cells;
-}
-
 int main(int argc, char** argv)
 {
     std::cout << std::endl;

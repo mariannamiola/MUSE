@@ -36,6 +36,8 @@
 #include <cinolib/triangle_wrap.h>
 #include <cinolib/winding_number.h>
 
+#include "../output/save_vtk.h"
+
 struct WellSpec {
     double x, y, z;
     double height;
@@ -2752,6 +2754,50 @@ static bool saveMesh(const cinolib::Trimesh<>& mesh, const std::string& filename
     }
 }
 
+template<class VolumeLikeMesh>
+static std::vector<std::vector<uint>> volume_cells_from_poly_verts(const VolumeLikeMesh& mesh)
+{
+    std::vector<std::vector<uint>> cells;
+    cells.reserve(mesh.num_polys());
+    for (uint pid = 0; pid < mesh.num_polys(); ++pid)
+    {
+        cells.push_back(mesh.poly_verts_id(pid));
+    }
+    return cells;
+}
+
+static bool hasVtkExtension(const std::string& filename)
+{
+    const size_t dot_pos = filename.find_last_of('.');
+    if (dot_pos == std::string::npos)
+    {
+        return false;
+    }
+
+    std::string ext = filename.substr(dot_pos);
+    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return ext == ".vtk";
+}
+
+template<class VolumeLikeMesh>
+static bool saveVolumeMesh(const VolumeLikeMesh& mesh, const std::string& filename)
+{
+    if (hasVtkExtension(filename))
+    {
+        return save_vtk(filename, mesh.vector_verts(), volume_cells_from_poly_verts(mesh)) == 0;
+    }
+
+    try
+    {
+        const_cast<VolumeLikeMesh&>(mesh).save(filename.c_str());
+        return true;
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
+}
+
 static bool isPointInsideCylinderWindingNumber(const cinolib::vec3d& point, const cinolib::Trimesh<>& cylinder_mesh)
 {
     int wn = cinolib::winding_number(cylinder_mesh, point);
@@ -3439,18 +3485,17 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
 
             std::string tet_filename = output_file.substr(0, output_file.find_last_of('.')) + volmesh_format; //".mesh";
 
-            try
+            if (saveVolumeMesh(tet_mesh, tet_filename))
             {
-                tet_mesh.save(tet_filename.c_str());
                 if (verbose)
                 {
                     std::cout << "Tetrahedral mesh saved to: " << tet_filename << std::endl;
                     std::cout << "Tet mesh stats: " << tet_mesh.num_verts() << " vertices, " << tet_mesh.num_polys() << " tetrahedra" << std::endl;
                 }
             }
-            catch (const std::exception& e)
+            else
             {
-                std::cerr << "Error: Failed to save tetrahedral mesh: " << e.what() << std::endl;
+                std::cerr << "Error: Failed to save tetrahedral mesh: " << tet_filename << std::endl;
             }
             
             std::string region_id_filename = output_file.substr(0, output_file.find_last_of('.')) + "_region_id.txt";
@@ -3467,45 +3512,41 @@ int create_tetmesh_with_wells(const CreateWellsConfig& config)
             
             if (save_no_wells)
             {
-                try
+                cinolib::Tetmesh<> no_wells_mesh = tet_mesh;
+                removeTetsInsideWells(no_wells_mesh, cylinder_meshes, wells, input_surface, surface_octree, well_id_sheet_tolerance, verbose);
+
+                std::string no_wells_filename = output_file.substr(0, output_file.find_last_of('.')) + "_no_wells" + volmesh_format;
+                if (saveVolumeMesh(no_wells_mesh, no_wells_filename))
                 {
-                    cinolib::Tetmesh<> no_wells_mesh = tet_mesh;
-                    removeTetsInsideWells(no_wells_mesh, cylinder_meshes, wells, input_surface, surface_octree, well_id_sheet_tolerance, verbose);
-
-                    std::string no_wells_filename = output_file.substr(0, output_file.find_last_of('.')) + "_no_wells" + volmesh_format;
-                    no_wells_mesh.save(no_wells_filename.c_str());
-
                     if (verbose)
                     {
                         std::cout << "No-wells mesh saved to: " << no_wells_filename << std::endl;
                         std::cout << "No-wells mesh stats: " << no_wells_mesh.num_verts() << " vertices, " << no_wells_mesh.num_polys() << " tetrahedra" << std::endl;
                     }
                 }
-                catch (const std::exception& e)
+                else
                 {
-                    std::cerr << "Warning: Failed to save no-wells mesh: " << e.what() << std::endl;
+                    std::cerr << "Warning: Failed to save no-wells mesh: " << no_wells_filename << std::endl;
                 }
             }
 
             if (save_only_wells)
             {
-                try
+                cinolib::Tetmesh<> only_wells_mesh = tet_mesh;
+                removeTetsOutsideWells(only_wells_mesh, cylinder_meshes, wells, input_surface, surface_octree, well_id_sheet_tolerance, verbose);
+
+                std::string only_wells_filename = output_file.substr(0, output_file.find_last_of('.')) + "_only_wells" + volmesh_format;
+                if (saveVolumeMesh(only_wells_mesh, only_wells_filename))
                 {
-                    cinolib::Tetmesh<> only_wells_mesh = tet_mesh;
-                    removeTetsOutsideWells(only_wells_mesh, cylinder_meshes, wells, input_surface, surface_octree, well_id_sheet_tolerance, verbose);
-
-                    std::string only_wells_filename = output_file.substr(0, output_file.find_last_of('.')) + "_only_wells" + volmesh_format;
-                    only_wells_mesh.save(only_wells_filename.c_str());
-
                     if (verbose)
                     {
                         std::cout << "Wells-only mesh saved to: " << only_wells_filename << std::endl;
                         std::cout << "Wells-only mesh stats: " << only_wells_mesh.num_verts() << " vertices, " << only_wells_mesh.num_polys() << " tetrahedra" << std::endl;
                     }
                 }
-                catch (const std::exception& e)
+                else
                 {
-                    std::cerr << "Warning: Failed to save wells-only mesh: " << e.what() << std::endl;
+                    std::cerr << "Warning: Failed to save wells-only mesh: " << only_wells_filename << std::endl;
                 }
             }
         }
