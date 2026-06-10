@@ -98,12 +98,30 @@ build_vtk() {
 }
 
 build_flann() {
+    local openmp_args=()
+
+    if [[ "$OS" == "Darwin" ]]; then
+        openmp_args=(
+            -DOpenMP_C_FLAGS=-Xclang\ -fopenmp
+            -DOpenMP_CXX_FLAGS=-Xclang\ -fopenmp
+            -DOpenMP_C_LIB_NAMES=libomp
+            -DOpenMP_CXX_LIB_NAMES=libomp
+            -DOpenMP_libomp_LIBRARY=/opt/homebrew/lib/libomp.dylib
+            -DOpenMP_C_INCLUDE_DIR=/opt/homebrew/include
+            -DOpenMP_CXX_INCLUDE_DIR=/opt/homebrew/include
+            -DOpenMP_EXE_LINKER_FLAGS=-L/opt/homebrew/lib\ -lomp
+            -DCMAKE_SHARED_LINKER_FLAGS=-L/opt/homebrew/lib\ -lomp
+        )
+    fi
+
     build_lib "GeoStatsLib/external/flann-lib" \
         -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}/GeoStatsLib/external/flann-lib/installed \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DUSE_OPENMP=ON \
         -DBUILD_PYTHON_BINDINGS=OFF \
-        -DBUILD_MATLAB_BINDINGS=OFF 
+        -DBUILD_MATLAB_BINDINGS=OFF \
+        "${openmp_args[@]}"
 }
 
 # ==========================
