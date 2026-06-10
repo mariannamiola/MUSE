@@ -732,8 +732,8 @@ int main(int argc, char **argv)
                             points.push_back(p);
                         }
 
-                        OGRFeature *poFeature;
-                        poFeature = OGRFeature::CreateFeature(poLayer->GetLayerDefn());
+                        OGRFeature *poFeature = OGRFeature::FromHandle(
+                            OGR_F_Create(reinterpret_cast<OGRFeatureDefnH>(poLayer->GetLayerDefn())));
 
                         OGRPolygon polygon;
                         OGRLinearRing ring;

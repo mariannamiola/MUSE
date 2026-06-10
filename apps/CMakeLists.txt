@@ -72,6 +72,7 @@ message(STATUS "GDAL_FOUND = ${GDAL_FOUND}")
 if(GDAL_FOUND)
     message("Using GDAL version at path: ${GDAL_EXTERNAL_PREFIX}/lib/cmake/gdal")
     message("Using GDAL imported target: GDAL::GDAL")
+    include_directories(BEFORE "${GDAL_EXTERNAL_PREFIX}/include")
 endif()
 
  
