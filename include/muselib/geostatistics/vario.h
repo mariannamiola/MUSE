@@ -110,6 +110,31 @@ std::vector<exp_variog> dir3DV_exp_variogram (const vector<double> &values, cons
                                                     const double &limit_dist,
                                                     const double &tol_factor);
 
+//Orthonormal basis (u = local "east", v = local "north", n = normal) of an arbitrary plane
+//defined by dip azimuth (degree, clockwise from North) and dip (degree from horizontal)
+void plane_basis (const double &dip_azimuth_deg, const double &dip_deg,
+                  std::vector<double> &u, std::vector<double> &v, std::vector<double> &n);
+
+//World unit vector of the in-plane direction theta (degree, clockwise from the local "north" v)
+std::vector<double> plane_direction_vector (const double &dip_azimuth_deg, const double &dip_deg, const double &theta_deg);
+
+//Compute directional experimental variograms on an arbitrary plane: samples are projected on the
+//local plane frame, then the standard 3D-horizontal machinery (dir3DH_exp_variogram) is reused,
+//where vertical tolerance/bandwidth act as off-plane tolerance/bandwidth
+std::vector<exp_variog> dirPlane_exp_variogram (const vector<double> &values, const vector<double> &coord_x, const vector<double> &coord_y, const vector<double> &coord_z,
+                                                    const double &dip_azimuth_deg,
+                                                    const double &dip_deg,
+                                                    const std::string &lagspac_type,
+                                                    const std::vector<double> &seq,
+                                                    const double &inplane_degree_tolerance,
+                                                    const double &offplane_degree_tolerance,
+                                                    const double &inplane_bandwidth,
+                                                    const double &offplane_bandwidth,
+                                                    const double &step,
+                                                    const int &n_points,
+                                                    const double &limit_dist,
+                                                    const double &tol_factor);
+
 std::vector<double> lagvar (const double &coverage, const double &dist_min, const double &factor, const int &n_points, const int &n_points_start, const double &tol_factor, std::vector<double> &tol);
 std::vector<double> lagvar1 (const double &coverage, const double &n_points, const double &percent, std::vector<double> &tol);
 std::vector<double> lagvar2 (const double &coverage, const double &dist_min, const double &step_factor, const int &n_points);

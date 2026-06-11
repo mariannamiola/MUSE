@@ -13,6 +13,7 @@
 
 #include "muselib/metadata/vario_methods.h"
 #include "muselib/metadata/fitvario_methods.h"
+#include "muselib/metadata/vario_plane_methods.h"
 
 #include "muselib/data_structures/project.h"
 //#include "muselib/data_structures/dependency.h"
@@ -117,6 +118,10 @@ public:
         int n_min_points_for_clean = 0.0;
         bool penalty_function = false;
 
+        // Multi-plane 3D workflow: number of analysis planes and their definition string
+        int n_planes = 0;
+        std::string set_planes;
+
         // Add any other additional descriptive info
 
         #ifdef MUSE_USES_CEREAL
@@ -134,6 +139,15 @@ public:
             ar (CEREAL_NVP(clean_is_set));
             ar (CEREAL_NVP(n_min_points_for_clean));
             ar (CEREAL_NVP(penalty_function));
+
+            // New optional fields (3D multi-plane workflow): cereal uses serialize() also on
+            // input for nested members, so the guard is needed here to read legacy JSON files
+            try
+            {
+                ar (CEREAL_NVP(n_planes));
+                ar (CEREAL_NVP(set_planes));
+            }
+            catch (const cereal::Exception &) { /* legacy file without plane info: keep defaults */ }
         }
 
         template <class Archive>
@@ -150,6 +164,14 @@ public:
             ar (CEREAL_NVP(clean_is_set));
             ar (CEREAL_NVP(n_min_points_for_clean));
             ar (CEREAL_NVP(penalty_function));
+
+            // New optional fields (3D multi-plane workflow): guarded to keep reading legacy JSON files
+            try
+            {
+                ar (CEREAL_NVP(n_planes));
+                ar (CEREAL_NVP(set_planes));
+            }
+            catch (const cereal::Exception &) { /* legacy file without plane info: keep defaults */ }
         }
         #endif
     };
@@ -180,6 +202,11 @@ public:
 
     const MUSE::EllipseParameter           &getSummary  () const    { return  summary; }
 
+    // Multi-plane 3D workflow: per-plane variographic analysis and fitted anisotropy ellipsoid
+    const std::vector<MUSE::plane_vario_methods> &getPlanesVariog () const           { return  planes_vario; }
+    const MUSE::plane_vario_methods &getPlaneVariog (const unsigned int i) const     { return  planes_vario.at(i); }
+    const MUSE::EllipsoidParameter         &getEllipsoid () const   { return  ellipsoid; }
+
 
 
     // Set Methods
@@ -200,6 +227,10 @@ public:
     void setFitExpVariog    (const std::vector<MUSE::variogram_methods> &d)    { fit_experimental_vario = d; }
 
     void setSummary         (const MUSE::EllipseParameter &d)   { summary = d; }
+
+    // Multi-plane 3D workflow setters (extension fields, harmless for simpler use cases)
+    void setPlanesVariog    (const std::vector<MUSE::plane_vario_methods> &d) { planes_vario = d; }
+    void setEllipsoid       (const MUSE::EllipsoidParameter &d) { ellipsoid = d; }
 
 
     // Additional Methods
@@ -228,6 +259,15 @@ public:
         ar (CEREAL_NVP(fit_experimental_vario));
 
         ar (CEREAL_NVP(summary));
+
+        // Multi-plane 3D workflow: appended at the end to preserve the legacy layout;
+        // guarded because cereal may use serialize() also on input archives
+        try
+        {
+            ar (CEREAL_NVP(planes_vario));
+            ar (CEREAL_NVP(ellipsoid));
+        }
+        catch (const cereal::Exception &) { /* legacy file without 3D ellipsoid info: keep defaults */ }
     }
 
     template <class Archive>
@@ -248,6 +288,14 @@ public:
         ar (CEREAL_NVP(fit_experimental_vario));
 
         ar (CEREAL_NVP(summary));
+
+        // New optional fields (3D multi-plane workflow): guarded to keep reading legacy JSON files
+        try
+        {
+            ar (CEREAL_NVP(planes_vario));
+            ar (CEREAL_NVP(ellipsoid));
+        }
+        catch (const cereal::Exception &) { /* legacy file without 3D ellipsoid info: keep defaults */ }
     }
 #endif
 
@@ -269,6 +317,11 @@ private:
     std::vector<MUSE::variogram_methods> fit_experimental_vario;
 
     MUSE::EllipseParameter summary;
+
+    // Multi-plane 3D workflow: per-plane analyses and fitted 3D anisotropy ellipsoid
+    // (both remain empty/default in the simpler 1D/2D/3Dxy/3Dz use cases)
+    std::vector<MUSE::plane_vario_methods> planes_vario;
+    MUSE::EllipsoidParameter ellipsoid;
 
 
     bool readConfFileJSON   (const std::string filename);

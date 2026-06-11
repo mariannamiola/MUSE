@@ -1433,6 +1433,198 @@ void fit_anisotropy_ellipse (const std::vector<double> &x, const std::vector<dou
 }
 
 
+///
+/// \brief variogram_fit_wmse computes the weighted mean squared error of a fitted variogram
+/// model against an experimental variogram, using the same point-validity rule and the same
+/// weights of the fitting loops. The score is normalized by the sum of the weights, so it is
+/// comparable across experimental variograms with different lags and different pair counts
+/// (used to rank candidate fits computed on different analysis planes).
+///
+double variogram_fit_wmse (const exp_variog &ev, const variogram &v, weightsType w_type)
+{
+    // Convert the stored model type string back to the enum used by get_gamma
+    variogram_type model_type;
+    convert_from_str(v.type, model_type);
+
+    // get_gamma composes gamma = c*f(h) + c0: c is the partial sill
+    double c0 = v.nugget;
+    double c = v.sill - v.nugget;
+
+    double sse = 0.0;
+    double wsum = 0.0;
+    for(size_t i=0; i<ev.h.size(); i++)
+    {
+        // Same validity rule of the fitting loops (sill = 1 for normal score values)
+        if(ev.h.at(i) > 0 && ev.gamma.at(i) <= 1.0)
+        {
+            double out = get_gamma(ev.h.at(i), v.range, c0, c, model_type);
+            double w = compute_weight(ev, i, w_type);
+
+            sse += pow((out - ev.gamma.at(i)), 2) * w;
+            wsum += w;
+        }
+    }
+
+    // Weighted mean: insensitive to the absolute magnitude of the weights
+    return (wsum > 0.0) ? sse/wsum : DBL_MAX;
+}
+
+
+///
+/// \brief fit_anisotropy_ellipsoid fits a 3D anisotropy ellipsoid, centered at the origin, on the
+/// 3D points obtained by projecting the fitted directional ranges along their direction unit vectors.
+/// The ellipsoid quadric form is p^T A p = 1 with A symmetric positive definite: the 6 unique
+/// coefficients of A are estimated by linear least squares, then the eigen-decomposition of A
+/// provides the semi-axes (1/sqrt(eigenvalue)) and the principal directions (eigenvectors).
+/// The rotation angles are extracted following the GSLIB-like setrot() convention, so that the
+/// result is directly usable by the covariance/Variogram machinery (see MUSE::EllipsoidParameter).
+/// \param x is the vector of x coordinates of the range points (world coordinates)
+/// \param y is the vector of y coordinates of the range points (world coordinates)
+/// \param z is the vector of z coordinates of the range points (world coordinates)
+/// \param ellipsoid_par is the output structure with semi-axes, angles and principal directions
+///
+void fit_anisotropy_ellipsoid (const std::vector<double> &x, const std::vector<double> &y, const std::vector<double> &z, MUSE::EllipsoidParameter &ellipsoid_par)
+{
+    size_t n = x.size();
+    ellipsoid_par.is_valid = false;
+
+    // At least 6 points are required to estimate the 6 unique coefficients of the quadric
+    if(n < 6 || y.size() != n || z.size() != n)
+    {
+        std::cerr << FRED("ERROR: fit_anisotropy_ellipsoid requires at least 6 consistent (x,y,z) points.") << std::endl;
+        return;
+    }
+
+    // 1) Build the linear system D*s = 1 where s = (A11, A22, A33, A12, A13, A23)
+    Eigen::MatrixXd D (n, 6);
+    Eigen::VectorXd ones = Eigen::VectorXd::Ones(n);
+    for(size_t i=0; i<n; i++)
+    {
+        D(i,0) = x[i]*x[i];
+        D(i,1) = y[i]*y[i];
+        D(i,2) = z[i]*z[i];
+        D(i,3) = 2.0*x[i]*y[i];
+        D(i,4) = 2.0*x[i]*z[i];
+        D(i,5) = 2.0*y[i]*z[i];
+    }
+
+    // 2) Solve in the least squares sense (the system is overdetermined and the input is noisy)
+    Eigen::VectorXd s = D.colPivHouseholderQr().solve(ones);
+
+    // 3) Recompose the symmetric quadric matrix A from the 6 estimated coefficients
+    Eigen::Matrix3d A;
+    A << s(0), s(3), s(4),
+         s(3), s(1), s(5),
+         s(4), s(5), s(2);
+
+    // 4) Mean absolute residual of the quadric equation (p^T A p = 1) as fit quality measure
+    Eigen::VectorXd res = D*s - ones;
+    ellipsoid_par.fit_residual = res.cwiseAbs().mean();
+
+    // 5) Eigen-decomposition of A: eigenvalues in ascending order, orthonormal eigenvectors
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eig (A);
+    Eigen::Vector3d lambda = eig.eigenvalues();
+
+    // The quadric represents an ellipsoid only if A is positive definite
+    if(lambda(0) <= 0.0)
+    {
+        std::cerr << FRED("ERROR: fitted quadric is not an ellipsoid (matrix is not positive definite).") << std::endl;
+        std::cerr << FRED("Check the spatial coverage of the directional ranges used for the fitting.") << std::endl;
+        return;
+    }
+
+    // The smallest eigenvalue corresponds to the major (longest) semi-axis
+    Eigen::Vector3d e_major = eig.eigenvectors().col(0);
+    double s_major = 1.0/std::sqrt(lambda(0));
+
+    // 6) Assign the two secondary axes: the most vertical eigenvector fills the z slot,
+    // the other one fills the min slot (consistent with range_min/range_z of variogram_methods)
+    Eigen::Vector3d e_a = eig.eigenvectors().col(1);
+    Eigen::Vector3d e_b = eig.eigenvectors().col(2);
+    double s_a = 1.0/std::sqrt(lambda(1));
+    double s_b = 1.0/std::sqrt(lambda(2));
+
+    Eigen::Vector3d e_min, e_z;
+    double s_min = 0.0, s_z = 0.0;
+    if(std::fabs(e_a(2)) >= std::fabs(e_b(2)))
+    {
+        e_z = e_a;   s_z = s_a;   //e_a is the most vertical secondary axis
+        e_min = e_b; s_min = s_b; //e_b is the most horizontal secondary axis
+    }
+    else
+    {
+        e_z = e_b;   s_z = s_b;
+        e_min = e_a; s_min = s_a;
+    }
+
+    // 7) Axes are bidirectional: flip the major axis to keep its azimuth in [0, 180)
+    const double rad2deg = 180.0/M_PI;
+    double az = std::atan2(e_major(0), e_major(1)) * rad2deg;
+    if(az < 0.0)
+    {
+        e_major = -e_major;
+        az += 180.0;
+    }
+
+    // Near-vertical major axis: the azimuth is undefined, fix it to 0 by convention
+    if(std::fabs(e_major(2)) > 0.999999)
+        az = 0.0;
+
+    // Roll (ang2 of setrot) is the inclination of the major axis above the horizontal plane
+    double roll = std::asin(std::max(-1.0, std::min(1.0, e_major(2)))) * rad2deg;
+
+    // 8) Build the right-handed frame (rows of the setrot matrix) to extract pitch (ang3):
+    // the third row is the cross product of the major and secondary axes
+    Eigen::Vector3d row2 = e_major.cross(e_min);
+    double pitch = std::atan2(e_min(2), row2(2)) * rad2deg;
+
+    // Keep pitch in (-90, 90]: flipping the secondary axis rotates pitch by 180 degree
+    if(pitch > 90.0)
+    {
+        e_min = -e_min;
+        pitch -= 180.0;
+    }
+    else if(pitch <= -90.0)
+    {
+        e_min = -e_min;
+        pitch += 180.0;
+    }
+
+    // Recompute the third row after the possible secondary axis flip
+    row2 = e_major.cross(e_min);
+
+    // 9) Store all the estimated parameters in the output structure
+    ellipsoid_par.max_semiaxis = s_major;
+    ellipsoid_par.min_semiaxis = s_min;
+    ellipsoid_par.z_semiaxis   = s_z;
+
+    ellipsoid_par.azimuth = az;
+    ellipsoid_par.roll    = roll;
+    ellipsoid_par.pitch   = pitch;
+
+    ellipsoid_par.max_axis_dir = {e_major(0), e_major(1), e_major(2)};
+    ellipsoid_par.min_axis_dir = {e_min(0), e_min(1), e_min(2)};
+    ellipsoid_par.z_axis_dir   = {row2(0), row2(1), row2(2)};
+    ellipsoid_par.is_valid = true;
+
+    // 10) Print a human readable summary of the fitted ellipsoid
+    std::cout << std::endl;
+    std::cout << "#############################################" << std::endl;
+    std::cout << "#### ANISOTROPY ELLIPSOID PARAMETERS (*) ####" << std::endl;
+    std::cout << "Max semi-axis (range_max): " << ellipsoid_par.max_semiaxis << std::endl;
+    std::cout << "Min semi-axis (range_min): " << ellipsoid_par.min_semiaxis << std::endl;
+    std::cout << "Z   semi-axis (range_z):   " << ellipsoid_par.z_semiaxis << std::endl;
+    std::cout << "Azimuth (degree from North, clockwise): " << ellipsoid_par.azimuth << std::endl;
+    std::cout << "Roll (degree, major axis dip):          " << ellipsoid_par.roll << std::endl;
+    std::cout << "Pitch (degree, around major axis):      " << ellipsoid_par.pitch << std::endl;
+    std::cout << "Mean quadric residual: " << ellipsoid_par.fit_residual << std::endl;
+    std::cout << "#############################################" << std::endl;
+    std::cout << "(*) Angles follow the setrot() convention of geostatslib (azimuth=ang1, roll=ang2, pitch=ang3)." << std::endl;
+    std::cout << FGRN("Fit anisotropy ellipsoid ... COMPLETED.") << std::endl;
+    std::cout << std::endl;
+}
+
+
 
 
 

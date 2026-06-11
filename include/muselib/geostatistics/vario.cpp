@@ -1028,15 +1028,15 @@ std::vector<exp_variog> dir3DH_exp_variogram (const vector<double> &values, cons
                     //std::cout << "Computed direction in 3D space (degree) - HORIZONTAL: " << dir_degree << std::endl;
                     //std::cout << "Computed direction in 3D space (degree) - VERTICAL: " << vert_dir_degree << std::endl;
 
-                    if(dir_degree == 180)
-                        dir_degree = 0;
+                    //Distanza angolare tra direzione della coppia e direzione di scansione, ripiegata su 180°:
+                    //il variogramma è simmetrico (gamma(h) = gamma(-h)), quindi h e -h appartengono alla
+                    //stessa direzione qualunque sia l'ordine dei due punti della coppia
+                    double diff_degree = std::fmod(std::fabs(dir_degree - check_dir), 180.0);
+                    if(diff_degree > 90.0)
+                        diff_degree = 180.0 - diff_degree;
 
-                    if(check_dir == 180)
-                        check_dir = 0;
-
-                    //se dir_degree rientra nella fascia che sto considerando (-/+tolerance_degree)
-                    //if(dir_degree >= seq[dir]-hor_degree_tolerance && dir_degree <= seq[dir]+hor_degree_tolerance)
-                    if(dir_degree >= check_dir-hor_degree_tolerance && dir_degree <= check_dir+hor_degree_tolerance)
+                    //se la direzione della coppia rientra nella fascia che sto considerando (-/+tolerance_degree)
+                    if(diff_degree <= hor_degree_tolerance)
                     {
                         if(vert_dir_degree >= vert_seq-vert_degree_tolerance && vert_dir_degree <= vert_seq+vert_degree_tolerance)
                         {
@@ -1057,6 +1057,14 @@ std::vector<exp_variog> dir3DH_exp_variogram (const vector<double> &values, cons
                 }
             }
         }
+        //Nessuna coppia trovata per questa direzione: lascio vuoto il variogramma e proseguo,
+        //evitando l'uscita forzata di lagvar quando un piano/direzione non ha campioni utili
+        if(max_dist == -DBL_MAX)
+        {
+            std::cout << FYEL("WARNING: No pairs found for this direction. Experimental variogram is left empty.") << std::endl;
+            continue;
+        }
+
         if(limit_dist != -DBL_MAX) //se è diverso dal default (!= -DBL_MAX)
             coverage = limit_dist;
         else
@@ -1147,15 +1155,15 @@ std::vector<exp_variog> dir3DH_exp_variogram (const vector<double> &values, cons
                     //std::cout << "Computed direction in 3D space (degree) - HORIZONTAL: " << dir_degree << std::endl;
                     //std::cout << "Computed direction in 3D space (degree) - VERTICAL: " << vert_dir_degree << std::endl;
 
-                    if(dir_degree == 180)
-                        dir_degree = 0;
+                    //Distanza angolare tra direzione della coppia e direzione di scansione, ripiegata su 180°:
+                    //il variogramma è simmetrico (gamma(h) = gamma(-h)), quindi h e -h appartengono alla
+                    //stessa direzione qualunque sia l'ordine dei due punti della coppia
+                    double diff_degree = std::fmod(std::fabs(dir_degree - check_dir), 180.0);
+                    if(diff_degree > 90.0)
+                        diff_degree = 180.0 - diff_degree;
 
-                    if(check_dir == 180)
-                        check_dir = 0;
-
-                    //se dir_degree rientra nella fascia che sto considerando (-/+tolerance_degree)
-                    //if(dir_degree >= seq[dir]-hor_degree_tolerance && dir_degree <= seq[dir]+hor_degree_tolerance)
-                    if(dir_degree >= check_dir-hor_degree_tolerance && dir_degree <= check_dir+hor_degree_tolerance)
+                    //se la direzione della coppia rientra nella fascia che sto considerando (-/+tolerance_degree)
+                    if(diff_degree <= hor_degree_tolerance)
                     {
                         if(vert_dir_degree >= vert_seq-vert_degree_tolerance && vert_dir_degree <= vert_seq+vert_degree_tolerance)
                         {
@@ -1222,6 +1230,107 @@ std::vector<exp_variog> dir3DH_exp_variogram (const vector<double> &values, cons
     }
 
     return dev;
+}
+
+
+///
+/// \brief plane_basis computes the orthonormal basis of an arbitrary plane defined by
+/// dip azimuth (degree, clockwise from North/Y axis) and dip (degree from the horizontal).
+/// \param u local "east" axis = strike direction (horizontal, lies on the plane)
+/// \param v local "north" axis = dip vector (in-plane, pointing down-dip)
+/// \param n plane normal = u x v (for dip = 0 it reduces to the world Z axis)
+///
+void plane_basis (const double &dip_azimuth_deg, const double &dip_deg,
+                  std::vector<double> &u, std::vector<double> &v, std::vector<double> &n)
+{
+    double az  = get_radians(dip_azimuth_deg);
+    double dip = get_radians(dip_deg);
+
+    // Strike direction: horizontal vector perpendicular to the dip azimuth
+    u = { std::cos(az), -std::sin(az), 0.0 };
+
+    // Dip vector: in-plane vector pointing down-dip (negative z for positive dip)
+    v = { std::sin(az)*std::cos(dip), std::cos(az)*std::cos(dip), -std::sin(dip) };
+
+    // Plane normal: cross product u x v; for the horizontal plane (az=0, dip=0)
+    // the basis reduces to the world axes (u=X, v=Y, n=Z), matching the 3Dxy flow
+    n = { std::sin(az)*std::sin(dip), std::cos(az)*std::sin(dip), std::cos(dip) };
+}
+
+
+///
+/// \brief plane_direction_vector returns the world unit vector of the in-plane direction theta.
+/// The convention is the same of dir3DH_exp_variogram: theta is measured in degree,
+/// clockwise from the local "north" axis (v) toward the local "east" axis (u).
+///
+std::vector<double> plane_direction_vector (const double &dip_azimuth_deg, const double &dip_deg, const double &theta_deg)
+{
+    // Build the local plane frame from the plane orientation parameters
+    std::vector<double> u, v, n;
+    plane_basis(dip_azimuth_deg, dip_deg, u, v, n);
+
+    // Combine the in-plane axes: theta=0 is the local "north", theta=90 the local "east"
+    double t = get_radians(theta_deg);
+    return { std::sin(t)*u[0] + std::cos(t)*v[0],
+             std::sin(t)*u[1] + std::cos(t)*v[1],
+             std::sin(t)*u[2] + std::cos(t)*v[2] };
+}
+
+
+///
+/// \brief dirPlane_exp_variogram: DIRECTIONAL EXPERIMENTAL VARIOGRAM ON AN ARBITRARY PLANE.
+/// The samples are projected on the local frame of the plane (defined by dip azimuth and dip),
+/// then the standard 3D-horizontal directional machinery (dir3DH_exp_variogram) is reused:
+/// in the local frame the plane is horizontal, so the vertical tolerance and bandwidth of the
+/// 3Dxy implementation naturally act as off-plane tolerance and off-plane bandwidth.
+/// \param dip_azimuth_deg dip direction azimuth of the plane (degree, clockwise from North)
+/// \param dip_deg dip of the plane (degree from the horizontal; 0 = horizontal plane)
+/// \param seq in-plane scan directions (degree, clockwise from the local "north" axis)
+/// \param inplane_degree_tolerance angular tolerance around each in-plane direction (degree)
+/// \param offplane_degree_tolerance angular tolerance out of the plane (degree)
+/// \param inplane_bandwidth maximum point-line distance inside the plane
+/// \param offplane_bandwidth maximum distance from the plane
+/// \return one experimental variogram for each in-plane direction of seq
+///
+std::vector<exp_variog> dirPlane_exp_variogram (const vector<double> &values, const vector<double> &coord_x, const vector<double> &coord_y, const vector<double> &coord_z,
+                                                    const double &dip_azimuth_deg,
+                                                    const double &dip_deg,
+                                                    const std::string &lagspac_type,
+                                                    const std::vector<double> &seq,
+                                                    const double &inplane_degree_tolerance,
+                                                    const double &offplane_degree_tolerance,
+                                                    const double &inplane_bandwidth,
+                                                    const double &offplane_bandwidth,
+                                                    const double &step,
+                                                    const int &n_points,
+                                                    const double &limit_dist,
+                                                    const double &tol_factor)
+{
+    // Build the local plane frame from the plane orientation parameters
+    std::vector<double> u, v, n;
+    plane_basis(dip_azimuth_deg, dip_deg, u, v, n);
+
+    std::cout << std::endl;
+    std::cout << "### Computing directional experimental variograms on arbitrary plane ..." << std::endl;
+    std::cout << "### Plane dip azimuth (degree): " << dip_azimuth_deg << "; dip (degree): " << dip_deg << std::endl;
+    std::cout << "### Plane normal: [" << n[0] << "; " << n[1] << "; " << n[2] << "]" << std::endl;
+
+    // Project every sample on the local plane frame: x'=p.u (east), y'=p.v (north), z'=p.n (off-plane)
+    size_t np = coord_x.size();
+    std::vector<double> loc_x(np), loc_y(np), loc_z(np);
+    for(size_t i=0; i<np; i++)
+    {
+        loc_x[i] = coord_x[i]*u[0] + coord_y[i]*u[1] + coord_z[i]*u[2];
+        loc_y[i] = coord_x[i]*v[0] + coord_y[i]*v[1] + coord_z[i]*v[2];
+        loc_z[i] = coord_x[i]*n[0] + coord_y[i]*n[1] + coord_z[i]*n[2];
+    }
+
+    // In the local frame the plane is horizontal: delegate to the standard, noise-resistant
+    // 3D horizontal directional variogram used by the 3Dxy dimension
+    return dir3DH_exp_variogram (values, loc_x, loc_y, loc_z, lagspac_type, seq,
+                                 inplane_degree_tolerance, offplane_degree_tolerance,
+                                 inplane_bandwidth, offplane_bandwidth,
+                                 step, n_points, limit_dist, tol_factor);
 }
 
 

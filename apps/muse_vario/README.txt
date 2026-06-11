@@ -157,3 +157,28 @@ EXAMPLE:
 1b. Compute variogram: --var = variable, --vario = modello, --mode = manuale, impostando il tipo di modello (--type = sferico) da considerare
    -V -p /Users/mariannamiola/Desktop/MUSE/MUSE_test/PROJECT_070822 --var Cl --vario MODEL --dir OMNI --mode MANUAL --type SPHERIC
 
+
+
+2. FULL 3D ANISOTROPIC VARIOGRAM (ELLIPSOID) - dim 3D + dir DIR + vario MODEL:
+   The directional analysis validated on the XY plane is repeated on arbitrary planes
+   (each defined by dip azimuth and dip, in degree). The common structure (model type
+   + nugget) is selected by free-fitting a spread subset of the valid planes (~10%,
+   at least 3, covering different orientations) and keeping the candidate with the
+   lowest weighted MSE; the same structure and nugget are then shared by every
+   plane/direction. The fitted ranges of all planes are combined to fit the 3D
+   anisotropy ellipsoid: 3 semi-axes (range_max, range_min, range_z) + azimuth, roll,
+   pitch (setrot/GSLIB convention, directly usable by the simulation covariance).
+
+   --planes "dipazimuth!dip,dipazimuth!dip,..." sets the analysis planes;
+   --planes AUTO (default) scans the plane orientation space with a constant angular
+   step (--pstep, default 45 degree): horizontal reference plane (dip 0), tilted
+   planes at every intermediate dip over the full azimuth turn (so they do not share
+   a common axis), and vertical planes (dip 90) over half a turn.
+
+   For each plane the app saves: one plot per computed direction (<var>_p<i>_dir<j>.jpeg)
+   and the rose diagram of ranges with the local anisotropy ellipse (<var>_p<i>_RangesDiagram.jpeg).
+   The JSON metadata stores the per-plane variograms (planes_vario) and the ellipsoid (ellipsoid).
+
+   EXAMPLE:
+   -V -p /path/to/project --var phi --nscore YES --vario MODEL --dim 3D --dir DIR
+      --deg 45 --degtol 22.5 --zdegtol 10 --lagspac VARIABLE --planes AUTO

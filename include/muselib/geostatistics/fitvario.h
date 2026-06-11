@@ -53,16 +53,16 @@ namespace MUSE {
 
     struct EllipseParameter
     {
-        double center_x;
-        double center_y;
+        double center_x = 0.0;
+        double center_y = 0.0;
 
-        double phi_rad;
+        double phi_rad = 0.0;
 
-        double max_direction;
-        double min_direction;
+        double max_direction = 0.0;
+        double min_direction = 0.0;
 
-        double max_semiaxis;
-        double min_semiaxis;
+        double max_semiaxis = 0.0;
+        double min_semiaxis = 0.0;
 
 
         // Add any other additional descriptive info
@@ -96,6 +96,79 @@ namespace MUSE {
 
             ar (CEREAL_NVP(max_semiaxis));
             ar (CEREAL_NVP(min_semiaxis));
+        }
+        #endif
+    };
+
+    // Parameters of the 3D anisotropy ellipsoid fitted on directional variogram ranges.
+    // The ellipsoid is centered at the origin (variogram ranges are symmetric by construction)
+    // and is described by 3 semi-axes plus 3 rotation angles (azimuth, roll, pitch).
+    // The angle convention matches GSLIB-like setrot() in geostatslib/statistics/data_structures.h:
+    // - azimuth: direction (degree, clockwise from North/Y axis) of the major axis projection on XY;
+    // - roll:    inclination (degree) of the major axis above the horizontal plane (ang2 of setrot);
+    // - pitch:   rotation (degree) of the two secondary axes around the major axis (ang3 of setrot).
+    // Semi-axes are mapped on the same slots used by variogram_methods/Variogram:
+    // - max_semiaxis -> range_max (major axis);
+    // - min_semiaxis -> range_min (secondary axis, the most horizontal one);
+    // - z_semiaxis   -> range_z   (secondary axis, the most vertical one).
+    struct EllipsoidParameter
+    {
+        // Semi-axes length (same measure units of the input coordinates)
+        double max_semiaxis = 0.0;
+        double min_semiaxis = 0.0;
+        double z_semiaxis   = 0.0;
+
+        // Rotation angles (degree) following the setrot() convention described above
+        double azimuth = 0.0;
+        double roll    = 0.0;
+        double pitch   = 0.0;
+
+        // Unit vectors (world coordinates) of the three principal axes
+        std::vector<double> max_axis_dir = {0.0, 0.0, 0.0};
+        std::vector<double> min_axis_dir = {0.0, 0.0, 0.0};
+        std::vector<double> z_axis_dir   = {0.0, 0.0, 0.0};
+
+        // Mean absolute residual of the quadric fit (0 = perfect fit) and validity flag
+        double fit_residual = 0.0;
+        bool   is_valid = false;
+
+        #ifdef MUSE_USES_CEREAL
+        template <class Archive>
+        void serialize( Archive & ar )
+        {
+            ar (CEREAL_NVP(max_semiaxis));
+            ar (CEREAL_NVP(min_semiaxis));
+            ar (CEREAL_NVP(z_semiaxis));
+
+            ar (CEREAL_NVP(azimuth));
+            ar (CEREAL_NVP(roll));
+            ar (CEREAL_NVP(pitch));
+
+            ar (CEREAL_NVP(max_axis_dir));
+            ar (CEREAL_NVP(min_axis_dir));
+            ar (CEREAL_NVP(z_axis_dir));
+
+            ar (CEREAL_NVP(fit_residual));
+            ar (CEREAL_NVP(is_valid));
+        }
+
+        template <class Archive>
+        void deserialize( Archive & ar )
+        {
+            ar (CEREAL_NVP(max_semiaxis));
+            ar (CEREAL_NVP(min_semiaxis));
+            ar (CEREAL_NVP(z_semiaxis));
+
+            ar (CEREAL_NVP(azimuth));
+            ar (CEREAL_NVP(roll));
+            ar (CEREAL_NVP(pitch));
+
+            ar (CEREAL_NVP(max_axis_dir));
+            ar (CEREAL_NVP(min_axis_dir));
+            ar (CEREAL_NVP(z_axis_dir));
+
+            ar (CEREAL_NVP(fit_residual));
+            ar (CEREAL_NVP(is_valid));
         }
         #endif
     };
@@ -176,7 +249,18 @@ vector<variogram>           fit_dir_variogram (const std::vector<exp_variog> &de
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+/// @brief weighted mean squared error of a fitted variogram model against an experimental
+/// variogram, with the same point-validity rule and weights used inside the fitting loops.
+/// Normalized by the sum of the weights, so that the score is comparable across
+/// experimental variograms with different numbers of lags and of point pairs.
+double variogram_fit_wmse                       (const exp_variog &ev, const variogram &v, weightsType w_type);
+
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
 void fit_anisotropy_ellipse                     (const std::vector<double> &x, const std::vector<double> &y, MUSE::EllipseParameter &ellipse_par);
+
+/// @brief fit a 3D anisotropy ellipsoid (centered at the origin) on directional variogram range points
+void fit_anisotropy_ellipsoid                   (const std::vector<double> &x, const std::vector<double> &y, const std::vector<double> &z, MUSE::EllipsoidParameter &ellipsoid_par);
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 

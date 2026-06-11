@@ -52,17 +52,22 @@ public:
     MUSE::EllipseParameter ellipse_par;
     MUSE::variogram_methods vario;
 
+    // 3D anisotropy ellipsoid fitted on multiple planes (default/empty for simpler use cases)
+    MUSE::EllipsoidParameter ellipsoid_par;
+
     // Get Methods
     const std::string &getFrameName             () const    { return frame_name; }
     const StatisticsInfo &getStatisticsInfo     () const    { return stats; }
     const MUSE::EllipseParameter &getSummary    () const    { return ellipse_par; }
     const MUSE::variogram_methods &getVario     () const    { return vario; }
+    const MUSE::EllipsoidParameter &getEllipsoid () const   { return ellipsoid_par; }
 
     // Set Methods
     void setFrameName   (const std::string &d)              { frame_name = d; }
     void setStatisticsInfo (const StatisticsInfo &d)        { stats = d; }
     void setSummary     (const MUSE::EllipseParameter &d)   { ellipse_par = d; }
     void setVario       (const MUSE::variogram_methods &d)  { vario = d; }
+    void setEllipsoid   (const MUSE::EllipsoidParameter &d) { ellipsoid_par = d; }
 
 
 
@@ -74,6 +79,14 @@ public:
         ar (CEREAL_NVP(stats));
         ar (CEREAL_NVP(ellipse_par));
         ar (CEREAL_NVP(vario));
+
+        // Appended at the end to preserve the legacy JSON layout; guarded because cereal
+        // uses serialize() also on input archives for the frames nested in the multiframe
+        try
+        {
+            ar (CEREAL_NVP(ellipsoid_par));
+        }
+        catch (const cereal::Exception &) { /* legacy file without ellipsoid info: keep defaults */ }
     }
 
     template <class Archive>
@@ -83,6 +96,13 @@ public:
         ar (CEREAL_NVP(stats));
         ar (CEREAL_NVP(ellipse_par));
         ar (CEREAL_NVP(vario));
+
+        // New optional field: guarded to keep reading legacy JSON files
+        try
+        {
+            ar (CEREAL_NVP(ellipsoid_par));
+        }
+        catch (const cereal::Exception &) { /* legacy file without ellipsoid info: keep defaults */ }
     }
 #endif
 

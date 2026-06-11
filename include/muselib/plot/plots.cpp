@@ -88,6 +88,109 @@ matplot::figure_handle biv_plot_leg (const MUSE::PlotStruct &dataplot, const std
     return fig;
 }
 
+///
+/// \brief ellipsoid_plot draws the fitted 3D anisotropy ellipsoid as a wireframe, together with
+/// the directional range points used for the fitting: it is the summary picture of the 3D fit.
+/// The wireframe is generated parametrically from the principal axes stored in the structure,
+/// so the drawn orientation reflects exactly the fitted azimuth/roll/pitch.
+///
+matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid_par, const MUSE::PlotStruct &range_points, const std::string &title)
+{
+    auto fig = matplot::figure(true);
+    fig->size(800, 700);
+
+    // Shortcuts for the semi-axes and the principal directions of the fitted ellipsoid
+    const double a = ellipsoid_par.max_semiaxis;
+    const double b = ellipsoid_par.min_semiaxis;
+    const double c = ellipsoid_par.z_semiaxis;
+    const std::vector<double> &ea = ellipsoid_par.max_axis_dir;
+    const std::vector<double> &eb = ellipsoid_par.min_axis_dir;
+    const std::vector<double> &ec = ellipsoid_par.z_axis_dir;
+
+    // Parametric point on the ellipsoid surface, expressed in world coordinates:
+    // p(u,v) = a*cos(u)cos(v)*ea + b*cos(u)sin(v)*eb + c*sin(u)*ec
+    auto surf_point = [&](const double u, const double v, double &x, double &y, double &z)
+    {
+        double c0 = a*std::cos(u)*std::cos(v);
+        double c1 = b*std::cos(u)*std::sin(v);
+        double c2 = c*std::sin(u);
+
+        x = c0*ea.at(0) + c1*eb.at(0) + c2*ec.at(0);
+        y = c0*ea.at(1) + c1*eb.at(1) + c2*ec.at(1);
+        z = c0*ea.at(2) + c1*eb.at(2) + c2*ec.at(2);
+    };
+
+    matplot::hold(matplot::on);
+
+    const int n_iso = 12;   //number of wireframe iso-lines per family
+    const int n_samp = 60;  //number of samples along each iso-line
+
+    // Wireframe, first family: meridians at constant v (from pole to pole)
+    for(int k=0; k<n_iso; k++)
+    {
+        double v = k * (2.0*M_PI/n_iso);
+
+        std::vector<double> x, y, z;
+        for(int i=0; i<=n_samp; i++)
+        {
+            double u = -M_PI/2.0 + i*(M_PI/n_samp);
+            double px, py, pz;
+            surf_point(u, v, px, py, pz);
+            x.push_back(px); y.push_back(py); z.push_back(pz);
+        }
+        auto l = matplot::plot3(x, y, z);
+        l->line_width(0.5);
+        l->color("#D95F02"); //orange wires
+    }
+
+    // Wireframe, second family: parallels at constant u (closed rings)
+    for(int k=1; k<n_iso/2; k++)
+    {
+        double u = -M_PI/2.0 + k*(M_PI/(n_iso/2));
+
+        std::vector<double> x, y, z;
+        for(int i=0; i<=n_samp; i++)
+        {
+            double v = i*(2.0*M_PI/n_samp);
+            double px, py, pz;
+            surf_point(u, v, px, py, pz);
+            x.push_back(px); y.push_back(py); z.push_back(pz);
+        }
+        auto l = matplot::plot3(x, y, z);
+        l->line_width(0.5);
+        l->color("#D95F02");
+    }
+
+    // Principal axes of the ellipsoid, drawn as thicker segments through the origin
+    const std::vector<const std::vector<double>*> axes_dir = {&ea, &eb, &ec};
+    const std::vector<double> axes_len = {a, b, c};
+    for(size_t k=0; k<axes_dir.size(); k++)
+    {
+        std::vector<double> x = {-axes_len.at(k)*axes_dir.at(k)->at(0), axes_len.at(k)*axes_dir.at(k)->at(0)};
+        std::vector<double> y = {-axes_len.at(k)*axes_dir.at(k)->at(1), axes_len.at(k)*axes_dir.at(k)->at(1)};
+        std::vector<double> z = {-axes_len.at(k)*axes_dir.at(k)->at(2), axes_len.at(k)*axes_dir.at(k)->at(2)};
+
+        auto l = matplot::plot3(x, y, z);
+        l->line_width(2.5);
+        l->color("#444444"); //dark gray principal axes
+    }
+
+    // Directional range points used for the ellipsoid fitting (fit quality at a glance)
+    auto pts = matplot::plot3(range_points.x, range_points.y, range_points.z, "o");
+    pts->marker_size(7);
+    pts->marker_face(true);
+    pts->color("#1F77B4"); //blue markers
+
+    matplot::title(title);
+    matplot::xlabel("X (East)");
+    matplot::ylabel("Y (North)");
+    matplot::zlabel("Z");
+    matplot::grid(matplot::on);
+
+    return fig;
+}
+
+
 void color_map (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label)
 {
     matplot::binscatter(dataplot.x, dataplot.y, matplot::bin_scatter_style::automatic);

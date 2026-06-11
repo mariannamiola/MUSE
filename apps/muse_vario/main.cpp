@@ -306,6 +306,33 @@ int main(int argc, char** argv)
      */
     ValueArg<std::string> varioDimension    ("", "dim", "Set variogram dimension type", false, "3D", &allowedValsVDm, cmd);
 
+    /**
+     * @brief Set analysis planes for FULL 3D directional variogram computation (--dim 3D --dir DIR --vario MODEL).
+     * Each plane is defined by the pair dipazimuth!dip (degree): dip azimuth is measured clockwise from North,
+     * dip is measured from the horizontal plane (0 = horizontal plane, 90 = vertical plane).
+     * On each plane the directional variograms are computed with the same robust machinery used on the XY plane,
+     * and the fitted ranges of all planes are combined to fit the 3D anisotropy ellipsoid
+     * (3 semi-axes + azimuth, roll, pitch).
+     * @default AUTO (grid of plane orientations: both dip and dip azimuth vary by the constant step --pstep,
+     * so that tilted planes are sampled in every direction and do not share a common axis)
+     * @format comma-separated list of dipazimuth!dip pairs (degree)
+     * @example --dim 3D --dir DIR --vario MODEL --planes "0!0,270!90,315!45,0!30"
+     */
+    ValueArg<std::string> setPlanes         ("", "planes", "Set analysis planes (dipazimuth!dip, comma separated, in degree) for FULL 3D directional variogram computation. AUTO = orientation grid with constant step --pstep on dip and dip azimuth", false, "AUTO", "string", cmd);
+
+    /**
+     * @brief Set angular step (in degree) for the automatic plane generation (--planes AUTO).
+     * Both the dip and the dip azimuth of the analysis planes vary by this constant step:
+     * dip = 0 gives the horizontal reference plane, intermediate dips span the full azimuth turn
+     * (tilted planes in every direction, with no axis shared among them), dip = 90 gives the
+     * vertical planes on half turn (a vertical plane and its 180-degree twin coincide).
+     * @default 45.0 degrees
+     * @note Smaller steps sample the plane orientation space more densely (better constrained
+     * ellipsoid) at the cost of more directional variogram computations.
+     * @example --dim 3D --dir DIR --vario MODEL --planes AUTO --pstep 30
+     */
+    ValueArg<double> setPlaneStep           ("", "pstep", "Set angular step (in degree) for automatic plane generation: dip and dip azimuth both vary by this step", false, 45.0, "double", cmd);
+
     // Option: compute variogram with variable/constant lag spacing
     std::vector<std::string> allowedLag = {"VARIABLE","CONSTANT","FIXED"};
     ValuesConstraint<std::string> allowedValsLag(allowedLag);
@@ -2337,9 +2364,470 @@ int main(int argc, char** argv)
 
                             if(varioDimension.getValue().compare("3D") == 0)
                             {
-                                //std::cout << "Computing 3D directional experimental variogram ... " << std::endl;
-                                std::cout << FRED("ERROR: NO 3D directional experimental variogram implementation ... ") << std::endl;
-                                exit(1);
+                                std::cout << "Computing FULL 3D directional variogram on multiple planes ... " << std::endl;
+
+                                // ===========================================================================
+                                // FULL 3D WORKFLOW: the robust directional analysis validated on the XY plane
+                                // is repeated on arbitrary planes; the fitted ranges of all the planes are
+                                // then combined to fit the 3D anisotropy ellipsoid (3 semi-axes + azimuth,
+                                // roll, pitch). The same model type and the same nugget (selected among the
+                                // best fits of the reference plane) are shared by every plane/direction.
+                                // ===========================================================================
+
+                                // 1) Define the list of analysis planes as (dip azimuth, dip) pairs in degree
+                                std::vector<std::pair<double,double>> planes;
+                                if(!setPlanes.isSet() || setPlanes.getValue().compare("AUTO") == 0)
+                                {
+                                    // AUTO mode: grid of plane orientations with a constant angular step on
+                                    // both dip and dip azimuth, so that the tilted planes point in every
+                                    // direction and do not share a common axis (e.g. the vertical)
+                                    double pstep = setPlaneStep.getValue();
+                                    if(pstep <= 0.0 || pstep > 90.0)
+                                    {
+                                        std::cerr << FRED("ERROR: --pstep must be in (0, 90] degree.") << std::endl;
+                                        exit(1);
+                                    }
+
+                                    // Reference horizontal plane (dip = 0): azimuth is irrelevant
+                                    planes.push_back(std::make_pair(0.0, 0.0));
+
+                                    // Tilted planes at intermediate dips: full azimuth turn is needed,
+                                    // since plane(az, dip) and plane(az+180, dip) are distinct planes
+                                    for(double dip = pstep; dip < 90.0; dip += pstep)
+                                        for(double az = 0.0; az < 360.0; az += pstep)
+                                            planes.push_back(std::make_pair(az, dip));
+
+                                    // Vertical planes (dip = 90): half turn is enough, because a vertical
+                                    // plane and its 180-degree azimuth twin are the same plane
+                                    for(double az = 0.0; az < 180.0; az += pstep)
+                                        planes.push_back(std::make_pair(az, 90.0));
+                                }
+                                else
+                                {
+                                    // User-defined planes: comma separated list of dipazimuth!dip pairs
+                                    std::vector<std::string> str_planes = split_string(setPlanes.getValue(), ',');
+                                    for(const std::string &sp:str_planes)
+                                    {
+                                        std::pair<std::string,std::string> pp = split_string_pair(sp, '!');
+                                        planes.push_back(std::make_pair(std::stod(pp.first), std::stod(pp.second)));
+                                    }
+                                }
+                                std::cout << "=== Number of analysis planes: " << planes.size() << std::endl;
+
+                                // Store the plane setting in the metadata (new optional fields)
+                                info_vario.n_planes = planes.size();
+                                info_vario.set_planes = setPlanes.getValue();
+                                if(setVarioCleanPoints.isSet())
+                                    info_vario.clean_is_set = true;
+                                info_vario.n_min_points_for_clean = setVarioCleanPoints.getValue();
+                                metavario.setInfoVariogram(info_vario);
+
+                                // Accumulators: per-plane metadata and 3D range points for the ellipsoid fit
+                                std::vector<MUSE::plane_vario_methods> planes_meta;
+                                std::vector<double> ell_x, ell_y, ell_z;
+
+                                // Valid experimental scans collected on each plane during the first pass
+                                struct PlaneScan
+                                {
+                                    size_t id;                  //plane index in the planes list
+                                    double dipaz, dip;          //plane orientation (degree)
+                                    std::vector<double> dirs;   //valid in-plane scan directions
+                                    std::vector<exp_variog> ex; //their experimental variograms
+                                    std::vector<double> weight; //their nugget-averaging weights
+                                };
+                                std::vector<PlaneScan> scans;
+
+                                // 2) FIRST PASS on the analysis planes: compute and validate the
+                                // directional experimental variograms of every plane
+                                for(size_t ip=0; ip<planes.size(); ip++)
+                                {
+                                    double dipaz = planes.at(ip).first;
+                                    double dip   = planes.at(ip).second;
+
+                                    std::cout << std::endl;
+                                    std::cout << "=========================================================" << std::endl;
+                                    std::cout << "### PLANE " << ip << " - dip azimuth: " << dipaz << " degree; dip: " << dip << " degree" << std::endl;
+                                    std::cout << "=========================================================" << std::endl;
+
+                                    // 2a) Directional experimental variograms in the local plane frame:
+                                    // vertical tolerance/bandwidth act as off-plane tolerance/bandwidth
+                                    std::vector<exp_variog> plane_ex_var = dirPlane_exp_variogram (normal_values.values, corr_x, corr_y, corr_z,
+                                                                                                   dipaz, dip,
+                                                                                                   setLagType.getValue(), directions,
+                                                                                                   setTol.getValue(), setVertTol.getValue(),
+                                                                                                   setBandwidth.getValue(), setVertBandwidth.getValue(),
+                                                                                                   setFactor.getValue(), setPointsVario.getValue(),
+                                                                                                   setMaxDistance.getValue(), setToleranceFactor.getValue());
+
+                                    // 2b) Clean noisy experimental points (same criterion of the 3Dxy flow)
+                                    // and drop the directions without enough informative points: on steep
+                                    // planes some scan directions may intercept too few pairs of samples
+                                    PlaneScan scan;
+                                    scan.id = ip;
+                                    scan.dipaz = dipaz;
+                                    scan.dip = dip;
+                                    for(size_t i=0; i<plane_ex_var.size(); i++)
+                                    {
+                                        exp_variog ev = plane_ex_var.at(i);
+
+                                        int nzeros = 0;
+                                        if(setVarioCleanPoints.isSet())
+                                            ev = clean_exp_variogram(ev, setVarioCleanPoints.getValue(), nzeros);
+
+                                        // Count the experimental points computed with at least one pair
+                                        int n_valid = 0;
+                                        for(size_t j=0; j<ev.N.size(); j++)
+                                            if(ev.N.at(j) > 0)
+                                                n_valid++;
+
+                                        // A directional fit needs at least 2 informative points (same
+                                        // minimal requirement implicitly accepted by the 2D/3Dxy flows)
+                                        if(n_valid < 2)
+                                        {
+                                            std::cout << FYEL("WARNING: direction ") << directions.at(i) << FYEL(" degree on plane ") << ip << FYEL(" has too few valid points. Direction is skipped.") << std::endl;
+                                            continue;
+                                        }
+
+                                        scan.dirs.push_back(directions.at(i));
+                                        scan.ex.push_back(ev);
+
+                                        // 2c) Optional penalty weight on nugget averaging (same rule of the 3Dxy flow)
+                                        if(setVarioCleanPoints.isSet() && setWeight.isSet())
+                                            scan.weight.push_back(1.0 - nzeros*0.1); //penalty function
+                                        else
+                                            scan.weight.push_back(1.0);
+                                    }
+
+                                    // Skip the whole plane when too few directions survive the validity check
+                                    if(scan.dirs.size() < 2)
+                                    {
+                                        std::cout << FYEL("WARNING: plane ") << ip << FYEL(" has less than 2 valid directions. Plane is skipped.") << std::endl;
+                                        continue;
+                                    }
+
+                                    scans.push_back(scan);
+                                }
+
+                                // Without any valid plane the 3D analysis cannot proceed
+                                if(scans.empty())
+                                {
+                                    std::cerr << FRED("ERROR: no analysis plane has enough valid directions. Check tolerances/bandwidths.") << std::endl;
+                                    exit(1);
+                                }
+
+                                // 3) SELECTION of the common anisotropic structure (model type + nugget):
+                                // the free fit is evaluated on a spread subset of the valid planes (~10%,
+                                // at least 3) and the candidate with the lowest weighted MSE wins, so the
+                                // common structure is not tied to the orientation of a single plane
+                                variogram_type common_type = variogram_type::SPHERIC;
+                                std::string common_type_str;
+                                double common_nugget = 0.0;
+                                double common_sill = 1.0;
+                                bool common_is_set = false;
+
+                                if(setModel.isSet() && setNugget.isSet())
+                                {
+                                    // Structure and nugget both forced from command line: nothing to select
+                                    convert_from_str(setModel.getValue(), common_type);
+                                    common_type_str = setModel.getValue();
+                                    common_nugget = setNugget.getValue();
+                                    common_sill = 1.0; //normal score values: total sill = 1
+                                    common_is_set = true;
+                                    std::cout << FGRN("### Common 3D structure forced from command line - model: ") << common_type_str << FGRN("; nugget: ") << common_nugget << std::endl;
+                                }
+                                else
+                                {
+                                    // Candidate planes: evenly spread over the valid scans (the scan list
+                                    // spans dips and azimuths, so the spread covers the orientation space)
+                                    size_t n_cand = std::max<size_t>(3, (size_t)std::ceil(0.30 * scans.size()));
+                                    n_cand = std::min(n_cand, scans.size());
+
+                                    std::vector<size_t> cand;
+                                    for(size_t k=0; k<n_cand; k++)
+                                    {
+                                        size_t idx = (n_cand == 1) ? 0 : (k*(scans.size()-1))/(n_cand-1);
+                                        if(cand.empty() || cand.back() != idx) //avoid duplicated indices
+                                            cand.push_back(idx);
+                                    }
+
+                                    std::cout << std::endl;
+                                    std::cout << "=========================================================" << std::endl;
+                                    std::cout << "### COMMON STRUCTURE SELECTION on " << cand.size() << " candidate planes (of " << scans.size() << " valid)" << std::endl;
+                                    std::cout << "=========================================================" << std::endl;
+
+                                    double best_score = DBL_MAX;
+                                    for(const size_t sc:cand)
+                                    {
+                                        const PlaneScan &cscan = scans.at(sc);
+                                        std::cout << std::endl;
+                                        std::cout << "### Candidate plane " << cscan.id << " - dip azimuth: " << cscan.dipaz << "; dip: " << cscan.dip << std::endl;
+
+                                        // Free fit on the candidate plane, honoring the CLI constraints
+                                        vector<variogram> vv;
+                                        try
+                                        {
+                                            if(setModel.isSet())
+                                            {
+                                                // Structure forced, nugget free (averaged on directions)
+                                                variogram_type model_type;
+                                                convert_from_str(setModel.getValue(), model_type);
+                                                vv = fit_dir_variogram (cscan.ex, cscan.dirs, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), model_type, cscan.weight, true, w_type);
+                                            }
+                                            else if(setNugget.isSet())
+                                            {
+                                                // Nugget forced, structure free (best model on MSE over directions)
+                                                vv = fit_dir_variogram (cscan.ex, cscan.dirs, setTol.getValue(), setRangeStep.getValue(), setNugget.getValue(), true, w_type);
+                                            }
+                                            else
+                                            {
+                                                // Fully automatic: best model on total MSE + weighted average nugget
+                                                vv = fit_dir_variogram (cscan.ex, cscan.dirs, setTol.getValue(), setRangeStep.getValue(), setNuggetStep.getValue(), cscan.weight, true, w_type);
+                                            }
+                                        }
+                                        catch (exception e)
+                                        {
+                                            std::cerr << "ERROR Fitting candidate plane " << cscan.id << " ... " << e.what() << std::endl;
+                                            continue; //skip this candidate, try the others
+                                        }
+
+                                        // An incomplete fit cannot be scored consistently
+                                        if(vv.size() != cscan.dirs.size())
+                                            continue;
+
+                                        // Candidate score: weighted MSE of the fitted models against the
+                                        // experimental points, averaged on the directions of the plane
+                                        // (weight-normalized, so comparable across different planes)
+                                        double score = 0.0;
+                                        for(size_t i=0; i<vv.size(); i++)
+                                            score += variogram_fit_wmse(cscan.ex.at(i), vv.at(i), w_type);
+                                        score /= vv.size();
+
+                                        std::cout << "### Candidate plane " << cscan.id << " - model: " << vv.at(0).type << "; nugget: " << vv.at(0).nugget << "; weighted MSE: " << score << std::endl;
+
+                                        // Keep the candidate with the lowest score as the common structure
+                                        if(score < best_score)
+                                        {
+                                            best_score = score;
+                                            common_type_str = vv.at(0).type;
+                                            convert_from_str(common_type_str, common_type);
+                                            common_nugget = vv.at(0).nugget;
+                                            common_sill = vv.at(0).sill;
+                                            common_is_set = true;
+                                        }
+                                    }
+
+                                    if(!common_is_set)
+                                    {
+                                        std::cerr << FRED("ERROR: no candidate plane produced a valid fit for the common structure.") << std::endl;
+                                        exit(1);
+                                    }
+
+                                    std::cout << std::endl;
+                                    std::cout << FGRN("### Common 3D structure (best of candidates) - model: ") << common_type_str << FGRN("; nugget: ") << common_nugget << FGRN("; weighted MSE: ") << best_score << std::endl;
+                                }
+
+                                // 4) SECOND PASS on the valid planes: with the common structure fixed,
+                                // only the directional ranges are fitted on every plane
+                                for(size_t s=0; s<scans.size(); s++)
+                                {
+                                    const PlaneScan &pscan = scans.at(s);
+                                    size_t ip = pscan.id;
+                                    double dipaz = pscan.dipaz;
+                                    double dip   = pscan.dip;
+                                    const std::vector<double> &plane_dirs = pscan.dirs;
+                                    const std::vector<exp_variog> &plane_ex_valid = pscan.ex;
+
+                                    std::cout << std::endl;
+                                    std::cout << "=========================================================" << std::endl;
+                                    std::cout << "### FITTING PLANE " << ip << " - dip azimuth: " << dipaz << " degree; dip: " << dip << " degree" << std::endl;
+                                    std::cout << "=========================================================" << std::endl;
+
+                                    // Same structure and same nugget: only ranges are fitted per direction
+                                    vector<variogram> vv;
+                                    try
+                                    {
+                                        vv = fit_dir_variogram (plane_ex_valid, plane_dirs, setRangeStep.getValue(), common_type, common_nugget, true, w_type);
+                                    }
+                                    catch (exception e)
+                                    {
+                                        std::cerr << "ERROR Computing directional variogram modeling on plane " << ip << " ... " << e.what() << std::endl;
+                                        continue; //skip this plane, keep the others
+                                    }
+
+                                    // Skip the plane if the fitting did not produce a model per direction
+                                    if(vv.size() != plane_dirs.size())
+                                    {
+                                        std::cerr << FRED("WARNING: fitting on plane ") << ip << FRED(" is incomplete. Plane is skipped.") << std::endl;
+                                        continue;
+                                    }
+
+                                    // 2e) Store experimental + fitted variograms in the per-plane metadata
+                                    MUSE::plane_vario_methods plane_meta;
+                                    plane_meta.setPlaneId(ip);
+                                    plane_meta.setDipAzimuth(dipaz);
+                                    plane_meta.setDip(dip);
+
+                                    // Plane normal (world coordinates) for downstream consumers
+                                    std::vector<double> pu, pv, pn;
+                                    plane_basis(dipaz, dip, pu, pv, pn);
+                                    plane_meta.setNormal(pn.at(0), pn.at(1), pn.at(2));
+
+                                    std::vector<MUSE::exp_variog_methods> variov3d;
+                                    std::vector<MUSE::variogram_methods> fitvario3d;
+                                    for(size_t i=0; i<plane_ex_valid.size(); i++)
+                                    {
+                                        // Experimental points of direction i (local plane convention)
+                                        MUSE::exp_variog_methods variovv;
+                                        variovv.setDirection(plane_dirs.at(i));
+                                        variovv.setExpVariog_N(plane_ex_valid.at(i).N);
+                                        variovv.setExpVariog_h(plane_ex_valid.at(i).h);
+                                        variovv.setExpVariog_gamma(plane_ex_valid.at(i).gamma);
+                                        variov3d.push_back(variovv);
+
+                                        // Fitted model of direction i (shared model type and nugget)
+                                        MUSE::variogram_methods fitvariov;
+                                        fitvariov.setDirection(plane_dirs.at(i));
+                                        fitvariov.setNugget(vv.at(i).nugget);
+                                        fitvariov.setSill(vv.at(i).sill);
+                                        fitvariov.set_range(vv.at(i).range);
+                                        fitvariov.setType(vv.at(i).type);
+                                        fitvario3d.push_back(fitvariov);
+                                    }
+                                    plane_meta.setDirExpVariog(variov3d);
+                                    plane_meta.setFitExpVariog(fitvario3d);
+
+                                    // 2f) Plot experimental + fitted variogram for every computed direction
+                                    for(size_t i=0; i<plane_ex_valid.size(); i++)
+                                    {
+                                        PlotStruct dir_gamma_h;
+                                        for(size_t j=0; j<plane_ex_valid.at(i).gamma.size(); j++)
+                                        {
+                                            dir_gamma_h.x.push_back(plane_ex_valid.at(i).h.at(j));     //distanze
+                                            dir_gamma_h.y.push_back(plane_ex_valid.at(i).gamma.at(j)); //gamma (variogramma)
+                                        }
+
+                                        std::string ptitle = "Plane " + std::to_string(ip) + " - Fitted Directional Variogram Model";
+                                        variogram_plot(dir_gamma_h, vv.at(i), ptitle, "Lag distance", "Semivariogram", setNxvis.getValue());
+
+                                        matplot::save(app_folder + "/" + data.getName() + "_p" + std::to_string(ip) + "_dir" + std::to_string(i), "jpeg");
+                                        matplot::cla();
+                                    }
+
+                                    // 2g) Rose diagram of the in-plane ranges + local anisotropy ellipse fit
+                                    PlotStruct h_plot;
+                                    for(size_t i=0; i<vv.size(); i++)
+                                    {
+                                        // Each fitted range generates two symmetric points in the local plane
+                                        h_plot.x.push_back(get_rangex(vv.at(i).range, plane_dirs.at(i)));
+                                        h_plot.y.push_back(get_rangey(vv.at(i).range, plane_dirs.at(i)));
+
+                                        h_plot.x.push_back(get_rangex(vv.at(i).range, 180 + plane_dirs.at(i)));
+                                        h_plot.y.push_back(get_rangey(vv.at(i).range, 180 + plane_dirs.at(i)));
+                                    }
+
+                                    // The direct conic fit needs at least 3 directions (6 symmetric points)
+                                    EllipseParameter plane_summary;
+                                    if(plane_dirs.size() >= 3)
+                                    {
+                                        fit_anisotropy_ellipse(h_plot.x, h_plot.y, plane_summary);
+
+                                        // In-plane directions (degree from the local "north") of the ellipse axes
+                                        plane_summary.max_direction = 90 - get_degrees(plane_summary.phi_rad);
+                                        if(plane_summary.max_direction < 0)
+                                            plane_summary.max_direction = 180 + plane_summary.max_direction;
+
+                                        plane_summary.min_direction = plane_summary.max_direction - 90;
+                                        if(plane_summary.min_direction < 0)
+                                            plane_summary.min_direction = 180 + plane_summary.min_direction;
+                                    }
+                                    else
+                                        std::cout << FYEL("WARNING: less than 3 valid directions on plane ") << ip << FYEL(": local ellipse fit is skipped.") << std::endl;
+
+                                    plane_meta.setEllipse(plane_summary);
+
+                                    // Save the per-plane rose diagram with the fitted ellipse overlay
+                                    std::string rtitle = "Rose Diagram of Ranges - Plane " + std::to_string(ip);
+                                    auto fig = biv_plot_leg(h_plot, rtitle, "h local-east", "h local-north", false, "Dir degree");
+
+                                    matplot::hold(matplot::on);
+                                    if(plane_dirs.size() >= 3)
+                                        ellipse_plot(fig, plane_summary, setEps.getValue());
+
+                                    matplot::save(app_folder + "/" + data.getName() + "_p" + std::to_string(ip) + "_RangesDiagram", "jpeg");
+                                    matplot::cla();
+
+                                    planes_meta.push_back(plane_meta);
+
+                                    // 2h) Accumulate the 3D range points (and their antipodes) for the
+                                    // ellipsoid fit: range * world unit vector of the in-plane direction
+                                    for(size_t i=0; i<vv.size(); i++)
+                                    {
+                                        std::vector<double> w3 = plane_direction_vector(dipaz, dip, plane_dirs.at(i));
+                                        double r = vv.at(i).range;
+
+                                        ell_x.push_back( r*w3.at(0)); ell_y.push_back( r*w3.at(1)); ell_z.push_back( r*w3.at(2));
+                                        ell_x.push_back(-r*w3.at(0)); ell_y.push_back(-r*w3.at(1)); ell_z.push_back(-r*w3.at(2));
+                                    }
+
+                                    // The first valid plane (the horizontal one, when not skipped) also
+                                    // fills the legacy single-plane metadata fields for simpler consumers
+                                    if(s == 0)
+                                    {
+                                        metavario.setDirExpVariog(variov3d);
+                                        metavario.setFitExpVariog(fitvario3d);
+                                        metavario.setSummary(plane_summary);
+                                        vario_frame.setSummary(plane_summary);
+                                    }
+                                }
+
+                                // 3) Save the per-plane analyses in the metadata (new optional field)
+                                metavario.setPlanesVariog(planes_meta);
+
+                                // 4) Fit the 3D anisotropy ellipsoid on all the collected range points
+                                MUSE::EllipsoidParameter ellipsoid;
+                                fit_anisotropy_ellipsoid(ell_x, ell_y, ell_z, ellipsoid);
+
+                                metavario.setEllipsoid(ellipsoid);
+                                vario_frame.setEllipsoid(ellipsoid);
+
+                                // 4b) Save the summary picture of the 3D fit: ellipsoid wireframe,
+                                // principal axes and all the directional range points
+                                if(ellipsoid.is_valid)
+                                {
+                                    PlotStruct ell_points;
+                                    ell_points.x = ell_x;
+                                    ell_points.y = ell_y;
+                                    ell_points.z = ell_z;
+
+                                    // Compact title with the fitted ellipsoid parameters
+                                    char ell_title[192];
+                                    snprintf(ell_title, sizeof(ell_title),
+                                             "Anisotropy Ellipsoid: a=%.1f b=%.1f c=%.1f - az=%.1f roll=%.1f pitch=%.1f (res %.2f)",
+                                             ellipsoid.max_semiaxis, ellipsoid.min_semiaxis, ellipsoid.z_semiaxis,
+                                             ellipsoid.azimuth, ellipsoid.roll, ellipsoid.pitch, ellipsoid.fit_residual);
+
+                                    ellipsoid_plot(ellipsoid, ell_points, ell_title);
+                                    matplot::save(app_folder + "/" + data.getName() + "_Ellipsoid3D", "jpeg");
+                                    matplot::cla();
+                                }
+                                else
+                                    std::cout << FYEL("WARNING: ellipsoid is not valid. Summary 3D picture is skipped.") << std::endl;
+
+                                // 5) Fill the synthetic 3D anisotropic variogram model of the frame summary:
+                                // the ellipsoid semi-axes map directly on range_max/range_min/range_z
+                                MUSE::variogram_methods fitvariov3d;
+                                fitvariov3d.setNugget(common_nugget);
+                                fitvariov3d.setSill(common_sill - common_nugget); //normal score: total sill = 1
+                                fitvariov3d.range_max = ellipsoid.max_semiaxis;
+                                fitvariov3d.range_min = ellipsoid.min_semiaxis;
+                                fitvariov3d.setRangeZ(ellipsoid.z_semiaxis);
+                                fitvariov3d.setDirection(ellipsoid.azimuth);
+                                fitvariov3d.setType(common_type_str);
+
+                                vario_frame.setVario(fitvariov3d);
+
+                                std::cout << FGRN("Computing FULL 3D directional variogram with ellipsoid fitting ... COMPLETED.") << std::endl;
+                                break; //the 3D multi-plane flow is self contained: skip the single-plane flow below
                             }
                             else if(varioDimension.getValue().compare("3Dxy") == 0)
                             {
