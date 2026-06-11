@@ -1,17 +1,17 @@
 project(muse_geometry LANGUAGES CXX)
 
-#####`
-# VTK
-find_package(VTK COMPONENTS
-    CommonCore
-    CommonDataModel
-    IOXML
-    IOLegacy)
-if(VTK_FOUND)
-    include_directories(SYSTEM ${VTK_INCLUDE_DIRS})
-endif()
+# #####`
+# # VTK
+# find_package(VTK COMPONENTS
+#     CommonCore
+#     CommonDataModel
+#     IOXML
+#     IOLegacy)
+# if(VTK_FOUND)
+#     include_directories(SYSTEM ${VTK_INCLUDE_DIRS})
+# endif()
 
-message("VTK found @ " VTK\n)
+# message("VTK found @ " VTK\n)
 
 #####
 # gdal
@@ -29,44 +29,25 @@ message("VTK found @ " VTK\n)
 #     set (GDAL_LIBRARY ${GDAL_LIBRARY_DIR}/libgdal.dylib)
 # endif()
 
-include_directories(${GDAL_INCLUDE_DIR})
+#include_directories(${GDAL_INCLUDE_DIR})
 
-message ("${GDAL_INCLUDE_DIR}")
-message ("${GDAL_LIBRARY}")
+#message ("${GDAL_INCLUDE_DIR}")
+#message ("${GDAL_LIBRARY}")
 
 #####
 # cinolib
-add_definitions(-DCINOLIB_USES_VTK)
 #set(CINOLIB_USES_VTK    ON )
-
-
-#####
-# triangle/tetgen
-set (TRIANGLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../external/triangle)
-set (TETGEN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../external/tetgen)
-
-add_custom_command(
-  OUTPUT ${TRIANGLE_DIR}/build/libtriangle.a
-  COMMAND mkdir -p build && cd build && cmake .. && make
-  #DEPENDS ${SOURCE_FILES} /tmp/bin/create_foo_hh main.cpp
-  WORKING_DIRECTORY ${TRIANGLE_DIR}
-)
-
-add_custom_command(
-  OUTPUT ${TETGEN_DIR}/build/libtetgen.a
-  COMMAND mkdir -p build && cd build && cmake .. && make
-  #DEPENDS ${SOURCE_FILES} /tmp/bin/create_foo_hh main.cpp
-  WORKING_DIRECTORY ${TETGEN_DIR}
-)
 
 add_executable(${PROJECT_NAME}
   main.cpp
-  ${TRIANGLE_DIR}/build/libtriangle.a
-  ${TETGEN_DIR}/build/libtetgen.a
   #${PROJ_LIB}
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${triangle_lib_file} ${tetgen_lib_file} ${VTK_LIBRARIES} ${GDAL_LIBRARY} PROJ::proj)
+target_link_libraries(${PROJECT_NAME} PUBLIC muse_cinolib PROJ::proj GDAL::GDAL)
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+	VOLUME_MESHER_EXECUTABLE="${VOLUME_MESHER_EXECUTABLE_PATH}"
+)
 
 #####
 
@@ -74,10 +55,7 @@ set(TETGEN_GENERATOR ${PROJECT_NAME}_tetmesh-generator)
 
 add_executable(${TETGEN_GENERATOR}
   main-tetmesh-generator.cpp
-  ${TRIANGLE_DIR}/build/libtriangle.a
-  ${TETGEN_DIR}/build/libtetgen.a
 )
 
-target_link_libraries(${TETGEN_GENERATOR} PUBLIC ${triangle_lib_file} ${tetgen_lib_file} ${VTK_LIBRARIES} )
-
+target_link_libraries(${TETGEN_GENERATOR} PUBLIC muse_cinolib)
 

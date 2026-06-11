@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 
+#include "muselib/colors.h"
 #include "muselib/utils.h"
 
 #define IOSUCCESS 0
@@ -434,19 +435,27 @@ int load_gpkg (const std::string filename, std::vector<std::vector<Point3D>> &bo
     // 1. Register all the format drivers that are desired
     GDALAllRegister();
 
-//    std::cout << "driver# " << GetGDALDriverManager()->GetDriverCount() << std::endl;
-//    for(int i=0; i< GetGDALDriverManager()->GetDriverCount(); i++)
-//    {
-//        auto driver = GetGDALDriverManager()->GetDriver(i);
-//        auto info = driver->GetDescription();
-//        std::cout << "driver " << i << ": " << info << std::endl;
-//    }
+    std::cout << "driver# " << GetGDALDriverManager()->GetDriverCount() << std::endl;
+    for(int i=0; i< GetGDALDriverManager()->GetDriverCount(); i++)
+    {
+       auto driver = GetGDALDriverManager()->GetDriver(i);
+       auto info = driver->GetDescription();
+       std::cout << "driver " << i << ": " << info << std::endl;
+    }
 
-//    auto driver = GetGDALDriverManager()->GetDriverByName("GPKG");
+    auto driver = GetGDALDriverManager()->GetDriverByName("GPKG");
 
     // 2. Open shape file
     GDALDataset *poDS;
-    poDS = static_cast<GDALDataset*> (GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL ));
+    try {
+        std::cout << FYEL("=== WARNING - Insert reading function in try-catch ... ") << std::endl;
+        std::cout << FYEL("=== ... to investigate a segmentation fault with reading geopackage.") << std::endl;
+        std::cout << FYEL("=== INTERNAL CRUSHED if the reading not continue!") << std::endl;
+        poDS = static_cast<GDALDataset*> (GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL ));
+    } catch (std::exception gdal_e) {
+       std::cerr << "error: " << gdal_e.what() << std::endl;
+    }
+
     if( poDS == NULL )
     {
         std::cerr << "Error while loading GeoPackage file " << filename << std::endl;

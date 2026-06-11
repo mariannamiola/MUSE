@@ -1,0 +1,59 @@
+{
+  "work_folder": "MUSE_test",
+  "project_name": "22_Tomography",
+
+  "samples": "cube.csv",
+  "varname": "C",
+  "units": "",
+
+  "geometry": {
+    "name": "boundary",
+    "sub": "",
+    "ext": "vtk"
+  },
+
+  "vario": {
+    "dir": "DIR",
+    "dim": "3Dxy"
+  },
+
+  "compute": {
+    "space": "",
+    "where": "_stats",
+    "var": "best",
+    "units": "",
+    "geom": "boundary"
+  },
+
+  "columns": {
+    "samples": {
+      "x": "X",
+      "y": "Y",
+      "z": "Z",
+      "value": "C",
+      "cat": true,
+      "n_cat": 4
+    },
+
+    "scalarfield": {
+      "x": "Field 0",
+      "y": "Field 0",
+      "z": "Field 0",
+      "value": "Field 0",
+      "cat": true,
+      "n_cat": 4
+    }
+  },
+  
+  "view": {
+    "plane": "XZ",
+    "distance_factor": 1.5
+  },  
+
+  "output": {
+    "save": true,
+    "resolution": 3000,
+    "dir": "_fig",
+    "format": "png"
+  }
+}

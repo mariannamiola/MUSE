@@ -28,6 +28,21 @@ enum add_variogram_type{
     HOLE_EFFECT
 };
 
+enum weightsType
+{
+    // original Cressie weights: N(h) / [gamma_exp(h)]^2, reduces influence of
+    // highly variable experimental lags (Cressie 1985, p. 90)
+    CRESSIE,
+    
+    // variant used by Pebesma/gstat: N(h) / h^2 (number of pairs over squared lag);
+    // emphasizes small lags by distance rather than semivariance
+    CRESSIE_WEIGHTED,
+    
+    // modified version: N(h) / h  (less aggressive distance weighting)
+    CRESSIE_WEIGHTED_MODIFIED
+};
+
+
 namespace MUSE {
 
     struct VarioError
@@ -96,44 +111,67 @@ double      get_gamma                           (const double &h, const double &
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
+// helper for fitting weights
+static double compute_weight(const exp_variog &ev, size_t idx, weightsType w_type);
+
 
 //FITTING - OMNIDIRECTIONAL
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-variogram   fit_variogram                       (const exp_variog &ev, const double &range_precision, const double &nugget_precision);
-variogram   fit_variogram                       (const exp_variog &ev, const double &range_precision, const double &nugget_precision, variogram_type model_type);
+/// @brief fitting experimental variogram: solution with minimum error varying on range, nugget and model type
+variogram   fit_variogram (const exp_variog &ev, const double &range_precision, const double &nugget_precision, weightsType w_type); //ok
 
-variogram   fit_variogram_1par                  (const exp_variog &ev, const double &range_precision, const double &nugget);
-variogram   fit_variogram                       (const exp_variog &ev, const double &range_precision, variogram_type model_type, const double &nugget, bool is_print = false);
+/// @brief fitting experimental variogram: solution with minimum error varying on range and nugget - model type fixed
+variogram   fit_variogram (const exp_variog &ev, const double &range_precision, const double &nugget_precision, variogram_type model_type, weightsType w_type); //ok
 
-MUSE::VarioError            fit_variogram_mse   (const exp_variog &ev, const double &range_precision, const double &nugget_precision, variogram_type model_type, bool is_print = false);
-MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &range_precision, const double &nugget, variogram_type model_type, bool is_print);
+/// @brief fitting experimental variogram: solution with minimum error varying on range and model type - nugget fixed
+variogram   fit_variogram_1par (const exp_variog &ev, const double &range_precision, const double &nugget, weightsType w_type); //OK
 
+/// @brief fitting experimental variogram: solution with minimum error varying on range - nugget and model type fixed
+variogram   fit_variogram  (const exp_variog &ev, const double &range_precision, variogram_type model_type, const double &nugget, bool is_print, weightsType w_type); //OK
 
+/// @brief fitting experimental variogram: solution with minimum error varying on range and nugget - model type fixed - output with error (mse)
+MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_precision, const double &nugget_precision, variogram_type model_type, bool is_print, weightsType w_type); //ok
+
+/// @brief fitting experimental variogram: solution with minimum error varying on range - nugget and model type fixed - output with error (mse)
+MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &range_precision, const double &nugget, variogram_type model_type, bool is_print, weightsType w_type); //OK
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
 
 
 //FITTING - DIRECTIONAL
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-vector<MUSE::VarioError>    fit_dir_variogram   (const std::vector<exp_variog> &dev, const double & degree_step, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, variogram_type &model_type);
-vector<MUSE::VarioError>    fit_dir_variogram   (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, const double &nugget_precision, variogram_type &model_type);
-vector<MUSE::VarioError> fit_dir_variogram_1par (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, const double &nugget, variogram_type &model_type, bool is_print = false);
+/// @brief loop on directions for fitting variograms with minimum error varying on range and nugget - model type fixed - output with error (mse) for each direction
+vector<MUSE::VarioError>    fit_dir_variogram   (const std::vector<exp_variog> &dev, const double & degree_step, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, variogram_type &model_type, weightsType w_type);
 
-vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev, const double & degree_step, const double & degree_tolerance, const double &range_precision, variogram_type &model_type, double &nugget);
-vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, variogram_type &model_type, const double &nugget, bool is_print = false);
+/// @brief loop on directions for fitting variograms with minimum error varying on range and nugget - model type fixed - output with error (mse) for each direction
+vector<MUSE::VarioError>    fit_dir_variogram   (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, const double &nugget_precision, variogram_type &model_type, weightsType w_type);
 
+/// @brief loop on directions for fitting variograms with minimum error varying on range - nugget and model type fixed - output with error (mse) for each direction
+vector<MUSE::VarioError> fit_dir_variogram_1par (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, const double &nugget, variogram_type &model_type, bool is_print, weightsType w_type);
 
-vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev, const double & degree_step, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::vector<double> &weigth, bool is_print = false);
-vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::vector<double> &weigth, bool is_print);
-vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, variogram_type &type, const std::vector<double> &weigth, bool is_print);
+/// @brief loop on directions for fitting variograms with minimum error varying on range - nugget and model type fixed
+vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev, const double & degree_step, const double & degree_tolerance, const double &range_precision, variogram_type &model_type, double &nugget, weightsType w_type);
 
-vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget, bool is_print);
+/// \brief loop on directions for fitting variograms with minimum error varying on range - nugget and model type fixed - with discrete directions
+vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev, const std::vector<double> &seq, const double &range_precision, variogram_type &model_type, const double &nugget, bool is_print, weightsType w_type);
 
-vector<variogram>           fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::string &type, const std::vector<double> &weight, bool is_print);
+/// @brief fitting variogram for each direction with minimum error varying on range, nugget and model type - with automatic selection of directions - with selection of best model based on MSE on all directions and weighted average of nugget values for best model
+vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev, const double & degree_step, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::vector<double> &weigth, bool is_print, weightsType w_type);
+
+/// \brief fit_dir_variogram ranging on models and nugget - with directions and final average nugget
+vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::vector<double> &weigth, bool is_print, weightsType w_type);
+
+/// @brief Fit directional variogram with ranging on models and fixed nugget
+vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, variogram_type &type, const std::vector<double> &weigth, bool is_print, weightsType w_type); //ok
+
+/// \brief fit_dir_variogram computes directional variogram fitting, with model type fixed
+vector<variogram>           fit_dir_variogram   (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget, bool is_print, weightsType w_type); //ok
+
+/// @brief fitting variogram for each direction with minimum error varying on range, nugget and model type - with selection of best model based on MSE on all directions and weighted average of nugget values for best model - with discrete directions
+vector<variogram>           fit_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_precision, const double &nugget_precision, const std::string &type, const std::vector<double> &weight, bool is_print, weightsType w_type); //ok
 
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

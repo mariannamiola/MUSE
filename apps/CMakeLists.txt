@@ -11,6 +11,26 @@ set (USE_ARMADILLO ON)
 
 ENABLE_LANGUAGE(C)
 
+# Reuse FetchContent downloads across rebuilds and avoid network update checks.
+set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/../external/.cache/fetchcontent" CACHE PATH "Shared FetchContent cache directory")
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "Skip remote updates for FetchContent dependencies" FORCE)
+set(FETCHCONTENT_UPDATES_DISCONNECTED_TETGEN ON CACHE BOOL "Skip tetgen remote updates" FORCE)
+set(FETCHCONTENT_UPDATES_DISCONNECTED_TRIANGLE ON CACHE BOOL "Skip triangle remote updates" FORCE)
+option(MUSE_OFFLINE_BUILD "Disallow network access for FetchContent" OFF)
+if(MUSE_OFFLINE_BUILD)
+    set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL "Disable all FetchContent downloads" FORCE)
+else()
+    set(FETCHCONTENT_FULLY_DISCONNECTED OFF CACHE BOOL "Disable all FetchContent downloads" FORCE)
+endif()
+
+# If previous downloads exist in this build tree, force reuse to avoid any fetch step.
+if(EXISTS "${CMAKE_BINARY_DIR}/_deps/tetgen-src/CMakeLists.txt")
+    set(FETCHCONTENT_SOURCE_DIR_TETGEN "${CMAKE_BINARY_DIR}/_deps/tetgen-src" CACHE PATH "Local tetgen source override" FORCE)
+endif()
+if(EXISTS "${CMAKE_BINARY_DIR}/_deps/triangle-src/CMakeLists.txt")
+    set(FETCHCONTENT_SOURCE_DIR_TRIANGLE "${CMAKE_BINARY_DIR}/_deps/triangle-src" CACHE PATH "Local triangle source override" FORCE)
+endif()
+
 include_directories(BEFORE "../include")
 
 #####
@@ -57,51 +77,25 @@ endif()
 
 
 #####
-# GDAL
-find_package(GDAL REQUIRED)
+#####
+# GDAL (prefer external installed copy to avoid system conflicts)
+# Set the external install prefix (adjust path if your install uses a different folder name)
 add_definitions(-DMUSE_USES_GDAL)
-INCLUDE_DIRECTORIES(${GDAL_INCLUDE_DIR})
- # find_package(GDAL CONFIG REQUIRED PATHS ${CMAKE_SOURCE_DIR}/../external/gdal/installed/lib/cmake/gdal NO_DEFAULT_PATH)
- # if(GDAL_FOUND)
- # set (GDAL_DIR ${CMAKE_SOURCE_DIR}/external/gdal)
- #     set(GDAL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/../external/gdal/installed/include)
- #        set(GDAL_LIBRARY_DIR ${CMAKE_SOURCE_DIR}/../external/gdal/installed/lib)
- #        if (UNIX AND NOT APPLE)
- #            set (GDAL_LIB ${GDAL_LIBRARY_DIR}/libgdal.so)
- #        elseif (MSVC)
- #            set (GDAL_LIB ${GDAL_LIBRARY_DIR}/gdal.lib)
- #        else() ###macos
- #            set (GDAL_LIB ${GDAL_LIBRARY_DIR}/libgdal.dylib)
- #            set (GDAL_LIBRARY ${GDAL_LIB})
- #        endif()
- #     INCLUDE_DIRECTORIES(${GDAL_INCLUDE_DIR})
- #     MESSAGE(STATUS "GDAL found: ${GDAL_INCLUDE_DIRS}")
- #     # Extract GDAL version from gdal_version.h
- #     SET(GDAL_VERSION_FILE ${GDAL_INCLUDE_DIRS}/gdal_version.h)
- #     IF (NOT EXISTS ${GDAL_VERSION_FILE})
- #       message(
- #           "Could not find file: ${GDAL_VERSION_FILE} "
- #           "containing version information in GDAL install located at: "
- #           "${GDAL_INCLUDE_DIRS}.")
- #     ELSE (NOT EXISTS ${GDAL_VERSION_FILE})
- #     FILE(READ ${GDAL_VERSION_FILE} GDAL_VERSION_FILE_CONTENTS)
- #        STRING(REGEX MATCH "define GDAL_VERSION_MAJOR +[0-9]+"
- #           GDAL_VERSION_MAJOR "${GDAL_VERSION_FILE_CONTENTS}")
- #         STRING(REGEX REPLACE "define GDAL_VERSION_MAJOR +([0-9]+)" "\\1"
- #           GDAL_VERSION_MAJOR "${GDAL_VERSION_MAJOR}")
- #         STRING(REGEX MATCH "define GDAL_VERSION_MINOR +[0-9]+"
- #           GDAL_VERSION_MINOR "${GDAL_VERSION_FILE_CONTENTS}")
- #         STRING(REGEX REPLACE "define GDAL_VERSION_MINOR +([0-9]+)" "\\1"
- #           GDAL_VERSION_MINOR "${GDAL_VERSION_MINOR}")
- #         STRING(REGEX MATCH "define GDAL_VERSION_REV +[0-9]+"
- #           GDAL_VERSION_REV "${GDAL_VERSION_FILE_CONTENTS}")
- #         STRING(REGEX REPLACE "define GDAL_VERSION_REV +([0-9]+)" "\\1"
- #           GDAL_VERSION_REV "${GDAL_VERSION_REV}")
- #         SET(GDAL_VERSION "${GDAL_VERSION_MAJOR}.${GDAL_VERSION_MINOR}.${GDAL_VERSION_REV}")
- #     ENDIF(NOT EXISTS ${GDAL_VERSION_FILE})
- #     MESSAGE(STATUS "GDAL version: ${GDAL_VERSION}")
- #     ADD_DEFINITIONS( -DGDALVER=${GDAL_VERSION_MAJOR} )
- # ENDIF()
+set(GDAL_EXTERNAL_PREFIX "${CMAKE_SOURCE_DIR}/../external/gdal/installed" CACHE PATH "External GDAL install prefix")
+if(EXISTS "${GDAL_EXTERNAL_PREFIX}")
+    list(APPEND CMAKE_PREFIX_PATH "${GDAL_EXTERNAL_PREFIX}")
+endif()
+
+# Try to find GDAL from the external install first (CONFIG mode), otherwise fall back to the system package
+find_package(GDAL CONFIG QUIET PATHS "${GDAL_EXTERNAL_PREFIX}/lib/cmake/gdal" NO_DEFAULT_PATH)
+message(STATUS "GDAL_FOUND = ${GDAL_FOUND}")
+if(GDAL_FOUND)
+    message("Using GDAL version at path: ${GDAL_EXTERNAL_PREFIX}/lib/cmake/gdal")
+    message("Using GDAL imported target: GDAL::GDAL")
+    include_directories(BEFORE "${GDAL_EXTERNAL_PREFIX}/include")
+endif()
+
+ 
 
 
 #####
@@ -112,7 +106,9 @@ add_definitions(-DGEOSTATLIB_USES_FLANN)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LZ4 REQUIRED liblz4)
 find_package(LZ4)
-include_directories(BEFORE "../external/geostatslib/include")
+#include_directories(BEFORE "../external/geostatslib/include")
+include_directories(BEFORE "../external/GeoStatsLib/include")
+
 
 
 #####
@@ -134,12 +130,23 @@ set(CINOLIB_USES_SHEWCHUK_PREDICATES  ON )
 set(CINOLIB_USES_INDIRECT_PREDICATES  OFF )
 set(CINOLIB_USES_GRAPH_CUT            OFF)
 set(CINOLIB_USES_BOOST                ON )
-set(CINOLIB_USES_VTK                  ON )
+set(CINOLIB_USES_VTK                  OFF )
 set(cinolib_DIR "${PROJECT_SOURCE_DIR}/../external/cinolib")
 message(${cinolib_DIR})
 find_package(cinolib REQUIRED)
-link_libraries(cinolib)
 
+# Keep cinolib as an opt-in dependency so apps that do not use it
+# avoid carrying triangle/tetgen/shewchuk build dependencies.
+add_library(muse_cinolib INTERFACE)
+target_link_libraries(muse_cinolib INTERFACE cinolib)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    # cinolib headers include implementation files that trigger warn_unused_result on fscanf.
+    target_compile_options(muse_cinolib INTERFACE -Wno-unused-result)
+endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # cinolib triangle wrappers may trigger oversized allocation diagnostics under GCC.
+    target_compile_options(muse_cinolib INTERFACE -Wno-alloc-size-larger-than)
+endif()
 
 
 #####
@@ -157,53 +164,69 @@ link_libraries(cinolib)
 # triangle
 add_definitions(-DMUSE_USES_TRIANGLE)
 #add_definitions(-DCINOLIB_USES_TRIANGLE)
-add_definitions(-DTRILIBRARY)
-include_directories (BEFORE "../external/triangle")
-set (TRIANGLE_DIR ${CMAKE_SOURCE_DIR}/../external/triangle)
-set (TRIANGLE_LIB ${CMAKE_SOURCE_DIR}/../external/triangle/build)
-set (triangle_lib_file "${TRIANGLE_DIR}/build/libtriangle.a")
 
 
 #####
 # tetgen
 add_definitions(-DMUSE_USES_TETGEN)
 #add_definitions(-DCINOLIB_USES_TETGEN)
-add_definitions(-DTETLIBRARY)
-include_directories (BEFORE "../external/tetgen")
-set (TETGEN_DIR ${CMAKE_SOURCE_DIR}/../external/tetgen)
-set (TETGEN_LIB ${CMAKE_SOURCE_DIR}/../external/tetgen/build)
-set (tetgen_lib_file "${TETGEN_DIR}/build/libtetgen.a")
 
+
+
+# #####
+# # OpenMP
+# #find_package(OpenMP)
+# find_package(OpenMP REQUIRED)
+# if(APPLE)
+#     message("\nConfiguring OPENMP compiler variables\n")
+#     if (OPENMP_FOUND)
+
+#        #set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+#        #set (OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp /usr/local/lib/libomp.dylib -I /usr/local/include/")
+#        #set (OpenMP_CXX_LIB_NAMES "libomp")
+#        #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+#         set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+#     endif()
+#     message("${CMAKE_CXX_FLAGS}\n")
+#     message("${CMAKE_EXE_LINKER_FLAGS}\n")
+# else()
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+# endif()
 
 
 #####
-# OpenMP
-#find_package(OpenMP)
-find_package(OpenMP REQUIRED)
+# OpenMP (macOS_MM fix)
 if(APPLE)
-    message("\nConfiguring OPENMP compiler variables\n")
-    if (OPENMP_FOUND)
+    message(STATUS "Configuring OpenMP for macOS")
 
-       #set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-       #set (OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp /usr/local/lib/libomp.dylib -I /usr/local/include/")
-       #set (OpenMP_CXX_LIB_NAMES "libomp")
-       #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    # Percorsi libomp
+    set(LIBOMP_INCLUDE_DIR "/opt/homebrew/opt/libomp/include")
+    set(LIBOMP_LIB_DIR "/opt/homebrew/opt/libomp/lib")
 
-        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-    endif()
-    message("${CMAKE_CXX_FLAGS}\n")
-    message("${CMAKE_EXE_LINKER_FLAGS}\n")
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+    find_library(OMP_LIBRARY omp
+        PATHS ${LIBOMP_LIB_DIR} /usr/local/opt/libomp/lib
+        REQUIRED
+    )
+
+    # Flag per Apple Clang
+    set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${LIBOMP_INCLUDE_DIR}")
+    set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${LIBOMP_INCLUDE_DIR}")
+    set(OpenMP_C_LIB_NAMES "omp")
+    set(OpenMP_CXX_LIB_NAMES "omp")
+    set(OpenMP_omp_LIBRARY "${OMP_LIBRARY}")
+
 endif()
+
+# Cerca OpenMP con CMake
+find_package(OpenMP REQUIRED)
 
 
 #####
 # Flann
-#include_directories ("/Users/mariannamiola/Downloads/flann/1.9.1/interfaces/flann")
-#include_directories ("/Users/mariannamiola/Downloads/flann/1.9.1/interfaces/flann")
-#link_directories ("/Users/mariannamiola/Downloads/flann/1.9.1")
-#set (FLANN_DIR ${CMAKE_SOURCE_DIR}/../flann)
+#find_package(FLANN REQUIRED PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../external/GeoStatsLib/external/flann-lib/installed NO_DEFAULT_PATH)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../external/GeoStatsLib/external/flann-lib/installed/include)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../external/GeoStatsLib/external/flann-lib/installed/lib)
 
 #####
 # Armadillo
@@ -232,9 +255,52 @@ include_directories(BEFORE "../external/ellipse-fitting")
 
 #####
 # database
-include_directories(BEFORE "../external/muse_database/include")
+#include_directories(BEFORE "../external/muse_database/include")
 
 
+#####
+# CLI Documentation Generation
+option(MUSE_BUILD_DOCS "Build CLI docs targets during normal build" OFF)
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_FOUND)
+    set(CLI_DOCS_SCRIPT "${CMAKE_SOURCE_DIR}/../scripts/generate_cli_docs.py")
+    set(HTML_DOCS_SCRIPT "${CMAKE_SOURCE_DIR}/../scripts/generate_html_docs.py")
+    set(MD_DOCS_OUTPUT "${CMAKE_SOURCE_DIR}/../docs/md")
+    set(HTML_DOCS_OUTPUT "${CMAKE_SOURCE_DIR}/../docs/html")
+    
+    # Generate Markdown documentation
+    add_custom_target(cli-docs-md
+        COMMAND ${Python3_EXECUTABLE} ${CLI_DOCS_SCRIPT} ${CMAKE_SOURCE_DIR} ${MD_DOCS_OUTPUT}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/..
+        COMMENT "Generating CLI markdown documentation from source code..."
+        VERBATIM
+    )
+    
+    # Generate HTML documentation from Markdown
+    add_custom_target(cli-docs-html
+        COMMAND ${Python3_EXECUTABLE} ${HTML_DOCS_SCRIPT} ${MD_DOCS_OUTPUT} ${HTML_DOCS_OUTPUT}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/..
+        DEPENDS cli-docs-md
+        COMMENT "Generating HTML documentation from markdown..."
+        VERBATIM
+    )
+    
+    # Combined target for both
+    add_custom_target(cli-docs
+        DEPENDS cli-docs-md cli-docs-html
+        COMMENT "Generating complete CLI documentation (Markdown + HTML)"
+    )
+
+    if(MUSE_BUILD_DOCS)
+        add_custom_target(cli-docs-all ALL DEPENDS cli-docs)
+    endif()
+    
+    message(STATUS "CLI documentation generation enabled")
+    message(STATUS "Markdown output: ${MD_DOCS_OUTPUT}")
+    message(STATUS "HTML output: ${HTML_DOCS_OUTPUT}")
+else()
+    message(WARNING "Python3 not found - CLI documentation generation disabled")
+endif()
 
 
 add_subdirectory(muse_project)

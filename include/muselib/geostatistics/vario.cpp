@@ -240,6 +240,13 @@ void load_exp_variogram (const std::string filename, exp_variog variogram)
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+/// @brief exp_variogram: OMNIDIRECTIONAL 1D EXPERIMENTAL VARIOGRAM - VARIABLE LAG SPACING
+/// @param values (normal score) sampled values
+/// @param coord_z z coordinates of the sampled points
+/// @param n_points number of points of the experimental variogram
+/// @param limit_dist limit distance for the experimental variogram
+/// @param tol_factor factor for the lag tolerance definition
+/// @return exp_variog struct containing the experimental variogram
 exp_variog exp_variogram (const std::vector<double> &values, const vector<double> &coord_z,
                           const int &n_points,
                           const double &limit_dist,
@@ -265,8 +272,8 @@ exp_variog exp_variogram (const std::vector<double> &values, const vector<double
             {
                 double md = sqrt((coord_z[i]-coord_z[j])*(coord_z[i]-coord_z[j]));
 
-                if(md == 6956.2)
-                    std::cout << coord_z[i] << "; " << coord_z[j] << std::endl;
+                //if(md == 6956.2)
+                    //std::cout << coord_z[i] << "; " << coord_z[j] << std::endl;
 
                 if(md > max_dist)
                     max_dist = md;
@@ -667,21 +674,17 @@ exp_variog exp_variogram_varlag (const vector<double> & values, const vector<dou
 }
 
 
-///
-/// \brief exp_variogram: OMNIDIRECTIONAL 3D EXPERIMENTAL VARIOGRAM
-/// \param values
-/// \param coord_x
-/// \param coord_y
-/// \param coord_z
-/// \param lagspac_type
-/// \param step
-/// \param n_points
-/// \param n_points_start
-/// \param limit_dist
-/// \param tol_factor
-/// \param percent
-/// \return
-///
+/// \brief exp_variogram: OMNIDIRECTIONAL 3D EXPERIMENTAL VARIOGRAM - LAG SPACING DEFINED IN INPUT
+/// \param values (normal) values of the sampled variable
+/// \param coord_x x coordinates of the sampled points
+/// \param coord_y y coordinates of the sampled points
+/// \param coord_z z coordinates of the sampled points
+/// \param lagspac_type type of lag spacing (VARIABLE or CONSTANT)
+/// \param step step for the variable lag spacing (if lagspac_type = VARIABLE)
+/// \param n_points number of points of the experimental variogram (for both variable and constant lag spacing)
+/// \param limit_dist limit distance for the experimental variogram (if != -DBL_MAX)
+/// \param tol_factor factor for the tolerance definition (tolerance = lag_spacing/tol_factor)
+/// \return exp_variog struct containing the experimental variogram (h, gamma, N)
 exp_variog exp_variogram (const vector<double> & values, const vector<double> & coord_x, const vector<double> & coord_y, const vector<double> & coord_z,
                             const std::string &lagspac_type,
                             const double &step,
@@ -740,6 +743,10 @@ std::vector<exp_variog> dir_exp_variogram_lagconst (const vector<double> &values
     {
         double check_dir = seq[dir];
 
+        // Normalizza check_dir in [0,180) UNA VOLTA SOLA QUI
+        while(check_dir < 0.0)    check_dir += 180.0;
+        while(check_dir >= 180.0) check_dir -= 180.0;
+
         std::cout << std::endl;
         std::cout << "### ID direction: " << dir << std::endl;
         std::cout << "Direction (degree): " << seq.at(dir) << std::endl;
@@ -756,13 +763,6 @@ std::vector<exp_variog> dir_exp_variogram_lagconst (const vector<double> &values
         {
             for(unsigned int j = i+1; j < values.size(); j++)
             {
-//                    std::cout << "I_x" << coord_x[i] << std::endl;
-//                    std::cout << "I_y" << coord_y[i] << std::endl;
-
-//                    std::cout << "J_x" << coord_x[j] << std::endl;
-//                    std::cout << "J_y" << coord_y[j] << std::endl;
-
-
                 double md = sqrt((coord_x[i]-coord_x[j])*(coord_x[i]-coord_x[j])+
                                                 (coord_y[i]-coord_y[j])*(coord_y[i]-coord_y[j]));
                 //calcolo la direzione
@@ -779,11 +779,15 @@ std::vector<exp_variog> dir_exp_variogram_lagconst (const vector<double> &values
                     double alfa_rad = atan2(md_y,md_x);
                     double dir_degree = 90 - get_degrees(alfa_rad);
 
-                    if(dir_degree == 180)
-                        dir_degree = 0;
+                    // Normalizza in [0, 180) - variogramma è simmetrico
+                    while(dir_degree < 0.0)    dir_degree += 180.0;
+                    while(dir_degree >= 180.0) dir_degree -= 180.0;
 
-                    if(check_dir == 180)
-                        check_dir = 0;
+                    // if(dir_degree == 180)
+                    //     dir_degree = 0;
+
+                    // if(check_dir == 180)
+                    //     check_dir = 0;
 
                     //se dir_degree rientra nella fascia che sto considerando (-/+tolerance_degree)
                     if(dir_degree >= check_dir-degree_tolerance && dir_degree <= check_dir+degree_tolerance)
@@ -876,11 +880,15 @@ std::vector<exp_variog> dir_exp_variogram_lagconst (const vector<double> &values
                     double alfa_rad = atan2(md_y,md_x);
                     double dir_degree = 90 - get_degrees(alfa_rad);
 
-                    if(dir_degree == 180)
-                        dir_degree = 0;
+                    // Normalizza in [0, 180) - variogramma è simmetrico
+                    while(dir_degree < 0.0)    dir_degree += 180.0;
+                    while(dir_degree >= 180.0) dir_degree -= 180.0;
 
-                    if(check_dir == 180)
-                        check_dir = 0;
+                    // if(dir_degree == 180)
+                    //     dir_degree = 0;
+
+                    // if(check_dir == 180)
+                    //     check_dir = 0;
 
                     //se dir_degree rientra nella fascia che sto considerando (-/+tolerance_degree)
                     if(dir_degree >= check_dir-degree_tolerance && dir_degree <= check_dir+degree_tolerance)
@@ -1973,6 +1981,11 @@ std::vector<exp_variog> dir_exp_variogram_lagvar (const vector<double> &values, 
     {
         double check_dir = seq[dir];
 
+        // Normalizza check_dir in [0,180) UNA VOLTA SOLA QUI
+        while(check_dir < 0.0)    check_dir += 180.0;
+        while(check_dir >= 180.0) check_dir -= 180.0;
+
+
         std::cout << std::endl;
         std::cout << "### ID direction: " << dir << std::endl;
         std::cout << "Direction (degree): " << seq.at(dir) << std::endl;
@@ -2005,15 +2018,15 @@ std::vector<exp_variog> dir_exp_variogram_lagvar (const vector<double> &values, 
                     double alfa_rad = atan2(md_y,md_x);
                     double dir_degree = 90 - get_degrees(alfa_rad);
 
-                    //double dir_degree = 90 - (atan2(md_y,md_x) * 180 / M_PI);
-    //                    std::cout << "degree = " << get_degrees(alfa_rad) << std::endl;
-    //                    std::cout << "dir degree= " << dir_degree << std::endl;
+                    // Normalizza in [0, 180) - variogramma è simmetrico
+                    while(dir_degree < 0.0)    dir_degree += 180.0;
+                    while(dir_degree >= 180.0) dir_degree -= 180.0;
 
-                    if(dir_degree == 180)
-                        dir_degree = 0;
+                    // if(dir_degree == 180)
+                    //     dir_degree = 0;
 
-                    if(check_dir == 180)
-                        check_dir = 0;
+                    // if(check_dir == 180)
+                    //     check_dir = 0;
 
                     //se dir_degree rientra nella fascia che sto considerando (-/+tolerance_degree)
                     if(dir_degree >= check_dir-degree_tolerance && dir_degree <= check_dir+degree_tolerance)
@@ -2056,98 +2069,12 @@ std::vector<exp_variog> dir_exp_variogram_lagvar (const vector<double> &values, 
             continue;
         }
 
-
-        // 2) Compute experimental variogram with variable lag (raggruppiamo i punti sul variogramma in modo da avere 15 punti (distanza;gamma))
-        //n_points sono il numero dei punti del diagramma discretizzato che voglio ottenere -> devo aggiungere 1 per contare la tacca dell'origine
-        //int n_lags = n_points-1;
-
-        //double lag_spacing = coverage/n_lags;
-        //std::cout << "\033[0;33mWARNING: Lag spacing is set on (max_dist/2)/n_lags = " << lag_spacing << "\033[0m" << std::endl;
-
-        //double tolerance = lag_spacing/tol_factor;
-        //std::cout << "\033[0;33mWARNING: Lag tolerance is set on lag_spacing/tol_factor = " << tolerance << "\033[0m" << std::endl;
-
-
-        /*vector<double> tol(n_points+1);
-        tol[0] = tolerance/4;
-        for(uint i=1;i<tol.size(); i++)
-        {
-            tol[i] = tol[i-1] * (1+percent/100 + i*0.0125);
-            //cout<<"tol[ "<<i<<" ]"<<tol[i]<<endl;
-        }
-
-        // Tacche sull'asse x: riferimento al vettore seq della funzione del vario_exp
-        dev[dir].h.resize(n_points);
-
-        dev[dir].h[0] = tol[0] + tol[1]; //primo valore di h
-
-        //cout<<"Computed h(0): "<< dev[dir].h[0] << std::endl;
-
-        //bool compute_scale_h = false;
-        for(size_t i = 1; i < dev[dir].h.size(); i++)
-        {
-            dev[dir].h[i] = dev[dir].h[i-1] + tol[i] + tol[i+1];
-
-//            if(dev[dir].h[i] > coverage)
-//                compute_scale_h = true;
-                //dev[dir].h[i] = coverage;
-
-            //cout<<"Computed h(j): "<< dev[dir].h[i] << std::endl;
-        }
-        std::cout << "Computing variable lags ... COMPLETED." << std::endl;*/
-
-
-//        if(compute_scale_h == true)
-//        {
-//            double scale_factor = dev[dir].h.at(dev[dir].h.size()-1)/coverage;
-//            std::cout << "Scaling h-axis by scale factor of: " << scale_factor << std::endl;
-//            for(size_t i=0; i< dev[dir].h.size(); i++)
-//            {
-//                dev[dir].h.at(i) = dev[dir].h.at(i)/scale_factor;
-//                cout<<"Computed scaled h(j): "<< dev[dir].h[i] << std::endl;
-//            }
-//        }
-
-
-
-
         //Nuovo metodo per il calcolo delle h a lag variabile + tolerance
         vector<double> tol;
-        //dev[dir].h = lagvar1(coverage, n_points, percent, tol);
-
-
-
-        //dev[dir].h = lagvar(coverage, min_dist, step, n_points, n_points_start, tol_factor, tol);
         dev[dir].h = lagvar_new(coverage, min_dist, n_points, step, tol_factor, tol);
-
-
-//        tol.push_back(0.0);
-//        for(size_t i = 1; i < dev[dir].h.size(); i++)
-//        {
-//            double delta = dev[dir].h.at(i) - dev[dir].h.at(i-1);
-//            //std::cout << "tolerance = " << delta << std::endl;
-
-//            tol.push_back(delta);
-//        }
-
-
-        //dev[dir].h = lagvar2(coverage, min_dist, step, n_points);
-
-//        tol.push_back(dev[dir].h.at(0)/tol_factor);
-//        for(size_t i = 1; i < dev[dir].h.size(); i++)
-//        {
-//            double delta = dev[dir].h.at(i) - dev[dir].h.at(i-1);
-//            //std::cout << "tolerance = " << delta << std::endl;
-
-//            tol.push_back(delta/tol_factor);
-//        }
 
         std::cout << "\033[0;33mWARNING: Step factor is set on: " << step << "\033[0m" << std::endl;
         std::cout << "\033[0;33mWARNING: n points is set on: " << n_points << "\033[0m" << std::endl;
-        //std::cout << "\033[0;33mWARNING: n start points is set on: " << n_points_start << "\033[0m" << std::endl;
-
-
-
 
         dev[dir].N.resize(dev[dir].h.size(), 0.0);
         dev[dir].gamma.resize(dev[dir].h.size());
@@ -2157,10 +2084,17 @@ std::vector<exp_variog> dir_exp_variogram_lagvar (const vector<double> &values, 
         // Compute discretized variogram
         std::vector<double> sum (dev[dir].h.size(), 0.0); //vettore somma dei punti che ricadono all'interno della banda di tolleranza (check sulla distanza)
 
+        // Variabili diagnostica - aggiungi prima del loop
+        int count_total_pairs = 0;
+        int count_pass_angle = 0;
+        int count_pass_bandwidth = 0;
+        int count_assigned = 0;
         for(unsigned int row = 0; row < values.size(); row++)
         {
             for(unsigned int col = row+1; col < values.size(); col++)
             {
+                count_total_pairs++;
+
                 double md = sqrt((coord_x[row]-coord_x[col])*(coord_x[row]-coord_x[col])+
                                  (coord_y[row]-coord_y[col])*(coord_y[row]-coord_y[col]));
 
@@ -2178,24 +2112,28 @@ std::vector<exp_variog> dir_exp_variogram_lagvar (const vector<double> &values, 
                     double alfa_rad = atan2(md_y,md_x);
                     double dir_degree = 90 - get_degrees(alfa_rad);
 
-                    //double dir_degree = 90 - (atan2(md_y,md_x) * 180 / M_PI);
-    //                    std::cout << "degree = " << get_degrees(alfa_rad) << std::endl;
-    //                    std::cout << "dir degree= " << dir_degree << std::endl;
+                    // Normalizza in [0, 180) - variogramma è simmetrico
+                    while(dir_degree < 0.0)    dir_degree += 180.0;
+                    while(dir_degree >= 180.0) dir_degree -= 180.0;
 
-                    if(dir_degree == 180)
-                        dir_degree = 0;
+                    // if(dir_degree == 180)
+                    //     dir_degree = 0;
 
-                    if(check_dir == 180)
-                        check_dir = 0;
+                    // if(check_dir == 180)
+                    //     check_dir = 0;
 
                     //se dir_degree rientra nella fascia che sto considerando (-/+tolerance_degree)
                     if(dir_degree >= check_dir-degree_tolerance && dir_degree <= check_dir+degree_tolerance)
                     {
+                        count_pass_angle++;
+
                         double dretta = point_to_line_distance(0.0, 0.0, alfa_rad, md_x, md_y);
                         //std::cout << "distanza punto retta = " << dretta << std::endl;
 
                         if(dretta <= bandwidth)
                         {
+                            count_pass_bandwidth++;
+
                             //std::cout << "la distanza punto-retta è minore/uguale della bandwidth (definita in input)" << std::endl;
                             //cout<<"Computed distance: "<< md << " Indici: row/col " << row << "/" << col << std::endl;
 
@@ -2211,6 +2149,8 @@ std::vector<exp_variog> dir_exp_variogram_lagvar (const vector<double> &values, 
 
                                 if(md >= min_tol && md <= max_tol)
                                 {
+                                    count_assigned++;
+
                                     dev[dir].N[j]+=1; //conto le coppie di punti che rientrano in quella banda di tolleranza
 
                                     // Compute variogram
@@ -2223,6 +2163,11 @@ std::vector<exp_variog> dir_exp_variogram_lagvar (const vector<double> &values, 
                 }
             }
         }
+
+        // std::cout << "Coppie totali:            " << count_total_pairs << std::endl;
+        // std::cout << "Coppie pass filtro angolo: " << count_pass_angle << std::endl;
+        // std::cout << "Coppie pass bandwidth:     " << count_pass_bandwidth << std::endl;
+        // std::cout << "Coppie assegnate a un lag: " << count_assigned << std::endl;
 
         cout<<endl;
         cout<<"################################################"<<endl;
@@ -2535,4 +2480,104 @@ exp_variog clean_exp_variogram (const exp_variog &ev, const uint min_npoints, in
     cout<<endl;
 
     return clean_ev;
+}
+
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+/// \brief Diagnose experimental variogram - check for anomalies, outliers, and potential issues
+/// \param ev experimental variogram
+/// \param values data values used to compute the variogram
+void diagnose_exp_variogram (const exp_variog &ev, const std::vector<double> &values)
+{
+    using namespace std;
+    cout << endl;
+    cout << "################################### VARIOGRAM DIAGNOSTICS ###################################" << endl;
+    
+    // Statistics on gamma values
+    double min_gamma = DBL_MAX;
+    double max_gamma = -DBL_MAX;
+    double sum_gamma = 0.0;
+    int count_gamma = 0;
+    
+    for(size_t i = 0; i < ev.gamma.size(); i++)
+    {
+        if(ev.N[i] > 0)  // Only count lags with data
+        {
+            min_gamma = min(min_gamma, ev.gamma[i]);
+            max_gamma = max(max_gamma, ev.gamma[i]);
+            sum_gamma += ev.gamma[i];
+            count_gamma++;
+        }
+    }
+    
+    double avg_gamma = (count_gamma > 0) ? sum_gamma / count_gamma : 0.0;
+    
+    // Standard deviation
+    double sum_var = 0.0;
+    for(size_t i = 0; i < ev.gamma.size(); i++)
+    {
+        if(ev.N[i] > 0)
+        {
+            sum_var += pow(ev.gamma[i] - avg_gamma, 2);
+        }
+    }
+    double std_gamma = (count_gamma > 0) ? sqrt(sum_var / count_gamma) : 0.0;
+    
+    cout << "\n=== GAMMA STATISTICS ===" << endl;
+    cout << "Min gamma: " << min_gamma << endl;
+    cout << "Max gamma: " << max_gamma << endl;
+    cout << "Mean gamma: " << avg_gamma << endl;
+    cout << "Std Dev gamma: " << std_gamma << endl;
+    cout << "Lags with data: " << count_gamma << " / " << ev.gamma.size() << endl;
+    
+    // Data value statistics
+    double min_val = *min_element(values.begin(), values.end());
+    double max_val = *max_element(values.begin(), values.end());
+    double sum_val = accumulate(values.begin(), values.end(), 0.0);
+    double avg_val = sum_val / values.size();
+    
+    double variance_data = 0.0;
+    for(double v : values)
+    {
+        variance_data += pow(v - avg_val, 2);
+    }
+    variance_data /= values.size();
+    
+    cout << "\n=== DATA STATISTICS ===" << endl;
+    cout << "Min value: " << min_val << endl;
+    cout << "Max value: " << max_val << endl;
+    cout << "Mean value: " << avg_val << endl;
+    cout << "Data variance: " << variance_data << endl;
+    cout << "Data range: " << (max_val - min_val) << endl;
+    cout << "Max diff^2/2: " << pow(max_val - min_val, 2) / 2 << " (theoretical max gamma)" << endl;
+    
+    // Check for anomalies
+    cout << "\n=== ANOMALY DETECTION ===" << endl;
+    
+    double threshold_lpc = avg_gamma + 2.0 * std_gamma;  // 2 sigma rule
+    bool has_anomalies = false;
+    
+    for(size_t i = 0; i < ev.gamma.size(); i++)
+    {
+        if(ev.N[i] > 0 && ev.gamma[i] > threshold_lpc)
+        {
+            cout << "WARNING: Lag #" << i << " (h=" << ev.h[i] << ") has high gamma=" << ev.gamma[i] 
+                 << " (N=" << ev.N[i] << " pairs)" << endl;
+            has_anomalies = true;
+        }
+    }
+    
+    // Check sill consistency
+    if(max_gamma > 1.2 && fabs(variance_data - 1.0) < 0.1)  // Should be ~1 for normal score
+    {
+        cout << "\nWARNING: Data appears to be normal score (variance=" << variance_data 
+             << "), but gamma reaches " << max_gamma << "." << endl;
+        cout << "Possible causes:" << endl;
+        cout << "  1. Incomplete normal score transformation" << endl;
+        cout << "  2. Directional anisotropy in this direction" << endl;
+        cout << "  3. Outliers in the data after NS transformation" << endl;
+    }
+    
+    cout << "\n#############################################################################################################" << endl;
+    cout << endl;
 }

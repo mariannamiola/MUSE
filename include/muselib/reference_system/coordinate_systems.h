@@ -7,6 +7,17 @@
 
 #include <string>
 
+#include <gdal_priv.h>
+#include <ogr_spatialref.h>
+#include <ogrsf_frmts.h>  // Aggiunto per OGR
+
+void analyzeSRS(const char* wkt, const std::string& file_path, std::string &epsg_code);
+void analyzeRaster(GDALDataset* dataset, const std::string& file_path, std::string &epsg_code);
+void analyzeVector(const std::string& file_path, std::string &epsg_code);
+void printSpatialReferenceInfo  (const std::string& file_path, std::string &epsg_code);
+
+void listAvailableDrivers();
+
 void coordinate_transformation (const double &x, const double &y, const double &z, const std::string source, const std::string target, double &tx, double &ty, double &tz);
 
 

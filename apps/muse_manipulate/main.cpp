@@ -24,6 +24,7 @@
 
 //#include "muselib/geometry/polygon_mesh.h"
 #include "muselib/input/load_xyz.h"
+#include "muselib/input/load_vtk.h"
 
 #include "muselib/colors.h"
 
@@ -84,52 +85,222 @@ int main(int argc, char** argv)
     // MAIN FUNCTIONALITIES:
 
     // Option 0. Index extraction from geometry model
-    SwitchArg setExtract                    ("E", "extract", "Extraction data", cmd, false); //booleano
-    ValueArg<std::string> projectFolder     ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
+    /**
+     * @brief Extraction data basing on geometry model. This option allows to extract data from a geometry model, such as a surface or volume mesh, based on specified criteria. The extracted data can be used for further analysis or visualization.
+     * @note When using -E/--extract, requires:
+     * - --geom: Geometry model to extract from (mandatory)
+     * - --zcoord: Coordinate Z to use for extraction (optional, used for 3D models)
+     * @example -E -p /path/to/project --geom model.obj
+     */
+    SwitchArg setExtract                    ("E", "extract", "Set extraction data based on geometry model", cmd, false); //booleano
 
-    ValueArg<std::string> geomModel         ("", "geom", "Geometry model", false, "name_geometry", "string", cmd);
+    /**
+     * @brief Set project directory. This is the main directory where the project files are located. It is a required argument for running the application, as it specifies the context in which the manipulation will occur. The project directory should contain all necessary data and geometry files for the operations to be performed.
+     * @note This argument is mandatory for running the application. The project directory should be organized according to the expected structure of the MUSE project, with subdirectories for data, geometry, and output as needed.
+     * @example -p /path/to/project
+     */
+    ValueArg<std::string> projectFolder     ("p", "pdir", "Set project directory", true, "path/to/project", "string", cmd);
 
-    ValueArg<std::string> setZcoord         ("z", "zcoord", "Coordinate Z", false, "z_name", "string", cmd);
+    /**
+     * @brief Set geometry model. This argument specifies the geometry model to be used for data extraction when the -E/--extract flag is enabled. The geometry model can be a surface mesh, volume mesh, or any other supported geometric representation. The specified model must exist within the project directory and will be used as the basis for extracting data according to the defined criteria.
+     * @example -E --geom model.obj
+     */
+    ValueArg<std::string> geomModel         ("", "geom", "Set geometry model", false, "geometry-name", "string", cmd);
 
-
+    /**
+     * @brief Set coordinate Z. This argument specifies the coordinate Z to be used for data extraction when the -E/--extract flag is enabled. It is optional and used for 3D models.
+     * @example -E --geom model.obj --zcoord elevation
+     */
+    ValueArg<std::string> setZcoord         ("z", "zcoord", "Set coordinate Z", false, "z_name", "string", cmd);
 
     // Option 1. Index extraction from interval
-    SwitchArg setIntervalExtraction         ("I", "intextr", "Extraction data from interval", cmd, false); //booleano
+    /**
+     * @brief Set extraction data from interval
+     * @param intextr Enable extraction data from interval
+     * @note When using -I/--intextr, requires:
+     * - --sup: Superior interval limit (mandatory)
+     * - --inf: Inferior interval limit (mandatory)
+     * - --nvar: Variable name to check (mandatory)
+     * @example -I --sup 100 --inf 0 --nvar temperature
+     */
+    SwitchArg setIntervalExtraction         ("I", "intextr", "Set extraction data from interval", cmd, false); //booleano
+
+    /**
+     * @brief Set sup interval
+     * @param sup sup interval
+     * @note Used with -I/--intextr flag. Required for interval extraction
+     * Must be used together with --inf and --nvar
+     */
     ValueArg<int> supInterval               ("", "sup", "Set sup interval", false, 0, "int", cmd);
+
+    /**
+     * @brief Set inf interval
+     * @param inf inf interval
+     * @note Used with -I/--intextr flag. Required for interval extraction
+     * Must be used together with --sup and --nvar
+     */
+
     ValueArg<int> infInterval               ("", "inf", "Set inf interval", false, 0, "int", cmd);
 
+    /**
+     * @brief Set variable to check
+     * @param nvar Name of set variable to check
+     * @note Used with -I/--intextr flag. Required for interval extraction
+     * Must be used together with --sup and --inf
+     */
     ValueArg<std::string> nameVar           ("", "nvar", "Set variable to check", false, "var_name", "string", cmd);
 
-    ValueArg<std::string> subDataset        ("", "sub", "Extraction sub dataset basing on geometry", false, "name", "path", cmd);
+    /**
+     * @brief Set sub dataset extraction based on geometry
+     * @param sub extraction sub dataset basing on geometry
+     */
+    ValueArg<std::string> subDataset        ("", "sub", "Set sub dataset extraction based on geometry", false, "name", "path", cmd);
+
+
+
+    /**
+     * @brief Set rotation axis
+     * @param rotaxis rotation axis
+     * @note When using rotation, these flags work together:
+     * - --rotaxis: Rotation axis (X, Y, Z)
+     * - --rotangle: Rotation angle (required if rotaxis != NO)
+     * - --rotcx, --rotcy, --rotcz: Rotation center coordinates
+     * @example For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
+     */
+
 
 
 
     ValueArg<std::string> setRotAxis        ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
+    /**
+     * @brief Set rotation angle (clockwise)
+     * @param rotangle rotation angle (clockwise)
+     * @note Used together with --rotaxis flag. Required when rotaxis != NO
+     */
+
     ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set rotation center x
+
+     * @param rotcx rotation center x
+
+     */
+
     ValueArg<double> setRotCenterX          ("", "rotcx", "Set rotation center x", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set rotation center y
+
+     * @param rotcy rotation center y
+
+     */
+
     ValueArg<double> setRotCenterY          ("", "rotcy", "Set rotation center y", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set rotation center z
+
+     * @param rotcz rotation center z
+
+     */
+
     ValueArg<double> setRotCenterZ          ("", "rotcz", "Set rotation center z", false, 0.0, "double", cmd);
 
 
 
 
     // Option 2. Point projection on surfaces
+    /**
+     * @brief Points projection on surfaces
+     * @param prsurf Enable points projection on surfaces
+     * @note Projection mode selection (mutually exclusive):
+     * - -P/--prsurf: Surface projection
+     * - -S/--prsect: Section projection (2D)
+     * - -R/--prqsect: Quad section projection
+     * Choose only ONE projection mode per operation
+     */
+
     SwitchArg setProjectionOnSurface        ("P", "prsurf", "Points projection on surfaces", cmd, false);
+    
+    /**
+     * @brief Compute points projection on boundary (2D section case).
+     * @param prsect Flag to compute points projection on boundary (2d section case).
+     * @note Mutually exclusive with -P/--prsurf and -R/--prqsect
+     * Use for 2D section projection operations
+     */
+
     SwitchArg setProjectionOnSection        ("S", "prsect", "Compute points projection on boundary (2D section case).", cmd, false);
+    
+    /**
+     * @brief Points projection on quads sections
+     * @param prqsect Enable points projection on quads sections
+     * @note Mutually exclusive with -P/--prsurf and -S/--prsect
+     * Use for quad-based section projection operations
+     */
+
     SwitchArg setProjectionOnQSection       ("R", "prqsect", "Points projection on quads sections", cmd, false);
 
+    /**
+
+
+     * @brief Compute points projection on boundary (3D volumetric case).
+
+
+     * @param prvol Flag to compute points projection on boundary (3d volumetric case).
+
+
+     */
+
+
     SwitchArg setProjectionOnVolume         ("V", "prvol", "Compute points projection on boundary (3D volumetric case).", cmd, false);
+    /**
+
+     * @brief Set number of steps for geometry model
+
+     * @param step Number of set number of steps for geometry model
+
+     */
+
     ValueArg<double> setStepGeometry        ("", "step", "Set number of steps for geometry model", false, 0.0, "double", cmd);
+    /**
+
+     * @brief Set tolerance to enlarge bounding box
+
+     * @param epsilon tolerance to enlarge bounding box
+
+     */
+
     ValueArg<double> setBBEpsilon           ("", "epsilon", "Set tolerance to enlarge bounding box", false, 1.0, "double", cmd);
 
     //SwitchArg setProjectionOnVolume        ("Q", "prqvol", "Points qprojection on volumes", cmd, false);
     //SwitchArg setProjectionOnVolume2        ("R", "prvol2", "Points projection on volumes2", cmd, false);
     MultiArg<std::string> meshFiles         ("m", "mgeom", "Multi-geometry to pass", false, "string", cmd );
 
+    /**
+
+
+     * @brief Set direction of projection
+
+
+     * @param prdir Path to set direction of projection
+
+
+     */
+
+
     ValueArg<std::string> setProjDir        ("", "prdir", "Set direction of projection", false, "Y", "string", cmd);
 
     std::vector<std::string> allowedType = {"SAMPLES","TET","HEX","VOLUME","GEOMETRY","QUADMESH"};
     ValuesConstraint<std::string> allowedValsT(allowedType);
+    /**
+
+     * @brief Set type
+
+     * @param type type
+
+     */
+
     ValueArg<std::string> setType           ("", "type", "Set type", false, "SAMPLES", &allowedValsT, cmd);
     allowedType.clear();
 
@@ -138,21 +309,121 @@ int main(int argc, char** argv)
     std::vector<std::string> allowedStratigraphicCondition = {"PROPORTIONAL","TRUNCATION","ONLAP","COMBINATION"};
     ValuesConstraint<std::string> allowedValsSC(allowedStratigraphicCondition);
 
+    /**
+
+
+     * @brief Points projection on surfaces
+
+
+     * @param strat Enable points projection on surfaces
+
+
+     */
+
+
     SwitchArg setStratigraphicTransf        ("T", "strat", "Points projection on surfaces", cmd, false);
+    /**
+
+     * @brief Name of geometry model
+
+     * @param name Name of name of geometry model
+
+     */
+
     ValueArg<std::string> geomName          ("", "name", "Name of geometry model", false, "name", "string", cmd);
+    /**
+
+     * @brief Set type of stratigraphic transformation
+
+     * @param sttype type of stratigraphic transformation
+
+     */
+
     ValueArg<std::string> stratCondition    ("", "sttype", "Set type of stratigraphic transformation", false, "NO", &allowedValsSC, cmd);
+    /**
+
+     * @brief Top geometry model
+
+     * @param top top geometry model
+
+     */
+
     ValueArg<std::string> topSurface        ("", "top", "Top geometry model", false, "name top geometry", "string", cmd);
+    /**
+
+     * @brief Bottom geometry model
+
+     * @param bot bottom geometry model
+
+     */
+
     ValueArg<std::string> botSurface        ("", "bot", "Bottom geometry model", false, "name bottom geometry", "string", cmd);
+    /**
+
+     * @brief Set region growing
+
+     * @param reggrow Enable set region growing
+
+     */
+
     SwitchArg setRegionGrowing              ("", "reggrow", "Set region growing", cmd, false); //booleano
 
 
     // ---------------------------------------------------------------------------------------------------------
     // ADDITIONAL FUNCTIONALITIES:
 
+    /**
+
+
+     * @brief Saving trimesh in obj format
+
+
+     * @param obj Enable saving trimesh in obj format
+
+
+     */
+
+
     SwitchArg objConversion                 ("", "obj", "Saving trimesh in obj format", cmd, false); //booleano
+    /**
+
+     * @brief Saving tetmesh in vtk format
+
+     * @param vtk Enable saving tetmesh in vtk format
+
+     */
+
     SwitchArg vtkConversion                 ("", "vtk", "Saving tetmesh in vtk format", cmd, false); //booleano
+    /**
+
+     * @brief Saving extraction as set of points
+
+     * @param save Enable saving extraction as set of points
+
+     */
+
     SwitchArg saveExtraction                ("", "save", "Saving extraction as set of points", cmd, false); //booleano
+    /**
+
+     * @brief Variable
+
+     * @param var Name of variable
+
+     */
+
     ValueArg<std::string> Variable          ("v", "var", "Variable", false, "variable to analyse", "name", cmd);
+
+    /**
+
+
+     * @brief Path file
+
+
+     * @param file Path to path file
+
+
+     */
+
 
     ValueArg<std::string> setFileData       ("", "file", "Path file", false, "path", "string", cmd);
 
@@ -536,7 +807,7 @@ int main(int argc, char** argv)
             if(xCoord.size() == id_points_in.size())
                 std::cout << "All points are included in mesh: " << geomModel.getValue() << std::endl;
             else
-                std::cout << id_points_in.size() << " points in mesh: " << geomModel.getValue() << std::endl;
+                std::cout << id_points_in.size() << " / " << xCoord.size() << " in mesh: " << geomModel.getValue() << std::endl;
 
 
             infoextr.n_points = id_points_in.size();
@@ -2775,7 +3046,7 @@ int main(int argc, char** argv)
                 //     exit(1);
                 // }
 
-                cinolib::Polyhedralmesh<> model;
+                MUSE::VolumeMesh<> model;
                 model.load(meshFiles.getValue().at(0).c_str());
                 std::cout << "\033[0;32mLoading polyhedral mesh file: " << meshFiles.getValue().at(0).c_str() << " ... COMPLETED.\033[0m" << std::endl;
                 std::cout << std::endl;
@@ -2996,7 +3267,7 @@ int main(int argc, char** argv)
                     std::cout << "ERROR set volume mesh --geom <file>"<< std::endl;
                     exit(1);
                 }
-                cinolib::Polyhedralmesh<> model;
+                MUSE::VolumeMesh<> model;
                 model.load(geomModel.getValue().c_str());
                 std::cout << "\033[0;32mLoading polyhedral mesh file: " << geomModel.getValue() << " ... COMPLETED.\033[0m" << std::endl;
                 std::cout << std::endl;
@@ -3405,7 +3676,7 @@ int main(int argc, char** argv)
                     exit(1);
                 }
 
-                cinolib::Polyhedralmesh<> model;
+                MUSE::VolumeMesh<> model;
                 model.load(geomModel.getValue().c_str());
                 std::cout << "\033[0;32mLoading polyhedral mesh file: " << geomModel.getValue() << " ... COMPLETED.\033[0m" << std::endl;
                 std::cout << std::endl;
@@ -3678,7 +3949,7 @@ int main(int argc, char** argv)
                     exit(1);
                 }
 
-                cinolib::Polyhedralmesh<> model;
+                MUSE::VolumeMesh<> model;
                 model.load(geomModel.getValue().c_str());
                 std::cout << "\033[0;32mLoading polyhedral mesh file: " << geomModel.getValue() << " ... COMPLETED.\033[0m" << std::endl;
                 std::cout << std::endl;
@@ -5044,7 +5315,22 @@ int main(int argc, char** argv)
             {
                 // Carico la mesh in input
                 cinolib::Tetmesh<> mesh;
-                mesh.load(files.at(i).c_str());
+                const std::string mesh_ext = get_extension(files.at(i));
+                if(mesh_ext == ".vtk" || mesh_ext == ".VTK")
+                {
+                    std::vector<cinolib::vec3d> verts;
+                    std::vector<std::vector<uint>> polys;
+                    if(load_vtk(files.at(i), verts, polys) != 0)
+                    {
+                        std::cerr << "ERROR while loading vtk file: " << files.at(i) << std::endl;
+                        exit(1);
+                    }
+                    mesh.init(verts, polys);
+                }
+                else
+                {
+                    mesh.load(files.at(i).c_str());
+                }
                 std::cout << "\033[0;32mLoading mesh file: " << files.at(i) << " ... COMPLETED.\033[0m" << std::endl;
 
                 std::string geom_name = files.at(i).substr(files.at(i).find_last_of("/")+1, files.at(i).length());
@@ -5196,7 +5482,22 @@ int main(int argc, char** argv)
             }
 
             cinolib::Tetmesh<> model;
-            model.load(geomModel.getValue().c_str());
+            const std::string model_ext = get_extension(geomModel.getValue());
+            if(model_ext == ".vtk" || model_ext == ".VTK")
+            {
+                std::vector<cinolib::vec3d> verts;
+                std::vector<std::vector<uint>> polys;
+                if(load_vtk(geomModel.getValue(), verts, polys) != 0)
+                {
+                    std::cerr << "ERROR while loading vtk file: " << geomModel.getValue() << std::endl;
+                    exit(1);
+                }
+                model.init(verts, polys);
+            }
+            else
+            {
+                model.load(geomModel.getValue().c_str());
+            }
             std::cout << "\033[0;32mLoading mesh file: " << geomModel.getValue() << " ... COMPLETED.\033[0m" << std::endl;
             std::cout << std::endl;
 
@@ -5211,7 +5512,22 @@ int main(int argc, char** argv)
             for(uint i=0; i<files.size(); i++)
             {
                 cinolib::Tetmesh<> mesh;
-                mesh.load(files.at(i).c_str());
+                const std::string mesh_ext = get_extension(files.at(i));
+                if(mesh_ext == ".vtk" || mesh_ext == ".VTK")
+                {
+                    std::vector<cinolib::vec3d> verts;
+                    std::vector<std::vector<uint>> polys;
+                    if(load_vtk(files.at(i), verts, polys) != 0)
+                    {
+                        std::cerr << "ERROR while loading vtk file: " << files.at(i) << std::endl;
+                        exit(1);
+                    }
+                    mesh.init(verts, polys);
+                }
+                else
+                {
+                    mesh.load(files.at(i).c_str());
+                }
                 std::cout << "\033[0;32mLoading mesh file: " << files.at(i) << " ... COMPLETED.\033[0m" << std::endl;
 
                 std::string geom_name = files.at(i).substr(files.at(i).find_last_of("/")+1, files.at(i).length());

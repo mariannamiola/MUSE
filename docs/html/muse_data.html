@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse_data - MUSE Documentation</title>
+    <style>
+        :root {
+            /* Light theme variables */
+            --bg-primary: #fafafa;
+            --bg-secondary: white;
+            --bg-tertiary: #f8f9fa;
+            --bg-quaternary: #f1f3f4;
+            --text-primary: #333;
+            --text-secondary: #555;
+            --text-tertiary: #666;
+            --border-color: #e1e4e8;
+            --border-light: #eee;
+            --shadow-color: rgba(0,0,0,0.1);
+            --shadow-light: rgba(0,0,0,0.05);
+            --code-bg: #f1f3f4;
+            --pre-bg: #f8f8f8;
+            --link-color: #0366d6;
+            --accent-color: #3498db;
+            --success-color: #28a745;
+            --danger-color: #d73a49;
+            --gradient-start: #f8f9fa;
+            --gradient-end: #e9ecef;
+        }
+        
+        [data-theme="dark"] {
+            /* Dark theme variables */
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --bg-quaternary: #30363d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #c9d1d9;
+            --text-tertiary: #8b949e;
+            --border-color: #30363d;
+            --border-light: #21262d;
+            --shadow-color: rgba(0,0,0,0.3);
+            --shadow-light: rgba(0,0,0,0.2);
+            --code-bg: #161b22;
+            --pre-bg: #0d1117;
+            --link-color: #58a6ff;
+            --accent-color: #58a6ff;
+            --success-color: #3fb950;
+            --danger-color: #f85149;
+            --gradient-start: #21262d;
+            --gradient-end: #30363d;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--bg-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .container {
+            background: var(--bg-secondary);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .nav {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav a {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .theme-toggle:hover {
+            background: var(--bg-quaternary);
+        }
+        .contact-button {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        .contact-button:hover {
+            background: var(--bg-quaternary);
+            transform: translateY(-1px);
+        }
+        .github-button {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        .github-button:hover {
+            background: var(--bg-quaternary);
+            transform: translateY(-1px);
+        }
+        .nav-buttons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }        h1 {
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: var(--text-primary);
+            margin-top: 30px;
+        }
+        h3, h4 {
+            color: var(--text-secondary);
+        }
+        h4 {
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            border-left: 4px solid var(--link-color);
+            padding: 12px 16px;
+            margin: 30px 0 20px 0;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 2px 4px var(--shadow-light);
+            border-top: 1px solid var(--border-color);
+        }
+        h4 code {
+            background: transparent;
+            color: var(--link-color);
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .flag-separator {
+            height: 2px;
+            background: linear-gradient(90deg, var(--link-color) 0%, var(--accent-color) 50%, transparent 100%);
+            margin: 25px 0;
+            border-radius: 1px;
+        }
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+            color: var(--text-primary);
+        }
+        pre {
+            background: var(--pre-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: var(--link-color);
+            font-weight: 500;
+            background: var(--bg-tertiary);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: var(--bg-quaternary);
+            text-decoration: none;
+        }
+        .app-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .app-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+        }
+        .app-card h3 {
+            margin-top: 0;
+            color: var(--link-color);
+        }
+        hr {
+            border: none;
+            height: 1px;
+            background: var(--border-color);
+            margin: 30px 0;
+        }
+        .dependencies {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--link-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: var(--link-color);
+        }
+        .example {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--success-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .example strong {
+            color: var(--success-color);
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 0.9em;
+            border-top: 1px solid var(--border-light);
+            padding-top: 20px;
+        }
+    </style>
+    <script>
+        // Theme switching functionality
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+        
+        function updateThemeIcon(theme) {
+            const themeButton = document.getElementById('theme-toggle');
+            if (themeButton) {
+                themeButton.innerHTML = theme === 'light' ? 
+                    '🌙 Dark' : 
+                    '☀️ Light';
+            }
+        }
+        
+        // Initialize theme when DOM loads
+        document.addEventListener('DOMContentLoaded', initTheme);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <div><a href="index.html">← Back to Index</a></div>
+            <div class="nav-buttons">
+                <a href="https://github.com/mariannaMiola/MUSE" class="github-button" title="View on GitHub" target="_blank">
+                    🐈 GitHub
+                </a>
+                <a href="mailto:marianna.miola@cnr.it" class="contact-button" title="Contact support">
+                    ✉️ Contact
+                </a>
+                <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                    🌙 Dark
+                </button>
+            </div>
+        </div>
+        <h2>muse_data</h2>
+
+<p><strong>Description:</strong> MUSE = Modelling of Uncertainty as a Support of Environment; Data tool</p>
+
+<h3>Usage</h3>
+
+<pre><code class="bash">muse_data [OPTIONS]
+</code></pre>
+
+<h3>Options</h3>
+
+<div class="flag-separator"></div>
+
+<h4 id="new-project"><code>-N</code>, <code>--new_project</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Create a new project</p>
+
+<p>Flag to create a new project</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Specify project directory</p>
+
+<p>Path to the project directory (required)</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="setEPSG"><code>--setEPSG</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set project EPSG coordinate system</p>
+
+<p>EPSG authority code (default: Unknown)</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="setIDXYZ"><code>-S</code>, <code>--setIDXYZ</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Enable manual setting of coordinate column numbers</p>
+
+<p>Flag to set coordinate column numbers</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using -S/<a href="#setIDXYZ">--setIDXYZ</a>, these column flags work together:
+<ul>
+  <li><a href="#setID">--setID</a>: ID column number</li>
+  <li><a href="#setX">--setX</a>: X coordinate column number</li>
+  <li><a href="#setY">--setY</a>: Y coordinate column number</li>
+  <li><a href="#setZ">--setZ</a>: Z coordinate column number (optional)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-S --setID 0 --setX 1 --setY 2 --setZ 3</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="setID"><code>--setID</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set ID column number</p>
+
+<p>Column number for ID field</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="setX"><code>--setX</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set X coordinate column number</p>
+
+<p>Column number for X coordinate</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="setY"><code>--setY</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set Y coordinate column number</p>
+
+<p>Column number for Y coordinate</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="setZ"><code>--setZ</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set Z coordinate column number</p>
+
+<p>Column number for Z coordinate</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="setDel"><code>--setDel</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set CSV delimiter type</p>
+
+<p>Type of CSV delimiter (DEFAULT or COMMA)</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="converter"><code>-C</code>, <code>--converter</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Convert CSV format data into MUSE format</p>
+
+<p>Flag to enable data conversion</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using -C/<a href="#converter">--converter</a>, these flags are commonly used:
+<ul>
+  <li><a href="#pdir">--pdir</a>: Project directory (REQUIRED)</li>
+  <li><a href="#setDel">--setDel</a>: CSV delimiter type (optional)</li>
+  <li><a href="#inf">--inf</a>, <a href="#sup">--sup</a>: Value limits (optional)</li>
+  <li>-S/<a href="#setIDXYZ">--setIDXYZ</a>: Manual column mapping (optional)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-C --pdir /project --setDel COMMA --inf 0.0 --sup 100.0</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="inf"><code>--inf</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set inferior limit for variable values</p>
+
+<p>Inferior limit value</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="sup"><code>--sup</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set superior limit for variable values</p>
+
+<p>Superior limit value</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="read"><code>-R</code>, <code>--read</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Enable reading of MUSE format files</p>
+
+<p>Flag to enable MUSE format reading</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using -R/<a href="#read">--read</a>, these flags work together:
+<ul>
+  <li><a href="#pdir">--pdir</a>: Project directory (REQUIRED)</li>
+  <li><a href="#var">--var</a>: Variable name (default: ALL_INPUT)</li>
+  <li><a href="#nrealiz">--nrealiz</a>: Number of realizations (optional)</li>
+  <li><a href="#hist">--hist</a>: Enable histogram plotting (optional)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-R --pdir /project --var temperature --hist --nbin 20</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="var"><code>-v</code>, <code>--var</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Specify variable name to read</p>
+
+<p>Variable name (default: ALL_INPUT)</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="nrealiz"><code>-n</code>, <code>--nrealiz</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set number of realization to process</p>
+
+<p>Number of realization (default: 0)</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="hist"><code>--hist</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Enable histogram computation and plotting</p>
+
+<p>Flag to compute histogram plots</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using <a href="#hist">--hist</a>, these flags work together:
+<ul>
+  <li><a href="#nval">--nval</a>: Minimum number of values for plotting (default: 20)</li>
+  <li><a href="#nbin">--nbin</a>: Number of histogram bins (default: 1)</li>
+</ul>
+Requires sufficient data points (>= nval threshold)</div>
+
+<div class="example"><strong>Example:</strong> <code>--hist --nval 50 --nbin 25</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="nval"><code>--nval</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set minimum number of values for histogram plotting</p>
+
+<p>Minimum number of values (default: 20)</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="nbin"><code>--nbin</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set number of bins for histogram plot</p>
+
+<p>Number of bins for histogram (default: 1)</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="csv"><code>--csv</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Enable CSV format for output files</p>
+
+<p>Flag to save files in CSV format</p>
+
+<div class="flag-separator"></div>
+
+
+        <div class="footer">
+            <p>Generated from MUSE source code documentation</p>
+        </div>
+    </div>
+</body>
+</html>

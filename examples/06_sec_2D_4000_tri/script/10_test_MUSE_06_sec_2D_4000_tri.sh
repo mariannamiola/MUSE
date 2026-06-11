@@ -19,6 +19,19 @@ help()
 (
 set -e	#exit if an error occours
 
+RUN_DIR=$(pwd)
+
+######################################################
+################ PROJECT NAME ########################
+
+FILENAME=$(basename "$0")          # prende il nome dello script in esecuzione
+NAME="${FILENAME%.*}"           # rimuove l'estensione .sh
+export setPROJECT_NAME="${NAME#10_test_MUSE_}"
+echo "Project name (automatically) set to: $setPROJECT_NAME"
+
+######################################################
+######################################################
+
 SHORT=d:,D:,p:,r:,s:,w:,h
 LONG=data:,data_source:,proj:,repl:,sim:,work:,help
 OPTS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
@@ -85,7 +98,7 @@ if [ "$OPTDATASOURCE" ]	#if a input data folder is provided
 then
 	export DATA_SOURCE=${OPTDATASOURCE}
 else
-	export DATA_SOURCE=${MUSE}/examples/06_sec_2D_4000_tri/data
+	export DATA_SOURCE=${MUSE}/examples/${setPROJECT_NAME}/data
 fi
 
 if [ "$OPTWORK" ]	#if a working directory is provided
@@ -103,14 +116,14 @@ if [ "$OPTPROJ" ]	#if a project name is provided
 then
 	export PROJ=${OPTPROJ}
 else
-	export PROJ=06_sec_2D_4000_tri
+	export PROJ=${setPROJECT_NAME}
 fi
 
 if [ "$OPTDATA" ]	#if a data filename is provided
 then
 	export DATA=${OPTDATA}
 else
-	export DATA=samples_sec4000.csv
+	export DATA=AMGA_full_may_2026.csv
 fi
 
 
@@ -119,14 +132,15 @@ fi
 #export GEOM1=sec
 export GMOD=sec_xz
 
-export VAR=phi
+export VAR1=phi
+export VAR2=class
 #######################################################################
 
 
 # 2. Export flags
 #######################################################################
 #For geometry
-export OPT=a0.01
+export OPT=a0.1
 
 #For vario
 export DIR=DIR
@@ -198,7 +212,7 @@ fi
 function jumpto
 {
     label=$1
-    cmd=$($SED	 -n "/$label:/{:a;n;p;ba};" $0 | grep -v ':$')
+  cmd=$($SED -n "/$label:/{:a;n;p;ba};" "$0" | grep -v ':$' | grep -v '^)$')
     eval "$cmd"
     exit
 }
@@ -221,7 +235,7 @@ if [[ -d ${WP} ]]; then
        ##########  DATA  ###########
         muse_data -N -p ${WP}
         cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
-        muse_data -S -p ${WP}  --setX 1 --setY 2 --setZ 3
+        muse_data -S -p ${WP} --setX 1 --setY 2 --setZ 3
         muse_data -C -p ${WP}
     
         ##########  GEOMETRY  ###########
@@ -248,7 +262,7 @@ else
     ##########  DATA  ###########
     muse_data -N -p ${WP}
     cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
-    muse_data -S -p ${WP}  --setX 1 --setY 2 --setZ 3
+    muse_data -S -p ${WP} --setX 1 --setY 2 --setZ 3
     muse_data -C -p ${WP}
     
     ##########  GEOMETRY  ###########
@@ -267,29 +281,24 @@ fi
 
 #vario:
 ##########  VARIO  ###########
-muse_vario -V -p ${WP} -v ${VAR} --rotaxis X --rotangle 270 --nscore YES --dir ${DIR} --dim ${DIM} --vario MODEL --dirs 0,70,80,90,110 --degtol 15 --vclean 5 --weight --eps 5.0 --nugget 0.18
+muse_vario -V -p ${WP} -v ${VAR1} --rotaxis X --rotangle 270 --nscore YES --dir ${DIR} --dim ${DIM} --vario MODEL --dirs 0,70,80,90,110 --degtol 15 --vclean 5 --weight --eps 5.0 --nugget 0.18
 
 
 #compute:
 ##########  COMPUTE  ###########
-#export OUTCOM=${OUTWP}/compute/${VAR}_${DIR}${DIM}_${GMOD}
-#export OUTNORMS=${OUTCOM}/_normspace
-#export OUTVARS=${OUTCOM}/_varspace
-
-
 if [[ $OUTSGS == 'MEAN'* ]]; then
-  muse_compute -C -p ${WP} -v ${VAR} --rotaxis X --rotangle 270 -m ${OUTSURF}/${GMOD}.obj --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --bnscore --extr Extr --minextr 0 --maxextr 1 --octant --scaleradius 1.5 --input 10 --simulated 6
+  muse_compute -C -p ${WP} -v ${VAR1} --rotaxis X --rotangle 270 -m ${OUTSURF}/${GMOD}.obj --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --bnscore --extr Extr --minextr 0 --maxextr 1 --octant --scaleradius 1.5 --input 10 --simulated 6
 else
-  muse_compute -C -p ${WP} -v ${VAR} --rotaxis X --rotangle 270 -m ${OUTSURF}/${GMOD}.obj --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --octant --scaleradius 1.5 --input 10 --simulated 6
+  muse_compute -C -p ${WP} -v ${VAR1} --rotaxis X --rotangle 270 -m ${OUTSURF}/${GMOD}.obj --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --octant --scaleradius 1.5 --input 10 --simulated 6
 
   #stats:
-  muse_compute -S -p ${WP} -v ${VAR} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --csv
+  muse_compute -S -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --csv
 
   #back:
-  muse_compute -B -p ${WP} -v ${VAR} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --extr Extr --minextr 0 --maxextr 1 --csv
+  muse_compute -B -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --extr Extr --minextr 0 --maxextr 1 --csv
   
   #statsback:
-  muse_compute -S -p ${WP} -v ${VAR} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --space VAR --csv
+  muse_compute -S -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --space VAR --csv
 fi
 
 
@@ -297,32 +306,43 @@ fi
 if [[ $OUTSGS == 'MEAN'* ]]; then
   for (( id=0; id<$NSIM; id++ ))
   do
-    rm ${SCRIPT_DIR}/output${id}.dat
+    rm -f "${SCRIPT_DIR}/output${id}.dat" "${RUN_DIR}/output${id}.dat"
   done
-  rm ${SCRIPT_DIR}/sgs_output_data
-  rm ${SCRIPT_DIR}/back_transf_data
+  rm -f "${SCRIPT_DIR}/sgs_output_data" "${RUN_DIR}/sgs_output_data"
+  rm -f "${SCRIPT_DIR}/back_transf_data" "${RUN_DIR}/back_transf_data"
 else
     for (( id=0; id<=$NSIM-1; id++ ))
   do
-    rm ${SCRIPT_DIR}/sgs_output_${id}.dat
-    rm ${SCRIPT_DIR}/output${id}.dat
+    rm -f "${SCRIPT_DIR}/sgs_output_${id}.dat" "${RUN_DIR}/sgs_output_${id}.dat"
+    rm -f "${SCRIPT_DIR}/output${id}.dat" "${RUN_DIR}/output${id}.dat"
   done
-  rm ${SCRIPT_DIR}/sgs_output_data
+  rm -f "${SCRIPT_DIR}/sgs_output_data" "${RUN_DIR}/sgs_output_data"
 fi
 
 
-#db:
-##########  DATABASE  ###########
-if [[ $OUTSGS == 'MEAN'* ]]; then
-  echo "Dataset creation for MEAN SGS method ... NOT IMPLEMENTED!"
-else
-  muse_compute -D -p ${WP} -v ${VAR} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --space VAR
-fi
+#variosis:
+##########  VARIO  ###########
+muse_vario -V -p ${WP} -v ${VAR2} --rotaxis X --rotangle 270 --vario MODEL --dir ${DIR} --dim ${DIM} --dirs 0,70,80,90,110 --degtol 15 --vclean 10 --itype SPHERICAL!6 --itype SPHERICAL!8 --inugget 0!1 --inugget 0!2 --inugget 0!3 --inugget 0!4 --inugget 0!5 --inugget 0!6 --inugget 0!7 --inugget 0!8
+
+#computesis:
+##########  COMPUTE  ###########
+muse_compute -C -p ${WP} -v ${VAR2} --rotaxis X --rotangle 270 --dir ${DIR} --dim ${DIM} -m ${OUTSURF}/${GMOD}.obj --crit SISIM --nsim ${NSIM}
+
+################################
+export OUTCOMP=${OUTWP}/compute/${VAR2}_${DIR}${DIM}_${GMOD}
+export PDF_NAME=pdf_cat_
+export NCAT=8
+for ((i=1; i<=${NCAT}; i++))
+do
+  PDF_SRC="${SCRIPT_DIR}/${PDF_NAME}${i}.txt"
+  if [[ -f "${RUN_DIR}/${PDF_NAME}${i}.txt" ]]; then
+    PDF_SRC="${RUN_DIR}/${PDF_NAME}${i}.txt"
+  fi
+  cp "${PDF_SRC}" "${OUTCOMP}/${VAR2}_${i}_pdf.csv"
+  rm -f "${SCRIPT_DIR}/${PDF_NAME}${i}.txt" "${RUN_DIR}/${PDF_NAME}${i}.txt"
+done 
 
 
-#plot:
-##########  PLOT  ###########
-#-H -p ${WP} -v <FILE>
 
 ####################################################################### MUSE END
 

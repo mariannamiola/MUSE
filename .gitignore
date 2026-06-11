@@ -64,8 +64,6 @@ build-apps-Desktop_Qt_6_6_1_GCC_64bit-Release
 build-apps-Qt_6_6_1_for_macOS-Debug
 build-apps-Qt_6_6_1_for_macOS-Release
 
-external/triangle/build
-external/tetgen/build
 apps/build
 bin
 script/bin
@@ -85,6 +83,11 @@ MUSE_test
 
 # folder
 apps/data/output
+docs/html/*
+docs/md/*
+
+#example
+#examples/*	
 
 # example 12_pianPadana_3D_hex_top
 examples/12_pianPadana_3D_hex_top/_fig_1Dprofile
@@ -111,3 +114,6 @@ examples/21_DGM_PrecAgri*/data/ID_*_UTM.csv
 examples/19_Bisagno_*/data/*.vtk
 examples/19_Polcevera_*/data/*.vtk
 examples/19_Polcevera_*/data/piana.xyz
+
+# from WSL
+*:Zone.Identifier

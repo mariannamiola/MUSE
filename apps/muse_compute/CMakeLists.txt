@@ -7,4 +7,6 @@ find_package(SQLite3 REQUIRED)
 add_executable(${PROJECT_NAME}
   main.cpp
 )
-target_link_libraries(${PROJECT_NAME} PUBLIC Matplot++::matplot ${ARMADILLO_LIBRARIES} OpenMP::OpenMP_CXX SQLite::SQLite3 ${LZ4_LINK_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC Matplot++::matplot ${ARMADILLO_LIBRARIES} OpenMP::OpenMP_CXX SQLite::SQLite3 ${LZ4_LINK_LIBRARIES}
+)
+target_link_libraries(${PROJECT_NAME} PUBLIC muse_cinolib)

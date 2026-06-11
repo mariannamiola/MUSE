@@ -1,12 +1,9 @@
 #include <iostream>
-#include <fstream>
-#include <algorithm>
 #include <cmath>
 #include <string.h>
 #include <filesystem>
 
 #include <tclap/CmdLine.h>
-//#include <json.hpp>
 #include <matplot/matplot.h>
 #include <geostatslib/statistics/stats.h>
 
@@ -50,70 +47,201 @@ using namespace TCLAP;
 
 int main(int argc, char** argv)
 {
-    std::cout << std::endl;
-    std::cout << "########### STARTING MUSE-DATA ..." << std::endl;
-    std::cout << std::endl;
-
     std::string app_name = "data"; //app name
 
     try {
-    CmdLine cmd("MUSE = Modelling of Uncertainty as a Support of Environment; Data tool", ' ', "version 0.0");
+    CmdLine cmd("MUSE - Modelling Uncertainty as a Support for Environment. muse-data application", ' ', "version 0.0");
+
+    std::cout << std::endl;
+    std::cout << "============================================================" << std::endl;
+    std::cout << "================== STARTING MUSE-DATA ======================" << std::endl;
+    std::cout << "============================================================" << std::endl;
+    std::cout << std::endl;
 
     // ---------------------------------------------------------------------------------------------------------
     // MAIN FUNCTIONALITIES:
 
     // Option 0. New project creation
-    SwitchArg projectCreation           ("N", "new_project", "Creation new project", cmd, false); //booleano
-    ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
+    /**
+     * @brief Initialize a new project directory structure for storing (source point) data
+     * @param new_project If set, creates `in/data` and `out/data` subdirectories under the path specified by `-pdir`
+     * @note Boolean flag, default: false. Requires `--pdir` to be set and `--input` to optionally copy data file(s)
+     * @example muse_data -N -p /path/to/project/dir --input user/path/filename.csv
+     */
+    SwitchArg projectCreation           ("N", "new_project", "Initialize a new project directory structure for storing (source point) data", cmd, false); //booleano
+    
+    /**
+     * @brief Specify the directory path where the project is created
+     * @param pdir Absolute path to the project root directory (mandatory)
+     * @note Required when using --new_project flag
+     * @example -p /path/to/project/dir
+     */
+    ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "/path/to/project/dir", "string", cmd);
+
+    /**
+     * @brief Copy input file(s) in the input data project directory (path/project/in/data) to replace manual data copy
+     * @param input One or more file paths to copy into `data/in/` of the project root.
+     * Multiple files can be specified by repeating the flag.
+     * @note Optional. Recommended with `-N` to populate the input directory without manual file copying.
+     * @example --input user/path1/file1.csv --input user/path2/file2.csv
+     */
+    MultiArg<std::string> setInput ("i", "input", "Copy input file(s) in the project directory (in/data/)", false, "string", cmd );
+
 
     // Option 0a. Project creation - optional: setting project EPSG
+    /**
+     * @brief Set project EPSG coordinate system
+     * @param setEPSG EPSG authority code (default: Unknown)
+     */
     ValueArg<std::string> setEPSG       ("", "setEPSG", "Set project EPSG", false, "Unknown", "authority", cmd);
 
     // Option 1. Project creation - optional: setting coordinate columns
+    /**
+     * @brief Enable manual setting of coordinate column numbers
+     * @param setIDXYZ Flag to set coordinate column numbers
+     * @note When using -S/--setIDXYZ, these column flags work together:
+     *       - --setID: ID column number
+     *       - --setX: X coordinate column number
+     *       - --setY: Y coordinate column number
+     *       - --setZ: Z coordinate column number (optional)
+     * @example -S --setID 0 --setX 1 --setY 2 --setZ 3
+     */
     SwitchArg setIDXYZ                  ("S", "setIDXYZ", "Set n. column coordinate", cmd, false); //booleano
+    
+    /**
+     * @brief Set ID column number
+     * @param setID Column number for ID field
+     */
     ValueArg<int> Colid                 ("", "setID", "Set ID", false, 0, "int" , cmd);
+    
+    /**
+     * @brief Set X coordinate column number
+     * @param setX Column number for X coordinate
+     */
     ValueArg<int> Colx                  ("", "setX", "Set coordinate x", false, 0, "int" , cmd);
+    
+    /**
+     * @brief Set Y coordinate column number
+     * @param setY Column number for Y coordinate
+     */
     ValueArg<int> Coly                  ("", "setY", "Set coordinate y", false, 0, "int" , cmd);
+    
+    /**
+     * @brief Set Z coordinate column number
+     * @param setZ Column number for Z coordinate
+     */
     ValueArg<int> Colz                  ("", "setZ", "Set coordinate z", false, 0, "int" , cmd);
 
     // Option 2b. Converter function - optional: setting delimiter
     std::vector<std::string> allowedDel = {"DEFAULT", "COMMA"}; //default = ;
     ValuesConstraint<std::string> allowedValsD(allowedDel);
+    
+    /**
+     * @brief Set CSV delimiter type
+     * @param setDel Type of CSV delimiter (DEFAULT or COMMA)
+     */
     ValueArg<std::string> Delimiter     ("", "setDel", "Set type of csv delimiter", false, "DEFAULT", &allowedValsD, cmd);
     allowedDel.clear();
 
     // Option 2a. Converter function - SINGLE DATASET
+    /**
+     * @brief Convert CSV format data into MUSE format
+     * @param converter Flag to enable data conversion
+     * @note When using -C/--converter, these flags are commonly used:
+     *       - --pdir: Project directory (REQUIRED)
+     *       - --setDel: CSV delimiter type (optional)
+     *       - --inf, --sup: Value limits (optional)
+     *       - -S/--setIDXYZ: Manual column mapping (optional)
+     * @example -C --pdir /project --setDel COMMA --inf 0.0 --sup 100.0
+     */
     SwitchArg converterFunction         ("C", "converter", "Converter data (csv format) into MUSE format", cmd, false); //booleano
     //UnlabeledValueArg<int> n_rowsHeader ("n_rows_header", "Number of header rows", false, 6, "int", cmd);
 
     // Option 2a. Option for variables check
     //ValueArg<double> scaleFactor        ("", "scale", "Set scale factor unity (only for compositional variables)", false, 1.0, "double", cmd);
+    
+    /**
+     * @brief Set inferior limit for variable values
+     * @param inf Inferior limit value
+     */
     ValueArg<double> infLimit           ("", "inf", "Set inf limit", false, 0, "inf", cmd);
+    
+    /**
+     * @brief Set superior limit for variable values
+     * @param sup Superior limit value
+     */
     ValueArg<double> supLimit           ("", "sup", "Set sup limit", false, 1, "sup", cmd);
 
     // Option 2a. Converter function - optional: setting flag row
 //    SwitchArg setFlagRow                ("F", "set_flag", "Set flag row", cmd, false); //booleano
 //    ValueArg<int> FlagRow               ("r", "row", "Set row ", false, 0, "row", cmd);
 
+
+    ValueArg<double> setTolerance        ("", "tol", "Set tolerance", false, 1.0, "double", cmd);
+
     // Option 3. Reading MUSE format
+    /**
+     * @brief Enable reading of MUSE format files
+     * @param read Flag to enable MUSE format reading
+     * @note When using -R/--read, these flags work together:
+     *       - --pdir: Project directory (REQUIRED)
+     *       - --var: Variable name (default: ALL_INPUT)
+     *       - --nrealiz: Number of realizations (optional)
+     *       - --hist: Enable histogram plotting (optional)
+     * @example -R --pdir /project --var temperature --hist --nbin 20
+     */
     SwitchArg readFunction              ("R", "read", "Reading MUSE format", cmd, false); //booleano
+    
+    /**
+     * @brief Specify variable name to read
+     * @param var Variable name (default: ALL_INPUT)
+     */
     ValueArg<std::string> Variable      ("v", "var", "Variable", false, "ALL_INPUT", "name", cmd);
+    
+    /**
+     * @brief Set number of realization to process
+     * @param nrealiz Number of realization (default: 0)
+     */
     ValueArg<int> setNrealization       ("n", "nrealiz", "Set number of realization", false, 0, "int", cmd);
 
 
     // Option 3a. Options for histograms
+    /**
+     * @brief Enable histogram computation and plotting
+     * @param hist Flag to compute histogram plots
+     * @note When using --hist, these flags work together:
+     *       - --nval: Minimum number of values for plotting (default: 20)
+     *       - --nbin: Number of histogram bins (default: 1)
+     *       Requires sufficient data points (>= nval threshold)
+     * @example --hist --nval 50 --nbin 25
+     */
     SwitchArg getHistogram              ("", "hist", "Compute plot - hitogram", cmd, false); //booleano
+    
+    /**
+     * @brief Set minimum number of values for histogram plotting
+     * @param nval Minimum number of values (default: 20)
+     */
     ValueArg<int> setNMaxValues         ("", "nval", "Set min number of values, sufficient for histogram plot", false, 20, "int", cmd);
+    
+    /**
+     * @brief Set number of bins for histogram plot
+     * @param nbin Number of bins for histogram (default: 1)
+     */
     ValueArg<size_t> setNbins           ("", "nbin", "Set number of bins for histogram plot", false, 1, "size_t", cmd);
 
 
     // ---------------------------------------------------------------------------------------------------------
     // ADDITIONAL FUNCTIONALITIES:
 
+    /**
+     * @brief Enable CSV format for output files
+     * @param csv Flag to save files in CSV format
+     */
     SwitchArg csvConversion             ("", "csv", "Saving file as csv", cmd, false); //booleano
 
-//    // Option 2a. Converter function - MULTI DATASET
-//    SwitchArg mergeDataset              ("M", "multi", "Merge dataset into CSV format", cmd, false); //booleano
+
+    SwitchArg setCheckDuplicates        ("", "check-duplicates", "Enable check of duplicated points", cmd, false); //booleano
+    SwitchArg setRemoveDuplicates       ("", "remove-duplicates", "Enable remvoval of duplicated points", cmd, false); //booleano
 
 
     // ---------------------------------------------------------------------------------------------------------
@@ -132,12 +260,8 @@ int main(int argc, char** argv)
     Project.setName(Project.folder.substr(Project.folder.find_last_of("/")+1, Project.folder.length()));
 
     // 0) Commands
-    std::cout << FCYN("###### Execution command ...") << std::endl;
     std::string command;
-    std::cout << "Number of command arguments: " << argc << std::endl;
-
     filesystem::path abspath = argv[3];
-    std::cout << "Absolute path: " << abspath << std::endl;
 
     for(int i=1; i< argc; i++)
     {
@@ -162,8 +286,9 @@ int main(int argc, char** argv)
             command += " ";
         }
     }
-    std::cout << command << std::endl;
-    std::cout << FCYN("###### ###### ###### ######") << std::endl;
+    std::cout << "=== Command line: " << command << std::endl;
+    std::cout << "=== Number of command arguments: " << argc << std::endl;
+    std::cout << "=== Absolute path: " << abspath << std::endl;
     std::cout << std::endl;
 
     // 0) Set folder (in/out)
@@ -182,14 +307,37 @@ int main(int argc, char** argv)
     // Option 0. Project creation and settings
     if(projectCreation.isSet())
     {
-        // MUSE::DataMeta datameta;
-        // datameta.setProject(Project);
-
         if(!filesystem::exists(in_folder))
             filesystem::create_directory(in_folder); //l'utente inserirà all'interno di questa cartella i dati di input
 
         if(!filesystem::exists(out_folder))
             filesystem::create_directory(out_folder);
+
+        if(setInput.isSet())
+        {
+            std::cout << "=== Copy input file in project_dir/in/data/ ..." << std::endl;
+            if(setInput.getValue().empty())
+                std::cerr << "ERROR: list of files is empty." << std::endl;
+
+            for (const std::string file : setInput.getValue())
+            {
+                std::string filename = get_filename(file);
+                try {
+                    filesystem::copy(file, in_folder + "/" + filename,
+                             filesystem::copy_options::overwrite_existing);
+
+                    std::cout << "Copied file: " << file << " in the data project directory ... " << in_folder + "/" + filename << std::endl;
+                } catch (filesystem::filesystem_error& e) {
+                    std::cerr << "ERROR: " << e.what() << std::endl;
+                }
+            }
+        }
+        else
+        {
+            std::cout << "WARNING. No input file is set and copied in project_dir/in/data/" << std::endl;
+            std::cout << "Use --input (multiple) flag to currently import data ..." << std::endl;
+            std::cout << "... or manually copy input files in project_dir/in/data/" << std::endl;
+        }
 
 
         // if(setEPSG.isSet())
@@ -319,6 +467,85 @@ int main(int argc, char** argv)
             std::vector<std::vector<std::string>> matrix_data;
             read_csv_with_header(filename, n_rows_header, matrix_header, matrix_data, csv_delimiter); //opzione sul delimitatore da linea di comando; stessa cosa anche sul separatore decimale!
 
+
+            // if(setCheckDuplicates.isSet())
+            // {
+            //     if(!Colx.isSet())
+            //     {
+            //         std::cerr << "=== Set x column for duplicated points check." << std::endl;
+            //         exit(1);
+            //     }
+            //     if(!Coly.isSet())
+            //     {
+            //         std::cerr << "=== Set y column for duplicated points check." << std::endl;
+            //         exit(1);
+            //     }
+
+            //     int col_z = Colz.getValue()-1;
+            //     if(!Colz.isSet())
+            //     {
+            //         col_z = -1;
+            //         std::cout << "=== z column is set to -1.0 (2D case)" << std::endl;
+            //         std::cout << "=== Set z column for duplicated points check." << std::endl;
+            //     }
+
+            //     std::cout << "=== Distance tolerance is set on: " << setTolerance.getValue() << std::endl;
+            //     int n_dup = check_duplicate_coords(matrix_data, Colx.getValue()-1, Coly.getValue()-1, col_z, setTolerance.getValue(), 1.0, false);
+
+            //     if(n_dup > 0)
+            //     {
+            //         std::cout << "=== Set --remove-duplicates to enable duplicated points removal." << std::endl;
+            //         // opzionale:
+            //         // exit(1);
+            //     }
+            // }
+
+
+            if(setCheckDuplicates.isSet())
+            {
+                if(!Colx.isSet())
+                {
+                    std::cerr << "=== Set x column for duplicated points check." << std::endl;
+                    exit(1);
+                }
+                if(!Coly.isSet())
+                {
+                    std::cerr << "=== Set y column for duplicated points check." << std::endl;
+                    exit(1);
+                }
+
+                int col_z = Colz.getValue()-1;
+                if(!Colz.isSet())
+                {
+                    col_z = -1;
+                    std::cout << "=== z column is set to -1.0 (2D case)" << std::endl;
+                    std::cout << "=== Set z column for duplicated points check." << std::endl;
+                }
+
+                // -------------------------------------------------------
+                // DUPLICATE CHECK on spatial coordinates
+                // -------------------------------------------------------
+                // Estrai colonne x e y dalla matrix_data
+                // (assumendo che le colonne di coordinate siano note per posizione)
+
+                //int col_x = Colx.getValue();
+                //int col_y = Coly.getValue();
+
+                std::cout << "=== Distance tolerance is set on: " << setTolerance.getValue() << std::endl;
+                int n_remove = check_points_to_remove(matrix_data, Colx.getValue()-1, Coly.getValue()-1, col_z, setTolerance.getValue());
+
+                if(setRemoveDuplicates.isSet())
+                {
+                    int n_dup = remove_duplicate_rows_by_coords(matrix_data, Colx.getValue()-1, Coly.getValue()-1, col_z, setTolerance.getValue());
+
+                    if(n_dup > 0)
+                    {
+                        std::cout << "=== WARNING: Duplicate points detected and removed before processing." << std::endl;
+                    }
+                    // -------------------------------------------------------
+                }
+            }
+
             size_t n_var = matrix_header[0].size();
             size_t n_files = 0; //numero file creati in formato MUSE
 
@@ -327,13 +554,11 @@ int main(int argc, char** argv)
             flagsTable(table);
 
             int flag_row = 3; //riga della matrice (contando da 1) dove si trova il flag
-//            if(setFlagRow.isSet())
-//                flag_row = FlagRow.getValue();
 
             // Preliminary check on values and creation of MUSE Format (json and data file)
-
+            std::cout << std::endl;
             std::cout << "Conversion into MUSE format ..." << std::endl;
-            std::cout << "###############################" << std::endl;
+            std::cout << "==========================================================" << std::endl;
 
             for(size_t i=0; i<n_var; i++)
             {
@@ -423,7 +648,7 @@ int main(int argc, char** argv)
                 restoreTable(table);
             }
 
-            std::cout << "###############################" << std::endl;
+            std::cout << "==========================================================" << std::endl;
             std::cout << "Conversion into MUSE format ... COMPLETED." << std::endl;
             std::cout << std::endl;
 

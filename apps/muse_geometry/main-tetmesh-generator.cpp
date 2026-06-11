@@ -46,13 +46,73 @@ int main(int argc, char **argv)
         CmdLine cmd("MUSE = Modelling of Uncertainty as a Support of Environment; Export tool", ' ', "version 0.5");
 
         // Define main functionalities options
+        /**
+
+         * @brief Geometry model
+
+         * @param geom geometry model
+
+         */
+
         ValueArg<std::string> geomModel("m", "geom", "Geometry model", true, "name_geometry", "string", cmd);
+        /**
+
+         * @brief Plane
+
+         * @param plane plane
+
+         */
+
         ValueArg<std::string> xyzPlane("p", "plane", "Plane", false, "plane", "string", cmd);
+
+        /**
+
+
+         * @brief Plane shift
+
+
+         * @param plane-shift plane shift
+
+
+         */
+
 
         ValueArg<double> planeShift("", "plane-shift", "Plane shift", false, 0.0, "double", cmd);
         
+        /**
+
+        
+         * @brief Triangle flags
+
+        
+         * @param triangle triangle flags
+
+        
+         */
+
+        
         ValueArg<std::string> triangleFlags("t", "triangle", "Triangle flags", false, "p", "string", cmd);
+        /**
+
+         * @brief Tetgen flags
+
+         * @param tetgen tetgen flags
+
+         */
+
         ValueArg<std::string> tetgenFlags("T", "tetgen", "Tetgen flags", false, "p", "string", cmd);
+
+        /**
+
+
+         * @brief Output file
+
+
+         * @param out Path to output file
+
+
+         */
+
 
         ValueArg<std::string> output("o", "out", "Output file", true, "output_file", "path", cmd);
 

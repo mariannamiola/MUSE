@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse_manipulate - MUSE Documentation</title>
+    <style>
+        :root {
+            /* Light theme variables */
+            --bg-primary: #fafafa;
+            --bg-secondary: white;
+            --bg-tertiary: #f8f9fa;
+            --bg-quaternary: #f1f3f4;
+            --text-primary: #333;
+            --text-secondary: #555;
+            --text-tertiary: #666;
+            --border-color: #e1e4e8;
+            --border-light: #eee;
+            --shadow-color: rgba(0,0,0,0.1);
+            --shadow-light: rgba(0,0,0,0.05);
+            --code-bg: #f1f3f4;
+            --pre-bg: #f8f8f8;
+            --link-color: #0366d6;
+            --accent-color: #3498db;
+            --success-color: #28a745;
+            --danger-color: #d73a49;
+            --gradient-start: #f8f9fa;
+            --gradient-end: #e9ecef;
+        }
+        
+        [data-theme="dark"] {
+            /* Dark theme variables */
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --bg-quaternary: #30363d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #c9d1d9;
+            --text-tertiary: #8b949e;
+            --border-color: #30363d;
+            --border-light: #21262d;
+            --shadow-color: rgba(0,0,0,0.3);
+            --shadow-light: rgba(0,0,0,0.2);
+            --code-bg: #161b22;
+            --pre-bg: #0d1117;
+            --link-color: #58a6ff;
+            --accent-color: #58a6ff;
+            --success-color: #3fb950;
+            --danger-color: #f85149;
+            --gradient-start: #21262d;
+            --gradient-end: #30363d;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--bg-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .container {
+            background: var(--bg-secondary);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .nav {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav a {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .theme-toggle:hover {
+            background: var(--bg-quaternary);
+        }
+        .contact-button {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        .contact-button:hover {
+            background: var(--bg-quaternary);
+            transform: translateY(-1px);
+        }
+        .github-button {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        .github-button:hover {
+            background: var(--bg-quaternary);
+            transform: translateY(-1px);
+        }
+        .nav-buttons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }        h1 {
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: var(--text-primary);
+            margin-top: 30px;
+        }
+        h3, h4 {
+            color: var(--text-secondary);
+        }
+        h4 {
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            border-left: 4px solid var(--link-color);
+            padding: 12px 16px;
+            margin: 30px 0 20px 0;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 2px 4px var(--shadow-light);
+            border-top: 1px solid var(--border-color);
+        }
+        h4 code {
+            background: transparent;
+            color: var(--link-color);
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .flag-separator {
+            height: 2px;
+            background: linear-gradient(90deg, var(--link-color) 0%, var(--accent-color) 50%, transparent 100%);
+            margin: 25px 0;
+            border-radius: 1px;
+        }
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+            color: var(--text-primary);
+        }
+        pre {
+            background: var(--pre-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: var(--link-color);
+            font-weight: 500;
+            background: var(--bg-tertiary);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: var(--bg-quaternary);
+            text-decoration: none;
+        }
+        .app-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .app-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+        }
+        .app-card h3 {
+            margin-top: 0;
+            color: var(--link-color);
+        }
+        hr {
+            border: none;
+            height: 1px;
+            background: var(--border-color);
+            margin: 30px 0;
+        }
+        .dependencies {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--link-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: var(--link-color);
+        }
+        .example {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--success-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .example strong {
+            color: var(--success-color);
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 0.9em;
+            border-top: 1px solid var(--border-light);
+            padding-top: 20px;
+        }
+    </style>
+    <script>
+        // Theme switching functionality
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+        
+        function updateThemeIcon(theme) {
+            const themeButton = document.getElementById('theme-toggle');
+            if (themeButton) {
+                themeButton.innerHTML = theme === 'light' ? 
+                    '🌙 Dark' : 
+                    '☀️ Light';
+            }
+        }
+        
+        // Initialize theme when DOM loads
+        document.addEventListener('DOMContentLoaded', initTheme);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <div><a href="index.html">← Back to Index</a></div>
+            <div class="nav-buttons">
+                <a href="https://github.com/mariannaMiola/MUSE" class="github-button" title="View on GitHub" target="_blank">
+                    🐈 GitHub
+                </a>
+                <a href="mailto:marianna.miola@cnr.it" class="contact-button" title="Contact support">
+                    ✉️ Contact
+                </a>
+                <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                    🌙 Dark
+                </button>
+            </div>
+        </div>
+        <h2>muse_manipulate</h2>
+
+<p><strong>Description:</strong> MUSE = Modelling of Uncertainty as a Support of Environment; Manipulate tool</p>
+
+<h3>Usage</h3>
+
+<pre><code class="bash">muse_manipulate [OPTIONS]
+</code></pre>
+
+<h3>Options</h3>
+
+<div class="flag-separator"></div>
+
+<h4 id="extract"><code>-E</code>, <code>--extract</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Extraction data</p>
+
+<p>Enable extraction data</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using -E/<a href="#extract">--extract</a>, requires:
+<ul>
+  <li><a href="#geom">--geom</a>: Geometry model (mandatory)</li>
+</ul>
+OPTIONAL:
+<ul>
+  <li><a href="#zcoord">--zcoord</a>: Z coordinate specification</li>
+  <li><a href="#sub">--sub</a>: Sub-dataset extraction</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-E --geom mesh_model --zcoord elevation</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Project directory</p>
+
+<p>Path to project directory</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="geom"><code>--geom</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Geometry model</p>
+
+<p>geometry model</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required when using -E/<a href="#extract">--extract</a> flag
+The geometry model must exist in the project</div>
+
+<div class="flag-separator"></div>
+
+<h4 id="zcoord"><code>-z</code>, <code>--zcoord</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Coordinate Z</p>
+
+<p>coordinate z</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="intextr"><code>-I</code>, <code>--intextr</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Extraction data from interval</p>
+
+<p>Enable extraction data from interval</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using -I/<a href="#intextr">--intextr</a>, requires:
+<ul>
+  <li><a href="#sup">--sup</a>: Superior interval limit (mandatory)</li>
+  <li><a href="#inf">--inf</a>: Inferior interval limit (mandatory)</li>
+  <li><a href="#nvar">--nvar</a>: Variable name to check (mandatory)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>-I --sup 100 --inf 0 --nvar temperature</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="sup"><code>--sup</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set sup interval</p>
+
+<p>sup interval</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
+Must be used together with <a href="#inf">--inf</a> and <a href="#nvar">--nvar</a></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="inf"><code>--inf</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set inf interval</p>
+
+<p>inf interval</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
+Must be used together with <a href="#sup">--sup</a> and <a href="#nvar">--nvar</a></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="nvar"><code>--nvar</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set variable to check</p>
+
+<p>Name of set variable to check</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
+Must be used together with <a href="#sup">--sup</a> and <a href="#inf">--inf</a></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="sub"><code>--sub</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Extraction sub dataset basing on geometry</p>
+
+<p>extraction sub dataset basing on geometry</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="rotaxis"><code>--rotaxis</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set rotation axis</p>
+
+<p>rotation axis</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using rotation, these flags work together:
+<ul>
+  <li><a href="#rotaxis">--rotaxis</a>: Rotation axis (X, Y, Z)</li>
+  <li><a href="#rotangle">--rotangle</a>: Rotation angle (required if rotaxis != NO)</li>
+  <li><a href="#rotcx">--rotcx</a>, <a href="#rotcy">--rotcy</a>, <a href="#rotcz">--rotcz</a>: Rotation center coordinates</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="rotangle"><code>--rotangle</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set rotation angle (clockwise)</p>
+
+<p>rotation angle (clockwise)</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO</div>
+
+<div class="flag-separator"></div>
+
+<h4 id="rotcx"><code>--rotcx</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set rotation center x</p>
+
+<p>rotation center x</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="rotcy"><code>--rotcy</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set rotation center y</p>
+
+<p>rotation center y</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="rotcz"><code>--rotcz</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set rotation center z</p>
+
+<p>rotation center z</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="prsurf"><code>-P</code>, <code>--prsurf</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Points projection on surfaces</p>
+
+<p>Enable points projection on surfaces</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Projection mode selection (mutually exclusive):
+<ul>
+  <li>-P/<a href="#prsurf">--prsurf</a>: Surface projection</li>
+  <li>-S/<a href="#prsect">--prsect</a>: Section projection (2D)</li>
+  <li>-R/<a href="#prqsect">--prqsect</a>: Quad section projection</li>
+</ul>
+Choose only ONE projection mode per operation</div>
+
+<div class="flag-separator"></div>
+
+<h4 id="prsect"><code>-S</code>, <code>--prsect</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Compute points projection on boundary (2D section case).</p>
+
+<p>Flag to compute points projection on boundary (2d section case).</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -P/<a href="#prsurf">--prsurf</a> and -R/<a href="#prqsect">--prqsect</a>
+Use for 2D section projection operations</div>
+
+<div class="flag-separator"></div>
+
+<h4 id="prqsect"><code>-R</code>, <code>--prqsect</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Points projection on quads sections</p>
+
+<p>Enable points projection on quads sections</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -P/<a href="#prsurf">--prsurf</a> and -S/<a href="#prsect">--prsect</a>
+Use for quad-based section projection operations</div>
+
+<div class="flag-separator"></div>
+
+<h4 id="prvol"><code>-V</code>, <code>--prvol</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Compute points projection on boundary (3D volumetric case).</p>
+
+<p>Flag to compute points projection on boundary (3d volumetric case).</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="step"><code>--step</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set number of steps for geometry model</p>
+
+<p>Number of set number of steps for geometry model</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="epsilon"><code>--epsilon</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set tolerance to enlarge bounding box</p>
+
+<p>tolerance to enlarge bounding box</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="prdir"><code>--prdir</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set direction of projection</p>
+
+<p>Path to set direction of projection</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="type"><code>--type</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set type</p>
+
+<p>type</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="strat"><code>-T</code>, <code>--strat</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Points projection on surfaces</p>
+
+<p>Enable points projection on surfaces</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="name"><code>--name</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Name of geometry model</p>
+
+<p>Name of name of geometry model</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="sttype"><code>--sttype</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set type of stratigraphic transformation</p>
+
+<p>type of stratigraphic transformation</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="top"><code>--top</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Top geometry model</p>
+
+<p>top geometry model</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="bot"><code>--bot</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Bottom geometry model</p>
+
+<p>bottom geometry model</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="reggrow"><code>--reggrow</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set region growing</p>
+
+<p>Enable set region growing</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="obj"><code>--obj</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Saving trimesh in obj format</p>
+
+<p>Enable saving trimesh in obj format</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="vtk"><code>--vtk</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Saving tetmesh in vtk format</p>
+
+<p>Enable saving tetmesh in vtk format</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="save"><code>--save</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Saving extraction as set of points</p>
+
+<p>Enable saving extraction as set of points</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="var"><code>-v</code>, <code>--var</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Variable</p>
+
+<p>Name of variable</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="file"><code>--file</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Path file</p>
+
+<p>Path to path file</p>
+
+<div class="flag-separator"></div>
+
+
+        <div class="footer">
+            <p>Generated from MUSE source code documentation</p>
+        </div>
+    </div>
+</body>
+</html>

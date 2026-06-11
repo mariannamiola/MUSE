@@ -35,18 +35,93 @@ int main(int argc, char** argv)
     // MAIN FUNCTIONALITIES:
 
     // Option 0.
+    /**
+     * @brief File List
+     * @param list Enable file list
+     * @note Operation mode selection (mutually exclusive):
+     * - -L/--list: File listing operation
+     * - -Q/--query: Query path creation
+     * - -H/--history: JSON history analysis
+     * When using file listing:
+     * - --pdir: Directory path (optional)
+     * - --type: File type filter (optional)
+     * @example -L --pdir /project --type JSON
+     */
+
     SwitchArg fileList                  ("L", "list", "File List", cmd, false); //booleano
+    /**
+     * @brief Directory
+     * @param pdir Path to directory
+     * @note Used with -L/--list flag for file listing operations
+     * Specifies the directory to search for files
+     */
+
     ValueArg<std::string> projectFolder ("p", "pdir", "Directory", false, "Directory", "path", cmd);
+    /**
+     * @brief Type of file
+     * @param type Path to type of file
+     * @note Used with -L/--list flag for file filtering
+     * Available types: JSON, MESH
+     */
+
     ValueArg<std::string> fileType      ("", "type", "Type of file", false, "Directory", "path", cmd);
 
     // Option 1. TO DO ...
+    /**
+     * @brief Query for creation path
+     * @param query Enable query for creation path
+     * @note Mutually exclusive with -L/--list and -H/--history
+     * Operation mode for path creation queries
+     */
+
     SwitchArg Query                     ("Q", "query", "Query for creation path", cmd, false); //booleano
 
     // Option 2. Print processing history following JSONs
+    /**
+     * @brief Set JSON history
+     * @param history Enable set json history
+     * @note Mutually exclusive with -L/--list and -Q/--query
+     * History analysis operation requires:
+     * - --json: JSON file path (mandatory)
+     * OPTIONAL history navigation flags:
+     * - --back: Recursive backward navigation
+     * - --forward: Recursive forward navigation
+     * - --more: Forward navigation with commands
+     * @example -H --json /path/to/history.json --more
+     */
+
     SwitchArg setHistory                ("H", "history", "Set JSON history", cmd, false); //booleano
+    /**
+     * @brief Set json file
+     * @param json Path to set json file
+     * @note Required when using -H/--history flag
+     * Specifies the JSON file containing processing history
+     */
+
     ValueArg<std::string> setJSON       ("", "json", "Set json file", false, "path", "string", cmd);
+    /**
+     * @brief Set JSON history (recursively - back)
+     * @param back Enable set json history (recursively - back)
+     * @note Optional modifier for -H/--history operations
+     * Enables recursive backward navigation through history
+     */
+
     SwitchArg setBackInfo               ("", "back", "Set JSON history (recursively - back)", cmd, false); //booleano
+    /**
+     * @brief Set JSON history (recursively - forward)
+     * @param forward Enable set json history (recursively - forward)
+     * @note Optional modifier for -H/--history operations
+     * Enables recursive forward navigation through history
+     */
+
     SwitchArg setForwardInfo            ("", "forward", "Set JSON history (recursively - forward)", cmd, false); //booleano
+    /**
+     * @brief Set JSON history (recursively - forward) and commands
+     * @param more Enable set json history (recursively - forward) and commands
+     * @note Optional modifier for -H/--history operations
+     * Provides detailed forward navigation with command information
+     */
+
     SwitchArg setMoreInfo               ("", "more", "Set JSON history (recursively - forward) and commands", cmd, false); //booleano
 
 

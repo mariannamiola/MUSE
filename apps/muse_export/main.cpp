@@ -103,29 +103,132 @@ int main(int argc, char **argv)
         CmdLine cmd("MUSE = Modelling of Uncertainty as a Support of Environment; Export tool", ' ', "version 0.5");
 
         // Define main functionalities options
+        /**
+         * @brief Project directory
+         * @param pdir Path to project directory
+         * @note MANDATORY for all export operations
+         * The project directory must contain MUSE data files
+         */
+
         ValueArg<std::string> projectFolder("p", "pdir", "Project directory", true, "Directory", "path", cmd);
+        /**
+         * @brief Variable
+         * @param var Name of variable
+         * @note MANDATORY for all export operations
+         * The variable must exist in the project data
+         */
+
         ValueArg<std::string> variable("v", "var", "Variable", true, "name_var", "string", cmd);
+        /**
+         * @brief Geometry model
+         * @param geom geometry model
+         * @note Often required depending on export type
+         * The geometry model must be available in the project
+         */
+
         ValueArg<std::string> geomModel("m", "geom", "Geometry model", false, "name_geometry", "string", cmd);
+        /**
+
+         * @brief Output directory
+
+         * @param out Path to output directory
+
+         */
+
         ValueArg<std::string> output("o", "out", "Output directory", false, "output_directory", "path", cmd);
+
+        /**
+
+
+         * @brief Type of analysis
+
+
+         * @param type type of analysis
+
+
+         */
+
+
+        ValueArg<std::string> analysis("", "type", "Type of analysis", false, "type", "string", cmd);
+
+        /**
+
+
+         * @brief multiframe name
+
+
+         * @param mf multiframe name
+
+
+         */
+
 
         ValueArg<std::string> multiframe("", "mf", "multiframe name", false, "multiframe", "string", cmd);
         // Define variogram direction options
         std::vector<std::string> allowedVarioDir = {"OMNI", "DIR"};
         ValuesConstraint<std::string> allowedValsVD(allowedVarioDir);
+        /**
+         * @brief type of variogram direction
+         * @param dir Path to type of variogram direction
+         * @note Used with variogram export operations
+         * Works together with --dim for variogram configuration
+         * Available options: OMNI, DIR
+         * @example --dir DIR --dim 3D
+         */
+
         ValueArg<std::string> varioDirection("", "dir", "type of variogram direction", false, "OMNI", &allowedValsVD, cmd);
 
         // Define variogram dimension options
         std::vector<std::string> allowedVarioDim = {"3D", "3Dxy", "3Dz", "2D", "1Dz", "1D"};
         ValuesConstraint<std::string> allowedValsVDm(allowedVarioDim);
+        /**
+         * @brief type of variogram dimension
+         * @param dim type of variogram dimension
+         * @note Used with variogram export operations
+         * Works together with --dir for variogram configuration
+         * Available options: 3D, 3Dxy, 3Dz, 2D, 1Dz, 1D
+         * @example --dir OMNI --dim 2D
+         */
+
         ValueArg<std::string> varioDimension("", "dim", "type of variogram dimension", false, "3D", &allowedValsVDm, cmd);
 
         // Define number of simulations option
+        /**
+         * @brief Number of simulations to export
+         * @param nsim Number of number of simulations to export
+         * @note Used for exporting multiple simulation results
+         * Requires simulation data to be available in project
+         */
+
         ValueArg<int> numSim("N", "nsim", "Number of simulations to export", false, 0, "int", cmd);
 
         // Define append existing table
+        /**
+
+         * @brief Append existing table (csv)
+
+         * @param append_csv_table append existing table (csv)
+
+         */
+
         ValueArg<std::string> appendTable("", "append_csv_table", "Append existing table (csv)", false, "append_table", "path", cmd);
+        /**
+
+         * @brief Separator for append table
+
+         * @param append_sep separator for append table
+
+         */
+
         ValueArg<std::string> appendSep("", "append_sep", "Separator for append table", false, ";", "string", cmd);
         // Define append existing gpkg table
+        /**
+         * @brief Append existing table (gpkg)
+         * @param append_gpkg append existing table (gpkg)
+         * @note Requires existing geopackage file at specified path
+         * Use with --geopkg output format
+         */
+
         ValueArg<std::string> appendGpkg("", "append_gpkg", "Append existing table (gpkg)", false, "append_table", "path", cmd);
 
         // Define export options
@@ -159,6 +262,16 @@ int main(int argc, char **argv)
 
         // Build a list of suffixes for compute output filenames
         std::vector<std::string> suffix = {"_mean", "_median", "_Q1", "_Q3", "_QCD" ,"_stdev", "_mean_m_stdev", "_mean_p_stdev"};
+        if(analysis.getValue().compare("INDICATOR") == 0)
+        {
+            suffix.clear();
+            std::vector<std::string> suffix_tmp = {"_best"};
+            suffix = suffix_tmp;
+        }
+        else
+        {
+            compute_folder += "_varspace";
+        }
 
         // Inizializza la struttura dati per le colonne
         std::vector<ColumnInfo> table_data;
@@ -174,7 +287,8 @@ int main(int argc, char **argv)
         // Read data from compute files
         for (const std::string &s : suffix)
         {
-            std::string compute_file = compute_folder + "/_varspace/_stats/" + variable.getValue() + s + ".csv";
+            //std::string compute_file = compute_folder + "/_varspace/_stats/" + variable.getValue() + s + ".csv";
+            std::string compute_file = compute_folder + "/_stats/" + variable.getValue() + s + ".csv";
             std::cout << "Working on file:\t" << compute_file << std::endl;
             std::ifstream file(compute_file);
             if (!file)
@@ -196,13 +310,24 @@ int main(int argc, char **argv)
         // If number of simulations is greater than 0, read simulation data
         if (numSim.getValue() > 0)
         {
+            if(analysis.getValue().compare("INDICATOR") == 0)
+                compute_folder += "/pdf_";
+            else
+                compute_folder += "/";
+
             for (int i = 0; i < numSim.getValue(); i++)
             {
                 std::stringstream ss;
-                ss << setw(4) << setfill('0') << i;
+                if(analysis.getValue().compare("INDICATOR") == 0)
+                    ss << i+1;
+                else
+                    ss << setw(4) << setfill('0') << i;
+
                 string number_str = ss.str();
 
-                std::string compute_file = compute_folder + "/_varspace/" + variable.getValue() + "_" + number_str + ".csv";
+
+                //std::string compute_file = compute_folder + "/_varspace/" + variable.getValue() + "_" + number_str + ".csv";
+                std::string compute_file = compute_folder + variable.getValue() + "_" + number_str + ".csv";
                 std::cout << "Working on file: " << compute_file << std::endl;
                 std::ifstream file(compute_file);
                 if (!file)
@@ -607,8 +732,8 @@ int main(int argc, char **argv)
                             points.push_back(p);
                         }
 
-                        OGRFeature *poFeature;
-                        poFeature = OGRFeature::CreateFeature(poLayer->GetLayerDefn());
+                        OGRFeature *poFeature = OGRFeature::FromHandle(
+                            OGR_F_Create(reinterpret_cast<OGRFeatureDefnH>(poLayer->GetLayerDefn())));
 
                         OGRPolygon polygon;
                         OGRLinearRing ring;

@@ -26,6 +26,8 @@
 
 #include <tclap/CmdLine.h>
 
+#include "muselib/geometry/volume_mesh.h"
+
 using namespace TCLAP;
 
 int sign(const double x)
@@ -48,20 +50,112 @@ int main(int argc, char **argv)
         CmdLine cmd("MUSE = Modelling of Uncertainty as a Support of Environment; Export tool", ' ', "version 0.5");
 
         // Define main functionalities options
+        /**
+
+         * @brief Geometry model
+
+         * @param geom geometry model
+
+         */
+
         ValueArg<std::string> geomModel("m", "geom", "Geometry model", true, "name_geometry", "string", cmd);
+        /**
+
+         * @brief Label
+
+         * @param label label
+
+         */
+
         ValueArg<int> label_keep("l", "label", "Label", true, 0, "int", cmd);
+        /**
+
+         * @brief Sis simulation
+
+         * @param sis sis simulation
+
+         */
+
         ValueArg<std::string> sisCSV("s", "sis", "Sis simulation", false, "name_sis", "string", cmd);
 
+        /**
+
+
+         * @brief Raster number of rows
+
+
+         * @param nrows Number of raster number of rows
+
+
+         */
+
+
         ValueArg<int> nrows("r", "nrows", "Raster number of rows", true, 0, "int", cmd);
+        /**
+
+         * @brief Raster number of cols
+
+         * @param ncols Number of raster number of cols
+
+         */
+
         ValueArg<int> ncols("c", "ncols", "Raster number of cols", true, 0, "int", cmd);
 
+        /**
+
+
+         * @brief Raster min x
+
+
+         * @param min_x raster min x
+
+
+         */
+
+
         ValueArg<double> minx("x", "min_x", "Raster min x", true, 0.0, "double", cmd);
+        /**
+
+         * @brief Raster min y
+
+         * @param min_y raster min y
+
+         */
+
         ValueArg<double> miny("y", "min_y", "Raster min y", true, 0.0, "double", cmd);
+        /**
+
+         * @brief Raster max x
+
+         * @param max_x raster max x
+
+         */
+
         ValueArg<double> maxx("X", "max_x", "Raster max x", true, 0.0, "double", cmd);
+        /**
+
+         * @brief Raster max y
+
+         * @param max_y raster max y
+
+         */
+
         ValueArg<double> maxy("Y", "max_y", "Raster max y", true, 0.0, "double", cmd);
 
         SwitchArg cl_bot("", "clean_from_bot", "Clean from bottom", cmd);
         SwitchArg cl_top("", "clean_from_top", "Clean from top", cmd);
+
+        /**
+
+
+         * @brief Output file
+
+
+         * @param out Path to output file
+
+
+         */
+
 
         ValueArg<std::string> output("o", "out", "Output file", true, "output_file", "path", cmd);
 
@@ -86,7 +180,8 @@ int main(int argc, char **argv)
         ////
 
         std::cout << "Reading mesh ..." << std::endl;
-        cinolib::Polyhedralmesh<> m_total(s.c_str());
+        MUSE::VolumeMesh<> m_total;
+        m_total.load(s.c_str());
 
         std::cout << std::endl << "Reading SIS results ..." << std::endl<< std::endl;
         std::ifstream csv_file;
@@ -106,7 +201,7 @@ int main(int argc, char **argv)
         // extract submesh aving only polys with label = input label
 
         std::cout << "Creating submesh with label " << label << " ..." << std::endl;
-        cinolib::Polyhedralmesh<> m;
+        MUSE::VolumeMesh<> m;
         std::unordered_map<uint,uint>      m2subm_vmap;
         std::unordered_map<uint,uint>      subm2m_vmap;
 

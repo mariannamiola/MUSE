@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse_geometry - MUSE Documentation</title>
+    <style>
+        :root {
+            /* Light theme variables */
+            --bg-primary: #fafafa;
+            --bg-secondary: white;
+            --bg-tertiary: #f8f9fa;
+            --bg-quaternary: #f1f3f4;
+            --text-primary: #333;
+            --text-secondary: #555;
+            --text-tertiary: #666;
+            --border-color: #e1e4e8;
+            --border-light: #eee;
+            --shadow-color: rgba(0,0,0,0.1);
+            --shadow-light: rgba(0,0,0,0.05);
+            --code-bg: #f1f3f4;
+            --pre-bg: #f8f8f8;
+            --link-color: #0366d6;
+            --accent-color: #3498db;
+            --success-color: #28a745;
+            --danger-color: #d73a49;
+            --gradient-start: #f8f9fa;
+            --gradient-end: #e9ecef;
+        }
+        
+        [data-theme="dark"] {
+            /* Dark theme variables */
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --bg-quaternary: #30363d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #c9d1d9;
+            --text-tertiary: #8b949e;
+            --border-color: #30363d;
+            --border-light: #21262d;
+            --shadow-color: rgba(0,0,0,0.3);
+            --shadow-light: rgba(0,0,0,0.2);
+            --code-bg: #161b22;
+            --pre-bg: #0d1117;
+            --link-color: #58a6ff;
+            --accent-color: #58a6ff;
+            --success-color: #3fb950;
+            --danger-color: #f85149;
+            --gradient-start: #21262d;
+            --gradient-end: #30363d;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--bg-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .container {
+            background: var(--bg-secondary);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .nav {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav a {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .theme-toggle:hover {
+            background: var(--bg-quaternary);
+        }
+        .contact-button {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        .contact-button:hover {
+            background: var(--bg-quaternary);
+            transform: translateY(-1px);
+        }
+        .github-button {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        .github-button:hover {
+            background: var(--bg-quaternary);
+            transform: translateY(-1px);
+        }
+        .nav-buttons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }        h1 {
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: var(--text-primary);
+            margin-top: 30px;
+        }
+        h3, h4 {
+            color: var(--text-secondary);
+        }
+        h4 {
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            border-left: 4px solid var(--link-color);
+            padding: 12px 16px;
+            margin: 30px 0 20px 0;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 2px 4px var(--shadow-light);
+            border-top: 1px solid var(--border-color);
+        }
+        h4 code {
+            background: transparent;
+            color: var(--link-color);
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .flag-separator {
+            height: 2px;
+            background: linear-gradient(90deg, var(--link-color) 0%, var(--accent-color) 50%, transparent 100%);
+            margin: 25px 0;
+            border-radius: 1px;
+        }
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+            color: var(--text-primary);
+        }
+        pre {
+            background: var(--pre-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .dependencies a {
+            color: var(--link-color);
+            font-weight: 500;
+            background: var(--bg-tertiary);
+            padding: 2px 4px;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .dependencies a:hover {
+            background: var(--bg-quaternary);
+            text-decoration: none;
+        }
+        .app-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .app-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+        }
+        .app-card h3 {
+            margin-top: 0;
+            color: var(--link-color);
+        }
+        hr {
+            border: none;
+            height: 1px;
+            background: var(--border-color);
+            margin: 30px 0;
+        }
+        .dependencies {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--link-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .dependencies strong {
+            color: var(--link-color);
+        }
+        .example {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--success-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .example strong {
+            color: var(--success-color);
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 0.9em;
+            border-top: 1px solid var(--border-light);
+            padding-top: 20px;
+        }
+    </style>
+    <script>
+        // Theme switching functionality
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+        
+        function updateThemeIcon(theme) {
+            const themeButton = document.getElementById('theme-toggle');
+            if (themeButton) {
+                themeButton.innerHTML = theme === 'light' ? 
+                    '🌙 Dark' : 
+                    '☀️ Light';
+            }
+        }
+        
+        // Initialize theme when DOM loads
+        document.addEventListener('DOMContentLoaded', initTheme);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <div><a href="index.html">← Back to Index</a></div>
+            <div class="nav-buttons">
+                <a href="https://github.com/mariannaMiola/MUSE" class="github-button" title="View on GitHub" target="_blank">
+                    🐈 GitHub
+                </a>
+                <a href="mailto:marianna.miola@cnr.it" class="contact-button" title="Contact support">
+                    ✉️ Contact
+                </a>
+                <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                    🌙 Dark
+                </button>
+            </div>
+        </div>
+        <h2>muse_geometry</h2>
+
+<p><strong>Description:</strong> MUSE = Modelling of Uncertainty as a Support of Environment; Geometry tool</p>
+
+<h3>Usage</h3>
+
+<pre><code class="bash">muse_geometry [OPTIONS]
+</code></pre>
+
+<h3>Options</h3>
+
+<div class="flag-separator"></div>
+
+<h4 id="geometry"><code>-N</code>, <code>--geometry</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Creation of new geometry</p>
+
+<p>Flag to creation of new geometry</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> When creating new geometry, requires:
+<ul>
+  <li>Input data source (choose one):</li>
+  <li>-V/<a href="#vector">--vector</a>: Load vector file (.shp, .gpkg)</li>
+  <li>-R/<a href="#raster">--raster</a>: Load raster file (.ASCII)</li>
+  <li>-P/<a href="#pcl">--pcl</a>: Load point cloud (.xyz, .dat, .txt)</li>
+  <li>Processing method (choose one):</li>
+  <li><a href="#tri">--tri</a>: Triangulation for 2D meshing</li>
+  <li><a href="#grid">--grid</a>: Grid for 2D meshing</li>
+</ul>
+OPTIONAL:
+<ul>
+  <li><a href="#pdir">--pdir</a>: Project directory</li>
+  <li><a href="#setEPSG">--setEPSG</a>: Set coordinate system</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -N --vector --tri --pdir /path/to/project</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Project directory</p>
+
+<p>Path to project directory</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="setEPSG"><code>--setEPSG</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set project EPSG</p>
+
+<p>project epsg</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="vector"><code>-V</code>, <code>--vector</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Load Vector file</p>
+
+<p>Enable load vector file</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -R/<a href="#raster">--raster</a> and -P/<a href="#pcl">--pcl</a>
+Used with -N/<a href="#geometry">--geometry</a> for geometry creation
+Supports: .shp, .gpkg formats
+OPTIONAL modifiers:
+<ul>
+  <li><a href="#save">--save</a>: Save data content</li>
+  <li><a href="#attribute">--attribute</a>: Save attribute table</div></li>
+</ul>
+
+<div class="flag-separator"></div>
+
+<h4 id="save"><code>--save</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Saving data content of geospatial files</p>
+
+<p>Enable saving data content of geospatial files</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="attribute"><code>--attribute</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Save attribute table from geospatial file</p>
+
+<p>Enable save attribute table from geospatial file</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="raster"><code>-R</code>, <code>--raster</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Load Raster file</p>
+
+<p>Enable load raster file</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -V/<a href="#vector">--vector</a> and -P/<a href="#pcl">--pcl</a>
+Used with -N/<a href="#geometry">--geometry</a> for geometry creation
+Supports: .ASCII format</div>
+
+<div class="flag-separator"></div>
+
+<h4 id="pcl"><code>-P</code>, <code>--pcl</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Load point cloud</p>
+
+<p>Enable load point cloud</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -V/<a href="#vector">--vector</a> and -R/<a href="#raster">--raster</a>
+Used with -N/<a href="#geometry">--geometry</a> for geometry creation
+Supports: .xyz, .dat, .txt formats
+Can be used with:
+<ul>
+  <li><a href="#points">--points</a>: Specify points geometry file</li>
+  <li><a href="#polygon">--polygon</a>: Specify polygon geometry file</div></li>
+</ul>
+
+<div class="flag-separator"></div>
+
+<h4 id="points"><code>--points</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Load filename as POINTS geometry type</p>
+
+<p>Path to load filename as points geometry type</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="polygon"><code>--polygon</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Load filename as POLYGON geometry type</p>
+
+<p>Path to load filename as polygon geometry type</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="gridata"><code>-G</code>, <code>--gridata</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Grid data - test</p>
+
+<p>Enable grid data - test</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="rotaxis"><code>--rotaxis</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set rotation axis</p>
+
+<p>rotation axis</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using rotation, these flags work together:
+<ul>
+  <li><a href="#rotaxis">--rotaxis</a>: Rotation axis (X, Y, Z)</li>
+  <li><a href="#rotangle">--rotangle</a>: Rotation angle (required if rotaxis != NO)</li>
+  <li><a href="#rotcx">--rotcx</a>, <a href="#rotcy">--rotcy</a>, <a href="#rotcz">--rotcz</a>: Rotation center coordinates</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="rotangle"><code>--rotangle</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set clockwise rotation angle (in degree)</p>
+
+<p>clockwise rotation angle (in degree)</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO</div>
+
+<div class="flag-separator"></div>
+
+<h4 id="rotcx"><code>--rotcx</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set coordinte X of rotation center</p>
+
+<p>coordinte x of rotation center</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="rotcy"><code>--rotcy</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set coordinte Y of rotation center</p>
+
+<p>coordinte y of rotation center</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="rotcz"><code>--rotcz</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set coordinte Z of rotation center</p>
+
+<p>coordinte z of rotation center</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="tri"><code>--tri</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set triangulation for 2D meshing</p>
+
+<p>Enable set triangulation for 2d meshing</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with <a href="#grid">--grid</a> meshing method
+Used with -N/<a href="#geometry">--geometry</a> for mesh creation
+Triangulation configuration (choose one):
+<ul>
+  <li><a href="#convex">--convex</a>: Convex hull triangulation (mutually exclusive with <a href="#concave">--concave</a>)</li>
+  <li><a href="#concave">--concave</a>: Concave hull triangulation (mutually exclusive with <a href="#convex">--convex</a>)</li>
+</ul>
+OPTIONAL:
+<ul>
+  <li><a href="#boundary">--boundary</a>: External boundary file</li>
+  <li><a href="#opt">--opt</a>: Optimization flags</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>--tri --convex OR --tri --concave --boundary /path/to/boundary.shp</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="convex"><code>--convex</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set convex hull for points triangulation</p>
+
+<p>Enable set convex hull for points triangulation</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#tri">--tri</a> flag. Mutually exclusive with <a href="#concave">--concave</a></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="concave"><code>--concave</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set concave hull for points triangulation</p>
+
+<p>Enable set concave hull for points triangulation</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#tri">--tri</a> flag. Mutually exclusive with <a href="#convex">--convex</a></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="boundary"><code>--boundary</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set external boundary for points triangulation</p>
+
+<p>external boundary for points triangulation</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="opt"><code>--opt</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set optimization flags</p>
+
+<p>optimization flags</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="grid"><code>--grid</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set grid for 2D meshing</p>
+
+<p>Enable set grid for 2d meshing</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with <a href="#tri">--tri</a> triangulation method
+Used with -N/<a href="#geometry">--geometry</a> for mesh creation
+Grid configuration requires:
+<ul>
+  <li><a href="#resx">--resx</a>: X resolution (mandatory)</li>
+  <li><a href="#resy">--resy</a>: Y resolution (mandatory)</li>
+</ul>
+OPTIONAL:
+<ul>
+  <li><a href="#resz">--resz</a>: Z resolution (for 3D grids)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>--grid --resx 10.0 --resy 10.0</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="resx"><code>--resx</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set x resolution</p>
+
+<p>x resolution</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#grid">--grid</a> flag. Required for grid meshing
+Must be used together with <a href="#resy">--resy</a></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="resy"><code>--resy</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set y resolution</p>
+
+<p>y resolution</p>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#grid">--grid</a> flag. Required for grid meshing
+Must be used together with <a href="#resx">--resx</a></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="resz"><code>--resz</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set z resolution</p>
+
+<p>z resolution</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="poly"><code>--poly</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set generic polygon mesh for 2D meshing</p>
+
+<p>Enable set generic polygon mesh for 2d meshing</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="subset"><code>--subset</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set (random) subset of points</p>
+
+<p>(random) subset of points</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="meth"><code>--meth</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set method for z values</p>
+
+<p>method for z values</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="setz"><code>--setz</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set const z values for new points</p>
+
+<p>const z values for new points</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="offset"><code>-O</code>, <code>--offset</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Load polygon mesh and apply offset</p>
+
+<p>Enable load polygon mesh and apply offset</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="delta"><code>--delta</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set DELTA offset</p>
+
+<p>Enable set delta offset</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="abs"><code>--abs</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set ABSOLUTE ELEVATION offset</p>
+
+<p>Enable set absolute elevation offset</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="zoffset"><code>-z</code>, <code>--zoffset</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set offset in Z direction</p>
+
+<p>offset in z direction</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="append"><code>-A</code>, <code>--append</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Append meshes</p>
+
+<p>Enable append meshes</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="triobj"><code>-T</code>, <code>--triobj</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Load trimeshes and create an object closed by surface meshes</p>
+
+<p>Flag to load trimeshes and create an object closed by surface meshes</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="quadobj"><code>-Q</code>, <code>--quadobj</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Load quadmeshes and create an object closed by surface meshes</p>
+
+<p>Flag to load quadmeshes and create an object closed by surface meshes</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="clean"><code>--clean</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Clean quadrilateral mesh from isolated polys</p>
+
+<p>Enable clean quadrilateral mesh from isolated polys</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="volmesh"><code>-M</code>, <code>--volmesh</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Load polygonal mesh and create polyedral mesh</p>
+
+<p>Flag to load polygonal mesh and create polyedral mesh</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="tet"><code>--tet</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set tetrahedralization</p>
+
+<p>Enable set tetrahedralization</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="vox"><code>--vox</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set voxel as polyedralmesh</p>
+
+<p>Enable set voxel as polyedralmesh</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="hex"><code>--hex</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set hexmesh as polyedral</p>
+
+<p>Enable set hexmesh as polyedral</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="nmaxvox"><code>--nmaxvox</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set n max voxel per side</p>
+
+<p>Number of set n max voxel per side</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="trimesh"><code>-L</code>, <code>--trimesh</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Load trimesh file</p>
+
+<p>Enable load trimesh file</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="splmet"><code>--splmet</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set polys split method</p>
+
+<p>polys split method</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="remesh"><code>--remesh</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set remeshing</p>
+
+<p>Enable set remeshing</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="mark"><code>--mark</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set marked boundary edges for remeshing</p>
+
+<p>Enable set marked boundary edges for remeshing</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="collapse"><code>--collapse</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set collapse on edge to simplify mesh boundary</p>
+
+<p>Enable set collapse on edge to simplify mesh boundary</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="extractbp"><code>--extractbp</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set extract boundary points</p>
+
+<p>Enable set extract boundary points</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="it"><code>--it</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set number of iterations</p>
+
+<p>Number of set number of iterations</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="scale"><code>--scale</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set scale mesh</p>
+
+<p>Enable set scale mesh</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="sx"><code>--sx</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set scale factor in X direction</p>
+
+<p>scale factor in x direction</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="sy"><code>--sy</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set scale factor in Y direction</p>
+
+<p>scale factor in y direction</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="sz"><code>--sz</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set scale factor in Z direction</p>
+
+<p>scale factor in z direction</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="tetmesh"><code>-Z</code>, <code>--tetmesh</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Load tetmesh file</p>
+
+<p>Enable load tetmesh file</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="surf"><code>--surf</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Extract surface from volume</p>
+
+<p>Enable extract surface from volume</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="obj"><code>--obj</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Saving mesh in obj format</p>
+
+<p>Enable saving mesh in obj format</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="vtk"><code>--vtk</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Saving mesh in vtk format</p>
+
+<p>Enable saving mesh in vtk format</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="merge"><code>-U</code>, <code>--merge</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Merge two trimesh</p>
+
+<p>Enable merge two trimesh</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="proxthresh"><code>--proxthresh</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set proximaty threshold</p>
+
+<p>proximaty threshold</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="split"><code>-S</code>, <code>--split</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Split two trimesh</p>
+
+<p>Enable split two trimesh</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="cscalar"><code>-F</code>, <code>--cscalar</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Create scalar field from centroids configuration and real samples</p>
+
+<p>Flag to create scalar field from centroids configuration and real samples</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="smesh"><code>--smesh</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set samples mesh associated to (real) values</p>
+
+<p>samples mesh associated to (real) values</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="sval"><code>--sval</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set samples values associated to each vertex of samples mesh</p>
+
+<p>samples values associated to each vertex of samples mesh</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="rscalar"><code>--rscalar</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Restore scalar field from centroids configuration and real samples</p>
+
+<p>Enable restore scalar field from centroids configuration and real samples</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="res"><code>-D</code>, <code>--res</code></h4>
+<p><strong>Type:</strong> Switch (flag)</p>
+
+<p><strong>Description:</strong> Set multiresolution</p>
+
+<p>Enable set multiresolution</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="file"><code>-f</code>, <code>--file</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set scalar field file</p>
+
+<p>Path to set scalar field file</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="refmod"><code>--refmod</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Geometry model</p>
+
+<p>geometry model</p>
+
+<div class="flag-separator"></div>
+
+<h4 id="outf"><code>--outf</code></h4>
+<p><strong>Type:</strong> Value (flag)</p>
+
+<p><strong>Description:</strong> Set folder to save outputs</p>
+
+<p>Path to set folder to save outputs</p>
+
+<div class="flag-separator"></div>
+
+
+        <div class="footer">
+            <p>Generated from MUSE source code documentation</p>
+        </div>
+    </div>
+</body>
+</html>
