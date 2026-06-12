@@ -72,6 +72,7 @@ void biv_plot (const MUSE::PlotStruct &dataplot, const std::string &title, const
 matplot::figure_handle biv_plot_leg (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label, bool set_legend, std::string legend)
 {
     auto fig = matplot::figure(true);
+    fig->backend()->run_command("unset warnings");
     fig->size(800, 600);   // golden ratio
 
     auto p = matplot::scatter(dataplot.x, dataplot.y);
@@ -97,6 +98,7 @@ matplot::figure_handle biv_plot_leg (const MUSE::PlotStruct &dataplot, const std
 matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid_par, const MUSE::PlotStruct &range_points, const std::string &title)
 {
     auto fig = matplot::figure(true);
+    fig->backend()->run_command("unset warnings");
     fig->size(800, 700);
 
     // Shortcuts for the semi-axes and the principal directions of the fitted ellipsoid
@@ -214,6 +216,7 @@ void color_map (const MUSE::PlotStruct &dataplot, const std::string &title, cons
 void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, const std::string &title, const std::string &x_label, const std::string &y_label, const size_t &N)
 {
     auto fig = matplot::figure(true);
+    fig->backend()->run_command("unset warnings");
     fig->size(800, 600);   // golden ratio
 
     auto p1 = matplot::scatter(dataplot.x, dataplot.y);
@@ -303,6 +306,7 @@ void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, co
                     const std::string &y_label, const double &eps_y)
 {
     auto fig = matplot::figure(true);
+    fig->backend()->run_command("unset warnings");
     fig->size(900, 556);   // golden ratio
 
     // ── 1. CURVA MODELLO ─────────────────────────────────────────────────
