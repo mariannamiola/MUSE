@@ -68,11 +68,7 @@ variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, con
                     mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                 }
 
-                // FIX: normalizzazione per count
-                if(count > 0)
-                    mse /= count;
-                else
-                    continue;
+
 
                 if(mse < best_mse_range)
                 {
@@ -186,11 +182,7 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
 
-            // FIX: normalizzazione per count
-            if(count > 0)
-                mse /= count;
-            else
-                continue;
+
 
             if(mse < best_mse_range)
             {
@@ -289,11 +281,7 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
 
-            // FIX: normalizzazione per count
-            if(count > 0)
-                mse /= count;
-            else
-                continue;
+
 
             if(mse < best_mse_range)
             {
@@ -453,11 +441,8 @@ MUSE::VarioError fit_ind_variogram_1par_mse (const exp_variog &ev, const double 
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
 
-            // FIX: normalizzazione per count
-            if(count > 0)
-                mse /= count;
-            else
-                continue;
+
+
 
             if(mse < best_mse_range)
             {
@@ -553,11 +538,6 @@ MUSE::VarioError fit_ind_variogram_2par_mse (const exp_variog &ev, const double 
             mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
         }
 
-        // FIX: normalizzazione per count
-        if(count > 0)
-            mse /= count;
-        else
-            continue;
 
         if(mse < best_mse_range)
         {
