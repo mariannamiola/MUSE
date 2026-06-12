@@ -187,6 +187,17 @@ matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid
     matplot::zlabel("Z");
     matplot::grid(matplot::on);
 
+    // Equal scale on all axes: the largest semi-axis defines the cube half-side.
+    // Without this the ellipsoid appears distorted and anisotropy ratios are wrong.
+    double r_max = std::max({a, b, c});
+    for(const auto &v : {range_points.x, range_points.y, range_points.z})
+        for(double val : v)
+            r_max = std::max(r_max, std::abs(val));
+    r_max *= 1.05; // 5 % margin
+    matplot::xlim({-r_max, r_max});
+    matplot::ylim({-r_max, r_max});
+    matplot::zlim({-r_max, r_max});
+
     return fig;
 }
 
