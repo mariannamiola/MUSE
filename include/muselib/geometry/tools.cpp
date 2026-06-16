@@ -7,6 +7,8 @@
 #include <deque>
 #include <tuple>
 
+#include <cinolib/geometry/aabb.h>
+#include <cinolib/geometry/plane.h>
 
 bool check_index (const std::vector<int> &id_dupl, int index)
 {
@@ -274,82 +276,197 @@ std::vector<cinolib::vec3d> points_rotation (std::vector<cinolib::vec3d> &points
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
-// std::vector<std::vector<std::tuple<double, double>>> buffered_points(const std::vector<std::vector<std::tuple<double, double>>>& poly_list, double distance = 1000)
-// {
-//     std::vector<std::vector<std::tuple<double, double>>> buff_vertices_l;
-//     std::vector<std::vector<std::tuple<double, double>>> buff_vertices_t;
+///Check plane orientation
+///
+/// \brief align_points_to_xyplane
+/// \param points: points to be aligned on the x-y plane
+///
+void align_points_to_xyplane (std::vector<double> &points_x, std::vector<double> &points_y, std::vector<double> &points_z, MUSE::Rotation &dataRotation)
+{
+    std::cout << "=== Automatic rotation of points to X-Y plane ..." << std::endl;
 
-//     for (const auto& poly : poly_list)
-//     {
-//         size_t size_of_list = poly.size();
-//         std::deque<std::tuple<double, double>> poly_coord;
+    // ----------------------------------------------------------
+    // 1) Costruisci il vettore di punti cinolib dai dati reali
+    // ----------------------------------------------------------
 
-//         for (size_t index = 0; index < size_of_list; ++index)
-//         {
-//             auto current_vertex = poly[index];
-//             std::vector<std::tuple<double, double>> control_vertices =
-//             {
-//                 poly[(index - 1 + size_of_list) % size_of_list],
-//                 current_vertex,
-//                 poly[(index + 1) % size_of_list]
-//             };
-//         }
-//     }
-//     return buff_vertices_l; // Adjust return as needed
-// }
+    std::vector<cinolib::vec3d> pts;
+    pts.reserve(points_x.size());
+    for(size_t i = 0; i < points_x.size(); i++)
+        pts.push_back(cinolib::vec3d(points_x[i], points_y[i], points_z[i]));
+
+    cinolib::Plane plane(pts);
+    cinolib::vec3d normal = plane.n;
+
+    // Orienta la normale sempre verso l'alto (Z > 0) per coerenza
+    if(normal.z() < 0.0) normal = -normal;
+
+    std::cout << "=== Estimated plane normal (on real points): [" << normal.x() << ", " << normal.y() << ", " << normal.z() << "]" << std::endl;
+
+    std::cout << "=== Checking if plane normal is aligned with x-y plane normal ..." << std::endl;
+    std::cout << std::endl;
+
+    // ----------------------------------------------------------
+    // 2) Verifica l'angolo tra la normale stimata e Z
+    // ----------------------------------------------------------
+    cinolib::vec3d normal_xy (0.0, 0.0, 1.0);
+    double dot       = normal.dot(normal_xy);
+    dot              = std::min(1.0, std::max(-1.0, dot));   // clamp per acos
+    double angle_deg = std::acos(dot) * 180.0 / M_PI;
+
+    std::cout << "=== Angle between plane normal and Z-axis: "
+              << angle_deg << " degree" << std::endl;
+
+    // tol viene passato come distanza lineare (es. 1e-2):
+    // convertiamo in gradi con una soglia fissa di 1° come minimo sensato
+    double threshold_deg = 1.0;
+    std::cout << "=== Tolerance set to: " << threshold_deg << std::endl;
+
+    if(angle_deg < 1.0)
+    {
+        std::cout << "=== Plane is already aligned with XY-plane. No rotation needed."
+                  << std::endl;
+        dataRotation.autoalign = false;
+        dataRotation.rotation  = false;
+        return;
+    }
+
+    // ----------------------------------------------------------
+    // 3) Asse di rotazione = cross(normale_piano, Z)
+    //    FIX: caso degenere quando la normale è anti-parallela a Z
+    //    (angolo ≈ 180°): il cross product ha norma ≈ 0, quindi
+    //    l'asse sarebbe indefinito. Gestiamo esplicitamente.
+    // ----------------------------------------------------------
+    cinolib::vec3d rot_axis = normal.cross(normal_xy);
+    double ax_len = rot_axis.norm();
+
+    if(ax_len < 1e-10)
+    {
+        // Normale quasi parallela o anti-parallela a Z
+        // Se anti-parallela (angle ≈ 180°): ruota 180° attorno a X
+        rot_axis  = cinolib::vec3d(1.0, 0.0, 0.0);
+        angle_deg = 180.0;
+        std::cout << "=== Degenerate case: plane normal is anti-parallel to Z. "
+                  << "Rotating 180 deg around X-axis." << std::endl;
+    }
+    else
+    {
+        rot_axis /= ax_len;   // normalizza
+    }
+
+    // ----------------------------------------------------------
+    // 4) Centro di rotazione = centroide dei punti reali
+    //    FIX: la versione precedente calcolava il centro sull'AABB
+    //    dei vertici del bbox (già sbagliati), non sui punti.
+    // ----------------------------------------------------------
+    double cx = 0.0, cy = 0.0, cz = 0.0;
+    size_t n  = points_x.size();
+    for(size_t i = 0; i < n; i++)
+    {
+        cx += points_x[i];
+        cy += points_y[i];
+        cz += points_z[i];
+    }
+    cx /= n; cy /= n; cz /= n;
+
+    std::cout << "=== Rotation axis:   ["
+              << rot_axis.x() << ", " << rot_axis.y() << ", " << rot_axis.z() << "]"
+              << std::endl;
+    std::cout << "=== Rotation angle:  " << angle_deg << " degree" << std::endl;
+    std::cout << "=== Rotation center: [" << cx << ", " << cy << ", " << cz << "]"
+              << std::endl;
+
+    
+    // ----------------------------------------------------------
+    // 5) Applica la rotazione a tutti i punti tramite point_rotation
+    //    (già disponibile in muselib/geometry/tools.h, usa cinolib)
+    // ----------------------------------------------------------
+    cinolib::vec3d center(cx, cy, cz);
+    constexpr size_t MAX_PRINT = 5;
+
+    for(size_t i = 0; i < n; i++)
+    {
+        cinolib::vec3d p(points_x[i], points_y[i], points_z[i]);
+
+        if(i < MAX_PRINT)
+            std::cout << "   | p[" << i << "] original: ("
+                      << p.x() << ", " << p.y() << ", " << p.z() << ")" << std::endl;
+
+        cinolib::vec3d pr = point_rotation(p, rot_axis, angle_deg, center);
+        points_x[i] = pr.x();
+        points_y[i] = pr.y();
+        points_z[i] = pr.z();
+
+        if(i < MAX_PRINT)
+            std::cout << "   | p[" << i << "] rotated:  ("
+                      << pr.x() << ", " << pr.y() << ", " << pr.z() << ")" << std::endl;
+    }
+
+    // ----------------------------------------------------------
+    // 6) Verifica post-rotazione: varianza Z deve essere ≈ 0
+    // ----------------------------------------------------------
+    double mean_z = 0.0;
+    for(size_t i = 0; i < n; i++) mean_z += points_z[i];
+    mean_z /= n;
+    double var_z = 0.0;
+    for(size_t i = 0; i < n; i++)
+        var_z += (points_z[i] - mean_z) * (points_z[i] - mean_z);
+    var_z /= n;
+    std::cout << "=== Post-rotation Z variance: " << var_z
+              << "  (should be approx 0 if data lie on a flat plane)" << std::endl;
+
+    // ----------------------------------------------------------
+    // 7) Salva parametri di rotazione per la back-rotation
+    // ----------------------------------------------------------
+    dataRotation.autoalign   = true;
+    dataRotation.rotation    = true;
+
+    dataRotation.rotation_axis_vec   = { rot_axis.x(), rot_axis.y(), rot_axis.z() };
+    dataRotation.rotation_angle      = angle_deg;
+    dataRotation.rotation_center_x   = cx;
+    dataRotation.rotation_center_y   = cy;
+    dataRotation.rotation_center_z   = cz;
+
+    dataRotation.normal_vec_original = { normal.x(),    normal.y(),    normal.z()    };
+    dataRotation.normal_vec_rotated  = { normal_xy.x(), normal_xy.y(), normal_xy.z() };
+
+    std::cout << "=== Automatic rotation to XY-plane ... COMPLETED." << std::endl;
+}
 
 
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+// ============================================================
+// check_align_points_to_xyplane
+//
+// Ritorna true se i punti NON sono già sul piano XY
+// (e quindi la rotazione è necessaria).
+// Usa cinolib::Plane sui punti reali, coerente con align_.
+// ============================================================
+bool check_align_points_to_xyplane(
+        const std::vector<double>& points_x,
+        const std::vector<double>& points_y,
+        const std::vector<double>& points_z)
+{
+    if(points_x.size() < 3)
+    {
+        std::cout << "=== check_align: fewer than 3 points, assuming XY-plane." << std::endl;
+        return false;
+    }
 
+    std::vector<cinolib::vec3d> pts;
+    pts.reserve(points_x.size());
+    for(size_t i = 0; i < points_x.size(); i++)
+        pts.push_back(cinolib::vec3d(points_x[i], points_y[i], points_z[i]));
 
+    cinolib::Plane plane(pts);
+    cinolib::vec3d normal = plane.n;
+    if(normal.z() < 0.0) normal = -normal;
 
+    cinolib::vec3d normal_xy(0.0, 0.0, 1.0);
+    double dot       = std::min(1.0, std::max(-1.0, normal.dot(normal_xy)));
+    double angle_deg = std::acos(dot) * 180.0 / M_PI;
 
-
-
-
-
-// Remove duplicates for Point2D, considering a fixed tolerance t = 1e-06
-//std::vector<Point3D> remove_duplicates (std::vector<Point3D> &points, const double t)
-//{
-//    // Fill index
-//    for(size_t i=0; i<points.size(); i++)
-//        points.at(i).id = i;
-
-//    std::vector<Point3D> sorted_points = points;
-//    std::vector<Point3D> unique_points;
-//    std::vector<int> id_dupl;
-
-//    std::sort(sorted_points.begin(), sorted_points.end(), comparePoint);
-
-//    for(size_t i=1; i < sorted_points.size(); i++)
-//    {
-//        Point2D p0, p1;
-//        p0.x = sorted_points.at(i-1).x;
-//        p0.y = sorted_points.at(i-1).y;
-//        p1.x = sorted_points.at(i).x;
-//        p1.y = sorted_points.at(i).y;
-
-//        if (dist(p0, p1) <= t)
-//            id_dupl.push_back(sorted_points.at(i).id);
-//    }
-
-//    if(id_dupl.size() > 0)
-//    {
-//        std::sort(id_dupl.begin(), id_dupl.end());
-
-//        for(size_t i=0; i< points.size(); i++)
-//            if (!check_index(id_dupl, points.at(i).id))
-//                unique_points.push_back(points.at(i));
-//    }
-//    else
-//        unique_points = points;
-
-//    std::cout << "Removing duplicated points ... COMPLETED. " << unique_points.size() << " left" << std::endl;
-//    return unique_points;
-//}
-
-
-
+    // Ritorna true (rotazione necessaria) se l'angolo supera 1°
+    return (angle_deg > 1.0);
+}
 
 
 

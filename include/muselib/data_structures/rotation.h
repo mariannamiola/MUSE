@@ -13,8 +13,15 @@ class MUSE::Rotation
 {
     public:
 
+    std::vector<double> normal_vec_original = {0,0,0};
+    std::vector<double> normal_vec_rotated = {0,0,0};
+
+    bool        autoalign = false;
     bool        rotation = false;
-    std::string rotation_axis;
+
+    std::string rotation_axis = "";
+    std::vector<double> rotation_axis_vec = {0,0,0};
+    
     double      rotation_center_x = 0.0;
     double      rotation_center_y = 0.0;
     double      rotation_center_z = 0.0;
@@ -26,8 +33,10 @@ class MUSE::Rotation
     template <class Archive>
     void serialize( Archive & ar )
     {
+        ar (CEREAL_NVP(autoalign));
         ar (CEREAL_NVP(rotation));
         ar (CEREAL_NVP(rotation_axis));
+        ar (CEREAL_NVP(rotation_axis_vec));
         ar (CEREAL_NVP(rotation_center_x));
         ar (CEREAL_NVP(rotation_center_y));
         ar (CEREAL_NVP(rotation_center_z));
@@ -37,8 +46,10 @@ class MUSE::Rotation
     template <class Archive>
     void deserialize( Archive & ar )
     {
+        ar (CEREAL_NVP(autoalign));
         ar (CEREAL_NVP(rotation));
         ar (CEREAL_NVP(rotation_axis));
+        ar (CEREAL_NVP(rotation_axis_vec));
         ar (CEREAL_NVP(rotation_center_x));
         ar (CEREAL_NVP(rotation_center_y));
         ar (CEREAL_NVP(rotation_center_z));

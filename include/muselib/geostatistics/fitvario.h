@@ -100,6 +100,50 @@ namespace MUSE {
         #endif
     };
 
+    struct EllipseOriented3D
+    {
+        // Semi-assi (stessa unità dei dati)
+        double max_semiaxis = 0.0;   // range massimo
+        double min_semiaxis = 0.0;   // range minimo
+
+        // Direzione dell'asse massimo nel piano originale (gradi da Nord, CW)
+        double max_direction_deg = 0.0;
+        double min_direction_deg = 0.0;
+
+        // Vettore 3D dell'asse massimo nel sistema di riferimento originale
+        std::vector<double> max_axis_vec3d = {1,0,0};
+        std::vector<double> min_axis_vec3d = {0,1,0};
+
+        // Normale al piano originale (utile per chi consuma il risultato)
+        std::vector<double> plane_normal = {0,0,1};
+
+        bool valid = false;
+    };
+
+    // ---------------------------------------------------------------------------
+    // Result structure returned by backproject_ellipse_to_original_plane
+    // ---------------------------------------------------------------------------
+    struct BackprojectedEllipse
+    {
+        // Updated EllipseParameter: semiaxes unchanged, directions and phi_rad
+        // expressed in the original plane frame.
+        EllipseParameter ellipse;
+    
+        // Range points projected onto the local (e1, e2) axes of the original plane.
+        // x_proj[i] = dot( range_point_3d[i], e1 )
+        // y_proj[i] = dot( range_point_3d[i], e2 )
+        // Ready to be fed directly to biv_plot_leg / ellipse_plot.
+        std::vector<double> x_proj;
+        std::vector<double> y_proj;
+    
+        // The two orthonormal axes that span the original plane (world coordinates).
+        // Stored for debugging or downstream use.
+        std::vector<double> e1; // "North" direction in the original plane
+        std::vector<double> e2; // "East"  direction in the original plane
+        std::vector<double> plane_normal; // unit normal of the original plane
+    };
+
+
     // Parameters of the 3D anisotropy ellipsoid fitted on directional variogram ranges.
     // The ellipsoid is centered at the origin (variogram ranges are symmetric by construction)
     // and is described by 3 semi-axes plus 3 rotation angles (azimuth, roll, pitch).

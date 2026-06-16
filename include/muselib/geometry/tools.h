@@ -6,6 +6,7 @@
 #include <cinolib/geometry/vec_mat.h>
 
 #include "muselib/data_structures/point.h"
+#include "muselib/data_structures/rotation.h"
 
 using namespace MUSE;
 
@@ -45,10 +46,11 @@ std::vector<cinolib::vec3d> points_rotation     (std::vector<cinolib::vec3d> &po
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+void align_points_to_xyplane                    (std::vector<double> &points_x, std::vector<double> &points_y, std::vector<double> &points_z, MUSE::Rotation &dataRotation);
+bool check_align_points_to_xyplane              (const std::vector<double>& points_x, const std::vector<double>& points_y, const std::vector<double>& points_z);
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-//std::vector<Point3D> create_grid_on_centers (const std::vector<Point3D> &points, const std::vector<Point3D> &boundary);
 
 
 
