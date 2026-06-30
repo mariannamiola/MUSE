@@ -69,8 +69,6 @@ chmod +x 00_installDeps.sh 00_buildDeps.sh 00_exe_creation.sh
 
 ## Documentation
 
-The complete set of options for the MUSE modules is available in the [MUSE manual](MUSE_Manual.pdf).
-
 The compilation process also generates the documentation for the available applications. After building MUSE, the generated documentation can be found in one of the following directories, depending on the selected output format:
 
 ```text
@@ -123,6 +121,14 @@ When a visualization script is provided, results can be visualized by running th
 If you use MUSE in academic work, please cite the following references.
 
 ```bibtex
+@phdthesis{MIOLA2025PHD,
+title = {{Increase the knowledge of Natural Systems through the evaluation of the uncertainty of environmental data: operational theory and application}},
+author = {Miola, Marianna},
+year = {2025},
+school = {Università degli Studi di Genova (UNIGE)},
+address = {Genova, Italy}
+}
+
 @inproceedings {10.2312:stag.20221265,
 booktitle = {Smart Tools and Applications in Graphics - Eurographics Italian Chapter Conference},
 editor = {Cabiddu, Daniela and Schneider, Teseo and Allegra, Dario and Catalano, Chiara Eva and Cherchi, Gianmarco and Scateni, Riccardo},
@@ -135,13 +141,6 @@ ISBN = {978-3-03868-191-5},
 DOI = {10.2312/stag.20221265}
 }
 
-@phdthesis{MIOLA2025PHD,
-title = {MUSE: Modeling Uncertainty as a Support for Environment},
-author = {Marianna Miola},
-year = {2025},
-school = {Università degli Studi di Genova (UNIGE)},
-address = {Genova, Italy}
-}
 ```
 
 ### Additional citations for specific components
@@ -170,8 +169,8 @@ If you use the metadata and workflow-persistence functionalities in MUSE, please
 
 ```bibtex
 @article{MIOLA2026106099,
-title = {EWoPe: A light Embeddable WOrkflow PErsistence tool for geoscientific pipeline reproducibility},
-journal = {Computers & Geosciences},
+title = {{EWoPe: A light Embeddable WOrkflow PErsistence tool for geoscientific pipeline reproducibility}},
+journal = {Computers \& Geosciences},
 volume = {209},
 pages = {106099},
 year = {2026},
