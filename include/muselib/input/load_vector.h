@@ -20,6 +20,7 @@ int getnPoints_shapefile_shp    (const std::string filename);
 int load_gpkg                   (const std::string filename, std::vector<std::vector<Point3D>> &boundary, std::vector<std::vector<Point3D>> &points, std::string &geometry_type);
 int export_gpkg_attributes_to_csv(const std::string filename, const string &csv_filename);
 
+int export_attributes_to_csv(const std::string filename, const std::string &csv_filename);
 
 
 
