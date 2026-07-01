@@ -7,6 +7,7 @@
 #include <cinolib/meshes/abstract_mesh.h>
 
 #include "muselib/colors.h"
+#include "muselib/geometry/tools.h"
 
 namespace MUSE
 {
@@ -279,24 +280,26 @@ void SurfaceMesh<M,V,E,P>::quads_split_on_edge()
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-// //Funzione per la rimozione dei vertici isolati
-// template<class M, class V, class E, class P>
-// void SurfaceMesh<M,V,E,P>::remove_isolate_vert()
-// {
-//     std::vector<uint> tbrem;
-//     for (uint vid=0; vid < this->num_verts(); vid++)
-//     {
-//         if (this->adj_v2v(vid).size() == 0)
-//             tbrem.push_back(vid);
-//     }
-//     if (tbrem.size() > 0)
-//     {
-//         std::reverse(tbrem.begin(), tbrem.end());
-//         for (uint vid : tbrem)
-//             this->vert_remove_unreferenced(vid);
-//     }
-//     std::cout << "Removing " << tbrem.size() << " Isolated Vertices ... COMPLETED" << std::endl;
-// }
+template<class M, class V, class E, class P>
+void SurfaceMesh<M,V,E,P>::rotate(const MUSE::Rotation &bound_Rotation, bool reverse)
+{
+    cinolib::vec3d rot_axis_vec (bound_Rotation.rotation_axis_vec.at(0), bound_Rotation.rotation_axis_vec.at(1), bound_Rotation.rotation_axis_vec.at(2));
+    cinolib::vec3d c (bound_Rotation.rotation_center_x, bound_Rotation.rotation_center_y, bound_Rotation.rotation_center_z);
+ 
+    double sign = 1.0;
+    if(reverse)
+        sign = -1.0;
+ 
+    for(size_t i=0; i< this->num_verts(); i++)
+    {
+        cinolib::vec3d sample (this->vert(i).x(), this->vert(i).y(), this->vert(i).z());
+        sample = point_rotation(sample, rot_axis_vec, sign * bound_Rotation.rotation_angle, c);
+ 
+        this->vert(i).x() = sample.x();
+        this->vert(i).y() = sample.y();
+        this->vert(i).z() = sample.z();
+    }
+}
 
 }
 

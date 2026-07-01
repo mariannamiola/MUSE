@@ -1,5 +1,6 @@
 #include "tools.h"
 
+#include <iostream>
 #include <float.h>
 #include <math.h>
 #include <vector>
@@ -9,6 +10,8 @@
 
 #include <cinolib/geometry/aabb.h>
 #include <cinolib/geometry/plane.h>
+
+#include "muselib/colors.h"
 
 bool check_index (const std::vector<int> &id_dupl, int index)
 {
@@ -471,13 +474,78 @@ bool check_align_points_to_xyplane(
 
 
 
+bool align_points_to_xyplane(
+    std::vector<Point3D> &points,
+    MUSE::Rotation &dataRotation
+)
+{
+    dataRotation = MUSE::Rotation();
+ 
+    if(points.size() < 3)
+    {
+        std::cerr << FRED("ERROR: at least 3 points are required to estimate a support plane.") << std::endl;
+        return false;
+    }
+ 
+    std::vector<double> x, y, z;
+    x.reserve(points.size());
+    y.reserve(points.size());
+    z.reserve(points.size());
+ 
+    for(const Point3D &p : points)
+    {
+        x.push_back(p.x);
+        y.push_back(p.y);
+        z.push_back(p.z);
+    }
+ 
+    align_points_to_xyplane(x, y, z, dataRotation);
+ 
+    for(size_t i = 0; i < points.size(); ++i)
+    {
+        points[i].x = x[i];
+        points[i].y = y[i];
+        points[i].z = z[i];
+    }
+ 
+    return dataRotation.rotation;
+}
 
 
-
-
-
-
-
+void apply_rotation_to_points(
+    std::vector<Point3D> &points,
+    const MUSE::Rotation &rotation,
+    const bool inverse
+)
+{
+    if(!rotation.rotation)
+        return;
+ 
+    cinolib::vec3d axis(
+        rotation.rotation_axis_vec[0],
+        rotation.rotation_axis_vec[1],
+        rotation.rotation_axis_vec[2]
+    );
+ 
+    cinolib::vec3d center(
+        rotation.rotation_center_x,
+        rotation.rotation_center_y,
+        rotation.rotation_center_z
+    );
+ 
+    const double angle = inverse ? -rotation.rotation_angle
+                                 :  rotation.rotation_angle;
+ 
+    for(Point3D &p : points)
+    {
+        cinolib::vec3d q(p.x, p.y, p.z);
+        q = point_rotation(q, axis, angle, center);
+ 
+        p.x = q.x();
+        p.y = q.y();
+        p.z = q.z();
+    }
+}
 
 
 

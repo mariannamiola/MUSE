@@ -1,3 +1,33 @@
+/********************************************************************************
+*  This file is part of MUSE                                                    *
+*  Copyright(C) 2025: Marianna Miola                                            *
+*                                                                               *
+*  Author:                                                                      *
+*                                                                               *
+*     Marianna Miola (marianna.miola@cnr.it)                                    *
+*                                                                               *
+*     Italian National Research Council (CNR)                                   *
+*     Institute for Applied Mathematics and Information Technologies (IMATI)    *
+*     Via de Marini, 6                                                          *
+*     16149 Genoa,                                                              *
+*     Italy                                                                     *
+*                                                                               *
+*  This program is free software: you can redistribute it and/or modify it      *
+*  under the terms of the GNU General Public License as published by the        *
+*  Free Software Foundation, either version 3 of the License, or (at your       *
+*  option) any later version.                                                   *
+*                                                                               *
+*  This program is distributed in the hope that it will be useful, but          *
+*  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY   *
+*  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for  *
+*  more details.                                                                *
+*                                                                               *
+*  You should have received a copy of the GNU General Public License along      *
+*  with this program. If not, see <https://www.gnu.org/licenses/>.              *
+*                                                                               *
+*********************************************************************************/
+
+
 #include <iostream>
 #include <algorithm>
 #include <filesystem>
@@ -551,32 +581,23 @@ int main(int argc, char** argv)
     SwitchArg loadSurface               ("L", "trimesh", "Load trimesh file", cmd, false); //booleano
 
     /**
-
      * @brief Set polys split method
-
      * @param splmet polys split method
-
      */
-
     ValueArg<std::string> splitMethod   ("", "splmet", "Set polys split method", false, "CENTROID", "string", cmd);
+    
     /**
-
      * @brief Set remeshing
-
      * @param remesh Enable set remeshing
-
      */
-
     SwitchArg setRemeshing              ("", "remesh", "Set remeshing", cmd, false); //booleano
+    
     /**
-
      * @brief Set marked boundary edges for remeshing
-
      * @param mark Enable set marked boundary edges for remeshing
-
      */
-
     SwitchArg setMarkedEdge             ("", "mark", "Set marked boundary edges for remeshing", cmd, false); //booleano
+    
     /**
 
      * @brief Set collapse on edge to simplify mesh boundary
@@ -676,6 +697,20 @@ int main(int argc, char** argv)
      * @example muse_geometry -M -p .. --vtk
      */
     SwitchArg vtkConversion             ("", "vtk", "Saving volume mesh in vtk format (default: .mesh)", cmd, false); //booleano
+
+
+    // Format conversion for saving text file (default: .dat)
+    /**
+     * @brief
+     * 
+     */
+    SwitchArg xyzFormat                 ("", "xyz", "Saving text file in xyz format", cmd, false); //booleano
+
+    /**
+     * @brief
+     * 
+     */
+    SwitchArg csvFormat                 ("", "csv", "Saving text file in csv format", cmd, false); //booleano
 
 
 
@@ -854,6 +889,13 @@ int main(int argc, char** argv)
     if(vtkConversion.isSet() == true)
         ext_vol = ".vtk";
 
+    // 0) Define file extension - text file
+    std::string ext_txt = ".dat";
+    if(xyzFormat.isSet() == true)
+        ext_txt = ".xyz";
+    else if(csvFormat.isSet())
+        ext_txt = ".csv";
+
 
     // ---------------------------------------------------------------------------------------------------------
     // STARTS:
@@ -873,8 +915,7 @@ int main(int argc, char** argv)
         std::cout << "\033[0;32mCreation new geometry_out: " << out_geometry << " ... COMPLETED.\033[0m" << std::endl;
     }
 
-
-    //NUOVA IMPLEMENETAZIONE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //Load vector file
     if(loadVector.isSet())
     {
         if(!filesystem::exists(out_surf))
@@ -899,141 +940,86 @@ int main(int argc, char** argv)
             exit(1);
         }
 
-        //ROTAZIONE FISSATA
-        if(setRotAxis.isSet())
-        {
-            MUSE::Rotation dataRotation;
-
-            dataRotation.rotation = true;
-            dataRotation.rotation_axis = setRotAxis.getValue();
-            dataRotation.rotation_center_x = setRotCenterX.getValue();
-            dataRotation.rotation_center_y = setRotCenterY.getValue();
-            dataRotation.rotation_center_z = setRotCenterZ.getValue();
-            dataRotation.rotation_angle = setRotAngle.getValue();
-            geometa.setDataRotation(dataRotation);
-
-            std::cout << "Rotation is activate on data ... " << dataRotation.rotation << std::endl;
-            std::cout << "Rotation axis: " << dataRotation.rotation_axis << std::endl;
-            std::cout << "Rotation center: [" << dataRotation.rotation_center_x << "; " << dataRotation.rotation_center_y << "; " << dataRotation.rotation_center_z << "]" <<  std::endl;
-            std::cout << "Rotation angle (degree): " << dataRotation.rotation_angle << std::endl;
-            std::cout << std::endl;
-        }
-
-
         // 2. Extraction directories from in_geometry
         std::vector<std::string> dirs = get_directories(in_geometry);
 
-        std::vector<std::vector<Point3D>> boundaries, datasets;
-        std::string GDALtype;
-
         std::vector<std::string> file_list;
 
-        if(dirs.size() > 0) //ci sono delle cartelle
+        if(!dirs.empty()) //ci sono delle cartelle
         {
-            for(size_t i=0; i<dirs.size(); i++)
+            //for(size_t i=0; i<dirs.size(); i++)
+            for(const auto& dir : dirs)
             {
-                file_list = get_vectorfiles(dirs.at(i));
+                auto file_list = get_vectorfiles(dir);
 
-                if(file_list.size() == 0)
+                if(file_list.empty())
                     continue; //vado alla dir_shape.at(i+1)
-                else
+                
+                for(const auto& file : file_list)
                 {
-                    for(size_t j=0; j < file_list.size(); j++)
+                    std::vector<std::vector<Point3D>> boundaries, datasets;
+                    std::string GDALtype;
+
+                    //read shape
+                    std::cout << "Loading shapefile: " << file << std::endl;
+
+                    printSpatialReferenceInfo(file, Project.authority);
+                    int loadvecfile = load_vectorfile(file, boundaries, datasets, GDALtype);
+                    if (loadvecfile != IOSUCCESS)
                     {
-                        //read shape
-                        std::cout << "Loading shapefile: " << file_list.at(j) << std::endl;
+                        std::cerr << "\033[0;31mERROR loading vector file: " << file << "\033[0m" << std::endl;
+                        exit(1);
+                    }
 
-                        int loadvecfile = load_vectorfile(file_list.at(j), boundaries, datasets, GDALtype);
-                        if (loadvecfile != IOSUCCESS)
+
+                    if(setSaveAttributesTable.isSet())
+                    {
+                        auto csv_path = out_surf + "/" + get_basename(get_filename(file)) + ext_txt;
+                        if(export_attributes_to_csv(file, csv_path) == IOSUCCESS)
+                            Geometry.setAttributeTable(get_basename(get_filename(file)) + ext_txt);
+                    }
+
+                    if(setSave.isSet())
+                    {
+                        const std::string basename = get_basename(get_filename(file));
+                        const std::string ext = get_extensionND(get_filename(file));
+
+                        if(!boundaries.empty())
                         {
-                            std::cerr << "\033[0;31mERROR loading vector file: " << file_list.at(j) << "\033[0m" << std::endl;
-                            exit(1);
+                            for(uint id=0; id<boundaries.size(); id++)
+                                export3d_xyz(out_surf + "/" + basename + "_" + std::to_string(id) + "@" + ext + ext_txt, boundaries[id]);
+                            std::cout << "=== Export boundary points from geospatial file: " << file << std::endl;
                         }
-                        if(setSaveAttributesTable.isSet())
+                        if(!datasets.empty())
                         {
-                            std::cout << "### Save Attribute Table ... TO COMPLETE!" << std::endl;
-                            exit(1);
-                            //int export_attribute = export_gpkg_attributes_to_csv(file_list.at(i), out_surf + "/" + get_basename(get_filename(file_list.at(i))) + ".csv");
-                            // if (export_attribute != IOSUCCESS)
-                            // {
-                            //     std::cerr << "\033[0;31mERROR export attribute table in: " << file_list.at(i) << "\033[0m" << std::endl;
-                            //     exit(1);
-                            // }
-                        }
-
-                        if(setSave.isSet() && boundaries.size()>0)
-                        {
-                            for(uint id=0;id<boundaries.size(); id++)
-                                export3d_xyz(out_surf + "/"+ get_basename(get_filename(file_list.at(j)))+ "_" + to_string(id) + "@" + get_extensionND(get_filename(file_list.at(j))) + ".dat", boundaries.at(id));
-                            std::cout << "Export content (boundaries) of geospatial file: " << file_list.at(j) << std::endl;
-                        }
-
-                        if(setSave.isSet() && datasets.size()>0)
-                        {
-                            for(uint id=0;id<datasets.size(); id++)
-                                export3d_xyz(out_surf + "/"+ get_basename(get_filename(file_list.at(j))) + "_" + to_string(id) + "@" + get_extensionND(get_filename(file_list.at(j))) + ".dat", datasets.at(id));
-                            std::cout << "Export content (data) of geospatial file: " << file_list.at(j)  << std::endl;
-                        }
-
-                        if(!triFlag.isSet() && !gridFlag.isSet() && !polygonFlag.isSet())
-                        {
-                            std::cout << "### Meshing algorithms are not selected!" << std::endl;
-                            exit(0);
-                        }
-
-                        Geometry.setFormat(get_extension(file_list.at(j)));
-
-                        depsgeom.push_back(filesystem::relative(file_list.at(j), Project.folder));
-                        geometa.setDependencies(depsgeom);
-
-
-                        // Coordinate system transformation
-                        if(setEPSG.isSet())
-                        {
-                            //leggi dal metadata di progetto epgs sorgente (geometria che leggo) e dal metadata di progetto
-                            // controlla se sono diversi
-                            // se si -> trasformazione al epsg di progetto (target)
-
-                            //possibilità di specificare da riga di comando l'epsg di tutte le superfici (ipotesi: che siano tutte nello stesso epsg)
-                            // TO DO: estendere a diversi epsg mediante ad esempio l'inserimento di un txt/csv dove per ogni file, specifico l'epsg
-
-                            if(setEPSG.getValue() != Project.authority)
-                            {
-                                if(boundaries.size() > 0)
-                                {
-                                    for(size_t i =0; i< boundaries.size(); i++)
-                                        for(size_t j=0; j< boundaries.at(i).size(); i++)
-                                        {
-                                            std::cout << "COODINATE TRANSFORMATION ... TO ENABLE" << std::endl;
-                                            coordinate_transformation(boundaries.at(i).at(j).x, boundaries.at(i).at(j).y, boundaries.at(i).at(j).z, setEPSG.getValue(), Project.authority, boundaries.at(i).at(j).x, boundaries.at(i).at(j).y, boundaries.at(i).at(j).z);
-
-                                        }
-                                }
-                                if(datasets.size() > 0)
-                                {
-                                    for(size_t i =0; i< datasets.size(); i++)
-                                        for(size_t j=0; j< datasets.at(i).size(); i++)
-                                        {
-                                            std::cout << "COODINATE TRANSFORMATION ... TO ENABLE" << std::endl;
-                                            coordinate_transformation(datasets.at(i).at(j).x, datasets.at(i).at(j).y, datasets.at(i).at(j).z, setEPSG.getValue(), Project.authority, datasets.at(i).at(j).x, datasets.at(i).at(j).y, datasets.at(i).at(j).z);
-                                        }
-                                }
-                            }
+                            for(uint id=0; id<datasets.size(); id++)
+                                export3d_xyz(out_surf + "/" + basename + "_" + std::to_string(id) + "@" + ext + ext_txt, datasets[id]);
+                            std::cout << "=== Export data points from geospatial file: " << file  << std::endl;
                         }
                     }
 
-                    // Set Geometry class
-                    Geometry.name = dirs.at(i).substr(dirs.at(i).find_last_of("/")+1, dirs.at(i).length());
+                    if(!triFlag.isSet() && !gridFlag.isSet() && !polygonFlag.isSet())
+                    {
+                        std::cout << "=== Meshing algorithms are not selected!" << std::endl;
+                        exit(0);
+                    }
+
+                    
+                    // Applicazione trasformazioni
+                    // applyCoordTransform(boundaries);
+                    // applyCoordTransform(datasets);
+
+                    Geometry.name = dir.substr(dir.find_last_of("/")+1);
+                    Geometry.setFormat(get_extension(file));
                     Geometry.setDomains(boundaries.size());
 
-                    if(boundaries.size() > 0 && datasets.size() > 0)
-                        Geometry.geom_type = MULTI;
-                    else
-                        setGeometryType(Geometry, GDALtype);
+                    if(!boundaries.empty() && !datasets.empty()) Geometry.geom_type = MULTI;
+                    else setGeometryType(Geometry, GDALtype);
 
-                    if(setEPSG.isSet())
-                        Geometry.setAuthority(setEPSG.getValue());
+                    if(setEPSG.isSet()) Geometry.setAuthority(setEPSG.getValue());
 
+                    std::vector<std::string> deps = {filesystem::relative(file, Project.folder)};
+                    geometa.setDependencies(deps);
                     geometa.setGeospatialData(Geometry);
 
 
@@ -1059,11 +1045,9 @@ int main(int argc, char** argv)
                             exit(1);
                         }
 
-
                         if(polygonFlag.isSet())
                         {
-                            //MUSE::SurfaceMeta::DataSummary dataSummary;
-
+                            std::cout << "=== Polygonal mesh is set ..." << std::endl;
                             paramSurface.type = "POLYGONMESH";
 
                             MUSE::Polygonmesh<> polygonmesh (boundaries, polygonmesh);
@@ -1078,176 +1062,154 @@ int main(int argc, char** argv)
                         }
                         else
                         {
-                            for(size_t i=0; i < boundaries.size(); i++)
+                            for(size_t k=0; k < boundaries.size(); k++)
                             {
-                                if(boundaries.size() > 1)
+                                if(boundaries[k].empty())
                                 {
-                                    Geometry.id_subdomain = std::to_string(i+1);
-                                    out_mesh = out_surf + "/"+ Geometry.name +"_" + Geometry.id_subdomain + ext_surf;
+                                    std::cout << "=== Domain " << k+1 << " empty - skipping." << std::endl;
+                                    continue;
                                 }
 
                                 // SET DATA SUMMARY
-                                //MUSE::GeometryMeta::DataSummary dataSummary;
-                                MUSE::SurfaceMeta::DataSummary dataSummary;
+                                MUSE::SurfaceMeta::DataSummary dataSummary; 
 
-
-                                std::vector<Point3D> data_tmp = boundaries.at(i);
+                                std::vector<Point3D> data_tmp = boundaries[k];
                                 if(datasets.size() > 0)
-                                    data_tmp.insert(data_tmp.end(), datasets.at(i).begin(), datasets.at(i).end());
+                                    data_tmp.insert(data_tmp.end(), datasets.at(k).begin(), datasets.at(k).end());
 
-                                dataSummary.setDataSummary(data_tmp);
+                                dataSummary.setDataSummary(data_tmp); //saving original data (boundaries + datasets) summary in metadata
                                 geometa.setDataSummary(dataSummary);
 
-                                //ROTAZIONE BOUNDARY
-                                if(setRotAxis.isSet())
+
+                                //Rimozione duplicati (per evitare problemi di triangolazione)
+                                std::vector<Point3D> boundaries_unique, dataset_unique;
+                                remove_duplicates_test_opt(boundaries[k], boundaries_unique, setTolerance.getValue());
+
+                                const bool has_datasets = (k < datasets.size() && !datasets[k].empty());
+                                if(has_datasets)
+                                    remove_duplicates_test_opt(datasets[k], dataset_unique, setTolerance.getValue());
+
+                                if(!datasets.empty() && datasets.size() != boundaries.size())
                                 {
-                                    cinolib::vec3d axis = set_rotation_axis(setRotAxis.getValue());
-                                    cinolib::vec3d c (setRotCenterX.getValue(), setRotCenterY.getValue(), setRotCenterZ.getValue());
-
-                                    for(uint r=0; r < boundaries.at(i).size(); r++)
-                                    {
-                                        cinolib::vec3d sample (boundaries.at(i).at(r).x, boundaries.at(i).at(r).y, boundaries.at(i).at(r).z);
-                                        sample = point_rotation(sample, axis, setRotAngle.getValue(), c);
-
-                                        boundaries.at(i).at(r).x = sample.x();
-                                        boundaries.at(i).at(r).y = sample.y();
-                                        boundaries.at(i).at(r).z = sample.z();
-                                    }
-                                    std::cout << "Data rotation ... COMPLETED." << std::endl;
+                                    std::cerr << FRED("ERROR: different size vectors (data/boundary).") << std::endl;
+                                    exit(1);
                                 }
 
-
-
-                                if(datasets.size() > 0)
+                                //Define output mesh name
+                                std::string out_mesh = out_surf + "/" + Geometry.name;
+                                if(boundaries.size() > 1)
                                 {
-                                    if(datasets.size() != boundaries.size())
-                                    {
-                                        std::cerr << FRED("ERROR: different size vectors (data/boundary).") << std::endl;
-                                        exit(1);
-                                    }
-
-                                    if(setRotAxis.isSet())
-                                    {
-                                        cinolib::vec3d axis = set_rotation_axis(setRotAxis.getValue());
-                                        cinolib::vec3d c (setRotCenterX.getValue(), setRotCenterY.getValue(), setRotCenterZ.getValue());
-
-                                        for(uint r=0; r < datasets.at(i).size(); r++)
-                                        {
-                                            cinolib::vec3d sample (datasets.at(i).at(r).x, datasets.at(i).at(r).y, datasets.at(i).at(r).z);
-                                            sample = point_rotation(sample, axis, setRotAngle.getValue(), c);
-
-                                            datasets.at(i).at(r).x = sample.x();
-                                            datasets.at(i).at(r).y = sample.y();
-                                            datasets.at(i).at(r).z = sample.z();
-                                        }
-                                        std::cout << "Data rotation ... COMPLETED." << std::endl;
-                                    }
-
-                                    if(triFlag.isSet())
-                                    {
-                                        cinolib::Trimesh<> trimesh;
-                                        trimesh.clear();
-
-                                        //FOR JSON ...
-                                        paramSurface.type = "TRIMESH";
-                                        paramSurface.opt = "";
-                                        paramSurface.boundary = "FIXED BOUNDARY";
-
-                                        std::cout << "WARNING: Triangulation is performed on XY plane." << std::endl;
-
-                                        if(optFlag.isSet())
-                                            paramSurface.opt = paramSurface.opt + optFlag.getValue();
-
-                                        std::cout << "\033[0;32mStarted Constrained Triangulation on boundary ...\033[0m" << std::endl;
-                                        trimesh = constrained_triangulation2(boundaries.at(i), datasets.at(i), paramSurface.opt);
-                                        remove_isolate_vertices(trimesh);
-
-                                        //Surface.setParameters(paramSurface);
-                                        Surface.setSummary(trimesh);
-
-                                        trimesh.save(out_mesh.c_str());
-                                        std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
-                                        std::cout << std::endl;
-                                    }
-                                    else if(gridFlag.isSet())
-                                    {
-                                        //std::cout << "2D gridding is set on plane: " << setPlane.getValue() << std::endl;
-
-                                        //FOR JSON ...
-                                        paramSurface.type = "QUADMESH";
-                                        paramSurface.resx = setResx.getValue();
-                                        paramSurface.resy = setResy.getValue();
-                                        paramSurface.resz = 0.0;
-
-                                        MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), boundaries.at(i));
-                                        quadmesh.save(out_mesh.c_str());
-                                        std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
-                                        std::cout << std::endl;
-
-                                        Surface.setSummary(quadmesh);
-                                    }
-                                    Surface.setParameters(paramSurface);
+                                    Geometry.id_subdomain = std::to_string(k+1);
+                                    out_mesh += "_" + Geometry.id_subdomain;
                                 }
-                                else
+                                out_mesh += ext_surf;
+
+
+                                /////////////////////ROTAZIONEEEEEEE ---- DA QUI IN POI MODIFICARE
+                                MUSE::Rotation otfRotation;
+
+                                std::vector<Point3D> data_xy;
+                                std::vector<Point3D> boundary_xy;
+                                
+                                // 1. Costruisco un unico supporto geometrico.
+                                std::vector<Point3D> support_xy = boundaries_unique;
+                                const size_t n_boundary = support_xy.size();
+                                
+                                if(has_datasets)
                                 {
-                                    if(triFlag.isSet())
-                                    {
-                                        cinolib::Trimesh<> trimesh;
-                                        trimesh.clear();
-
-                                        //FOR JSON ...
-                                        paramSurface.type = "TRIMESH";
-                                        paramSurface.opt = "";
-                                        paramSurface.boundary = "FIXED BOUNDARY";
-
-                                        std::cout << "WARNING: Triangulation is performed on XY plane." << std::endl;
-
-                                        if(optFlag.isSet())
-                                            paramSurface.opt = paramSurface.opt + optFlag.getValue();
-
-                                        std::cout << "\033[0;32mStarted Constrained Triangulation on boundary ...\033[0m" << std::endl;
-                                        trimesh = boundary_triangulation(boundaries.at(i), paramSurface.opt);
-                                        remove_isolate_vertices(trimesh);
-
-                                        Surface.setSummary(trimesh);
-
-                                        trimesh.save(out_mesh.c_str());
-                                        std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
-                                        std::cout << std::endl;
-
-                                    }
-                                    else if(gridFlag.isSet())
-                                    {
-                                        //std::cout << "2D gridding is set on plane: " << setPlane.getValue() << std::endl;
-
-                                        //FOR JSON ...
-                                        paramSurface.type = "QUADMESH";
-                                        paramSurface.resx = setResx.getValue();
-                                        paramSurface.resy = setResy.getValue();
-                                        paramSurface.resz = 0.0;
-
-                                        MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), boundaries.at(i));
-                                        quadmesh.save(out_mesh.c_str());
-                                        std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
-                                        std::cout << std::endl;
-
-                                        Surface.setSummary(quadmesh);
-                                    }
-                                    Surface.setParameters(paramSurface);
+                                    support_xy.insert(
+                                        support_xy.end(),
+                                        dataset_unique.begin(),
+                                        dataset_unique.end()
+                                    );
                                 }
+                                
+                                // 2. Ruoto UNA SOLA VOLTA il supporto completo.
+                                bool auto_aligned = align_points_to_xyplane(support_xy, otfRotation);
+                                
+                                // 3. Risplitto il vettore già ruotato.
+                                boundary_xy.assign(
+                                    support_xy.begin(),
+                                    support_xy.begin() + n_boundary
+                                );
+                                
+                                if(has_datasets)
+                                {
+                                    data_xy.assign(
+                                        support_xy.begin() + n_boundary,
+                                        support_xy.end()
+                                    );
+                                }
+                                //////////////////////////////
 
+                                if(triFlag.isSet())
+                                {
+                                    if(concaveFlag.isSet())
+                                    {
+                                        std::cerr << "=== Concave flag is not able for GDALTYPE=POLYGON triangulation." << std::endl;
+                                        exit(0);
+                                    }
+                                    if(convexFlag.isSet())
+                                    {
+                                        std::cerr << "=== Convex flag is not able for GDALTYPE=POLYGON triangulation." << std::endl;
+                                        exit(0);
+                                    }
 
+                                    std::cout << "=== WARNING: Triangulation is performed on XY plane." << std::endl;
+                                    std::cout << "=== WARNING: Check data alignment on XY plane (and auto-align them)." << std::endl;
+
+                                    cinolib::Trimesh<> trimesh;
+                                    trimesh.clear();
+
+                                    paramSurface.type = "TRIMESH";
+                                    paramSurface.opt = "";
+                                    paramSurface.boundary = "FIXED-BOUNDARY";
+                                    
+                                    if(optFlag.isSet())
+                                        paramSurface.opt += optFlag.getValue();
+
+                                    std::cout << "\033[0;32mStarted Triangulation on X-Y aligned data (with boundary) ...\033[0m" << std::endl;
+                                    
+                                    if(has_datasets)
+                                        trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt);
+                                    else
+                                        trimesh = boundary_triangulation(boundary_xy, paramSurface.opt);                                        
+
+                                    remove_isolate_vertices(trimesh);
+                                    if(auto_aligned)
+                                        rotation_on_trimesh(trimesh, otfRotation, true);
+                                    
+                                    Surface.setSummary(trimesh);
+
+                                    trimesh.save(out_mesh.c_str());
+                                    std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
+                                    std::cout << std::endl;
+                                }
+                                else if(gridFlag.isSet())
+                                {
+                                    //FOR JSON ...
+                                    paramSurface.type = "QUADMESH";
+                                    paramSurface.resx = setResx.getValue();
+                                    paramSurface.resy = setResy.getValue();
+                                    paramSurface.resz = 0.0;
+
+                                    MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), boundary_xy);
+                                    quadmesh.save(out_mesh.c_str());
+                                    std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
+                                    std::cout << std::endl;
+
+                                    Surface.setSummary(quadmesh);
+                                }
+                                
+                                Surface.setParameters(paramSurface);
                                 geometa.setMeshSummary(Surface);
-
-                                if(boundaries.size() > 1)
-                                    Geometry.id_subdomain = i+1;
-
                                 geometa.setGeospatialData(Geometry);
-
-                                if(boundaries.size() > 1)
-                                    geometa.write(out_surf +"/"+ Geometry.name +"_" + std::to_string(i+1) + ".json");
-                                else
-                                    geometa.write(out_surf +"/"+ Geometry.name + ".json");
+                                
+                                std::string json_path = boundaries.size() > 1
+                                            ? out_surf + "/" + Geometry.name + "_" + Geometry.id_subdomain + ".json"
+                                            : out_surf + "/" + Geometry.name + ".json";
+                                
+                                geometa.write(json_path);
                             }
                         }
                         break;
@@ -1255,41 +1217,46 @@ int main(int argc, char** argv)
 
                     case POINT:
                     {
-                        if(datasets.size() == 0)
+                        if(datasets.empty())
                         {
-                            std::cerr << FRED("Error on loading points") << std::endl;
+                            std::cerr << FRED("ERROR: No point data.") << std::endl;
                             exit(1);
                         }
 
                         for(size_t ii=0; ii< datasets.size(); ii++)
                         {
-                            std::vector<Point3D> data = datasets.at(ii);
-
-                            if(setRotAxis.isSet())
-                            {
-                                cinolib::vec3d axis = set_rotation_axis(setRotAxis.getValue());
-                                cinolib::vec3d c (setRotCenterX.getValue(), setRotCenterY.getValue(), setRotCenterZ.getValue());
-
-                                for(uint r=0; r < data.size(); r++)
-                                {
-                                    cinolib::vec3d sample (data.at(r).x, data.at(r).y, data.at(r).z);
-                                    sample = point_rotation(sample, axis, setRotAngle.getValue(), c);
-
-                                    data.at(r).x = sample.x();
-                                    data.at(r).y = sample.y();
-                                    data.at(r).z = sample.z();
-                                }
-                                std::cout << "Data rotation ... COMPLETED." << std::endl;
-                            }
-
-
                             MUSE::SurfaceMeta::DataSummary dataSummary;
-                            dataSummary.setDataSummary(data);
+                            dataSummary.setDataSummary(datasets.at(ii)); //saving original data (datasets) summary in metadata
                             geometa.setDataSummary(dataSummary);
 
+                            std::vector<Point3D> data_unique;
+                            remove_duplicates_test_opt(datasets.at(ii), data_unique, setTolerance.getValue());
+
+                            if(data_unique.size() < 3)
+                            {
+                                std::cerr << FRED("ERROR: at least 3 unique points are required for triangulation.") << std::endl;
+                                continue;
+                            }
+
+                            ///////////////////////
+                            std::string out_mesh = out_surf + "/" + Geometry.name;
+                            if(datasets.size() > 1)
+                            {
+                                Geometry.id_subdomain = std::to_string(ii+1);
+                                out_mesh += "_" + std::to_string(ii+1);
+                            }
+                            out_mesh += ext_surf;
+
+                            ///////////////////////
+                            MUSE::Rotation otfRotation;
 
                             if(triFlag.isSet())
                             {
+                                std::vector<Point3D> data_xy = data_unique;
+
+                                //Rotazione
+                                bool auto_aligned = align_points_to_xyplane(data_xy, otfRotation);
+                                
                                 cinolib::Trimesh<> trimesh;
                                 trimesh.clear();
 
@@ -1302,14 +1269,16 @@ int main(int argc, char** argv)
                                 if (convexFlag.isSet())
                                 {
                                     paramSurface.opt = "c";
+                                    paramSurface.boundary = "CONVEX HULL";
 
                                     if(optFlag.isSet())
-                                        paramSurface.opt = paramSurface.opt + optFlag.getValue();
+                                        paramSurface.opt += optFlag.getValue();
 
-                                    trimesh = points_triangulation(data, paramSurface.opt);
+                                    trimesh = points_triangulation(data_xy, paramSurface.opt);
                                     remove_isolate_vertices(trimesh);
 
-                                    paramSurface.boundary = "CONVEX HULL";
+                                    if(auto_aligned)
+                                        rotation_on_trimesh(trimesh, otfRotation, true);                                    
 
                                     std::cout << "\033[0;32mTriangulation with convex hull ... COMPLETED.\033[0m" << std::endl;
                                 }
@@ -1317,40 +1286,51 @@ int main(int argc, char** argv)
                                 // Concave hull
                                 else if (concaveFlag.isSet())
                                 {
+                                    paramSurface.boundary = "CONCAVE HULL";
+
                                     // 1. Calcolo il convex hull (passando per la triangolazione dei punti) e lo trasformo in int da uint
-                                    trimesh = points_triangulation(data, "c");
+                                    trimesh = points_triangulation(data_xy, "c");
+
                                     std::vector<int> convexhull;
                                     std::vector<unsigned int> convex_uint = trimesh.get_ordered_boundary_vertices();
                                     for(int i: convex_uint)
                                         convexhull.push_back((short) i);
 
                                     std::vector<int> b_id;
-                                    std::vector<Point3D> concavehull = computing_concavehull(data, convexhull, b_id);
+                                    std::vector<Point3D> concavehull = computing_concavehull(data_xy, convexhull, b_id);
 
                                     // 2. Removing points of concavehull (boundary) from datasets
                                     std::sort(b_id.begin(), b_id.end());
-                                    std::vector<Point3D> unique_data;
-                                    for(size_t i=0; i< data.size(); i++)
-                                    {
-                                        if (!check_index(b_id, i))
-                                        {
-                                            Point3D unique_p;
-                                            unique_p.x = data.at(i).x;
-                                            unique_p.y = data.at(i).y;
-                                            unique_p.z = data.at(i).z;
 
-                                            unique_data.push_back(unique_p);
-                                        }
+                                    std::vector<Point3D> unique_data;
+                                    for(size_t idp=0; idp<data_xy.size(); idp++)
+                                    {
+                                        if(!check_index(b_id, static_cast<size_t>(idp)))
+                                            unique_data.push_back(data_xy.at(idp));
                                     }
+                                    
+                                    // for(size_t i=0; i< data.size(); i++)
+                                    // {
+                                    //     if (!check_index(b_id, i))
+                                    //     {
+                                    //         Point3D unique_p;
+                                    //         unique_p.x = data.at(i).x;
+                                    //         unique_p.y = data.at(i).y;
+                                    //         unique_p.z = data.at(i).z;
+
+                                    //         unique_data.push_back(unique_p);
+                                    //     }
+                                    // }
 
                                     if(optFlag.isSet())
-                                        paramSurface.opt = paramSurface.opt + optFlag.getValue();
+                                        paramSurface.opt += optFlag.getValue();
 
                                     trimesh.clear();
                                     trimesh = concavehull_triangulation(concavehull, unique_data, paramSurface.opt);
                                     remove_isolate_vertices(trimesh);
 
-                                    paramSurface.boundary = "CONCAVE HULL";
+                                    if(auto_aligned)
+                                        rotation_on_trimesh(trimesh, otfRotation, true);
 
                                     std::cout << "\033[0;32mTriangulation with concave hull ... COMPLETED.\033[0m" << std::endl;
                                 }
@@ -1363,8 +1343,7 @@ int main(int argc, char** argv)
                                     std::vector<std::vector<Point3D>> boundaries_b, datasets_b;
                                     std::string GDALtype_b;
 
-                                    std::cout << "Loading file: " << filename_boundary << std::endl;
-
+                                    std::cout << "=== Loading boundary file: " << filename_boundary << std::endl;
                                     int loadvecfile = load_vectorfile(filename_boundary, boundaries_b, datasets_b, GDALtype_b);
                                     if (loadvecfile != IOSUCCESS)
                                     {
@@ -1373,20 +1352,42 @@ int main(int argc, char** argv)
                                     }
                                     std::cout << "\033[0;32mLoading file: " << filename_boundary << "... COMPLETED.\033[0m" << std::endl;
 
-                                    std::cout << "DIM: " << boundaries_b.size() <<std::endl;
-                                    std::cout << "DIM: " << boundaries_b.at(0).size() <<std::endl;
-                                    std::cout << "\033[0;32mTYPE: " << GDALtype_b << std::endl;
+                                    if(boundaries_b.empty())
+                                    {
+                                        std::cerr << FRED("ERROR: Boundary file does not contain valid polygon boundary data.") << std::endl;
+                                        exit(1);
+                                    }
 
+                                    paramSurface.boundary = "EXTERNAL BOUNDARY";
                                     paramSurface.opt = "";
 
                                     if(optFlag.isSet())
-                                        paramSurface.opt = paramSurface.opt + optFlag.getValue();
+                                        paramSurface.opt += optFlag.getValue();
 
-                                    for(size_t j=0; j<boundaries_b.size(); j++)
+                                    //Se ci sono più di un poligono di bordo, triangolo tutti i poligoni con lo stesso dataset (dati) e salvo una mesh per boundary
+                                    for(size_t jj=0; jj<boundaries_b.size(); jj++)
                                     {
+                                        std::vector<Point3D> boundary_unique;
+                                        remove_duplicates_test_opt(boundaries_b.at(jj), boundary_unique, setTolerance.getValue());
+
+                                        if(boundary_unique.size() < 3)
+                                        {
+                                            std::cerr << FRED("ERROR: at least 3 unique points are required for triangulation.") << std::endl;
+                                            continue;
+                                        }
+
+                                        std::vector<Point3D> boundary_xy = boundary_unique;
+                                        if(auto_aligned)
+                                            align_points_to_xyplane(boundary_xy, otfRotation);
+                                        
                                         trimesh.clear();
-                                        trimesh = constrained_triangulation2(boundaries_b.at(j), datasets.at(i), paramSurface.opt);
+                                        trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt);
                                         remove_isolate_vertices(trimesh);
+
+                                        if(auto_aligned)
+                                            rotation_on_trimesh(trimesh, otfRotation, true);
+                                        
+                                        //Fix saving? To do: save a mesh for each boundary (if more than one)
                                     }
                                 }
                                 else
@@ -1404,447 +1405,490 @@ int main(int argc, char** argv)
                             }
                             else if (gridFlag.isSet())
                             {
-//                                std::cout << "2D gridding is set on plane: " << setPlane.getValue() << std::endl;
-
-//                                MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), data);
-//                                quadmesh.save(out_mesh.c_str());
-
-                                //paramSurface.type = "GRIDMESH";
-
-                                std::cerr << FRED("GRID FLAG IS NOT ACTIVE!!") << std::endl;
+                                std::cerr << "\033[0;31mGRID FLAG NOT ACTIVE for POINT/LINESTRING!\033[0m" << std::endl;
                                 exit(1);
                             }
 
                             geometa.setMeshSummary(Surface);
 
-
                             if(datasets.size() > 1)
-                                Geometry.id_subdomain = i+1;
+                                Geometry.id_subdomain = std::to_string(ii+1);
 
                             geometa.setGeospatialData(Geometry);
 
-                            if(datasets.size() > 1)
-                                geometa.write(out_surf +"/"+ Geometry.name +"_" + std::to_string(i+1) + ".json");
-                            else
-                                geometa.write(out_surf +"/"+ Geometry.name + ".json");
+                            std::string json_path = datasets.size() > 1
+                                                        ? out_surf + "/" + Geometry.name + "_" + std::to_string(ii+1) + ".json"
+                                                        : out_surf + "/" + Geometry.name + ".json";
+                            geometa.write(json_path);
                         }
                         break;
                     }
                     case LINESTRING:
+                    {
                         break;
+                    }
                     }
                 }
             }
         }
 
-        Geometry = MUSE::GeospatialData();
-
         // Append list of files
-        file_list = get_vectorfiles(in_geometry);
-        if(file_list.size() > 0)
+        auto file_list_gpkg = get_vectorfiles(in_geometry);
+        for(const auto& file : file_list_gpkg)
         {
-            for(size_t i=0; i<file_list.size(); i++)
+            std::vector<std::vector<Point3D>> boundaries, datasets;
+            std::string GDALtype;
+
+            std::cout << "=== Loading: " << file << std::endl;
+
+            printSpatialReferenceInfo(file, Project.authority);
+            if(load_vectorfile(file, boundaries, datasets, GDALtype) != IOSUCCESS) {
+                std::cerr << "\033[0;31mERROR loading: " << file << "\033[0m" << std::endl;
+                continue;
+            }
+
+            // Export
+            if(setSaveAttributesTable.isSet())
             {
-                std::cout << "Loading file: " << file_list.at(i) << std::endl;
-
-                int loadvecfile = load_vectorfile(file_list.at(i), boundaries, datasets, GDALtype);
-                if (loadvecfile != IOSUCCESS)
-                {
-                    std::cerr << "\033[0;31mERROR vector loading file: " << file_list.at(i) << "\033[0m" << std::endl;
-                    exit(1);
+                auto csv_path = out_surf + "/" + get_basename(get_filename(file)) + ext_txt;
+                if(export_attributes_to_csv(file, csv_path) == IOSUCCESS) {
+                    Geometry.setAttributeTable(get_basename(get_filename(file)) + ext_txt);
                 }
-                if(setSaveAttributesTable.isSet())
+            }
+
+            if(setSave.isSet()) {
+                const std::string basename = get_basename(get_filename(file));
+                const std::string ext = get_extensionND(get_filename(file));
+
+                if(!boundaries.empty())
                 {
-                    std::cout << "### Save Attribute Table ..." << std::endl;
-                    int export_attribute = export_gpkg_attributes_to_csv(file_list.at(i), out_surf + "/" + get_basename(get_filename(file_list.at(i))) + ".csv");
-                    if (export_attribute != IOSUCCESS)
-                    {
-                        std::cerr << "\033[0;31mERROR export attribute table in: " << file_list.at(i) << "\033[0m" << std::endl;
-                        exit(1);
-                    }
-                    Geometry.setAttributeTable(get_basename(get_filename(file_list.at(i))) + ".csv");
+                    for(uint id=0; id<boundaries.size(); id++)
+                        export3d_xyz(out_surf + "/" + basename + "_" + std::to_string(id) + "@" + ext + ext_txt, boundaries[id]);
+                    std::cout << "=== Export boundary points from geospatial file: " << file << std::endl;
                 }
-
-                if(setSave.isSet() && boundaries.size()>0)
+                if(!datasets.empty())
                 {
-                    for(uint id=0;id<boundaries.size(); id++)
-                        export3d_xyz(out_surf + "/"+ get_basename(get_filename(file_list.at(i))) + "_" + to_string(id) + "@" + get_extensionND(get_filename(file_list.at(i))) + ".dat", boundaries.at(id));
-                    std::cout << "Export content (boundaries) of geospatial file: " << file_list.at(i) << std::endl;
+                    for(uint id=0; id<datasets.size(); id++)
+                        export3d_xyz(out_surf + "/" + basename + "_" + std::to_string(id) + "@" + ext + ext_txt, datasets[id]);
+                    std::cout << "=== Export data points from geospatial file: " << file  << std::endl;
                 }
+            }
 
-                if(setSave.isSet() && datasets.size()>0)
+            if(!triFlag.isSet() && !gridFlag.isSet() && !polygonFlag.isSet()) {
+                std::cout << "=== No meshing algorithms selected!" << std::endl;
+                continue;
+            }
+            
+            // Trasformazioni
+            //applyCoordTransform(boundaries);
+            //applyCoordTransform(datasets);
+
+            // Setup Geometry
+            Geometry.setName(get_basename(get_filename(file)));
+            Geometry.setFormat(get_extension(file));
+            Geometry.setDomains(std::max(boundaries.size(), datasets.size()));
+
+            if(!boundaries.empty() && !datasets.empty()) Geometry.geom_type = MULTI;
+            else setGeometryType(Geometry, GDALtype);
+
+            if(setEPSG.isSet()) Geometry.setAuthority(setEPSG.getValue());
+
+            std::vector<std::string> deps = {filesystem::relative(file, Project.folder)};
+            geometa.setDependencies(deps);
+            geometa.setGeospatialData(Geometry);
+
+
+        
+            switch (Geometry.geom_type)
+            {
+            case POLYGON:
+            case MULTI:
+            {
+                if(boundaries.empty()) 
                 {
-                    for(uint id=0;id<datasets.size(); id++)
-                        export3d_xyz(out_surf + "/"+ get_basename(get_filename(file_list.at(i))) + "_" + to_string(id) + "@" + get_extensionND(get_filename(file_list.at(i))) + ".dat", datasets.at(id));
-                    std::cout << "Export content (data) of geospatial file: " << file_list.at(i)  << std::endl;
-                }
-
-                if(!triFlag.isSet() && !gridFlag.isSet() && !polygonFlag.isSet())
-                {
-                    std::cout << "### Meshing algorithms are not selected!" << std::endl;
-                    exit(0);
-                }
-
-                depsgeom.push_back(filesystem::relative(file_list.at(i), Project.folder));
-                geometa.setDependencies(depsgeom);
-
-                std::cout << "\033[0;32mLoading file: " << file_list.at(i) << "... COMPLETED.\033[0m" << std::endl;
-
-
-                // Coordinate system transformation
-                if(setEPSG.isSet())
-                {
-                    //leggi dal metadata di progetto epgs sorgente (geometria che leggo) e dal metadata di progetto
-                    // controlla se sono diversi
-                    // se si -> trasformazione al epsg di progetto (target)
-
-                    //possibilità di specificare da riga di comando l'epsg di tutte le superfici (ipotesi: che siano tutte nello stesso epsg)
-                    // TO DO: estendere a diversi epsg mediante ad esempio l'inserimento di un txt/csv dove per ogni file, specifico l'epsg
-
-                    if(setEPSG.getValue() != Project.authority)
-                    {
-                        if(boundaries.size() > 0)
-                        {
-                            for(size_t i =0; i< boundaries.size(); i++)
-                                for(size_t j=0; j< boundaries.at(i).size(); i++)
-                                {
-                                    std::cout << "COODINATE TRANSFORMATION ... TO ENABLE" << std::endl;
-                                    coordinate_transformation(boundaries.at(i).at(j).x, boundaries.at(i).at(j).y, boundaries.at(i).at(j).z, setEPSG.getValue(), Project.authority, boundaries.at(i).at(j).x, boundaries.at(i).at(j).y, boundaries.at(i).at(j).z);
-                                }
-                        }
-
-                        if(datasets.size() > 0)
-                        {
-                            for(size_t i =0; i< datasets.size(); i++)
-                                for(size_t j=0; j< datasets.at(i).size(); i++)
-                                {
-                                    std::cout << "COODINATE TRANSFORMATION ... TO ENABLE" << std::endl;
-                                    coordinate_transformation(datasets.at(i).at(j).x, datasets.at(i).at(j).y, datasets.at(i).at(j).z, setEPSG.getValue(), Project.authority, datasets.at(i).at(j).x, datasets.at(i).at(j).y, datasets.at(i).at(j).z);
-
-                                }
-                        }
-                    }
+                    std::cerr << FRED("ERROR: No polygon boundary data.") << std::endl;
+                    continue;
                 }
 
-                // Set Geometry class
-                Geometry.name = file_list.at(i).substr(file_list.at(i).find_last_of("/")+1, file_list.at(i).length());
-                Geometry.setName(get_basename(Geometry.name));
-                Geometry.setFormat(get_extension(file_list.at(i)));
-                Geometry.setDomains(boundaries.size());
-
-                if(boundaries.size() > 0 && datasets.size() > 0)
-                    Geometry.geom_type = MULTI;
-                else
-                    setGeometryType(Geometry, GDALtype);
-
-                if(setEPSG.isSet())
-                    Geometry.setAuthority(setEPSG.getValue());
-
-                geometa.setGeospatialData(Geometry);
-
-
-                //per salvataggio mesh
-                std::string out_mesh = out_surf + "/"+ Geometry.name;
-                out_mesh = out_mesh + ext_surf;
-
-                // Creation of surface_metadata
-                MUSE::Surface Surface;
-                MUSE::Surface::Parameters paramSurface;
-
-                std::cout << std::endl;
-
-                switch (Geometry.geom_type)
+                if(polygonFlag.isSet())
                 {
-                case POLYGON:
-                case MULTI:
-                {
+                    //FOR JSON ...
+                    MUSE::Surface::Parameters paramSurface;
+                    paramSurface.type = "POLYGONMESH";
 
-                    if(polygonFlag.isSet())
-                    {
-                        //FOR JSON ...
-                        paramSurface.type = "POLYGONMESH";
+                    MUSE::Polygonmesh<> polygonmesh (boundaries, polygonmesh);
+                    std::string out_mesh = out_surf + "/" + Geometry.name + ext_surf;
+                    polygonmesh.save(out_mesh.c_str());
 
-                        MUSE::Polygonmesh<> polygonmesh (boundaries, polygonmesh);
-                        polygonmesh.save(out_mesh.c_str());
+                    MUSE::Surface Surface;
+                    Surface.setSummary(polygonmesh);
+                    Surface.setParameters(paramSurface);
 
-                        Surface.setSummary(polygonmesh);
-                        Surface.setParameters(paramSurface);
+                    geometa.setMeshSummary(Surface);
+                    geometa.setGeospatialData(Geometry);
+                    geometa.write(out_surf +"/"+ Geometry.name + ".json");
 
-                        geometa.setMeshSummary(Surface);
-                        geometa.setGeospatialData(Geometry);
-                        geometa.write(out_surf +"/"+ Geometry.name + ".json");
-
-                        break;
-                    }
-                    else
-                    {
-                        for(size_t i=0; i< boundaries.size(); i++)
-                        {
-                            // if(i>=5766)
-                            // {
-                            // std::vector<Point3D> data_tmp = boundaries.at(i);
-                            // if(datasets.size() > 0)
-                            //     data_tmp.insert(data_tmp.end(), datasets.at(i).begin(), datasets.at(i).end());
-
-                            if(boundaries.at(i).size() <= 0)
-                            {
-                                std::cout << "### ID " << i+1 << " - boundary dimension is minor/equal to zero!" << std::endl;
-                                std::cout << "### ID " << i+1 << " - NEGLECTED POLYGON!" << std::endl;
-                                continue;
-                            }
-
-                            std::vector<Point3D> dataset_unique, boundaries_unique, data_unique;
-                            boundaries_unique.clear();
-                            remove_duplicates_test_opt(boundaries.at(i), boundaries_unique);
-
-                            data_unique = boundaries_unique;
-                            if(datasets.size()>0)
-                            {
-                                remove_duplicates_test_opt(datasets.at(i), dataset_unique);
-                                data_unique.insert(data_unique.end(), dataset_unique.begin(), dataset_unique.end());
-                            }
-
-
-                            MUSE::SurfaceMeta::DataSummary dataSummary;
-                            dataSummary.setDataSummary(data_unique);
-                            geometa.setDataSummary(dataSummary);
-                            data_unique.clear();
-
-
-                            if(boundaries.size() > 1)
-                            {
-                                Geometry.id_subdomain = std::to_string(i+1);
-                                out_mesh = out_surf + "/"+ Geometry.name +"_" + Geometry.id_subdomain + ext_surf;
-                            }
-
-                            if(triFlag.isSet())
-                            {
-                                // Procedo con la triangolazione in base al tipo di geometria
-                                cinolib::Trimesh<> trimesh;
-                                trimesh.clear();
-
-                                paramSurface.type = "TRIMESH";
-                                paramSurface.opt = "";
-                                paramSurface.boundary = "FIXED BOUNDARY";
-
-                                if(optFlag.isSet())
-                                    paramSurface.opt = paramSurface.opt + optFlag.getValue();
-
-
-                                std::cout << "\033[0;32mStarted Constrained Triangulation on boundary ...\033[0m" << std::endl;
-                                // if(datasets.size() > 0)
-                                //     trimesh = constrained_triangulation2(boundaries.at(i), datasets.at(i), paramSurface.opt);
-                                // else
-                                //     trimesh = boundary_triangulation(boundaries.at(i), paramSurface.opt);
-
-                                if(datasets.size() > 0)
-                                    trimesh = constrained_triangulation2(boundaries_unique, dataset_unique, paramSurface.opt);
-                                else
-                                    trimesh = boundary_triangulation(boundaries_unique, paramSurface.opt);
-
-                                remove_isolate_vertices(trimesh);
-
-                                //Surface.setParameters(paramSurface);
-                                Surface.setSummary(trimesh);
-
-                                trimesh.save(out_mesh.c_str());
-                                std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
-                                std::cout << std::endl;
-                            }
-                            else if(gridFlag.isSet())
-                            {
-                                //std::cout << "2D gridding is set on plane: " << setPlane.getValue() << std::endl;
-
-                                //FOR JSON ...
-                                paramSurface.type = "QUADMESH";
-                                paramSurface.resx = setResx.getValue();
-                                paramSurface.resy = setResy.getValue();
-                                paramSurface.resz = 0.0;
-
-                                MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), boundaries_unique);
-                                quadmesh.save(out_mesh.c_str());
-                                std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
-                                std::cout << std::endl;
-
-                                Surface.setSummary(quadmesh);
-                            }
-
-                            Surface.setParameters(paramSurface);
-
-                            geometa.setMeshSummary(Surface);
-                            geometa.setGeospatialData(Geometry);
-
-
-                            if(boundaries.size() > 1)
-                                geometa.write(out_surf +"/"+ Geometry.name +"_" + Geometry.id_subdomain + ".json");
-                            else
-                                geometa.write(out_surf +"/"+ Geometry.name + ".json");
-
-                            // std::cout << std::endl;
-                            // std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
-                            //}
-                        }
-                    }
                     break;
                 }
-                case LINESTRING:
-                case POINT:
+                else
                 {
-                    if(datasets.size() == 0)
+                    if(boundaries.size() != datasets.size() && !datasets.empty())
                     {
-                        std::cerr << "Error on loading points" << std::endl;
-                        exit(1);
+                        std::cerr << FRED("ERROR: Different size vectors (data/boundary).") << std::endl;
+                        continue;
                     }
 
-                    for(size_t i=0; i< datasets.size(); i++)
+                    for(size_t i=0; i<boundaries.size(); i++)
                     {
-                        std::vector<Point3D> data; // = datasets.at(i);
-                        remove_duplicates_test_opt(datasets.at(i), data);
+                        if(boundaries[i].size() <= 0)
+                        {
+                            std::cout << "### ID " << i+1 << " - boundary dimension is minor/equal to zero!" << std::endl;
+                            std::cout << "### ID " << i+1 << " - NEGLECTED POLYGON!" << std::endl;
+                            continue;
+                        }
 
+                        //////////////////
+                        std::vector<Point3D> data_tmp = boundaries[i];
+                        if(i < datasets.size() && !datasets[i].empty())
+                            data_tmp.insert(data_tmp.end(), datasets[i].begin(), datasets[i].end());
+                        MUSE::SurfaceMeta::DataSummary dataSummary;
+                        dataSummary.setDataSummary(data_tmp);
+                        geometa.setDataSummary(dataSummary);
+
+                        // Rimozione duplicati (per evitare problemi di triangolazione) 
+                        std::vector<Point3D> dataset_unique, boundaries_unique;
+                        remove_duplicates_test_opt(boundaries[i], boundaries_unique, setTolerance.getValue());
+
+                        const bool has_datasets = (i < datasets.size() && !datasets[i].empty());
+                        if(has_datasets)
+                            remove_duplicates_test_opt(datasets[i], dataset_unique, setTolerance.getValue());
+
+                        if(boundaries_unique.size() < 3)
+                        {
+                            std::cerr << FRED("ERROR: at least 3 unique points are required for triangulation.") << std::endl;
+                            continue;
+                        }
+
+                        std::string out_mesh = out_surf + "/"+ Geometry.name;
+                        if(boundaries.size() > 1)
+                        {
+                            Geometry.id_subdomain = std::to_string(i+1);
+                            out_mesh += "_" + Geometry.id_subdomain;
+                        }
+                        out_mesh += ext_surf;
+
+
+                        ///////////////////////
+                        MUSE::Rotation otfRotation;
+                        std::vector<Point3D> support_xy = boundaries_unique;
+                        const size_t n_boundary = support_xy.size();
+                        if(has_datasets)
+                            support_xy.insert(support_xy.end(), dataset_unique.begin(), dataset_unique.end());
+
+                        bool auto_aligned = align_points_to_xyplane(support_xy, otfRotation);
+                        std::vector<Point3D> boundary_xy(support_xy.begin(), support_xy.begin() + n_boundary);
+                        std::vector<Point3D> data_xy;
+                        if(has_datasets)
+                            data_xy.assign(support_xy.begin() + n_boundary, support_xy.end());
+
+                        MUSE::Surface Surface;
+                        MUSE::Surface::Parameters paramSurface;    
+
+                        ////
                         if(triFlag.isSet())
                         {
+                            if(convexFlag.isSet())
+                            {
+                                std::cerr << "=== Convex flag is not able for GDALTYPE=POLYGON triangulation." << std::endl;
+                                exit(0);
+                            }
+                            if(concaveFlag.isSet())
+                            {
+                                std::cerr << "=== Concave flag is not able for GDALTYPE=POLYGON triangulation." << std::endl;
+                                exit(0);
+                            }
+
+                            // Procedo con la triangolazione in base al tipo di geometria
                             cinolib::Trimesh<> trimesh;
                             trimesh.clear();
 
-                            //Convex hull
-                            if (convexFlag.isSet())
-                            {
-                                paramSurface.opt = "c";
+                            paramSurface.type = "TRIMESH";
+                            paramSurface.opt = "";
+                            paramSurface.boundary = "FIXED BOUNDARY";
 
-                                if(optFlag.isSet())
-                                    paramSurface.opt = paramSurface.opt + optFlag.getValue();
+                            if(optFlag.isSet())
+                                paramSurface.opt += optFlag.getValue();
 
-                                trimesh.clear();
-                                trimesh = points_triangulation(data, paramSurface.opt);
-                                remove_isolate_vertices(trimesh);
+                            std::cout << "\033[0;32mStarted Constrained Triangulation on boundary ...\033[0m" << std::endl;
 
-                                paramSurface.boundary = "CONVEX HULL";
-
-                                std::cout << "\033[0;32mTriangulation with convex hull ... COMPLETED.\033[0m" << std::endl;
-                            }
-
-                            else if (concaveFlag.isSet())
-                            {
-                                // 1. Calcolo il convex hull (passando per la triangolazione dei punti) e lo trasformo in int da uint
-                                trimesh = points_triangulation(data, "c");
-                                std::vector<int> convexhull;
-                                std::vector<unsigned int> convex_uint = trimesh.get_ordered_boundary_vertices();
-                                for(int i: convex_uint)
-                                    convexhull.push_back((short) i);
-
-                                std::vector<int> b_id;
-                                std::vector<Point3D> concavehull = computing_concavehull(data, convexhull, b_id);
-
-                                // 2. Removing points of concavehull (boundary) from datasets
-                                std::sort(b_id.begin(), b_id.end());
-                                std::vector<Point3D> unique_data;
-                                for(size_t i=0; i< data.size(); i++)
-                                {
-                                    if (!check_index(b_id, i))
-                                    {
-                                        Point3D unique_p;
-                                        unique_p.x = data.at(i).x;
-                                        unique_p.y = data.at(i).y;
-                                        unique_p.z = data.at(i).z;
-
-                                        unique_data.push_back(unique_p);
-                                    }
-                                }
-
-                                if(optFlag.isSet())
-                                    paramSurface.opt = paramSurface.opt + optFlag.getValue();
-
-                                trimesh.clear();
-                                trimesh = concavehull_triangulation(concavehull, unique_data, paramSurface.opt);
-                                remove_isolate_vertices(trimesh);
-
-                                paramSurface.boundary = "CONCAVE HULL";
-
-                                std::cout << "\033[0;32mTriangulation with concave hull ... COMPLETED.\033[0m" << std::endl;
-                            }
-
-
-                            // External boundary from cmd
-                            else if (setBoundary.isSet()) //se gli passo da linea di comando un bordo esterno: 1) leggi 2) triangola i punti vincolati al bordo
-                            {
-                                std::string filename_boundary = setBoundary.getValue();
-
-                                std::vector<std::vector<Point3D>> boundaries_b, datasets_b;
-                                std::string GDALtype_b;
-
-                                std::cout << "Loading file: " << filename_boundary << std::endl;
-
-                                int loadvecfile = load_vectorfile(filename_boundary, boundaries_b, datasets_b, GDALtype_b);
-                                if (loadvecfile != IOSUCCESS)
-                                {
-                                    std::cerr << "\033[0;31mERROR vector loading file: " << filename_boundary << "\033[0m" << std::endl;
-                                    exit(1);
-                                }
-                                std::cout << "\033[0;32mLoading file: " << filename_boundary << "... COMPLETED.\033[0m" << std::endl;
-                                std::cout << "\033[0;32mTYPE: " << GDALtype_b << std::endl;
-
-
-                                paramSurface.opt = "";
-
-                                if(optFlag.isSet())
-                                    paramSurface.opt = paramSurface.opt + optFlag.getValue();
-
-                                trimesh.clear();
-                                trimesh = constrained_triangulation2(boundaries_b.at(i), datasets.at(i), paramSurface.opt);
-                            }
-
+                            if(has_datasets)
+                                trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt);
                             else
-                            {
-                                std::cerr << "ERROR: Required argument missing: --convex, --concave or --boundary -m <filename>." << std::endl;
-                                continue;
-                            }
+                                trimesh = boundary_triangulation(boundary_xy, paramSurface.opt);
+
+                            remove_isolate_vertices(trimesh);
+
+                            if(auto_aligned)
+                                rotation_on_trimesh(trimesh, otfRotation, true);
+
+                            Surface.setSummary(trimesh);
 
                             trimesh.save(out_mesh.c_str());
                             std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
                             std::cout << std::endl;
-
-                            Surface.setParameters(paramSurface);
-                            Surface.setSummary(trimesh);
                         }
-
                         else if(gridFlag.isSet())
                         {
-//                            std::cout << "2D gridding is set on plane: " << setPlane.getValue() << std::endl;
+                            //std::cout << "2D gridding is set on plane: " << setPlane.getValue() << std::endl;
 
-//                            MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), data);
-//                            quadmesh.save(out_mesh.c_str());
+                            //FOR JSON ...
+                            paramSurface.type = "QUADMESH";
+                            paramSurface.resx = setResx.getValue();
+                            paramSurface.resy = setResy.getValue();
+                            paramSurface.resz = 0.0;
 
-                            paramSurface.type = "GRIDMESH";
+                            MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), boundary_xy);
+                            quadmesh.save(out_mesh.c_str());
+                            std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
+                            std::cout << std::endl;
 
-                            std::cerr << FRED("GRID FLAG IS NOT ACTIVE!") << std::endl;
-                            exit(1);
+                            Surface.setSummary(quadmesh);
                         }
+
+                        Surface.setParameters(paramSurface);
+
+                        geometa.setMeshSummary(Surface);
+                        geometa.setGeospatialData(Geometry);
+
+                        std::string json_path = boundaries.size() > 1
+                                                    ? out_surf + "/" + Geometry.name + "_" + Geometry.id_subdomain + ".json"
+                                                    : out_surf + "/" + Geometry.name + ".json";
+                        geometa.write(json_path);
+                    }
+                }
+                break;
+            }
+            case LINESTRING:
+            case POINT:
+            {
+                MUSE::Surface Surface;
+                MUSE::Surface::Parameters paramSurface;
+
+                if(datasets.empty())
+                {
+                    std::cerr << "ERROR: No point data available" << std::endl;
+                    continue;
+                }
+
+                for(size_t i=0; i< datasets.size(); i++)
+                {
+                    if(datasets[i].size() <= 0)
+                    {
+                        std::cout << "### ID " << i+1 << " - dataset dimension is minor/equal to zero!" << std::endl;
+                        std::cout << "### ID " << i+1 << " - NEGLECTED DATASET!" << std::endl;
+                        continue;
                     }
 
+                    MUSE::SurfaceMeta::DataSummary dataSummary;
+                    dataSummary.setDataSummary(datasets.at(i)); //saving original data (datasets) summary in metadata
+                    geometa.setDataSummary(dataSummary);
 
-                    geometa.setMeshSummary(Surface);
 
-                    if(datasets.size() > 1 || boundaries.size() > 1)
-                        out_mesh = out_surf + "/"+ Geometry.name +"_" + std::to_string(i+1) + ext_surf;
-                    else
-                        out_mesh = out_surf + "/"+ Geometry.name + ext_surf;
+                    std::vector<Point3D> data_unique;
+                    remove_duplicates_test_opt(datasets.at(i), data_unique, setTolerance.getValue());
 
+                    if(data_unique.size() < 3)
+                    {
+                        std::cerr << FRED("ERROR: at least 3 unique points are required for triangulation.") << std::endl;
+                        continue;
+                    }
+
+                    std::string out_mesh = out_surf + "/" + Geometry.name;
+                    if(datasets.size() > 1) {
+                        Geometry.id_subdomain = std::to_string(i+1);
+                        out_mesh += "_" + std::to_string(i+1);
+                    }
+                    out_mesh += ext_surf;
+
+                     
+                    MUSE::Rotation otfRotation;
+
+                    if(triFlag.isSet())
+                    {
+                        std::vector<Point3D> data_xy = data_unique;
+                        bool auto_aligned = align_points_to_xyplane(data_xy, otfRotation);
+
+                        cinolib::Trimesh<> trimesh;
+                        trimesh.clear();
+
+                        
+
+                        paramSurface.type = "TRIMESH";
+                        paramSurface.opt = "";
+
+                        std::cout << "=== WARNING: Triangulation on XY plane." << std::endl;
+                        std::cout << "=== WARNING: Data are automatically aligned to XY and restored to original space." << std::endl;
+
+                        //Convex hull
+                        if (convexFlag.isSet())
+                        {
+                            paramSurface.opt = "c";
+                            paramSurface.boundary = "CONVEX HULL";
+
+                            if(optFlag.isSet())
+                                paramSurface.opt += optFlag.getValue();
+
+                            trimesh = points_triangulation(data_xy, paramSurface.opt);
+                            remove_isolate_vertices(trimesh);
+
+                            if(auto_aligned)
+                                rotation_on_trimesh(trimesh, otfRotation, true);                            
+
+                            std::cout << "\033[0;32mTriangulation with convex hull ... COMPLETED.\033[0m" << std::endl;
+                        }
+
+                        else if (concaveFlag.isSet())
+                        {
+                            paramSurface.boundary = "CONCAVE HULL";
+
+                            // 1. Calcolo il convex hull (passando per la triangolazione dei punti) e lo trasformo in int da uint
+                            trimesh = points_triangulation(data_xy, "c");
+
+                            std::vector<int> convexhull;
+                            std::vector<unsigned int> convex_uint = trimesh.get_ordered_boundary_vertices();
+                            for(int i: convex_uint)
+                                convexhull.push_back((short) i);
+
+                            std::vector<int> b_id;
+                            std::vector<Point3D> concavehull = computing_concavehull(data_xy, convexhull, b_id);
+
+                            // 2. Removing points of concavehull (boundary) from datasets
+                            std::sort(b_id.begin(), b_id.end());
+
+                            std::vector<Point3D> unique_data;
+                            
+                            for(size_t idp=0; idp< data_xy.size(); idp++)
+                            {
+                                if(!check_index(b_id, static_cast<size_t>(idp)))
+                                    unique_data.push_back(data_xy.at(idp));
+
+                                // if (!check_index(b_id, i))
+                                // {
+                                //     Point3D unique_p;
+                                //     unique_p.x = data.at(i).x;
+                                //     unique_p.y = data.at(i).y;
+                                //     unique_p.z = data.at(i).z;
+
+                                //     unique_data.push_back(unique_p);
+                                // }
+                            }
+
+                            if(optFlag.isSet())
+                                paramSurface.opt += optFlag.getValue();
+
+                            trimesh.clear();
+                            trimesh = concavehull_triangulation(concavehull, unique_data, paramSurface.opt);
+                            remove_isolate_vertices(trimesh);
+
+                            if(auto_aligned)
+                                rotation_on_trimesh(trimesh, otfRotation, true);
+                            
+                            std::cout << "\033[0;32mTriangulation with concave hull ... COMPLETED.\033[0m" << std::endl;
+                        }
+
+
+                        // External boundary from cmd
+                        else if (setBoundary.isSet()) //se gli passo da linea di comando un bordo esterno: 1) leggi 2) triangola i punti vincolati al bordo
+                        {
+                            paramSurface.opt = "";
+                            paramSurface.boundary = "EXTERNAL-BOUNDARY";
+
+                            std::string filename_boundary = setBoundary.getValue();
+
+                            std::vector<std::vector<Point3D>> boundaries_b, datasets_b;
+                            std::string GDALtype_b;
+
+                            std::cout << "=== Loading file: " << filename_boundary << std::endl;
+
+                            int loadvecfile = load_vectorfile(filename_boundary, boundaries_b, datasets_b, GDALtype_b);
+                            if (loadvecfile != IOSUCCESS)
+                            {
+                                std::cerr << "\033[0;31mERROR vector loading file: " << filename_boundary << "\033[0m" << std::endl;
+                                exit(1);
+                            }
+                            std::cout << "\033[0;32mLoading file: " << filename_boundary << "... COMPLETED.\033[0m" << std::endl;
+                            std::cout << "\033[0;32mTYPE: " << GDALtype_b << std::endl;
+
+                            if(boundaries_b.empty())
+                            {
+                                std::cerr << FRED("ERROR: Boundary file does not contain valid polygon boundary data.") << std::endl;
+                                exit(1);
+                            }
+
+                            if(optFlag.isSet())
+                                paramSurface.opt += optFlag.getValue();
+
+                            for(size_t jj=0; jj<boundaries_b.size(); jj++)
+                            {
+                                std::vector<Point3D> boundary_unique;
+                                remove_duplicates_test_opt(boundaries_b.at(jj), boundary_unique, setTolerance.getValue());
+
+                                if(boundary_unique.size() < 3)
+                                {
+                                    std::cerr << FRED("ERROR: at least 3 unique points are required for triangulation.") << std::endl;
+                                    continue;
+                                }
+
+                                std::vector<Point3D> boundary_xy = boundary_unique;
+                                if(auto_aligned)
+                                    align_points_to_xyplane(boundary_xy, otfRotation);
+
+                                trimesh.clear();
+                                trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt);
+                                remove_isolate_vertices(trimesh);
+
+                                if(auto_aligned)
+                                    rotation_on_trimesh(trimesh, otfRotation, true);
+                                
+                                //Fix saving? To do: save a mesh for each boundary (if more than one)
+                            }
+                        }
+
+                        else
+                        {
+                            std::cerr << "ERROR: Required argument missing: --convex, --concave or --boundary -m <filename>." << std::endl;
+                            continue;
+                        }
+
+                        Surface.setParameters(paramSurface);
+                        Surface.setSummary(trimesh);
+                        geometa.setMeshSummary(Surface);
+
+                        trimesh.save(out_mesh.c_str());
+                        std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
+                        std::cout << std::endl;
+                    }
+                    else if(gridFlag.isSet())
+                    {
+                        std::cerr << "\033[0;31mGRID FLAG NOT ACTIVE for POINT/LINESTRING!\033[0m" << std::endl;
+                        exit(1);
+                    }
 
                     if(datasets.size() > 1)
-                        Geometry.id_subdomain = i+1;
+                        Geometry.id_subdomain = std::to_string(i+1);
 
                     geometa.setGeospatialData(Geometry);
 
-                    if(datasets.size() > 1 || boundaries.size() > 1)
-                        geometa.write(out_surf +"/"+ Geometry.name +"_" + std::to_string(i+1) + ".json");
-                    else
-                        geometa.write(out_surf +"/"+ Geometry.name + ".json");
-
-                    break;
+                    std::string json_path = datasets.size() > 1
+                                                ? out_surf + "/" + Geometry.name + "_" + std::to_string(i+1) + ".json"
+                                                : out_surf + "/" + Geometry.name + ".json";
+                    geometa.write(json_path);
                 }
-                }
+                break;            
+            }
             }
         }
+        std::cout << "\033[0;32m=== Vector processing ... COMPLETED.\033[0m" << std::endl;
     }
 
 
@@ -1945,35 +1989,6 @@ int main(int argc, char** argv)
                 std::cout << std::endl;
 
                 ///
-                /// Computing bbox data and traslate at the center - TO CHECK!!
-                ///
-                // std::vector<cinolib::vec3d> data_for_bbox;
-                // for(size_t di=0; di < data.size(); di++)
-                //     data_for_bbox.push_back(cinolib::vec3d({data.at(di).x, data.at(di).y, data.at(di).z}));
-                // cinolib::AABB aabb (data_for_bbox);
-                // data_for_bbox.clear();
-
-                // data_for_bbox.push_back(cinolib::vec3d({aabb.min.x(), aabb.min.y(), aabb.min.z()}));
-                // data_for_bbox.push_back(cinolib::vec3d({aabb.max.x(), aabb.min.y(), aabb.min.z()}));
-                // data_for_bbox.push_back(cinolib::vec3d({aabb.max.x(), aabb.max.y(), aabb.min.z()}));
-                // data_for_bbox.push_back(cinolib::vec3d({aabb.min.x(), aabb.max.y(), aabb.min.z()}));
-                // data_for_bbox.push_back(cinolib::vec3d({aabb.min.x(), aabb.min.y(), aabb.max.z()}));
-                // data_for_bbox.push_back(cinolib::vec3d({aabb.max.x(), aabb.min.y(), aabb.max.z()}));
-                // data_for_bbox.push_back(cinolib::vec3d({aabb.max.x(), aabb.max.y(), aabb.max.z()}));
-                // data_for_bbox.push_back(cinolib::vec3d({aabb.min.x(), aabb.max.y(), aabb.max.z()}));
-                // std::cout << "=== Computing best plane on points bounding box | vector size: " << data_for_bbox.size() << std::endl;
-
-                // cinolib::vec3d center (aabb.min.x() + aabb.delta_x()/2.0, aabb.min.y() + aabb.delta_y()/2.0, aabb.min.z() + aabb.delta_z()/2.0);
-                // std::cout << "=== Center bbox data: " << center.x() << "; " << center.y() << "; " << center.z() << std::endl;
-
-                // for(auto &point:data)
-                // {
-                //     point.x -= center.x();
-                //     point.y -= center.y();
-                //     point.z -= center.z();
-                // }
-
-                ///
                 /// Starting meshing
                 ///
                 if(triFlag.isSet())
@@ -2049,24 +2064,11 @@ int main(int argc, char** argv)
                     // External boundary from cmd
                     else if(setBoundary.isSet())
                     {
+                        std::cout << "=== External boundary is interpreted as a 2D xy clipping/constrained domain for raster data triangulation." << std::endl;
+                        std::cout << "=== No rotation is applied to raster data or boundary points." << std::endl;
+
                         std::vector<Point3D> boundary;
                         load_xyzfile(setBoundary.getValue(), boundary);
-
-                        if(setRotAxis.isSet())
-                        {
-                            for(size_t k = 0; k < boundary.size(); k++)
-                            {
-                                cinolib::vec3d sample(boundary.at(k).x, boundary.at(k).y, boundary.at(k).z);
-                                cinolib::vec3d axis = set_rotation_axis(setRotAxis.getValue());
-                                cinolib::vec3d c(setRotCenterX.getValue(), setRotCenterY.getValue(), setRotCenterZ.getValue());
-
-                                sample = point_rotation(sample, axis, setRotAngle.getValue(), c);
-
-                                boundary.at(k).x = sample.x();
-                                boundary.at(k).y = sample.y();
-                                boundary.at(k).z = sample.z();
-                            }
-                        }
 
                         paramSurface.opt = "";
 
@@ -2094,9 +2096,6 @@ int main(int argc, char** argv)
                 else if(gridFlag.isSet())
                 {
                     paramSurface.type = "QUADMESH";
-                    // paramSurface.resx = XSizePixel;
-                    // paramSurface.resy = YSizePixel;
-                    // paramSurface.resz = 0.0;
 
                     paramSurface.resx = setResx.isSet() ? setResx.getValue() : XSizePixel;
                     paramSurface.resy = setResy.isSet() ? setResy.getValue() : YSizePixel;
@@ -2128,21 +2127,6 @@ int main(int argc, char** argv)
 
     if(loadPointCloud.isSet())
     {
-//        cinolib::Trimesh<> mmm;
-//        mmm.load("/Users/mariannamiola/muse/examples/MUSE_test/12_pianPadana_3D_tet/out/geometry/surf/samples.obj");
-
-//        std::vector<Point3D> bvec;
-//        for(uint vid:mmm.get_ordered_boundary_vertices())
-//        {
-//            Point3D v;
-//            v.x = mmm.vert(vid).x();
-//            v.y = mmm.vert(vid).y();
-//            v.z = mmm.vert(vid).z();
-//            bvec.push_back(v);
-//        }
-//        export3d_xyz("/Users/mariannamiola/muse/examples/MUSE_test/12_pianPadana_3D_tet/out/geometry/surf/samples_bound.xyz", bvec);
-//        exit(1);
-
         // Check on input files (.txt, .dat)
         if(filesystem::is_empty(in_geometry))
         {

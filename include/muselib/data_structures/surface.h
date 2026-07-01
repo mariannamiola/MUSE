@@ -21,9 +21,9 @@ public:
 
     struct Parameters
     {
-        std::string type;
-        std::string boundary;
-        std::string opt;
+        std::string type = "";
+        std::string boundary = "";
+        std::string opt = "";
 
         double resx = 0.0;
         double resy = 0.0;

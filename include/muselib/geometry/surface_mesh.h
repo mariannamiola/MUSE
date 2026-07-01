@@ -2,6 +2,7 @@
 #define SURFACE_MESH_H
 
 #include <cinolib/meshes/polygonmesh.h>
+#include "muselib/data_structures/rotation.h"
 
 namespace MUSE
 {
@@ -42,6 +43,8 @@ class SurfaceMesh : public cinolib::Polygonmesh<M,V,E,P>
         void triangles_split_on_edge();
         void quads_split_on_edge();
         //void remove_isolate_vert();
+
+        void rotate(const MUSE::Rotation &bound_Rotation, bool reverse);
 
     private:
 

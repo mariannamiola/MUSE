@@ -38,8 +38,6 @@ std::vector<double> serialized_from_point3d (const std::vector<Point3D> &points)
 
 
 
-
-
 std::vector<Point3D> remove_sorted_duplicates (const std::vector<Point3D> &points)
 {
     std::vector<Point3D> sorted_points = points;
@@ -64,133 +62,7 @@ std::vector<Point3D> remove_sorted_duplicates (const std::vector<Point3D> &point
 }
 
 
-
-
-//std::vector<Point3D> remove_duplicates (const std::vector<Point3D> &points)
-//{
-//    //std::vector<Point3D> points_ex;
-//    for(size_t i=0; i<points.size(); i++)
-//    {
-//        Point3DID pex;
-//        pex.x = points.at(i).x;
-//        pex.y = points.at(i).y;
-//        pex.z = points.at(i).z;
-//        pex.id = i;
-
-//        points_ex.push_back(pex);
-//    }
-
-//    std::vector<Point3DID> sorted_points = points_ex;
-//    std::vector<Point3D> unique_points;
-//    std::vector<int> id_dupl;
-
-//    std::sort(sorted_points.begin(), sorted_points.end(), comparePoint2);
-
-//    for (uint i=1; i < sorted_points.size(); i++)
-//    {
-//        Point2D p0, p1;
-//        p0.x = sorted_points.at(i-1).x;
-//        p0.y = sorted_points.at(i-1).y;
-//        p1.x = sorted_points.at(i).x;
-//        p1.y = sorted_points.at(i).y;
-
-//        if (dist(p0, p1) <= 1e-6)
-//            id_dupl.push_back(sorted_points.at(i).id);
-//    }
-
-//    if(id_dupl.size() > 0)
-//    {
-//        std::sort(id_dupl.begin(), id_dupl.end());
-
-//        for(size_t i=0; i< points_ex.size(); i++)
-//        {
-//            if (!check_index(id_dupl, points_ex.at(i).id))
-//            {
-//                Point3D unique_p;
-//                unique_p.x = points_ex.at(i).x;
-//                unique_p.y = points_ex.at(i).y;
-//                unique_p.z = points_ex.at(i).z;
-
-//                unique_points.push_back(unique_p);
-//            }
-//        }
-//    }
-//    else
-//        unique_points = points;
-
-//    std::cout << "Removing duplicated points ... COMPLETED. " << unique_points.size() << " left" << std::endl;
-//    return unique_points;\
-//}
-
-//namespace std
-//{
-//    template<>
-//    struct hash<Point3D>
-//    {
-//        size_t operator()(Point3D const& pt) const
-//        {
-//            return (size_t)(pt.x*100 + pt.y);
-//        }
-//    };
-//}
-//bool operator==(const Point3D& pt1, const Point3D& pt2)
-//{
-//    return ((pt1.x == pt2.x) && (pt1.y == pt2.y));
-//}
-
-//std::vector<Point3D> remove_points_duplicates (std::vector<Point3D> &vec)
-//{
-
-//    std::unordered_set<Point3D> pointset;  // unordered_set is a hash table implementation
-
-//    auto itor = vec.begin();
-//    while (itor != vec.end())
-//    {
-//        if (pointset.find(*itor) != pointset.end())   // O(1) lookup time for unordered_set
-//        {
-//            itor = vec.erase(itor); // vec.erase returns the next valid iterator
-//        }
-//        else
-//        {
-//            pointset.insert(*itor);
-//            itor++;
-//        }
-//    }
-
-////    std::sort(points.begin(), points.end(), comparePoint);
-////    auto unique_end = std::unique(points.begin(), points.end(), equalPoint);
-////    points.erase(unique_end, points.end());
-
-
-//}
-
-
-void remove_duplicates_test(const std::vector<Point3D> &points, std::vector<Point3D> &unique_points, const double &tol)
-{
-    unique_points.push_back(points.at(0));
-
-    for(uint i=1; i<points.size(); i++)
-    {
-        bool is_unique = true;
-        for(uint j=0; j< unique_points.size(); j++)
-        {
-            double d = dist3D(points.at(i), unique_points.at(j));
-
-            if(d < tol)
-            {
-                is_unique = false;
-                break;
-            }
-
-        }
-        if(is_unique)
-            unique_points.push_back(points.at(i));
-    }
-    std::cout << "Removing " << points.size()-unique_points.size() << " duplicated points ... COMPLETED." << std::endl;
-}
-
-
-void remove_duplicates_test_opt(const std::vector<Point3D> &points, std::vector<Point3D> &unique_points)
+void remove_duplicates_test_opt(const std::vector<Point3D> &points, std::vector<Point3D> &unique_points, const double &tol)
 {
     std::cout << "### Starting vector dimension: " << points.size() << std::endl;  
     std::vector<Point3D> sorted_points = points;
@@ -272,6 +144,25 @@ void mesh_summary (cinolib::Trimesh<> &mesh)
     std::cout << std::endl;
 }
 
+void rotation_on_trimesh (cinolib::Trimesh<> &trimesh, const MUSE::Rotation &bound_Rotation, bool reverse)
+{
+    cinolib::vec3d rot_axis_vec (bound_Rotation.rotation_axis_vec.at(0), bound_Rotation.rotation_axis_vec.at(1), bound_Rotation.rotation_axis_vec.at(2));
+    cinolib::vec3d c (bound_Rotation.rotation_center_x, bound_Rotation.rotation_center_y, bound_Rotation.rotation_center_z);
+ 
+    double sign = 1.0;
+    if(reverse)
+        sign = -1.0;
+ 
+    for(size_t i=0; i< trimesh.num_verts(); i++)
+    {
+        cinolib::vec3d sample (trimesh.vert(i).x(), trimesh.vert(i).y(), trimesh.vert(i).z());
+        sample = point_rotation(sample, rot_axis_vec, sign * bound_Rotation.rotation_angle, c);
+ 
+        trimesh.vert(i).x() = sample.x();
+        trimesh.vert(i).y() = sample.y();
+        trimesh.vert(i).z() = sample.z();
+    }
+}
 
 //Routine for points triangulation
 cinolib::Trimesh<> points_triangulation (const std::vector<Point3D> &points, std::string opt)
@@ -1587,118 +1478,6 @@ bool vert_merge (cinolib::Trimesh<> mesh, const uint vid0, const uint vid1)
 
     return true;
 }
-
-
-//void triangles_split_on_centroid (cinolib::Trimesh<> &mesh)
-//{
-//    uint n_polys = mesh.num_polys();
-//    for(uint pid=0; pid < n_polys; pid++)
-//        mesh.poly_split(pid);
-//}
-
-//void triangles_split_on_edge (cinolib::Trimesh<> &mesh)
-//{
-//    uint n_verts = mesh.num_verts();
-//    for(uint eid=0; eid<mesh.num_edges();eid++)
-//    {
-//        cinolib::vec3d v0 = mesh.edge_vert(eid, 0);
-//        cinolib::vec3d v1 = mesh.edge_vert(eid, 1);
-//        cinolib::vec3d delta = (v1-v0)/2;
-
-//        cinolib::vec3d v_med (v0.x()+delta.x(), v0.y()+delta.y(), v0.z()+delta.z());
-//        mesh.vert_add(v_med);
-//    }
-//    //std::cout << "N. ORIGINALE VERTICI: " << n_verts << std::endl;
-//    //std::cout << "N. VERTICI POST: " << mesh.num_verts() << std::endl;
-
-//    uint n_polys = mesh.num_polys();
-//    for(uint pid=0; pid < n_polys; pid++)
-//    {
-//        uint vid0 = mesh.poly_vert_id(pid, 0);
-//        uint vid1 = mesh.poly_vert_id(pid, 1);
-//        uint vid2 = mesh.poly_vert_id(pid, 2);
-
-//        uint new0 = mesh.poly_edge_id(pid, 0) + n_verts;
-//        uint new1 = mesh.poly_edge_id(pid, 1) + n_verts;
-//        uint new2 = mesh.poly_edge_id(pid, 2) + n_verts;
-
-//        uint new_pid;
-//        new_pid = mesh.poly_add(vid0, new0, new2);
-//        mesh.poly_data(new_pid) = mesh.poly_data(pid);
-
-//        new_pid = mesh.poly_add(new0, vid1, new1);
-//        mesh.poly_data(new_pid) = mesh.poly_data(pid);
-
-//        new_pid = mesh.poly_add(new2, new1, vid2);
-//        mesh.poly_data(new_pid) = mesh.poly_data(pid);
-
-//        new_pid = mesh.poly_add(new0, new1, new2);
-//        mesh.poly_data(new_pid) = mesh.poly_data(pid);
-
-//        mesh.poly_remove(pid);
-//    }
-//}
-
-
-//void quads_split_on_edge (cinolib::Quadmesh<> &mesh)
-//{
-//    uint n_verts = mesh.num_verts();
-//    for(uint eid=0; eid<mesh.num_edges();eid++)
-//    {
-//        cinolib::vec3d v0 = mesh.edge_vert(eid, 0);
-//        cinolib::vec3d v1 = mesh.edge_vert(eid, 1);
-//        cinolib::vec3d delta = (v1-v0)/2;
-
-//        cinolib::vec3d v_med (v0.x()+delta.x(), v0.y()+delta.y(), v0.z()+delta.z());
-//        mesh.vert_add(v_med);
-//    }
-//    //std::cout << "N. ORIGINALE VERTICI: " << n_verts << std::endl;
-//    //std::cout << "N. VERTICI POST: " << mesh.num_verts() << std::endl;
-
-//    uint n_polys = mesh.num_polys();
-//    for(uint pid=0; pid < n_polys; pid++)
-//    {
-//        uint centr = mesh.vert_add(mesh.poly_centroid(pid));
-
-//        uint vid0 = mesh.poly_vert_id(pid, 0);
-//        uint vid1 = mesh.poly_vert_id(pid, 1);
-//        uint vid2 = mesh.poly_vert_id(pid, 2);
-//        uint vid3 = mesh.poly_vert_id(pid, 3);
-
-//        std::vector<uint> pid_adj_edge = mesh.adj_p2e(pid);
-
-//        uint new0 = pid_adj_edge.at(0) + n_verts;
-//        uint new1 = pid_adj_edge.at(1) + n_verts;
-//        uint new2 = pid_adj_edge.at(2) + n_verts;
-//        uint new3 = pid_adj_edge.at(3) + n_verts;
-
-//        std::vector<uint> list0 {vid0, new0, centr, new3};
-//        std::vector<uint> list1 {new0, vid1, new1, centr};
-//        std::vector<uint> list2 {centr, new1, vid2, new2};
-//        std::vector<uint> list3 {new3, centr, new2, vid3};
-
-
-//        uint new_pid;
-//        new_pid = mesh.poly_add(list0);
-//        mesh.poly_data(new_pid) = mesh.poly_data(pid);
-
-//        new_pid = mesh.poly_add(list1);
-//        mesh.poly_data(new_pid) = mesh.poly_data(pid);
-
-//        new_pid = mesh.poly_add(list2);
-//        mesh.poly_data(new_pid) = mesh.poly_data(pid);
-
-//        new_pid = mesh.poly_add(list3);
-//        mesh.poly_data(new_pid) = mesh.poly_data(pid);
-
-//        mesh.poly_remove(pid);
-//    }
-//}
-
-
-
-
-
 
 
 

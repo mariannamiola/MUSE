@@ -3,6 +3,7 @@
 #include <ogrsf_frmts.h>
 #include <iostream>
 #include <fstream>
+#include <string>
 
 #include "muselib/colors.h"
 #include "muselib/utils.h"
@@ -758,125 +759,125 @@ int load_gpkg (const std::string filename, std::vector<std::vector<Point3D>> &bo
 
 
 
-int export_gpkg_attributes_to_csv(const std::string filename, const std::string &csv_filename)
-{
-    std::string gpkg_filename = filename.substr(filename.find_last_of("/") + 1, filename.length());
-    std::string basename = get_basename(gpkg_filename);
+// int export_gpkg_attributes_to_csv(const std::string filename, const std::string &csv_filename)
+// {
+//     std::string gpkg_filename = filename.substr(filename.find_last_of("/") + 1, filename.length());
+//     std::string basename = get_basename(gpkg_filename);
 
 
-    // 1. Register all the format drivers that are desired
-    GDALAllRegister();
+//     // 1. Register all the format drivers that are desired
+//     GDALAllRegister();
 
-    // 2. Open GeoPackage file
-    GDALDataset *poDS;
-    poDS = static_cast<GDALDataset*>(GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL));
-    if (poDS == NULL) {
-        std::cerr << "Error while loading GeoPackage file " << filename << std::endl;
-        return IOERROR;
-    }
+//     // 2. Open GeoPackage file
+//     GDALDataset *poDS;
+//     poDS = static_cast<GDALDataset*>(GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL));
+//     if (poDS == NULL) {
+//         std::cerr << "Error while loading GeoPackage file " << filename << std::endl;
+//         return IOERROR;
+//     }
 
-    // 3. Get the layer
-    OGRLayer *poLayer = poDS->GetLayer(0);
-    if (poLayer == NULL) {
-        std::cerr << "ERROR: Failed to get layer " << basename.c_str() << std::endl;
-        GDALClose(poDS);
-        return IOERROR;
-    }
+//     // 3. Get the layer
+//     OGRLayer *poLayer = poDS->GetLayer(0);
+//     if (poLayer == NULL) {
+//         std::cerr << "ERROR: Failed to get layer " << basename.c_str() << std::endl;
+//         GDALClose(poDS);
+//         return IOERROR;
+//     }
 
-    OGRFeatureDefn *poFDefn = poLayer->GetLayerDefn();
-    int iFieldCount = poFDefn->GetFieldCount();
-    std::vector<std::map<std::string, std::string>> featureAttributes;
+//     OGRFeatureDefn *poFDefn = poLayer->GetLayerDefn();
+//     int iFieldCount = poFDefn->GetFieldCount();
+//     std::vector<std::map<std::string, std::string>> featureAttributes;
 
-    // 4. Reading features from the layer
-    OGRFeature *poFeature;
-    poLayer->ResetReading(); // to ensure we are starting at the beginning of the layer
+//     // 4. Reading features from the layer
+//     OGRFeature *poFeature;
+//     poLayer->ResetReading(); // to ensure we are starting at the beginning of the layer
 
-    while ((poFeature = poLayer->GetNextFeature()) != NULL)
-    {
-        std::map<std::string, std::string> attributes;
-        for (int iField = 0; iField < iFieldCount; iField++)
-        {
-            OGRFieldDefn *poFieldDefn = poFDefn->GetFieldDefn(iField);
-            std::string fieldName = poFieldDefn->GetNameRef();
-            std::string fieldValue;
+//     while ((poFeature = poLayer->GetNextFeature()) != NULL)
+//     {
+//         std::map<std::string, std::string> attributes;
+//         for (int iField = 0; iField < iFieldCount; iField++)
+//         {
+//             OGRFieldDefn *poFieldDefn = poFDefn->GetFieldDefn(iField);
+//             std::string fieldName = poFieldDefn->GetNameRef();
+//             std::string fieldValue;
 
-            switch (poFieldDefn->GetType()) {
-            case OFTInteger:
-                fieldValue = std::to_string(poFeature->GetFieldAsInteger(iField));
-                break;
-            case OFTInteger64:
-                fieldValue = std::to_string(poFeature->GetFieldAsInteger64(iField));
-                break;
-            case OFTReal:
-            {
-                //std::cout << Value << std::endl;
-                char charValue[50];
-                sprintf(charValue, "%.15g", poFeature->GetFieldAsDouble(iField));
-                std::string fieldValue_tmp(charValue);
-                fieldValue = fieldValue_tmp;
+//             switch (poFieldDefn->GetType()) {
+//             case OFTInteger:
+//                 fieldValue = std::to_string(poFeature->GetFieldAsInteger(iField));
+//                 break;
+//             case OFTInteger64:
+//                 fieldValue = std::to_string(poFeature->GetFieldAsInteger64(iField));
+//                 break;
+//             case OFTReal:
+//             {
+//                 //std::cout << Value << std::endl;
+//                 char charValue[50];
+//                 sprintf(charValue, "%.15g", poFeature->GetFieldAsDouble(iField));
+//                 std::string fieldValue_tmp(charValue);
+//                 fieldValue = fieldValue_tmp;
 
-                //std::cout << fieldValue << std::endl;
-                //fieldValue = std::to_string(poFeature->GetFieldAsDouble(iField));
-                //sprintf(poFeature->GetFieldAsDouble(iField), "%.17g");
-                //fieldValue = std::to_string(poFeature->GetFieldAsDouble(iField));
-                break;
-            }
-            case OFTString:
-                fieldValue = poFeature->GetFieldAsString(iField);
-                break;
-            default:
-                fieldValue = "";
-                break;
-            }
-            attributes[fieldName] = fieldValue;
-        }
-        featureAttributes.push_back(attributes);
+//                 //std::cout << fieldValue << std::endl;
+//                 //fieldValue = std::to_string(poFeature->GetFieldAsDouble(iField));
+//                 //sprintf(poFeature->GetFieldAsDouble(iField), "%.17g");
+//                 //fieldValue = std::to_string(poFeature->GetFieldAsDouble(iField));
+//                 break;
+//             }
+//             case OFTString:
+//                 fieldValue = poFeature->GetFieldAsString(iField);
+//                 break;
+//             default:
+//                 fieldValue = "";
+//                 break;
+//             }
+//             attributes[fieldName] = fieldValue;
+//         }
+//         featureAttributes.push_back(attributes);
 
-        OGRFeature::DestroyFeature(poFeature);
-    }
+//         OGRFeature::DestroyFeature(poFeature);
+//     }
 
-    // 5. Export attributes to CSV
-    std::ofstream csv_file;
-    csv_file.open(csv_filename);
-    if (!csv_file.is_open()) {
-        std::cerr << "Error while opening CSV file " << csv_filename << std::endl;
-        return IOERROR;
-    }
+//     // 5. Export attributes to CSV
+//     std::ofstream csv_file;
+//     csv_file.open(csv_filename);
+//     if (!csv_file.is_open()) {
+//         std::cerr << "Error while opening CSV file " << csv_filename << std::endl;
+//         return IOERROR;
+//     }
 
-    // Write header
-    for (int iField = 0; iField < iFieldCount; iField++)
-    {
-        OGRFieldDefn *poFieldDefn = poFDefn->GetFieldDefn(iField);
-        std::string fieldName = poFieldDefn->GetNameRef();
+//     // Write header
+//     for (int iField = 0; iField < iFieldCount; iField++)
+//     {
+//         OGRFieldDefn *poFieldDefn = poFDefn->GetFieldDefn(iField);
+//         std::string fieldName = poFieldDefn->GetNameRef();
 
-        csv_file << fieldName;
-        if (iField < iFieldCount - 1) {
-            csv_file << ";";
-        }
-    }
-    csv_file << "\n";
+//         csv_file << fieldName;
+//         if (iField < iFieldCount - 1) {
+//             csv_file << ";";
+//         }
+//     }
+//     csv_file << "\n";
 
-    // Write attributes
-    for (const auto &attributes : featureAttributes) {
-        for (int iField = 0; iField < iFieldCount; iField++) {
-            OGRFieldDefn *poFieldDefn = poFDefn->GetFieldDefn(iField);
-            std::string fieldName = poFieldDefn->GetNameRef();
-            csv_file << attributes.at(fieldName);
-            if (iField < iFieldCount - 1) {
-                csv_file << ";";
-            }
-        }
-        csv_file << "\n";
-    }
+//     // Write attributes
+//     for (const auto &attributes : featureAttributes) {
+//         for (int iField = 0; iField < iFieldCount; iField++) {
+//             OGRFieldDefn *poFieldDefn = poFDefn->GetFieldDefn(iField);
+//             std::string fieldName = poFieldDefn->GetNameRef();
+//             csv_file << attributes.at(fieldName);
+//             if (iField < iFieldCount - 1) {
+//                 csv_file << ";";
+//             }
+//         }
+//         csv_file << "\n";
+//     }
 
-    csv_file.close();
+//     csv_file.close();
 
 
 
-    GDALClose(poDS);
+//     GDALClose(poDS);
 
-    return IOSUCCESS;
-}
+//     return IOSUCCESS;
+// }
 
 
 int export_attributes_to_csv(const std::string filename, const std::string &csv_filename)

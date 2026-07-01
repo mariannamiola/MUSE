@@ -49,6 +49,14 @@ std::vector<cinolib::vec3d> points_rotation     (std::vector<cinolib::vec3d> &po
 void align_points_to_xyplane                    (std::vector<double> &points_x, std::vector<double> &points_y, std::vector<double> &points_z, MUSE::Rotation &dataRotation);
 bool check_align_points_to_xyplane              (const std::vector<double>& points_x, const std::vector<double>& points_y, const std::vector<double>& points_z);
 
+bool align_points_to_xyplane                    (std::vector<Point3D> &points, MUSE::Rotation &dataRotation);
+
+void apply_rotation_to_points(
+    std::vector<Point3D> &points,
+    const MUSE::Rotation &rotation,
+    const bool inverse
+);
+
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
