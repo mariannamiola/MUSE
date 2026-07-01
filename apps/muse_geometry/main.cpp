@@ -2224,53 +2224,32 @@ int main(int argc, char** argv)
             std::vector<Point3D> boundary;
             load_xyzfile(setPolygon.getValue(), boundary);
 
-            if(boundary.size() == 0)
+            if(boundary.empty())
             {
-                std::cerr << "ERROR on loading points" << std::endl;
+                std::cerr << "ERROR on loading data representing boundary" << std::endl;
                 exit(1);
             }
-
 
             MUSE::SurfaceMeta::DataSummary dataSummary;
             dataSummary.setDataSummary(boundary);
             geometa.setDataSummary(dataSummary);
 
+            std::vector<Point3D> boundary_unique;
+            remove_duplicates_test_opt(boundary, boundary_unique, setTolerance.getValue());
 
-            MUSE::Rotation dataRotation;
-            if(setRotAxis.isSet())
+            if(boundary_unique.size() < 3)
             {
-                std::cout << "Rotation is activate on data..." << std::endl;
-                std::cout << "Rotation axis: " << setRotAxis.getValue() << std::endl;
-                std::cout << "Rotation center: [" << setRotCenterX.getValue() << "; "<< setRotCenterY.getValue() << "; " << setRotCenterZ.getValue() << "]" << std::endl;
-                std::cout << "Rotation angle (degree): " << setRotAngle.getValue() << std::endl;
-                std::cout << std::endl;
-
-                dataRotation.rotation_axis = setRotAxis.getValue();
-                dataRotation.rotation_center_x = setRotCenterX.getValue();
-                dataRotation.rotation_center_y = setRotCenterY.getValue();
-                dataRotation.rotation_center_z = setRotCenterZ.getValue();
-                dataRotation.rotation_angle = setRotAngle.getValue();
+                std::cerr << FRED("ERROR: at least 3 unique points are required for triangulation.") << std::endl;
+                exit(1);
             }
 
-            if(setRotAxis.isSet())
-            {
-                cinolib::vec3d axis = set_rotation_axis(setRotAxis.getValue());
-                cinolib::vec3d c (setRotCenterX.getValue(), setRotCenterY.getValue(), setRotCenterZ.getValue());
-
-                for(size_t i=0; i<boundary.size(); i++)
-                {
-                    cinolib::vec3d sample (boundary.at(i).x, boundary.at(i).y, boundary.at(i).z);
-                    sample = point_rotation(sample, axis, setRotAngle.getValue(), c);
-
-                    boundary.at(i).x = sample.x();
-                    boundary.at(i).y = sample.y();
-                    boundary.at(i).z = sample.z();
-                }
-            }
-            geometa.setDataRotation(dataRotation);
+            MUSE::Rotation otfRotation;
 
             if(triFlag.isSet())
             {
+                std::vector<Point3D> boundary_xy = boundary_unique;
+                bool auto_aligned = align_points_to_xyplane(boundary_xy, otfRotation);
+
                 cinolib::Trimesh<> trimesh;
                 trimesh.clear();
 
@@ -2283,37 +2262,43 @@ int main(int argc, char** argv)
                 std::cout << std::endl;
 
                 if(optFlag.isSet())
-                    paramSurface.opt = paramSurface.opt + optFlag.getValue();
+                    paramSurface.opt += optFlag.getValue();
 
-                trimesh = boundary_triangulation(boundary, paramSurface.opt);
+                trimesh = boundary_triangulation(boundary_xy, paramSurface.opt);
 
-                if(trimesh.num_verts() > boundary.size())
+                if(trimesh.num_verts() > boundary_xy.size())
                 {
                     std::cout << std::endl;
                     std::cout << "Restore z for additional points ..." << std::endl;
                     if(setMethodZ.getValue().compare("CONSTANT") == 0)
                     {
                         std::cout << "Constant value " << setNewZ.getValue() << " is set for Z additional points." << std::endl;
-                        for(uint vid=boundary.size(); vid < trimesh.num_verts(); vid++)
+                        for(uint vid=boundary_xy.size(); vid < trimesh.num_verts(); vid++)
                             trimesh.vert(vid).z() = setNewZ.getValue();
                     }
                     else if (setMethodZ.getValue().compare("MEAN") == 0)
                     {
                         std::cout << "Interpolation method is adopted to set z for additional points" << std::endl;
-                        fittedPlane plane = fitPlane(boundary);
-                        for(uint vid=boundary.size(); vid < trimesh.num_verts(); vid++)
+                        fittedPlane plane = fitPlane(boundary_xy);
+                        for(uint vid=boundary_xy.size(); vid < trimesh.num_verts(); vid++)
                             trimesh.vert(vid).z() = (trimesh.vert(vid).x()-plane.meanX)*plane.meanA0+(trimesh.vert(vid).y()-plane.meanY)*plane.meanA1 + plane.meanZ;
                     }
                     else if (setMethodZ.getValue().compare("NEAR") == 0)
                     {
+                        std::cout << "=== Nearest neighbor is not enabled." << std::endl;
+                        exit(1);
                     }
-                    std::cout << "Restore z for additional points ... COMPLETED." << std::endl;
+                    std::cout << "=== Restore z for additional points ... COMPLETED." << std::endl;
                     std::cout << std::endl;
                 }
 
                 remove_isolate_vertices(trimesh);
 
+                if(auto_aligned)
+                    rotation_on_trimesh(trimesh, otfRotation, true);
+
                 Surface.setSummary(trimesh);
+                Surface.setParameters(paramSurface);
                 trimesh.save(out_mesh.c_str());
             }
 
@@ -2324,6 +2309,7 @@ int main(int argc, char** argv)
                 std::cout << "Resolution in Y direction: " << setResy.getValue() << std::endl;
                 std::cout << "Set --resx <value>, --resy <value> to modify default resolutions." << std::endl;
                 std::cout << std::endl;
+                std::cout << "=== TO DO: auto-alignment is not enabled for grid meshing." << std::endl;
 
                 //FOR JSON ...
                 paramSurface.type = "QUADMESH";
@@ -2361,7 +2347,7 @@ int main(int argc, char** argv)
             std::vector<Point3D> data, uniq_data;
             load_xyzfile(setPoints.getValue(), data);
 
-            if(data.size() == 0)
+            if(data.empty())
             {
                 std::cerr << "ERROR on loading points" << std::endl;
                 exit(1);
@@ -2372,41 +2358,9 @@ int main(int argc, char** argv)
             geometa.setDataSummary(dataSummary);
 
 
-            MUSE::Rotation dataRotation;
-            if(setRotAxis.isSet())
-            {
-                std::cout << "Rotation is activate on data..." << std::endl;
-                std::cout << "Rotation axis: " << setRotAxis.getValue() << std::endl;
-                std::cout << "Rotation center: [" << setRotCenterX.getValue() << "; "<< setRotCenterY.getValue() << "; " << setRotCenterZ.getValue() << "]" << std::endl;
-                std::cout << "Rotation angle (degree): " << setRotAngle.getValue() << std::endl;
-                std::cout << std::endl;
-
-                dataRotation.rotation_axis = setRotAxis.getValue();
-                dataRotation.rotation_center_x = setRotCenterX.getValue();
-                dataRotation.rotation_center_y = setRotCenterY.getValue();
-                dataRotation.rotation_center_z = setRotCenterZ.getValue();
-                dataRotation.rotation_angle = setRotAngle.getValue();
-            }
-
-            if(setRotAxis.isSet())
-            {
-                for(size_t i=0; i<data.size(); i++)
-                {
-                    cinolib::vec3d sample (data.at(i).x, data.at(i).y, data.at(i).z);
-                    cinolib::vec3d axis = set_rotation_axis(setRotAxis.getValue());
-                    cinolib::vec3d c (setRotCenterX.getValue(), setRotCenterY.getValue(), setRotCenterZ.getValue());
-
-                    sample = point_rotation(sample, axis, setRotAngle.getValue(), c);
-
-                    data.at(i).x = sample.x();
-                    data.at(i).y = sample.y();
-                    data.at(i).z = sample.z();
-                }
-            }
-            geometa.setDataRotation(dataRotation);
-
             if(subSet.isSet())
             {
+                std::cout << "=== Random sampling of data vector is set." << std::endl;
                 srand(time(NULL));
                 std::vector<size_t> random_id(subSet.getValue());
                 for (size_t i = 0; i < subSet.getValue(); i++)
@@ -2422,16 +2376,30 @@ int main(int argc, char** argv)
                 data.clear();
                 for(int rid:random_id)
                     data.push_back(data_rand.at(rid));
-                std::cout << "### Size of data vector (before random sampling): " << data_rand.size() << std::endl;
-                std::cout << "### New size of data vector (after random sampling): " << data.size() << std::endl;
+                std::cout << "=== Size of data vector (before random sampling): " << data_rand.size() << std::endl;
+                std::cout << "=== New size of data vector (after random sampling): " << data.size() << std::endl;
                 std::cout << std::endl;
 
-                std::string filename_rand = "DEM_subset.xyz";
+                std::string filename_rand = "_subset.xyz";
                 export3d_xyz(out_surf + "/" + filename_rand, data);
             }
 
+            std::vector<Point3D> data_unique;
+            remove_duplicates_test_opt(data, data_unique, setTolerance.getValue());
+
+            if(data_unique.size() < 3)
+            {
+                std::cerr << FRED("ERROR: at least 3 unique points are required for triangulation.") << std::endl;
+                exit(1);
+            }
+
+            MUSE::Rotation otfRotation;
+
             if(triFlag.isSet())
             {
+                std::vector<Point3D> data_xy = data_unique;
+                bool auto_aligned = align_points_to_xyplane(data_xy, otfRotation);
+
                 cinolib::Trimesh<> trimesh;
                 trimesh.clear();
 
@@ -2443,37 +2411,34 @@ int main(int argc, char** argv)
                 //Convex hull
                 if (convexFlag.isSet())
                 {
-                    remove_duplicates_test_opt(data, uniq_data);
-
                     paramSurface.opt = "c";
 
                     if(optFlag.isSet())
-                        paramSurface.opt = paramSurface.opt + optFlag.getValue();
+                        paramSurface.opt += optFlag.getValue();
 
-                    trimesh.clear();
-                    trimesh = points_triangulation(uniq_data, paramSurface.opt);
+                    trimesh = points_triangulation(data_xy, paramSurface.opt);
 
-                    if(trimesh.num_verts() > uniq_data.size())
+                    if(trimesh.num_verts() > data_xy.size())
                     {
                         std::cout << std::endl;
                         std::cout << "Restore z for additional points ..." << std::endl;
                         if(setMethodZ.getValue().compare("CONSTANT") == 0)
                         {
                             std::cout << "Constant value " << setNewZ.getValue() << " is set for Z additional points." << std::endl;
-                            for(uint vid=uniq_data.size(); vid < trimesh.num_verts(); vid++)
+                            for(uint vid=data_xy.size(); vid < trimesh.num_verts(); vid++)
                                 trimesh.vert(vid).z() = setNewZ.getValue();
                         }
                         else if (setMethodZ.getValue().compare("MEAN") == 0)
                         {
                             std::cout << "Interpolation method is adopted to set z for additional points" << std::endl;
-                            fittedPlane plane = fitPlane(uniq_data);
-                            for(uint vid=uniq_data.size(); vid < trimesh.num_verts(); vid++)
+                            fittedPlane plane = fitPlane(data_xy);
+                            for(uint vid=data_xy.size(); vid < trimesh.num_verts(); vid++)
                                 trimesh.vert(vid).z() = (trimesh.vert(vid).x()-plane.meanX)*plane.meanA0+(trimesh.vert(vid).y()-plane.meanY)*plane.meanA1 + plane.meanZ;
                         }
                         else if (setMethodZ.getValue().compare("NEAR") == 0)
                         {
                             std::cout << "Interpolation method is adopted to set z for additional points" << std::endl;
-                            for(uint vid=uniq_data.size(); vid < trimesh.num_verts(); vid++)
+                            for(uint vid=data_xy.size(); vid < trimesh.num_verts(); vid++)
                             {
                                 std::vector<uint> adj_vert = trimesh.adj_v2v(vid);
                                 double mean, sum=0.0;
@@ -2495,41 +2460,24 @@ int main(int argc, char** argv)
                         else if (setMethodZ.getValue().compare("KRIGING") == 0)
                         {
                             std::vector<double> res_uniq_data, uniq_coord_x, uniq_coord_y, uniq_coord_z;
-                            fittedPlane plane = fitPlane(uniq_data);
-                            for(uint i=0; i<uniq_data.size(); i++)
+                            fittedPlane plane = fitPlane(data_xy);
+                            for(uint i=0; i<data_xy.size(); i++)
                             {
-                                double h = plane.meanA0 * uniq_data.at(i).x + plane.meanA1 * uniq_data.at(i).y + plane.b; //formulazione generale: h = A0*X + A1*Y + b
-                                res_uniq_data.push_back(uniq_data.at(i).z - h); //creo il vettore dei residuali (x,y,res_z)
-                                uniq_coord_x.push_back(uniq_data.at(i).x);
-                                uniq_coord_y.push_back(uniq_data.at(i).y);
-                                uniq_coord_z.push_back(uniq_data.at(i).z);
+                                double h = plane.meanA0 * data_xy.at(i).x + plane.meanA1 * data_xy.at(i).y + plane.b; //formulazione generale: h = A0*X + A1*Y + b
+                                res_uniq_data.push_back(data_xy.at(i).z - h); //creo il vettore dei residuali (x,y,res_z)
+                                uniq_coord_x.push_back(data_xy.at(i).x);
+                                uniq_coord_y.push_back(data_xy.at(i).y);
+                                uniq_coord_z.push_back(data_xy.at(i).z);
                             }
                             std::cout << "Calculating distance between points and best fitting plane ... COMPLETED." << std::endl;
-
-                            // APPLICARE IL KRIGING
-                            // std::vector<point3d> points_to_est;
-                            // for(uint vid=uniq_data.size(); vid < trimesh.num_verts(); vid++)
-                            //     points_to_est.push_back(point3d({trimesh.vert(vid).x(), trimesh.vert(vid).y(), trimesh.vert(vid).z()}, {0.0}));
-                            //OK_interpolation (res_uniq_data, uniq_coord_x, uniq_coord_y, uniq_coord_z, points_to_est);
-
-                            //AGGIUNGERE IL TREND
-                            //Riaggiungo il trend
-                            // void add_drift(const fittedPlane &plane, Residual &res)
-                            // {
-                            //     for (uint i = 0; i < res.res.size(); i++)
-                            //     {
-                            //         double new_h = plane.barA0 * res.x.at(i) + plane.barA1 * res.y.at(i) + plane.b;
-                            //         res.z.at(i) = res.res.at(i) + new_h;
-                            //     }
-                            // }
-
-                            //ASSOCIARE LE Z CALCOLATE AI PUNTI AGGIUNTIVI
                         }
                         std::cout << "Restore z for additional points ... COMPLETED." << std::endl;
                         std::cout << std::endl;
                     }
 
                     remove_isolate_vertices(trimesh);
+                    if(auto_aligned)
+                        rotation_on_trimesh(trimesh, otfRotation, true);
 
                     paramSurface.boundary = "CONVEX HULL";
 
@@ -2538,36 +2486,28 @@ int main(int argc, char** argv)
 
                 else if (concaveFlag.isSet())
                 {
-                    remove_duplicates_test_opt(data, uniq_data);
-
                     // 1. Calcolo il convex hull (passando per la triangolazione dei punti) e lo trasformo in int da uint
-                    trimesh = points_triangulation(uniq_data, "c");
+                    trimesh = points_triangulation(data_xy, "c");
+
                     std::vector<int> convexhull;
                     std::vector<unsigned int> convex_uint = trimesh.get_ordered_boundary_vertices();
                     for(int i: convex_uint)
                         convexhull.push_back((short) i);
 
                     std::vector<int> b_id;
-                    std::vector<Point3D> concavehull = computing_concavehull(uniq_data, convexhull, b_id);
+                    std::vector<Point3D> concavehull = computing_concavehull(data_xy, convexhull, b_id);
 
                     // 2. Removing points of concavehull (boundary) from datasets
                     std::sort(b_id.begin(), b_id.end());
                     std::vector<Point3D> unique_data;
-                    for(size_t i=0; i< uniq_data.size(); i++)
+                    for(size_t idp=0; idp< data_xy.size(); idp++)
                     {
-                        if (!check_index(b_id, i))
-                        {
-                            Point3D unique_p;
-                            unique_p.x = uniq_data.at(i).x;
-                            unique_p.y = uniq_data.at(i).y;
-                            unique_p.z = uniq_data.at(i).z;
-
-                            unique_data.push_back(unique_p);
-                        }
+                        if (!check_index(b_id, static_cast<int>(idp)))
+                            unique_data.push_back(data_xy.at(idp));
                     }
 
                     if(optFlag.isSet())
-                        paramSurface.opt = paramSurface.opt + optFlag.getValue();
+                        paramSurface.opt += optFlag.getValue();
 
                     trimesh.clear();
                     trimesh = concavehull_triangulation(concavehull, unique_data, paramSurface.opt);
@@ -2575,35 +2515,34 @@ int main(int argc, char** argv)
 
                     paramSurface.boundary = "CONCAVE HULL";
 
+                    if(auto_aligned)
+                        rotation_on_trimesh(trimesh, otfRotation, true);
+
                     std::cout << "\033[0;32mTriangulation with concave hull ... COMPLETED.\033[0m" << std::endl;
                 }
 
                 // External boundary from cmd
                 else if (setBoundary.isSet()) //se gli passo da linea di comando un bordo esterno: 1) leggi 2) triangola i punti vincolati al bordo
                 {
-                    remove_duplicates_test_opt(data, uniq_data);
-                    //uniq_data=data;
-                    std::cout << std::endl;
-
-                    std::vector<Point3D> boundary, uniq_boundary;
+                    std::vector<Point3D> boundary, boundary_unique;
                     load_xyzfile(setBoundary.getValue(), boundary);
-                    remove_duplicates_test_opt(boundary, uniq_boundary);
-
-                    if(setRotAxis.isSet())
+                    
+                    if(boundary.empty())
                     {
-                        for(size_t i=0; i<uniq_boundary.size(); i++)
-                        {
-                            cinolib::vec3d sample (uniq_boundary.at(i).x, uniq_boundary.at(i).y, uniq_boundary.at(i).z);
-                            cinolib::vec3d axis = set_rotation_axis(setRotAxis.getValue());
-                            cinolib::vec3d c (setRotCenterX.getValue(), setRotCenterY.getValue(), setRotCenterZ.getValue());
-
-                            sample = point_rotation(sample, axis, setRotAngle.getValue(), c);
-
-                            uniq_boundary.at(i).x = sample.x();
-                            uniq_boundary.at(i).y = sample.y();
-                            uniq_boundary.at(i).z = sample.z();
-                        }
+                        std::cerr << "ERROR on loading data representing boundary" << std::endl;
+                        exit(1);
                     }
+
+                    remove_duplicates_test_opt(boundary, boundary_unique, setTolerance.getValue());
+                    if(boundary_unique.size() < 3)
+                    {
+                        std::cerr << FRED("ERROR: at least 3 unique points are required for triangulation.") << std::endl;
+                        exit(1);
+                    }
+
+                    std::vector<Point3D> boundary_xy = boundary_unique;
+                    if(auto_aligned)
+                        align_points_to_xyplane(boundary_xy, otfRotation);
 
                     paramSurface.opt = "";
 
@@ -2611,8 +2550,11 @@ int main(int argc, char** argv)
                         paramSurface.opt = paramSurface.opt + optFlag.getValue();
 
                     trimesh.clear();
-                    trimesh = constrained_triangulation2(uniq_boundary, uniq_data, paramSurface.opt);
+                    trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt);
+                    remove_isolate_vertices(trimesh);
 
+                    if(auto_aligned)
+                        rotation_on_trimesh(trimesh, otfRotation, true);
                 }
                 else
                 {
@@ -2627,13 +2569,6 @@ int main(int argc, char** argv)
             }
             else if (gridFlag.isSet())
             {
-//              std::cout << "2D gridding is set on plane: " << setPlane.getValue() << std::endl;
-
-//              MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), data);
-//              quadmesh.save(out_mesh.c_str());
-
-                //paramSurface.type = "GRIDMESH";
-
                 std::cerr << FRED("GRID FLAG IS NOT ACTIVE!!") << std::endl;
                 exit(1);
             }
