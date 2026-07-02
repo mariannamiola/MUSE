@@ -1,0 +1,58 @@
+{
+  "work_folder": "MUSE_test",
+  "project_name": "08_anti_2D_4000_tri",
+
+  "samples": "samples.csv",
+  "varname": "class",
+  "units": "-",
+
+  "geometry": {
+    "name": "anti_rot",
+    "sub": "anti",
+    "ext": "obj"
+  },
+
+  "vario": {
+    "dir": "DIR",
+    "dim": "2D"
+  },
+
+  "compute": {
+    "space": "",
+    "where": "_stats",
+    "var": "best",
+    "units": "-",
+    "geom": "geom_anti"
+  },
+
+  "columns": {
+    "samples": {
+      "x": "X",
+      "y": "Y",
+      "z": "Z",
+      "value": "class",
+      "cat": true,
+      "n_cat": 8
+    },
+
+    "scalarfield": {
+      "x": "Field 0",
+      "y": "Field 0",
+      "z": "Field 0",
+      "value": "Field 0",
+      "cat": true,
+      "n_cat": 8
+    }
+  },
+
+  "view": {
+    "plane": "XZ",
+    "distance_factor": 1.5
+  },
+
+  "output": {
+    "save": true,
+    "dir": "_fig",
+    "format": "png"
+  }
+}
