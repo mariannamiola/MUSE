@@ -39,7 +39,40 @@ double point_to_line_distance (const double &x0, const double &y0, const double 
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-bool point_in_polygon (const Point2D p, const std::vector<Point2D> &boundaries)
+bool point_on_segment(const Point2D &p, const Point2D &a, const Point2D &b, const double tol)
+{
+    const double dx = b.x - a.x;
+    const double dy = b.y - a.y;
+ 
+    const double len2 = dx * dx + dy * dy;
+ 
+    if(len2 <= tol * tol)
+    {
+        const double ddx = p.x - a.x;
+        const double ddy = p.y - a.y;
+ 
+        return std::sqrt(ddx * ddx + ddy * ddy) <= tol;
+    }
+ 
+    // Distanza del punto dalla retta passante per a-b.
+    const double cross = (p.x - a.x) * dy - (p.y - a.y) * dx;
+    const double dist = std::fabs(cross) / std::sqrt(len2);
+ 
+    if(dist > tol)
+        return false;
+ 
+    // Check che il punto cada tra gli estremi del segmento.
+    if(p.x < std::min(a.x, b.x) - tol || p.x > std::max(a.x, b.x) + tol)
+        return false;
+ 
+    if(p.y < std::min(a.y, b.y) - tol || p.y > std::max(a.y, b.y) + tol)
+        return false;
+ 
+    return true;
+}
+
+
+bool point_in_polygon (const Point2D p, const std::vector<Point2D> &boundaries, const double tol)
 {
     double min_x =  DBL_MAX;
     double min_y =  DBL_MAX;
@@ -56,7 +89,7 @@ bool point_in_polygon (const Point2D p, const std::vector<Point2D> &boundaries)
     }
 
     //Check se i punti sono fuori/dentro i min/max
-    if (p.x < min_x || p.x > max_x || p.y < min_y || p.y > max_y )
+    if (p.x < min_x - tol || p.x > max_x + tol || p.y < min_y - tol || p.y > max_y + tol )
         return false;
 
 
@@ -67,24 +100,34 @@ bool point_in_polygon (const Point2D p, const std::vector<Point2D> &boundaries)
     int i, j, c = 0;
     unsigned int nvert = boundaries.size();
 
-    for (i = 0, j = nvert-1; i < nvert; j = i++)
+    //Controllo esplicito se il punto è sul bordo
+    for(size_t i = 0, j = nvert - 1; i < nvert; j = i++)
     {
-        if ( ((boundaries[i].y>p.y) != (boundaries[j].y>p.y)) &&
-                 (p.x < (boundaries[j].x-boundaries[i].x) * (p.y-boundaries[i].y) / (boundaries[j].y-boundaries[i].y) + boundaries[i].x) )
+        if(point_on_segment(p, boundaries[j], boundaries[i], tol))
+            return true;
+    }
+
+    for (size_t i = 0, j = nvert-1; i < nvert; j = i++)
+    {
+        const Point2D &pi = boundaries[i];
+        const Point2D &pj = boundaries[j];
+
+        if ( ((pi.y>p.y) != (pj.y>p.y)) &&
+                 (p.x < (pj.x-pi.x) * (p.y-pi.y) / (pj.y-pi.y) + pi.x) )
             c = !c;
     }
     return c;
 }
 
 
-void points_in_polygon (const std::vector<Point2D> &points, const std::vector<Point2D> &boundaries, std::vector<unsigned int> &id_in_points)
+void points_in_polygon (const std::vector<Point2D> &points, const std::vector<Point2D> &boundaries, std::vector<unsigned int> &id_in_points, const double tol)
 {
     id_in_points.clear();
 
     unsigned int id = 0;
     for (const Point2D &p : points)
     {
-        if (point_in_polygon(p, boundaries)) //se è vero, salva l'indice del punto nel vettore id_is_points
+        if (point_in_polygon(p, boundaries, tol)) //se è vero, salva l'indice del punto nel vettore id_is_points
             id_in_points.push_back(id);
         id++;
     }

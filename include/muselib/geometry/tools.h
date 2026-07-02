@@ -19,9 +19,11 @@ double point_to_line_distance                   (const double &x0, const double 
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+bool point_on_segment                           (const Point2D &p, const Point2D &a, const Point2D &b, const double tol = 1e-9);
 
-bool point_in_polygon                           (const Point2D p, const std::vector<Point2D> &boundaries);
-void points_in_polygon                          (const std::vector<Point2D> &points, const std::vector<Point2D> &boundaries, std::vector<unsigned int> &id_in_points);
+bool point_in_polygon                           (const Point2D p, const std::vector<Point2D> &boundaries, const double tol = 1e-9);
+void points_in_polygon                          (const std::vector<Point2D> &points, const std::vector<Point2D> &boundaries, std::vector<unsigned int> &id_in_points, const double tol = 1e-9);
+
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
