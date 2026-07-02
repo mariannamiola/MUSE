@@ -1204,6 +1204,7 @@ int main(int argc, char** argv)
                                 Surface.setParameters(paramSurface);
                                 geometa.setMeshSummary(Surface);
                                 geometa.setGeospatialData(Geometry);
+                                geometa.setDataRotation(otfRotation);
                                 
                                 std::string json_path = boundaries.size() > 1
                                             ? out_surf + "/" + Geometry.name + "_" + Geometry.id_subdomain + ".json"
@@ -1410,6 +1411,7 @@ int main(int argc, char** argv)
                             }
 
                             geometa.setMeshSummary(Surface);
+                            geometa.setDataRotation(otfRotation);
 
                             if(datasets.size() > 1)
                                 Geometry.id_subdomain = std::to_string(ii+1);
@@ -1659,6 +1661,7 @@ int main(int argc, char** argv)
 
                         geometa.setMeshSummary(Surface);
                         geometa.setGeospatialData(Geometry);
+                        geometa.setDataRotation(otfRotation);
 
                         std::string json_path = boundaries.size() > 1
                                                     ? out_surf + "/" + Geometry.name + "_" + Geometry.id_subdomain + ".json"
@@ -1863,6 +1866,7 @@ int main(int argc, char** argv)
                         Surface.setParameters(paramSurface);
                         Surface.setSummary(trimesh);
                         geometa.setMeshSummary(Surface);
+                        geometa.setDataRotation(otfRotation);
 
                         trimesh.save(out_mesh.c_str());
                         std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
@@ -1878,6 +1882,7 @@ int main(int argc, char** argv)
                         Geometry.id_subdomain = std::to_string(i+1);
 
                     geometa.setGeospatialData(Geometry);
+                    geometa.setDataRotation(otfRotation);
 
                     std::string json_path = datasets.size() > 1
                                                 ? out_surf + "/" + Geometry.name + "_" + std::to_string(i+1) + ".json"
@@ -2333,6 +2338,7 @@ int main(int argc, char** argv)
 
             geometa.setMeshSummary(Surface);
             geometa.setGeospatialData(Geometry);
+            geometa.setDataRotation(otfRotation);
             geometa.write(out_surf +"/"+ Geometry.name + ".json");
 
             break;
@@ -2575,6 +2581,7 @@ int main(int argc, char** argv)
 
             geometa.setMeshSummary(Surface);
             geometa.setGeospatialData(Geometry);
+            geometa.setDataRotation(otfRotation);
 
             geometa.write(out_surf + "/"+ Geometry.name + ".json");
 
@@ -2618,17 +2625,17 @@ int main(int argc, char** argv)
             exit(1);
         }
 
-        //TO DOOOOOOOOOOOOOOOOOO: CONTROLLARE FUNZIONE DI ROTAZIONE PUNTI!!!
-        if(setRotAxis.isSet())
-        {
-            std::vector<Point3D> boundary_tmp = boundary;
-            boundary.clear();
-            for(size_t i=0; i<boundary_tmp.size(); i++)
-            {
-                Point3D p_rot = rotPoint(boundary_tmp.at(i), setRotAxis.getValue(), setRotAngle.getValue());
-                boundary.push_back(p_rot);
-            }
-        }
+        // //TO DOOOOOOOOOOOOOOOOOO: CONTROLLARE FUNZIONE DI ROTAZIONE PUNTI!!!
+        // if(setRotAxis.isSet())
+        // {
+        //     std::vector<Point3D> boundary_tmp = boundary;
+        //     boundary.clear();
+        //     for(size_t i=0; i<boundary_tmp.size(); i++)
+        //     {
+        //         Point3D p_rot = rotPoint(boundary_tmp.at(i), setRotAxis.getValue(), setRotAngle.getValue());
+        //         boundary.push_back(p_rot);
+        //     }
+        // }
 
         if(gridFlag.isSet())
         {
@@ -2698,197 +2705,6 @@ int main(int argc, char** argv)
 
     }
 
-/*//    if(gridData.isSet())
-//    {
-//        if(!filesystem::exists(out_surf))
-//            filesystem::create_directory(out_surf);
-
-//        std::vector<Point3D> data;
-//        load_xyzfile(meshFiles.getValue().at(0), data);
-
-//        if(data.size() == 0)
-//        {
-//            std::cerr << "Error on loading points" << std::endl;
-//            exit(1);
-//        }
-
-
-//        if(gridDimension.getValue().compare("2D") == 0)
-//        {
-//            //TO DO: DA ESTENDERE PER TUTTI I PIANI E PER IL 3D.............................................
-//            //TO DO: DEFINIRE IL CENTRO DI ROTAZIONE........................................................
-
-
-//            std::cout << "2D gridding is set on plane: " << setPlane.getValue() << std::endl;
-
-
-//            if(setRotAxis.isSet())
-//            {
-//                std::cout << "Rotation is activate on data..." << std::endl;
-//                std::cout << "Rotation axis: " << setRotAxis.getValue() << std::endl;
-//                std::cout << "Rotation center: " << std::endl; //TO COMPLETE
-//                std::cout << "Rotation angle (degree): " << setRotAngle.getValue() << std::endl;
-
-//                std::vector<Point3D> data_tmp = data;
-//                data.clear();
-//                for(size_t i=0; i<data_tmp.size(); i++)
-//                {
-//                    Point3D p_rot = rotPoint(data_tmp.at(i), setRotAxis.getValue(), setRotAngle.getValue());
-//                    data.push_back(p_rot);
-//                }
-//            }
-
-//            double res_x =  setResx.getValue();
-//            double res_y =  setResy.getValue();
-
-//            if (setBoundary.isSet()) //se gli passo da linea di comando un bordo esterno: 1) leggi 2) triangola i punti vincolati al bordo
-//            {
-//                std::vector<Point3D> boundary;
-//                load_xyzfile(setBoundary.getValue(), boundary);
-
-//                if(setRotAxis.isSet())
-//                {
-//                    std::vector<Point3D> boundary_tmp = boundary;
-//                    boundary.clear();
-//                    for(size_t i=0; i<boundary_tmp.size(); i++)
-//                    {
-//                        Point3D p_rot = rotPoint(boundary_tmp.at(i), setRotAxis.getValue(), setRotAngle.getValue());
-//                        boundary.push_back(p_rot);
-//                    }
-//                }
-
-
-//                MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), boundary);
-
-//                std::string ext_mesh = ".off";
-//                if(objConversion.isSet() == true)
-//                    ext_mesh = ".obj";
-
-//                std::string out_mesh = out_surf + "/grid" + ext_mesh;
-
-//                quadmesh.save(out_mesh.c_str());
-//                exit(1);
-//            }
-
-
-
-
-
-
-
-
-//            double min_x =  DBL_MAX;
-//            double min_y =  DBL_MAX;
-
-//            double max_x = -DBL_MAX;
-//            double max_y = -DBL_MAX;
-
-
-//            if (setBoundary.isSet()) //se gli passo da linea di comando un bordo esterno: 1) leggi 2) triangola i punti vincolati al bordo
-//            {
-//                std::vector<Point3D> boundary;
-//                load_xyzfile(setBoundary.getValue(), boundary);
-
-//                if(setRotAxis.isSet())
-//                {
-//                    std::vector<Point3D> boundary_tmp = boundary;
-//                    boundary.clear();
-//                    for(size_t i=0; i<boundary_tmp.size(); i++)
-//                    {
-//                        Point3D p_rot = rotPoint(boundary_tmp.at(i), setRotAxis.getValue(), setRotAngle.getValue());
-//                        boundary.push_back(p_rot);
-//                    }
-//                }
-
-//                // Definizione boundary 2d
-//                std::vector<Point2D> boundary2d;
-//                for (uint i=0; i < boundary.size(); i++)
-//                {
-//                    Point2D p;
-//                    p.x = boundary.at(i).x;
-//                    p.y = boundary.at(i).y;
-
-//                    boundary2d.push_back(p);
-//                }
-
-
-//                std::cout << "Computing bounding box ... COMPLETED. " << std::endl;
-
-//                // Verifica se i punti cadono all'interno del bordo: se si, aggiorna il minimo/massimo
-//                for (const Point3D &p : data)
-//                {
-//                    Point2D pp;
-//                    pp.x = p.x;
-//                    pp.y = p.y;
-//                    if (! point_in_polygon(pp, boundary2d))
-//                        continue;
-
-//                    if (p.x < min_x) min_x = p.x;
-//                    if (p.y < min_y) min_y = p.y;
-//                    //if (p.z < min_z) min_z = p.z;
-
-//                    if (p.x > max_x) max_x = p.x;
-//                    if (p.y > max_y) max_y = p.y;
-//                    //if (p.z > max_z) max_z = p.z;
-//                }
-
-//                // Calcolo delta
-//                double delta_x = max_x - min_x;
-//                double delta_y = max_y - min_y;
-//                //double delta_z = max_z - min_z;
-//                std::cout << "deltax = " << delta_x << "; deltay = " << delta_y << std::endl;
-
-//                delta_x = delta_x + res_x;
-//                delta_y = delta_y + res_y;
-
-//                uint ncelle_x = static_cast<uint>(delta_x / res_x );
-//                uint ncelle_y = static_cast<uint>(delta_y / res_y );
-//                //uint nz = static_cast<uint>(delta_z / res_z );
-//                std::cout << "nx = " << ncelle_x << "; ny = " << ncelle_y << std::endl;
-
-//                std::vector<Point3D> points;
-
-//                double xstart = min_x - res_x/2;
-//                double ystart = min_y - res_y/2;
-
-//                for (uint dx=0; dx < ncelle_x+1; dx++)
-//                {
-//                    double x = xstart + res_x * dx ;
-
-//                    for (uint dy=0; dy < ncelle_y+1; dy++)
-//                    {
-//                        double y = ystart + res_y * dy ;
-//                        double z = -1 ;
-
-//                        //std::cout << x << "; " << y << "; " << z << std::endl;
-
-//                        Point3D p;
-//                        p.x = x;
-//                        p.y = y;
-//                        p.z = z;
-//                        points.push_back(p);
-
-//                    }
-//                }
-//                std::cout << "N. points of grid: " << points.size() << std::endl;
-//                export3d_xyz(out_geometry + "/grid.txt", points);
-
-
-
-
-
-
-//            }
-//            else
-//            {
-//                std::cout << "Set external boundary to control only internal points in a fixed boundary" << std::endl;
-//                exit(1);
-//            }
-//        }
-
-//    }*/
-
-
 
     //passare una superficie in lettura
     if(appendMeshes.isSet() && meshFiles.getValue().size()>=2)
@@ -2927,10 +2743,6 @@ int main(int argc, char** argv)
 
             mesh += mesh_i;
         }
-
-//        std::string ext_mesh = ".off";
-//        if(objConversion.isSet() == true)
-//            ext_mesh = ".obj";
 
         std::string out_mesh = surface_folder +"/" + basename +"_append" + ext_surf;
         mesh.save(out_mesh.c_str());
@@ -2992,17 +2804,11 @@ int main(int argc, char** argv)
         std::string basename = files.at(0).substr(files.at(0).find_last_of("/")+1, files.at(0).length());
         basename = get_basename (basename);
 
-//        std::string ext_mesh = ".off";
-//        if(objConversion.isSet() == true)
-//            ext_mesh = ".obj";
         std::string out_name = out_surf +"/" + basename;
 
 
         MUSE::SurfaceMeta::Extrusion objinfo;
-//        objinfo.method = "one surface";
-//        objinfo.surface = basename;
 
-        //cinolib::Trimesh<> extr_trimesh;
         if(deltazExtrusion.isSet()) //estrusione con delta costante (z + delta)
         {
             objinfo.type = "delta";
