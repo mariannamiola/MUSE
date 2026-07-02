@@ -1,4 +1,33 @@
-﻿#include <iostream>
+﻿/********************************************************************************
+*  This file is part of MUSE                                                    *
+*  Copyright(C) 2025: Marianna Miola                                            *
+*                                                                               *
+*  Author:                                                                      *
+*                                                                               *
+*     Marianna Miola (marianna.miola@cnr.it)                                    *
+*                                                                               *
+*     Italian National Research Council (CNR)                                   *
+*     Institute for Applied Mathematics and Information Technologies (IMATI)    *
+*     Via de Marini, 6                                                          *
+*     16149 Genoa,                                                              *
+*     Italy                                                                     *
+*                                                                               *
+*  This program is free software: you can redistribute it and/or modify it      *
+*  under the terms of the GNU General Public License as published by the        *
+*  Free Software Foundation, either version 3 of the License, or (at your       *
+*  option) any later version.                                                   *
+*                                                                               *
+*  This program is distributed in the hope that it will be useful, but          *
+*  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY   *
+*  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for  *
+*  more details.                                                                *
+*                                                                               *
+*  You should have received a copy of the GNU General Public License along      *
+*  with this program. If not, see <https://www.gnu.org/licenses/>.              *
+*                                                                               *
+*********************************************************************************/
+
+#include <iostream>
 #include <fstream>
 #include <iomanip>
 
@@ -15,14 +44,12 @@
 #include <igl/slice.h>
 #include <igl/marching_tets.h>
 #include <igl/winding_number.h>
-//#include <igl/opengl/glfw/Viewer.h>
 #include <Eigen/Sparse>
 
 
 #include "cinolib/predicates.h"
 #include "cinolib/octree.h"
 
-//#include "muselib/geometry/polygon_mesh.h"
 #include "muselib/input/load_xyz.h"
 #include "muselib/input/load_vtk.h"
 
@@ -40,7 +67,6 @@
 
 #include "muselib/metadata/manipulate_meta.h"
 #include "muselib/metadata/data_meta.h"
-//#include "muselib/metadata/extraction_meta.h"
 
 #include "muselib/utils.h"
 #include "muselib/geometry/tools.h"
@@ -49,8 +75,6 @@
 
 #include <cinolib/meshes/drawable_trimesh.h>
 #include <cinolib/meshes/drawable_tetmesh.h>
-
-//#include "cinolib/export_surface.h"
 
 #include "muselib/geometry/surface_mesh.h"
 #include "muselib/geometry/volume_mesh.h"
@@ -167,47 +191,32 @@ int main(int argc, char** argv)
      * - --rotcx, --rotcy, --rotcz: Rotation center coordinates
      * @example For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
-
-
-
-
     ValueArg<std::string> setRotAxis        ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
+
     /**
      * @brief Set rotation angle (clockwise)
      * @param rotangle rotation angle (clockwise)
      * @note Used together with --rotaxis flag. Required when rotaxis != NO
      */
-
     ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
+    
     /**
-
      * @brief Set rotation center x
-
      * @param rotcx rotation center x
-
      */
-
     ValueArg<double> setRotCenterX          ("", "rotcx", "Set rotation center x", false, 0.0, "double", cmd);
+    
     /**
-
      * @brief Set rotation center y
-
      * @param rotcy rotation center y
-
      */
-
     ValueArg<double> setRotCenterY          ("", "rotcy", "Set rotation center y", false, 0.0, "double", cmd);
+    
     /**
-
      * @brief Set rotation center z
-
      * @param rotcz rotation center z
-
      */
-
     ValueArg<double> setRotCenterZ          ("", "rotcz", "Set rotation center z", false, 0.0, "double", cmd);
-
-
 
 
     // Option 2. Point projection on surfaces
@@ -220,7 +229,6 @@ int main(int argc, char** argv)
      * - -R/--prqsect: Quad section projection
      * Choose only ONE projection mode per operation
      */
-
     SwitchArg setProjectionOnSurface        ("P", "prsurf", "Points projection on surfaces", cmd, false);
     
     /**
@@ -229,7 +237,6 @@ int main(int argc, char** argv)
      * @note Mutually exclusive with -P/--prsurf and -R/--prqsect
      * Use for 2D section projection operations
      */
-
     SwitchArg setProjectionOnSection        ("S", "prsect", "Compute points projection on boundary (2D section case).", cmd, false);
     
     /**
@@ -238,39 +245,24 @@ int main(int argc, char** argv)
      * @note Mutually exclusive with -P/--prsurf and -S/--prsect
      * Use for quad-based section projection operations
      */
-
     SwitchArg setProjectionOnQSection       ("R", "prqsect", "Points projection on quads sections", cmd, false);
 
     /**
-
-
      * @brief Compute points projection on boundary (3D volumetric case).
-
-
      * @param prvol Flag to compute points projection on boundary (3d volumetric case).
-
-
      */
-
-
     SwitchArg setProjectionOnVolume         ("V", "prvol", "Compute points projection on boundary (3D volumetric case).", cmd, false);
-    /**
 
+    /**
      * @brief Set number of steps for geometry model
-
      * @param step Number of set number of steps for geometry model
-
      */
-
     ValueArg<double> setStepGeometry        ("", "step", "Set number of steps for geometry model", false, 0.0, "double", cmd);
+    
     /**
-
      * @brief Set tolerance to enlarge bounding box
-
      * @param epsilon tolerance to enlarge bounding box
-
      */
-
     ValueArg<double> setBBEpsilon           ("", "epsilon", "Set tolerance to enlarge bounding box", false, 1.0, "double", cmd);
 
     //SwitchArg setProjectionOnVolume        ("Q", "prqvol", "Points qprojection on volumes", cmd, false);
@@ -278,29 +270,17 @@ int main(int argc, char** argv)
     MultiArg<std::string> meshFiles         ("m", "mgeom", "Multi-geometry to pass", false, "string", cmd );
 
     /**
-
-
      * @brief Set direction of projection
-
-
      * @param prdir Path to set direction of projection
-
-
      */
-
-
     ValueArg<std::string> setProjDir        ("", "prdir", "Set direction of projection", false, "Y", "string", cmd);
 
     std::vector<std::string> allowedType = {"SAMPLES","TET","HEX","VOLUME","GEOMETRY","QUADMESH"};
     ValuesConstraint<std::string> allowedValsT(allowedType);
     /**
-
      * @brief Set type
-
      * @param type type
-
      */
-
     ValueArg<std::string> setType           ("", "type", "Set type", false, "SAMPLES", &allowedValsT, cmd);
     allowedType.clear();
 
@@ -310,62 +290,39 @@ int main(int argc, char** argv)
     ValuesConstraint<std::string> allowedValsSC(allowedStratigraphicCondition);
 
     /**
-
-
      * @brief Points projection on surfaces
-
-
      * @param strat Enable points projection on surfaces
-
-
      */
-
-
     SwitchArg setStratigraphicTransf        ("T", "strat", "Points projection on surfaces", cmd, false);
-    /**
 
+    /**
      * @brief Name of geometry model
-
      * @param name Name of name of geometry model
-
      */
-
     ValueArg<std::string> geomName          ("", "name", "Name of geometry model", false, "name", "string", cmd);
+    
     /**
-
      * @brief Set type of stratigraphic transformation
-
      * @param sttype type of stratigraphic transformation
-
      */
-
     ValueArg<std::string> stratCondition    ("", "sttype", "Set type of stratigraphic transformation", false, "NO", &allowedValsSC, cmd);
+    
     /**
-
      * @brief Top geometry model
-
      * @param top top geometry model
-
      */
-
     ValueArg<std::string> topSurface        ("", "top", "Top geometry model", false, "name top geometry", "string", cmd);
+    
     /**
-
      * @brief Bottom geometry model
-
      * @param bot bottom geometry model
-
      */
-
     ValueArg<std::string> botSurface        ("", "bot", "Bottom geometry model", false, "name bottom geometry", "string", cmd);
+    
     /**
-
      * @brief Set region growing
-
      * @param reggrow Enable set region growing
-
      */
-
     SwitchArg setRegionGrowing              ("", "reggrow", "Set region growing", cmd, false); //booleano
 
 
@@ -373,58 +330,33 @@ int main(int argc, char** argv)
     // ADDITIONAL FUNCTIONALITIES:
 
     /**
-
-
      * @brief Saving trimesh in obj format
-
-
      * @param obj Enable saving trimesh in obj format
-
-
      */
-
-
     SwitchArg objConversion                 ("", "obj", "Saving trimesh in obj format", cmd, false); //booleano
+    
     /**
-
      * @brief Saving tetmesh in vtk format
-
      * @param vtk Enable saving tetmesh in vtk format
-
      */
-
     SwitchArg vtkConversion                 ("", "vtk", "Saving tetmesh in vtk format", cmd, false); //booleano
+    
     /**
-
      * @brief Saving extraction as set of points
-
      * @param save Enable saving extraction as set of points
-
      */
-
     SwitchArg saveExtraction                ("", "save", "Saving extraction as set of points", cmd, false); //booleano
+    
     /**
-
      * @brief Variable
-
      * @param var Name of variable
-
      */
-
     ValueArg<std::string> Variable          ("v", "var", "Variable", false, "variable to analyse", "name", cmd);
 
     /**
-
-
      * @brief Path file
-
-
      * @param file Path to path file
-
-
      */
-
-
     ValueArg<std::string> setFileData       ("", "file", "Path file", false, "path", "string", cmd);
 
 
@@ -487,23 +419,6 @@ int main(int argc, char** argv)
     std::string app_folder = out_folder + "/" + app_name;
     if(!filesystem::exists(app_folder))
         filesystem::create_directory(app_folder);
-
-
-
-
-
-    // std::vector<double> test0;
-    // load1d_xyzfile("/Users/mariannamiola/Desktop/test0.dat", test0);
-
-    // std::vector<double> dato0, dato1;
-    // load1d_xyzfile("/Users/mariannamiola/muse/examples/MUSE_test/19_Polcevera_hex/out/data/data/cat.dat", dato0);
-    // for(uint i:test0)
-    // {
-    //     dato1.push_back(dato0.at(i));
-    // }
-    // export1d_xyz("/Users/mariannamiola/Desktop/test1.dat", dato1);
-    // exit(1);
-
 
 
 
@@ -622,41 +537,6 @@ int main(int argc, char** argv)
                 load_xyzfile(setFileData.getValue(), xCoord, yCoord, zCoord);
 
 
-            if(setRotAxis.isSet())
-            {
-                MUSE::Rotation dataRotation;
-
-                dataRotation.rotation = true;
-                dataRotation.rotation_axis = setRotAxis.getValue();
-                dataRotation.rotation_center_x = setRotCenterX.getValue();
-                dataRotation.rotation_center_y = setRotCenterY.getValue();
-                dataRotation.rotation_center_z = setRotCenterZ.getValue();
-                dataRotation.rotation_angle = setRotAngle.getValue();
-                extrmeta.setRotation(dataRotation);
-
-                std::cout << "Rotation is activate on data ... " << dataRotation.rotation << std::endl;
-                std::cout << "Rotation axis: " << dataRotation.rotation_axis << std::endl;
-                std::cout << "Rotation center: [" << dataRotation.rotation_center_x << "; " << dataRotation.rotation_center_y << "; " << dataRotation.rotation_center_z << "]" <<  std::endl;
-                std::cout << "Rotation angle (degree): " << dataRotation.rotation_angle << std::endl;
-                std::cout << std::endl;
-
-                cinolib::vec3d axis = set_rotation_axis(setRotAxis.getValue());
-                cinolib::vec3d c (setRotCenterX.getValue(), setRotCenterY.getValue(), setRotCenterZ.getValue());
-
-                for(uint i=0; i<xCoord.size(); i++)
-                {
-                    cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
-                    sample = point_rotation(sample, axis, setRotAngle.getValue(), c);
-
-                    xCoord.at(i) = sample.x();
-                    yCoord.at(i) = sample.y();
-                    zCoord.at(i) = sample.z();
-                }
-                std::cout << "Data rotation ... COMPLETED." << std::endl;
-            }
-
-
-
             // 2) Load polygonal mesh and check on mesh type
 
             MUSE::SurfaceMesh<> mesh;
@@ -676,28 +556,87 @@ int main(int argc, char** argv)
 
 
             std::vector<uint> id_points_in;
-
-            //if(!check_closing_mesh(mesh)) //se la mesh non è chiusa -> allora è una superficie
             if(!mesh.check_lateral_closing()) //se la mesh non è chiusa -> allora è una superficie
             {
                 std::vector<uint> bv = mesh.get_ordered_boundary_vertices();
 
+                MUSE::Rotation otfRotation, otfRotation_data; //relativa alla geometria -> definisco un piano locale x-y di riferimento per l'allineamento dei dati
+
+                // ------------------------------------------------------------
+                // 1. Uso il boundary della mesh come geometria master.
+                // La mesh definisce il piano locale su cui fare point-in-polygon.
+                // ------------------------------------------------------------
+                std::vector<Point3D> boundary_xy;
+                boundary_xy.reserve(bv.size());
+                for(uint vid : bv)
+                {
+                    Point3D p;
+                    p.x = mesh.vert(vid).x();
+                    p.y = mesh.vert(vid).y();
+                    p.z = mesh.vert(vid).z();
+                    boundary_xy.push_back(p);
+                }
+
+                bool auto_aligned_geom = align_points_to_xyplane(boundary_xy, otfRotation);
+
+                std::cout << "=== Point-in-polygon is performed on local XY plane." << std::endl;
+                if(auto_aligned_geom)
+                    std::cout << "=== Mesh boundary automatically aligned to XY plane." << std::endl;
+                else
+                    std::cout << "=== Mesh boundary already aligned to XY plane." << std::endl;
+                
+                // ------------------------------------------------------------
+                // 2. Porto i dati nello stesso sistema locale XY della mesh.
+                // Se la mesh era già XY, i dati restano invariati.
+                // ------------------------------------------------------------
+                std::vector<Point3D> coords_xy;
+                coords_xy.reserve(xCoord.size());
+                
+                bool auto_aligned_data = false;
+                if(auto_aligned_geom)
+                {
+                    for(size_t i = 0; i < xCoord.size(); i++)
+                    {
+                        cinolib::vec3d axis (otfRotation.rotation_axis_vec.at(0), otfRotation.rotation_axis_vec.at(1), otfRotation.rotation_axis_vec.at(2));
+                        cinolib::vec3d center (otfRotation.rotation_center_x, otfRotation.rotation_center_y, otfRotation.rotation_center_z);
+
+                        Point3D p_xy;
+                        point_rotation(xCoord.at(i), yCoord.at(i), zCoord.at(i), axis, otfRotation.rotation_angle, center, p_xy.x, p_xy.y, p_xy.z);
+
+                        coords_xy.push_back(p_xy);
+                    }    
+                }
+                else 
+                {
+                    for(size_t i = 0; i < xCoord.size(); i++)
+                    {
+                        Point3D p;
+                        p.x = xCoord.at(i);
+                        p.y = yCoord.at(i);
+                        p.z = zCoord.at(i);
+                        p.index = i;
+                        coords_xy.push_back(p);
+                    }
+                    auto_aligned_data = align_points_to_xyplane(coords_xy, otfRotation_data);
+                }
+                
+
                 std::vector<Point2D> polygon;
-                for(uint vid:bv)
+                for(size_t i=0; i<boundary_xy.size(); i++)
                 {
                     Point2D v;
-                    v.x = mesh.vert(vid).x();
-                    v.y = mesh.vert(vid).y();
+                    v.x = boundary_xy.at(i).x;
+                    v.y = boundary_xy.at(i).y;
 
                     polygon.push_back(v);
                 }
 
                 std::vector<Point2D> coords;
-                for(size_t i=0; i<xCoord.size(); i++)
+                for(size_t i=0; i<coords_xy.size(); i++)
                 {
                     Point2D point;
-                    point.x = xCoord.at(i);
-                    point.y = yCoord.at(i);
+                    point.x = coords_xy.at(i).x;
+                    point.y = coords_xy.at(i).y;
 
                     coords.push_back(point);
                 }
