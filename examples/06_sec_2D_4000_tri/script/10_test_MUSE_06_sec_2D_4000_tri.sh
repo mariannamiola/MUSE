@@ -129,7 +129,6 @@ fi
 
 # 1. Export variables
 #######################################################################
-#export GEOM1=sec
 export GMOD=sec_xz
 
 export VAR1=phi
@@ -221,68 +220,32 @@ start=${1:-"start"}
 
 jumpto $start
 
-#project:
-# Check if the current user is root
-if [[ -d ${WP} ]]; then
-    echo "DIRECTORY: " ${WP} " EXISTS."
-    if $RMPROJ; then
-        echo "REMOVING EXISTING PROJECT " ${WP} 
-        rm -r ${WP}
-    
-        ##########  PROJECT  ###########
-        muse_project -N -p ${WORK} --name ${PROJ}
+#project:   
+##########  PROJECT  ###########
+muse_project -N -p ${WORK} --name ${PROJ} --overwrite
    
-       ##########  DATA  ###########
-        muse_data -N -p ${WP}
-        cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
-        muse_data -S -p ${WP} --setX 1 --setY 2 --setZ 3
-        muse_data -C -p ${WP}
-    
-        ##########  GEOMETRY  ###########
-        muse_geometry -N -p ${WP}
-        cp -R ${DATA_SOURCE}/${GMOD}.xyz ${INGEOM}
-        muse_geometry -P -p ${WP} --tri --polygon ${INGEOM}/${GMOD}.xyz --opt ${OPT} --setz -1.0 --obj --rotaxis X --rotangle 270
-        muse_geometry -L -p ${WP} -m ${OUTSURF}/${GMOD}.obj --rotaxis X --rotangle -270 --obj
-    else
-        if [[ -d ${OUTMAN} ]]; then
-           rm -r ${OUTMAN}
-        fi
-        if [[ -d ${OUTVARIO} ]]; then
-           rm -r ${OUTVARIO}
-        fi
-        if [[ -d ${OUTCOMP} ]]; then
-           rm -r ${OUTCOMP}
-        fi
-    fi
-else
-    echo "DIRECTORY: " ${WP} " NOT EXISTS."
-    ##########  PROJECT  ###########
-    muse_project -N -p ${WORK} --name ${PROJ}
-    
-    ##########  DATA  ###########
-    muse_data -N -p ${WP}
-    cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
-    muse_data -S -p ${WP} --setX 1 --setY 2 --setZ 3
-    muse_data -C -p ${WP}
-    
-    ##########  GEOMETRY  ###########
-    muse_geometry -N -p ${WP}
-    cp -R ${DATA_SOURCE}/${GMOD}.xyz ${INGEOM}
-    muse_geometry -P -p ${WP} --tri --polygon ${INGEOM}/${GMOD}.xyz --opt ${OPT} --setz -1.0 --obj --rotaxis X --rotangle 270
-    muse_geometry -L -p ${WP} -m ${OUTSURF}/${GMOD}.obj --rotaxis X --rotangle -270 --obj
-fi
+##########  DATA  ###########
+muse_data -N -p ${WP}
+cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
+muse_data -S -p ${WP} --setX 1 --setY 2 --setZ 3
+muse_data -C -p ${WP}
+
+##########  GEOMETRY  ###########
+muse_geometry -N -p ${WP}
+cp -R ${DATA_SOURCE}/${GMOD}.xyz ${INGEOM}
+muse_geometry -P -p ${WP} --tri --polygon ${INGEOM}/${GMOD}.xyz --opt ${OPT} --setz -7.5 --obj
 
 
 
 #manip:
 ##########  MANIPULATE  ###########
-#muse_manipulate -E -p ${WP} --geom ${OUTSURF}/${GMOD}.obj --rotaxis X --rotangle 270
-
+muse_manipulate -E -p ${WP} --geom ${OUTSURF}/${GMOD}.obj
+exit
 
 #vario:
 ##########  VARIO  ###########
-muse_vario -V -p ${WP} -v ${VAR1} --rotaxis X --rotangle 270 --nscore YES --dir ${DIR} --dim ${DIM} --vario MODEL --dirs 0,70,80,90,110 --degtol 15 --vclean 5 --weight --eps 5.0 --nugget 0.18
-
+muse_vario -V -p ${WP} -v ${VAR1} --nscore YES --dir ${DIR} --dim ${DIM} --vario MODEL --dirs 0,70,80,90,110 --degtol 15 --vclean 5 --weight --eps 5.0 --nugget 0.18
+exit
 
 #compute:
 ##########  COMPUTE  ###########

@@ -232,12 +232,12 @@ int main(int argc, char** argv)
     SwitchArg setProjectionOnSurface        ("P", "prsurf", "Points projection on surfaces", cmd, false);
     
     /**
-     * @brief Compute points projection on boundary (2D section case).
+     * @brief Compute points projection on top/bottom boundary (2D section case).
      * @param prsect Flag to compute points projection on boundary (2d section case).
      * @note Mutually exclusive with -P/--prsurf and -R/--prqsect
      * Use for 2D section projection operations
      */
-    SwitchArg setProjectionOnSection        ("S", "prsect", "Compute points projection on boundary (2D section case).", cmd, false);
+    SwitchArg setProjectionOnSection        ("S", "prsect", "Compute points projection on top/bottom boundary (2D section case).", cmd, false);
     
     /**
      * @brief Points projection on quads sections
@@ -354,10 +354,12 @@ int main(int argc, char** argv)
     ValueArg<std::string> Variable          ("v", "var", "Variable", false, "variable to analyse", "name", cmd);
 
     /**
-     * @brief Path file
+     * @brief Set path to data file. This argument allows the user to specify the path to a data file that will be used in the manipulation process. The data file should contain relevant information that the application can read and process. It is optional.
      * @param file Path to path file
+     * @note If not set, the application will look for data files in the default project directory structure. If set, the specified file will be used for data manipulation.
+     * @example -E --file path/to/datafile.dat
      */
-    ValueArg<std::string> setFileData       ("", "file", "Path file", false, "path", "string", cmd);
+    ValueArg<std::string> setFileData       ("", "file", "Set path to data file", false, "string", "path/to/data", cmd);
 
 
     // ---------------------------------------------------------------------------------------------------------
@@ -425,7 +427,7 @@ int main(int argc, char** argv)
     // ---------------------------------------------------------------------------------------------------------
     // STARTS:
 
-    if(setExtract.isSet() && !setFileData.isSet())
+    if(setExtract.isSet())
     {
         std::string abs_datadir = out_folder + "/" + app_data;
         std::vector<std::string> list_dir = get_directories(abs_datadir);
@@ -775,14 +777,6 @@ int main(int argc, char** argv)
                     file_out.close();
                 }
 
-                // for(uint i:id_points_in)
-                // {
-                //     out_x.push_back(xCoord.at(i));
-                //     out_y.push_back(yCoord.at(i));
-                //     out_z.push_back(zCoord.at(i));
-                //     out_values.push_back(in_values.at(i));
-                // }
-                // export_idxyzv(app_folder + "/" + Variable.getValue() + "_" + get_basename(geom_name) + ".dat" , out_x, out_y, out_z, out_values);
             }
             else if(saveExtraction.isSet() && !Variable.isSet())
             {
@@ -803,187 +797,11 @@ int main(int argc, char** argv)
 
             std::cout << std::endl;
             std::cout << "Points extrapolation... COMPLETED." << std::endl;
-
         }
-
     }
 
 
-    if(setExtract.isSet() && setFileData.isSet())
-    {
-        std::vector<double> xCoord, yCoord, zCoord;
-        load_xyzfile(setFileData.getValue(), xCoord, yCoord, zCoord);
-
-        // 2) Load polygonal mesh and check on mesh type
-        MUSE::SurfaceMesh<> mesh;
-        mesh.load(geomModel.getValue().c_str());
-
-        std::cout << "\033[0;32mLoading mesh file: " << geomModel.getValue() << " ... COMPLETED.\033[0m" << std::endl;
-        std::cout << std::endl;
-
-
-        std::string geom_name = geomModel.getValue().substr(geomModel.getValue().find_last_of("/")+1, geomModel.getValue().length()); //nome progetto
-
-
-
-        std::vector<uint> id_points_in;
-
-        //if(!check_closing_mesh(mesh)) //se la mesh non è chiusa -> allora è una superficie
-        if(!mesh.check_lateral_closing()) //se la mesh non è chiusa -> allora è una superficie
-        {
-            std::vector<uint> bv = mesh.get_ordered_boundary_vertices();
-
-            std::vector<Point2D> polygon;
-            for(uint vid:bv)
-            {
-                Point2D v;
-                v.x = mesh.vert(vid).x();
-                v.y = mesh.vert(vid).y();
-
-                polygon.push_back(v);
-            }
-
-            std::vector<Point2D> coords;
-            for(size_t i=0; i<xCoord.size(); i++)
-            {
-                Point2D point;
-                point.x = xCoord.at(i);
-                point.y = yCoord.at(i);
-
-                coords.push_back(point);
-            }
-
-            //Il check sulla bounding box viene fatto all'interno della funzione dei points_in_polygon
-            points_in_polygon(coords, polygon, id_points_in);
-        }
-
-        else
-        {
-            // Check on bbox
-            double bbx_max = mesh.bbox().max.x();
-            double bbx_min = mesh.bbox().min.x();
-            double bby_max = mesh.bbox().max.y();
-            double bby_min = mesh.bbox().min.y();
-            double bbz_max = mesh.bbox().max.z();
-            double bbz_min = mesh.bbox().min.z();
-
-            std::vector<Point3D> coords_in;
-            for(size_t i=0; i<xCoord.size(); i++)
-            {
-                if (xCoord.at(i) < bbx_min || xCoord.at(i) > bbx_max || yCoord.at(i) < bby_min || yCoord.at(i) > bby_max || zCoord.at(i) < bbz_min || zCoord.at(i) > bbz_max )
-                {
-                    continue;
-                    std::cout << "Point is out from the bbox" << std::endl;
-                    std::cout << "ID = " << i << " - " << xCoord.at(i) << "; " << yCoord.at(i) << "; " << zCoord.at(i) << std::endl;
-                }
-                else
-                {
-                    Point3D point;
-                    point.x = xCoord.at(i);
-                    point.y = yCoord.at(i);
-                    point.z = zCoord.at(i);
-                    point.index = i;
-
-                    coords_in.push_back(point);
-                }
-            }
-            std::cout << coords_in.size() << " points in bbox." << std::endl;
-
-
-#ifdef MUSE_USES_LIBIGL
-
-            using namespace Eigen;
-            using namespace std;
-
-            Eigen::MatrixXd V   (mesh.num_verts(), 3); //vettore dei vertici
-            Eigen::MatrixXi T   (mesh.num_polys(), 3); //vettore delle facce
-
-            for(uint vid=0; vid<mesh.num_verts(); vid++)
-            {
-                V(vid, 0) = mesh.vert(vid).x();
-                V(vid, 1) = mesh.vert(vid).y();
-                V(vid, 2) = mesh.vert(vid).z();
-            }
-
-            for(uint pid=0; pid<mesh.num_polys(); pid++)
-            {
-                T(pid, 0) = mesh.poly_vert_id(pid, 0);
-                T(pid, 1) = mesh.poly_vert_id(pid, 1);
-                T(pid, 2) = mesh.poly_vert_id(pid, 2);
-            }
-
-            Eigen::MatrixXd VC  (coords_in.size(), 3); //campioni
-            Eigen::VectorXd W   (coords_in.size());
-
-            int j = 0;
-            for(size_t i=0; i<coords_in.size(); i++)
-            {
-                VC(j, 0) = coords_in.at(i).x;
-                VC(j, 1) = coords_in.at(i).y;
-                VC(j, 2) = coords_in.at(i).z;
-
-                j++;
-            }
-
-            // Compute generalized winding number at all barycenters
-            //cout<<"Computing winding number over all "<<T.rows()<<" tets..." << T.cols() <<endl;
-            igl::winding_number(V,T,VC,W);
-
-            std::vector<int> id_points_out;
-            for(size_t i=0; i<coords_in.size(); i++)
-            {
-                if(W[i] < 0.5)
-                {
-                    id_points_out.push_back(coords_in.at(i).index);
-                    std::cout << "### Point #" << coords_in.at(i).index << " is out from the bbox: [" << std::setprecision(12) << coords_in.at(i).x << "; " << coords_in.at(i).y << "; " << coords_in.at(i).z << "]" << std::endl;
-                    //continue;
-                }
-                else
-                {
-                    //std::cout << "the point is in the tet mesh!" << std::endl;
-                    id_points_in.push_back(coords_in.at(i).index);
-                }
-            }
-            std::cout << "Computing winding numbers... COMPLETED." << std::endl;
-
-
-#else
-
-                std::cerr << "LIBIGL is required. Please include the library and use MUSE_USES_LIBIGL." << std::endl;
-
-#endif
-        }
-
-        std::cout << std::endl;
-        if(xCoord.size() == id_points_in.size())
-            std::cout << "All points are included in mesh: " << geomModel.getValue() << std::endl;
-        else
-            std::cout << id_points_in.size() << " points in mesh: " << geomModel.getValue() << std::endl;
-
-        if(saveExtraction.isSet())
-        {
-            std::ofstream file_out;
-            file_out.open(app_folder + "/"+ get_basename(get_filename(setFileData.getValue())) + "__.dat", std::fstream::out);
-            if(!file_out.is_open())
-            {
-                std::cerr << "\033[0;31mError in file opening: " << app_folder + "/"+ get_basename(get_filename(setFileData.getValue())) + "__.dat" << "\033[0m" << std::endl;
-                exit(1);
-            }
-            else
-            {
-                for(uint idin:id_points_in)
-                    file_out << std::setprecision(9) << xCoord.at(idin) << " " << yCoord.at(idin) << " " << zCoord.at(idin) << std::endl;
-                file_out.close();
-            }
-        }
-
-        std::cout << std::endl;
-        std::cout << "Points extrapolation... COMPLETED." << std::endl;
-
-    }
-
-
-
+    
 
     //JSON DA ALLINEARE!!!
     if(setProjectionOnSurface.isSet())
@@ -1238,6 +1056,7 @@ int main(int argc, char** argv)
     }
 
 
+    //Funzione per proiettare i punti (campioni/vertici mesh) sul bordo (top/bottom) di una sezione (piano)
     if(setProjectionOnSection.isSet())
     {
         std::string abs_datadir = out_folder + "/" + app_data;
