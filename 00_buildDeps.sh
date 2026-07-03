@@ -98,22 +98,22 @@ build_vtk() {
 }
 
 build_flann() {
-    local openmp_args=()
-
     if [[ "$OS" == "Darwin" ]]; then
+        libomp_prefix="$(brew --prefix libomp)"
+
         openmp_args=(
-            -DOpenMP_C_FLAGS=-Xclang\ -fopenmp
-            -DOpenMP_CXX_FLAGS=-Xclang\ -fopenmp
-            -DOpenMP_C_LIB_NAMES=libomp
-            -DOpenMP_CXX_LIB_NAMES=libomp
-            -DOpenMP_libomp_LIBRARY=/opt/homebrew/lib/libomp.dylib
-            -DOpenMP_C_INCLUDE_DIR=/opt/homebrew/include
-            -DOpenMP_CXX_INCLUDE_DIR=/opt/homebrew/include
-            -DOpenMP_EXE_LINKER_FLAGS=-L/opt/homebrew/lib\ -lomp
-            -DCMAKE_SHARED_LINKER_FLAGS=-L/opt/homebrew/lib\ -lomp
+            "-DOpenMP_C_FLAGS=-Xclang -fopenmp -I${libomp_prefix}/include"
+            "-DOpenMP_CXX_FLAGS=-Xclang -fopenmp -I${libomp_prefix}/include"
+            "-DOpenMP_C_LIB_NAMES=omp"
+            "-DOpenMP_CXX_LIB_NAMES=omp"
+            "-DOpenMP_omp_LIBRARY=${libomp_prefix}/lib/libomp.dylib"
+            "-DOpenMP_libomp_LIBRARY=${libomp_prefix}/lib/libomp.dylib"
+            "-DCMAKE_SHARED_LINKER_FLAGS=${libomp_prefix}/lib/libomp.dylib -Wl,-rpath,${libomp_prefix}/lib"
+            "-DCMAKE_EXE_LINKER_FLAGS=${libomp_prefix}/lib/libomp.dylib -Wl,-rpath,${libomp_prefix}/lib"
+            "-DCMAKE_MODULE_LINKER_FLAGS=${libomp_prefix}/lib/libomp.dylib -Wl,-rpath,${libomp_prefix}/lib"
         )
     fi
-
+    
     build_lib "GeoStatsLib/external/flann-lib" \
         -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}/GeoStatsLib/external/flann-lib/installed \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
