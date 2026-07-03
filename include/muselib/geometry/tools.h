@@ -40,6 +40,7 @@ cinolib::vec3d segment_triangle_intersection_3d (const cinolib::vec3d &q1, const
 
 
 cinolib::vec3d set_rotation_axis                (const std::string &rot_axis);
+cinolib::vec3d get_rotation_axis                (const MUSE::Rotation &rotation); //returns rotation_axis_vec for auto-aligned rotations, set_rotation_axis(rotation_axis) otherwise
 
 void point_rotation                             (const double &x, const double &y, const double &z, const cinolib::vec3d &rot_axis, const double &rot_angle, const cinolib::vec3d &rot_center, double &x_rot, double &y_rot, double &z_rot); //angle in degree
 

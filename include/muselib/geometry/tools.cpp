@@ -271,6 +271,17 @@ cinolib::vec3d set_rotation_axis (const std::string &rot_axis)
     return axis;
 }
 
+cinolib::vec3d get_rotation_axis (const MUSE::Rotation &rotation)
+{
+    //rotations produced by align_points_to_xyplane only populate rotation_axis_vec
+    //(the axis is an arbitrary vector, not necessarily X/Y/Z), while manually set
+    //rotations (--rotaxis) only populate the rotation_axis string.
+    if(rotation.autoalign)
+        return cinolib::vec3d(rotation.rotation_axis_vec.at(0), rotation.rotation_axis_vec.at(1), rotation.rotation_axis_vec.at(2));
+
+    return set_rotation_axis(rotation.rotation_axis);
+}
+
 
 void point_rotation (const double &x, const double &y, const double &z, const cinolib::vec3d &rot_axis, const double &rot_angle, const cinolib::vec3d &rot_center, double &x_rot, double &y_rot, double &z_rot) //angle in degree
 {
@@ -563,13 +574,12 @@ void apply_rotation_to_points(
 {
     if(!rotation.rotation)
         return;
- 
-    cinolib::vec3d axis(
-        rotation.rotation_axis_vec[0],
-        rotation.rotation_axis_vec[1],
-        rotation.rotation_axis_vec[2]
-    );
- 
+
+    //get_rotation_axis sceglie rotation_axis_vec (rotazioni auto-allineate) o
+    //set_rotation_axis(rotation_axis) (rotazioni manuali --rotaxis): usare solo
+    //rotation_axis_vec qui darebbe asse nullo per le rotazioni manuali.
+    cinolib::vec3d axis = get_rotation_axis(rotation);
+
     cinolib::vec3d center(
         rotation.rotation_center_x,
         rotation.rotation_center_y,

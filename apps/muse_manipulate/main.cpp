@@ -67,6 +67,7 @@
 
 #include "muselib/metadata/manipulate_meta.h"
 #include "muselib/metadata/data_meta.h"
+#include "muselib/metadata/surface_meta.h"
 
 #include "muselib/utils.h"
 #include "muselib/geometry/tools.h"
@@ -550,6 +551,20 @@ int main(int argc, char** argv)
             depsextr.push_back(filesystem::relative(get_basename(geomModel.getValue()) + ".json", Project.folder));
             extrmeta.setDependencies(depsextr); //added dependencies
 
+            // La mesh e i campioni devono condividere lo stesso piano locale x-y: leggo la
+            // rotazione salvata da muse_geometry (unica sorgente di verità) invece di
+            // ristimarla indipendentemente sulla mesh e sui campioni. Due fit indipendenti,
+            // pur con stessi asse/angolo, in generale hanno centri di rotazione diversi
+            // (centroide del boundary vs. centroide dei campioni) e producono trasformazioni
+            // rigide diverse: la mesh e i campioni ruotati finiscono su piani x-y paralleli
+            // ma sfalsati, e le proiezioni top/bottom calcolate su quel piano diventano errate.
+            MUSE::Rotation geomRotation;
+            MUSE::SurfaceMeta surfmeta;
+            if(!surfmeta.read(get_basename(geomModel.getValue()) + ".json"))
+                std::cout << FYEL("WARNING: No metadata JSON found next to the geometry mesh: assuming samples are already aligned to its local x-y plane.") << std::endl;
+            else
+                geomRotation = surfmeta.getDataRotation();
+
 
             std::string geom_name = geomModel.getValue().substr(geomModel.getValue().find_last_of("/")+1, geomModel.getValue().length()); //nome progetto
 
@@ -558,15 +573,17 @@ int main(int argc, char** argv)
 
 
             std::vector<uint> id_points_in;
+            MUSE::Rotation extractedRotation; //rotazione (se presente) usata per allineare i dati al piano locale x-y della mesh, da persistere per gli step successivi (es. muse_manipulate -S --sub)
             if(!mesh.check_lateral_closing()) //se la mesh non è chiusa -> allora è una superficie
             {
                 std::vector<uint> bv = mesh.get_ordered_boundary_vertices();
 
-                MUSE::Rotation otfRotation, otfRotation_data; //relativa alla geometria -> definisco un piano locale x-y di riferimento per l'allineamento dei dati
-
                 // ------------------------------------------------------------
-                // 1. Uso il boundary della mesh come geometria master.
-                // La mesh definisce il piano locale su cui fare point-in-polygon.
+                // 1. Boundary della mesh: muse_geometry salva sempre la geometria nel suo
+                // sistema di riferimento ORIGINALE (la rotazione usata internamente per
+                // triangolare viene invertita prima del salvataggio, si veda
+                // rotation_on_trimesh(trimesh, otfRotation, true) in muse_geometry -P).
+                // Quindi anche il boundary qui va riportato sul piano locale x-y.
                 // ------------------------------------------------------------
                 std::vector<Point3D> boundary_xy;
                 boundary_xy.reserve(bv.size());
@@ -579,49 +596,31 @@ int main(int argc, char** argv)
                     boundary_xy.push_back(p);
                 }
 
-                bool auto_aligned_geom = align_points_to_xyplane(boundary_xy, otfRotation);
-
                 std::cout << "=== Point-in-polygon is performed on local XY plane." << std::endl;
-                if(auto_aligned_geom)
-                    std::cout << "=== Mesh boundary automatically aligned to XY plane." << std::endl;
-                else
-                    std::cout << "=== Mesh boundary already aligned to XY plane." << std::endl;
-                
+
                 // ------------------------------------------------------------
-                // 2. Porto i dati nello stesso sistema locale XY della mesh.
-                // Se la mesh era già XY, i dati restano invariati.
+                // 2. Porto boundary e campioni sullo stesso piano locale x-y applicando a
+                // entrambi, in modo identico, la rotazione usata da muse_geometry per
+                // generare la mesh (stesso asse, stesso angolo, stesso centro). Se la
+                // geometria non richiedeva rotazione, entrambi restano invariati.
                 // ------------------------------------------------------------
                 std::vector<Point3D> coords_xy;
                 coords_xy.reserve(xCoord.size());
-                
-                bool auto_aligned_data = false;
-                if(auto_aligned_geom)
-                {
-                    for(size_t i = 0; i < xCoord.size(); i++)
-                    {
-                        cinolib::vec3d axis (otfRotation.rotation_axis_vec.at(0), otfRotation.rotation_axis_vec.at(1), otfRotation.rotation_axis_vec.at(2));
-                        cinolib::vec3d center (otfRotation.rotation_center_x, otfRotation.rotation_center_y, otfRotation.rotation_center_z);
 
-                        Point3D p_xy;
-                        point_rotation(xCoord.at(i), yCoord.at(i), zCoord.at(i), axis, otfRotation.rotation_angle, center, p_xy.x, p_xy.y, p_xy.z);
-
-                        coords_xy.push_back(p_xy);
-                    }    
-                }
-                else 
+                for(size_t i = 0; i < xCoord.size(); i++)
                 {
-                    for(size_t i = 0; i < xCoord.size(); i++)
-                    {
-                        Point3D p;
-                        p.x = xCoord.at(i);
-                        p.y = yCoord.at(i);
-                        p.z = zCoord.at(i);
-                        p.index = i;
-                        coords_xy.push_back(p);
-                    }
-                    auto_aligned_data = align_points_to_xyplane(coords_xy, otfRotation_data);
+                    Point3D p_xy;
+                    p_xy.x = xCoord.at(i);
+                    p_xy.y = yCoord.at(i);
+                    p_xy.z = zCoord.at(i);
+                    p_xy.index = i;
+
+                    coords_xy.push_back(p_xy);
                 }
-                
+
+                apply_rotation_to_points(boundary_xy, geomRotation, false);
+                apply_rotation_to_points(coords_xy, geomRotation, false);
+
 
                 std::vector<Point2D> polygon;
                 for(size_t i=0; i<boundary_xy.size(); i++)
@@ -645,6 +644,9 @@ int main(int argc, char** argv)
 
                 //Il check sulla bounding box viene fatto all'interno della funzione dei points_in_polygon
                 points_in_polygon(coords, polygon, id_points_in);
+
+                //la rotazione effettivamente applicata ai dati per portarli sul piano locale x-y della mesh
+                extractedRotation = geomRotation;
             }
 
             else
@@ -754,6 +756,7 @@ int main(int argc, char** argv)
             infoextr.n_points = id_points_in.size();
             infoextr.id_points = id_points_in;
             extrmeta.setDataExtraction(infoextr);
+            extrmeta.setRotation(extractedRotation);
 
             extrmeta.write(app_folder + "/" + get_basename(geom_name) + ".json");
 
@@ -956,7 +959,7 @@ int main(int argc, char** argv)
 
                     if(dataRotation.rotation == true)
                     {
-                        cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
+                        cinolib::vec3d axis = get_rotation_axis(dataRotation);
                         cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
                         sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
                     }
@@ -1190,7 +1193,7 @@ int main(int argc, char** argv)
                     {
                         //rotazione coordinate all'inidice i
                         cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
-                        cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
+                        cinolib::vec3d axis = get_rotation_axis(dataRotation);
                         cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
                         sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
 
@@ -1210,35 +1213,41 @@ int main(int argc, char** argv)
 
 
                     //1) VERIFICARE ROTAZIONE DATI
-                    MUSE::Rotation dataRotation = extrmeta.getRotation();
-                    if(dataRotation.rotation == true)
+                    //NB: niente "MUSE::Rotation" davanti - altrimenti si crea una variabile
+                    //locale che shadowa quella dichiarata più esterna, che poi torna al suo
+                    //valore di default (rotation=false) appena finisce questo blocco, facendo
+                    //perdere l'informazione di rotazione al resto della funzione (es. mesh).
+                    dataRotation = extrmeta.getRotation();
+
+                    std::cout << std::endl;
+                    std::cout << "Rotation is activate on data ... " << dataRotation.rotation << std::endl;
+                    std::cout << "Rotation axis: " << dataRotation.rotation_axis << std::endl;
+                    std::cout << "Rotation center: [" << dataRotation.rotation_center_x << "; " << dataRotation.rotation_center_y << "; " << dataRotation.rotation_center_z << "]" <<  std::endl;
+                    std::cout << "Rotation angle (degree): " << dataRotation.rotation_angle << std::endl;
+                    std::cout << std::endl;
+
+                    //2) ESTRARRE SOTTODATASET DA INDICI
+                    if(extrmeta.getDataExtraction().id_points.size() == 0)
                     {
-                        std::cout << std::endl;
-                        std::cout << "Rotation is activate on data ... " << dataRotation.rotation << std::endl;
-                        std::cout << "Rotation axis: " << dataRotation.rotation_axis << std::endl;
-                        std::cout << "Rotation center: [" << dataRotation.rotation_center_x << "; " << dataRotation.rotation_center_y << "; " << dataRotation.rotation_center_z << "]" <<  std::endl;
-                        std::cout << "Rotation angle (degree): " << dataRotation.rotation_angle << std::endl;
-                        std::cout << std::endl;
+                        std::cout << FRED("Vector of index is empty.") << std::endl;
+                        exit(1);
+                    }
 
-                        //2) ESTRARRE SOTTODATASET DA INDICI
-                        if(extrmeta.getDataExtraction().id_points.size() == 0)
-                        {
-                            std::cout << FRED("Vector of index is empty.") << std::endl;
-                            exit(1);
-                        }
+                    for(uint i:extrmeta.getDataExtraction().id_points)
+                    {
+                        //rotazione coordinate all'inidice i (solo se necessaria)
+                        cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
 
-                        for(uint i:extrmeta.getDataExtraction().id_points)
+                        if(dataRotation.rotation == true)
                         {
-                            //rotazione coordinate all'inidice i
-                            cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
-                            cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
+                            cinolib::vec3d axis = get_rotation_axis(dataRotation);
                             cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
                             sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
-
-                            coord_samples.push_back(sample);
                         }
-                        std::cout << FGRN("Rotation on data ... COMPLETED.") << std::endl;
+
+                        coord_samples.push_back(sample);
                     }
+                    std::cout << FGRN("Sub-dataset samples ... COMPLETED.") << std::endl;
 
                     manmeta.setRotation(dataRotation);
 
@@ -1290,11 +1299,39 @@ int main(int argc, char** argv)
 
                     std::vector<uint> vert_bound = mesh.get_ordered_boundary_vertices();
 
+                    // La mesh caricata da file è nel sistema di riferimento ORIGINALE
+                    // (muse_geometry salva sempre la geometria non ruotata), mentre
+                    // coord_samples è già nel piano locale x-y (ruotato secondo dataRotation,
+                    // si veda sopra). Per confrontare le due cose serve riportare anche i
+                    // vertici della mesh nello stesso piano locale.
+                    std::vector<cinolib::vec3d> mesh_verts_rot(mesh.num_verts());
+                    for(uint vid=0; vid<mesh.num_verts(); vid++)
+                    {
+                        cinolib::vec3d v = mesh.vert(vid);
+                        if(dataRotation.rotation == true)
+                        {
+                            cinolib::vec3d axis = get_rotation_axis(dataRotation);
+                            cinolib::vec3d center (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
+                            v = point_rotation(v, axis, dataRotation.rotation_angle, center);
+                        }
+                        mesh_verts_rot.at(vid) = v;
+                    }
+
+                    double mesh_bb_min_x = DBL_MAX, mesh_bb_max_x = -DBL_MAX;
+                    double mesh_bb_min_y = DBL_MAX, mesh_bb_max_y = -DBL_MAX;
+                    for(const cinolib::vec3d &v : mesh_verts_rot)
+                    {
+                        mesh_bb_min_x = std::min(mesh_bb_min_x, v.x());
+                        mesh_bb_max_x = std::max(mesh_bb_max_x, v.x());
+                        mesh_bb_min_y = std::min(mesh_bb_min_y, v.y());
+                        mesh_bb_max_y = std::max(mesh_bb_max_y, v.y());
+                    }
+
 
                     if(setProjDir.getValue().compare("Y") == 0)
                     {
-                        double bby_max = mesh.bbox().max.y();
-                        double bby_min = mesh.bbox().min.y();
+                        double bby_max = mesh_bb_max_y;
+                        double bby_min = mesh_bb_min_y;
 
                         for(uint j=0; j<coord_samples.size(); j++)
                         {
@@ -1323,8 +1360,8 @@ int main(int argc, char** argv)
                                 else
                                     next = vert_bound.at(0);
 
-                                cinolib::vec3d v0 = mesh.vert(curr);
-                                cinolib::vec3d v1 = mesh.vert(next);
+                                cinolib::vec3d v0 = mesh_verts_rot.at(curr);
+                                cinolib::vec3d v1 = mesh_verts_rot.at(next);
 
                                 cinolib::vec2d v02d(v0.x(), v0.y());
                                 cinolib::vec2d v12d(v1.x(), v1.y());
@@ -1376,8 +1413,8 @@ int main(int argc, char** argv)
                     }
                     else if(setProjDir.getValue().compare("X") == 0)
                     {
-                        double bbx_max = mesh.bbox().max.x();
-                        double bbx_min = mesh.bbox().min.x();
+                        double bbx_max = mesh_bb_max_x;
+                        double bbx_min = mesh_bb_min_x;
 
                         for(uint j=0; j<coord_samples.size(); j++)
                         {
@@ -1403,8 +1440,8 @@ int main(int argc, char** argv)
                                 else
                                     next = vert_bound.at(0);
 
-                                cinolib::vec3d v0 = mesh.vert(curr);
-                                cinolib::vec3d v1 = mesh.vert(next);
+                                cinolib::vec3d v0 = mesh_verts_rot.at(curr);
+                                cinolib::vec3d v1 = mesh_verts_rot.at(next);
 
                                 cinolib::vec2d v02d(v0.x(), v0.y());
                                 cinolib::vec2d v12d(v1.x(), v1.y());
@@ -1461,6 +1498,11 @@ int main(int argc, char** argv)
                     manmeta.setDataProjection(dataProjection);
                     manmeta.write(app_folder + "/samples_" + geom_name + ".json");
 
+                    //la rotazione è solo on-the-fly per il calcolo: su disco (cartella
+                    //manipulate) le proiezioni vanno salvate nel sistema di riferimento
+                    //originale dei dati di input.
+                    apply_rotation_to_points(proj_top, dataRotation, true);
+                    apply_rotation_to_points(proj_bot, dataRotation, true);
 
                     export3d_xyz(app_folder + "/samples_" + dataProjection.top_name + ".dat", proj_top);
                     export3d_xyz(app_folder + "/samples_" + dataProjection.bottom_name + ".dat", proj_bot);
@@ -1487,6 +1529,30 @@ int main(int argc, char** argv)
                 std::cout << "\033[0;32mLoading mesh file: " << geomModel.getValue() << " ... COMPLETED.\033[0m" << std::endl;
                 std::cout << std::endl;
 
+                // Come per --type SAMPLES: muse_geometry salva sempre la geometria nel suo
+                // sistema di riferimento ORIGINALE, quindi sia --geom (section) che --mgeom
+                // (mesh, sotto) vanno riportati sul piano locale x-y usando la rotazione
+                // autorevole salvata da muse_geometry -P per --geom.
+                MUSE::Rotation geomRotation;
+                MUSE::SurfaceMeta surfmeta;
+                if(!surfmeta.read(get_basename(geomModel.getValue()) + ".json"))
+                    std::cout << FYEL("WARNING: No metadata JSON found next to --geom: assuming it is already aligned to its local x-y plane.") << std::endl;
+                else
+                    geomRotation = surfmeta.getDataRotation();
+
+                std::vector<cinolib::vec3d> section_verts_rot(section.num_verts());
+                for(uint vid=0; vid<section.num_verts(); vid++)
+                {
+                    cinolib::vec3d v = section.vert(vid);
+                    if(geomRotation.rotation == true)
+                    {
+                        cinolib::vec3d axis = get_rotation_axis(geomRotation);
+                        cinolib::vec3d center (geomRotation.rotation_center_x, geomRotation.rotation_center_y, geomRotation.rotation_center_z);
+                        v = point_rotation(v, axis, geomRotation.rotation_angle, center);
+                    }
+                    section_verts_rot.at(vid) = v;
+                }
+
                 if(!meshFiles.isSet())
                 {
                     std::cerr << "ERROR set trimesh file to compute projections: --mgeom <file>" << std::endl;
@@ -1509,10 +1575,37 @@ int main(int argc, char** argv)
 
                     std::vector<uint> vert_bound = mesh.get_ordered_boundary_vertices();
 
+                    // --mgeom viene riportato sullo stesso piano locale x-y di --geom usando
+                    // la stessa identica rotazione (in questo esempio --geom e --mgeom sono
+                    // di fatto lo stesso file, ma il ragionamento vale in generale finché
+                    // condividono lo stesso spazio fisico).
+                    std::vector<cinolib::vec3d> mesh_verts_rot(mesh.num_verts());
+                    for(uint vid=0; vid<mesh.num_verts(); vid++)
+                    {
+                        cinolib::vec3d v = mesh.vert(vid);
+                        if(geomRotation.rotation == true)
+                        {
+                            cinolib::vec3d axis = get_rotation_axis(geomRotation);
+                            cinolib::vec3d center (geomRotation.rotation_center_x, geomRotation.rotation_center_y, geomRotation.rotation_center_z);
+                            v = point_rotation(v, axis, geomRotation.rotation_angle, center);
+                        }
+                        mesh_verts_rot.at(vid) = v;
+                    }
+
+                    double mesh_bb_min_x = DBL_MAX, mesh_bb_max_x = -DBL_MAX;
+                    double mesh_bb_min_y = DBL_MAX, mesh_bb_max_y = -DBL_MAX;
+                    for(const cinolib::vec3d &v : mesh_verts_rot)
+                    {
+                        mesh_bb_min_x = std::min(mesh_bb_min_x, v.x());
+                        mesh_bb_max_x = std::max(mesh_bb_max_x, v.x());
+                        mesh_bb_min_y = std::min(mesh_bb_min_y, v.y());
+                        mesh_bb_max_y = std::max(mesh_bb_max_y, v.y());
+                    }
+
                     if(setProjDir.getValue().compare("Y") == 0)
                     {
-                        double bby_max = mesh.bbox().max.y();
-                        double bby_min = mesh.bbox().min.y();
+                        double bby_max = mesh_bb_max_y;
+                        double bby_min = mesh_bb_min_y;
 
                         //In questo caso i punti da proiettare sono i vertici interni della mesh
 
@@ -1529,8 +1622,8 @@ int main(int argc, char** argv)
                             proj_min.y = DBL_MAX;
 
 
-                            cinolib::vec2d p1 (section.vert(vid).x(), bby_min); //bottom
-                            cinolib::vec2d p2 (section.vert(vid).x(), bby_max); //top
+                            cinolib::vec2d p1 (section_verts_rot.at(vid).x(), bby_min); //bottom
+                            cinolib::vec2d p2 (section_verts_rot.at(vid).x(), bby_max); //top
 
         //                    std::cout << "p1 = " <<  p1 << std::endl;
         //                    std::cout << "p2 = " <<  p2 << std::endl;
@@ -1545,8 +1638,8 @@ int main(int argc, char** argv)
                                 else
                                     next = vert_bound.at(0);
 
-                                cinolib::vec3d v0 = mesh.vert(curr);
-                                cinolib::vec3d v1 = mesh.vert(next);
+                                cinolib::vec3d v0 = mesh_verts_rot.at(curr);
+                                cinolib::vec3d v1 = mesh_verts_rot.at(next);
 
                                 cinolib::vec2d v02d(v0.x(), v0.y());
                                 cinolib::vec2d v12d(v1.x(), v1.y());
@@ -1560,7 +1653,7 @@ int main(int argc, char** argv)
                                     cinolib::vec2d proj = segment_segment_intersection_2d(p1, p2, v02d, v12d);
 
                                     Point3D p_proj;
-                                    p_proj.z = section.vert(vid).z();
+                                    p_proj.z = section_verts_rot.at(vid).z();
                                     //p_proj.y = proj.y();
 
                                     if(proj.y() != DBL_MAX)
@@ -1570,16 +1663,16 @@ int main(int argc, char** argv)
                                     }
                                     else
                                     {
-                                        cinolib::vec2d p (section.vert(vid).x(), section.vert(vid).y());
+                                        cinolib::vec2d p (section_verts_rot.at(vid).x(), section_verts_rot.at(vid).y());
                                         if(p.dist(v02d) <= p.dist(v12d))
                                         {
                                             p_proj.y = v02d.y();
-                                            p_proj.x = section.vert(vid).x();
+                                            p_proj.x = section_verts_rot.at(vid).x();
                                         }
                                         else
                                         {
                                             p_proj.y = v12d.y();
-                                            p_proj.x = section.vert(vid).x();
+                                            p_proj.x = section_verts_rot.at(vid).x();
                                         }
                                     }
 
@@ -1598,8 +1691,8 @@ int main(int argc, char** argv)
                     }
                     else if(setProjDir.getValue().compare("X") == 0)
                     {
-                        double bbx_max = mesh.bbox().max.x();
-                        double bbx_min = mesh.bbox().min.x();
+                        double bbx_max = mesh_bb_max_x;
+                        double bbx_min = mesh_bb_min_x;
 
                         //In questo caso i punti da proiettare sono i vertici interni della mesh
 
@@ -1616,8 +1709,8 @@ int main(int argc, char** argv)
                             proj_min.y = DBL_MAX;
 
 
-                            cinolib::vec2d p1 (bbx_min, section.vert(vid).y()); //bottom
-                            cinolib::vec2d p2 (bbx_max, section.vert(vid).y()); //top
+                            cinolib::vec2d p1 (bbx_min, section_verts_rot.at(vid).y()); //bottom
+                            cinolib::vec2d p2 (bbx_max, section_verts_rot.at(vid).y()); //top
 
                             for(uint vidb = 0; vidb < vert_bound.size(); vidb ++)
                             {
@@ -1629,8 +1722,8 @@ int main(int argc, char** argv)
                                 else
                                     next = vert_bound.at(0);
 
-                                cinolib::vec3d v0 = mesh.vert(curr);
-                                cinolib::vec3d v1 = mesh.vert(next);
+                                cinolib::vec3d v0 = mesh_verts_rot.at(curr);
+                                cinolib::vec3d v1 = mesh_verts_rot.at(next);
 
                                 cinolib::vec2d v02d(v0.x(), v0.y());
                                 cinolib::vec2d v12d(v1.x(), v1.y());
@@ -1644,7 +1737,7 @@ int main(int argc, char** argv)
                                     cinolib::vec2d proj = segment_segment_intersection_2d(p1, p2, v02d, v12d);
 
                                     Point3D p_proj;
-                                    p_proj.z = section.vert(vid).z();
+                                    p_proj.z = section_verts_rot.at(vid).z();
                                     //p_proj.y = proj.y();
 
                                     if(proj.x() != DBL_MAX)
@@ -1654,16 +1747,16 @@ int main(int argc, char** argv)
                                     }
                                     else
                                     {
-                                        cinolib::vec2d p (section.vert(vid).x(), section.vert(vid).y());
+                                        cinolib::vec2d p (section_verts_rot.at(vid).x(), section_verts_rot.at(vid).y());
                                         if(p.dist(v02d) <= p.dist(v12d))
                                         {
                                             p_proj.x = v02d.x();
-                                            p_proj.y = section.vert(vid).y();
+                                            p_proj.y = section_verts_rot.at(vid).y();
                                         }
                                         else
                                         {
                                             p_proj.x = v12d.x();
-                                            p_proj.y = section.vert(vid).y();
+                                            p_proj.y = section_verts_rot.at(vid).y();
                                         }
                                     }
 
@@ -1689,6 +1782,11 @@ int main(int argc, char** argv)
                     manmeta.setDataProjection(dataProjection);
                     manmeta.write(app_folder + "/geom_" + geom_name + ".json");
 
+                    //la rotazione è solo on-the-fly per il calcolo: su disco (cartella
+                    //manipulate) le proiezioni vanno salvate nel sistema di riferimento
+                    //originale dei dati di input.
+                    apply_rotation_to_points(proj_top, geomRotation, true);
+                    apply_rotation_to_points(proj_bot, geomRotation, true);
 
                     export3d_xyz(app_folder + "/geom_" + dataProjection.top_name + ".dat", proj_top);
                     export3d_xyz(app_folder + "/geom_" + dataProjection.bottom_name + ".dat", proj_bot);
@@ -1830,7 +1928,7 @@ int main(int argc, char** argv)
                     {
                         //rotazione coordinate all'inidice i
                         cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
-                        cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
+                        cinolib::vec3d axis = get_rotation_axis(dataRotation);
                         cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
                         sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
 
@@ -1870,7 +1968,7 @@ int main(int argc, char** argv)
                         {
                             //rotazione coordinate all'inidice i
                             cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
-                            cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
+                            cinolib::vec3d axis = get_rotation_axis(dataRotation);
                             cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
                             sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
 
@@ -2477,7 +2575,7 @@ int main(int argc, char** argv)
 
                     if(dataRotation.rotation == true)
                     {
-                        cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
+                        cinolib::vec3d axis = get_rotation_axis(dataRotation);
                         cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
                         sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
                     }
@@ -2779,7 +2877,7 @@ int main(int argc, char** argv)
 
                     if(dataRotation.rotation == true)
                     {
-                        cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
+                        cinolib::vec3d axis = get_rotation_axis(dataRotation);
                         cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
                         sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
                     }
@@ -4352,7 +4450,7 @@ int main(int argc, char** argv)
 
                         if(dataRotation.rotation == true)
                         {
-                            cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
+                            cinolib::vec3d axis = get_rotation_axis(dataRotation);
                             cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
                             sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
                         }
@@ -4361,10 +4459,16 @@ int main(int argc, char** argv)
 
 
 
-                    //leggi in input le proiezioni
+                    //leggi in input le proiezioni: sono salvate su disco nel sistema di
+                    //riferimento originale (si veda muse_manipulate -S), quindi vanno
+                    //riportate on-the-fly sul piano locale x-y per essere confrontate con
+                    //coord_samples, già ruotato più sopra con la stessa dataRotation.
                     std::vector<Point3D> pztop, pzbot;
                     load_xyzfile(app_folder + "/samples_" + topSurface.getValue() + ".dat", pztop);
                     load_xyzfile(app_folder + "/samples_" + botSurface.getValue() + ".dat", pzbot);
+
+                    apply_rotation_to_points(pztop, dataRotation, false);
+                    apply_rotation_to_points(pzbot, dataRotation, false);
 
                     if((pztop.size() != coord_samples.size()) || (pzbot.size() != coord_samples.size()))
                     {
@@ -4453,6 +4557,11 @@ int main(int argc, char** argv)
                         exit(1);
                     }
 
+                     //la rotazione è solo on-the-fly per il calcolo: su disco (cartella
+                     //manipulate) le coordinate stratigrafiche vanno salvate nel sistema di
+                     //riferimento originale dei dati di input.
+                     apply_rotation_to_points(coord_samples_transformed, dataRotation, true);
+
                      manmeta.setStratigraphicTransf(strat);
                      manmeta.write(app_folder + "/samples_" + geomName.getValue() + ".json");
                      export3d_xyz(app_folder + "/samples_" + geomName.getValue() + ".xyz", coord_samples_transformed);
@@ -4482,11 +4591,43 @@ int main(int argc, char** argv)
                     std::string geom_name = geomModel.getValue().substr(geomModel.getValue().find_last_of("/")+1, geomModel.getValue().length());
                     geom_name = get_basename(geom_name);
 
+                    // model è caricato da --geom, che muse_geometry salva sempre nel sistema
+                    // di riferimento ORIGINALE. geom_top/geom_bot.dat (pztop/pzbot sotto)
+                    // sono invece già nel piano locale x-y (fix di muse_manipulate -S --type
+                    // GEOMETRY). Per confrontare le due cose bisogna riportare anche model
+                    // sullo stesso piano locale, usando la rotazione autorevole salvata da
+                    // muse_geometry -P per --geom.
+                    MUSE::Rotation geomRotation;
+                    MUSE::SurfaceMeta surfmeta;
+                    if(!surfmeta.read(get_basename(geomModel.getValue()) + ".json"))
+                        std::cout << FYEL("WARNING: No metadata JSON found next to --geom: assuming it is already aligned to its local x-y plane.") << std::endl;
+                    else
+                        geomRotation = surfmeta.getDataRotation();
+
+                    if(geomRotation.rotation == true)
+                    {
+                        cinolib::vec3d axis = get_rotation_axis(geomRotation);
+                        cinolib::vec3d center (geomRotation.rotation_center_x, geomRotation.rotation_center_y, geomRotation.rotation_center_z);
+
+                        for(uint vid=0; vid<model.num_verts(); vid++)
+                            model.vert(vid) = point_rotation(model.vert(vid), axis, geomRotation.rotation_angle, center);
+                    }
+
+                    //la coordinata stratigrafica sostituisce quella "verticale" (--prdir) nel
+                    //piano locale x-y: le altre due restano quelle ruotate di model, non quelle
+                    //originali, per essere coerenti con l'output di --type SAMPLES
+                    strat_model = model;
 
                     // Modificare la z con le trasformazioni in coordinate stratigrafiche, in base al tipo dichiarato da linea di comando --strat
+                    // Le proiezioni sono salvate su disco nel sistema di riferimento originale
+                    // (si veda muse_manipulate -S), quindi vanno riportate on-the-fly sul piano
+                    // locale x-y per essere confrontate con model, già ruotato più sopra.
                     std::vector<Point3D> pztop, pzbot;
                     load_xyzfile(app_folder + "/geom_" + topSurface.getValue() + ".dat", pztop);
                     load_xyzfile(app_folder + "/geom_" + botSurface.getValue() + ".dat", pzbot);
+
+                    apply_rotation_to_points(pztop, geomRotation, false);
+                    apply_rotation_to_points(pzbot, geomRotation, false);
 
 
                     if (setProjDir.getValue().compare("Y") == 0)
@@ -4500,8 +4641,6 @@ int main(int argc, char** argv)
                         }
                         strat.avg_thick = sum/pztop.size();
 
-
-                        strat_model = model;
                         for(size_t vid=0; vid< model.num_verts(); vid++)
                         {
                             if(pztop.at(vid).y == pzbot.at(vid).y)
@@ -4521,8 +4660,6 @@ int main(int argc, char** argv)
                         }
                         strat.avg_thick = sum/pztop.size();
 
-
-                        strat_model = model;
                         for(size_t vid=0; vid< model.num_verts(); vid++)
                         {
                             if(pztop.at(vid).x == pzbot.at(vid).x)
@@ -4537,6 +4674,18 @@ int main(int argc, char** argv)
                         exit(1);
                     }
 
+
+                    // La rotazione è solo on-the-fly per il calcolo: su disco (cartella
+                    // manipulate) il modello stratigrafico va salvato nel sistema di
+                    // riferimento originale della geometria di input.
+                    if(geomRotation.rotation == true)
+                    {
+                        cinolib::vec3d axis = get_rotation_axis(geomRotation);
+                        cinolib::vec3d center (geomRotation.rotation_center_x, geomRotation.rotation_center_y, geomRotation.rotation_center_z);
+
+                        for(uint vid=0; vid<strat_model.num_verts(); vid++)
+                            strat_model.vert(vid) = point_rotation(strat_model.vert(vid), axis, -geomRotation.rotation_angle, center);
+                    }
 
                     std::string ext_mesh = ".off";
                     if(objConversion.isSet() == true)
@@ -5048,7 +5197,7 @@ int main(int argc, char** argv)
 
                 if(dataRotation.rotation == true)
                 {
-                    cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
+                    cinolib::vec3d axis = get_rotation_axis(dataRotation);
                     cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
                     sample = point_rotation(sample, axis, dataRotation.rotation_angle, c);
                 }
@@ -5115,7 +5264,7 @@ int main(int argc, char** argv)
                         proj_min.x = coord_samples.at(j).x();
                         proj_min.y = DBL_MAX;
 
-                        cinolib::vec3d axis = set_rotation_axis(dataRotation.rotation_axis);
+                        cinolib::vec3d axis = get_rotation_axis(dataRotation);
                         cinolib::vec3d c (dataRotation.rotation_center_x, dataRotation.rotation_center_y, dataRotation.rotation_center_z);
 
                         cinolib::vec3d p_rot;
