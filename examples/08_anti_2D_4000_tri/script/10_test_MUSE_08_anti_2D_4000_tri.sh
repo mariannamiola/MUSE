@@ -225,7 +225,6 @@ muse_geometry -P -p ${WP} --tri --polygon ${INGEOM}/${GEOM}.txt --opt ${OPT} --s
 ##########  MANIPULATE  ###########
 ##Data are rotated to operate on horizontal geometry (x-y plane) for manipulation
 muse_manipulate -E -p ${WP} --geom ${OUTSURF}/${GEOM}.obj
-exit
 
 ##Points (samples and vertex of the geometry) are projected on top and bottom of the geometry to define the stratigraphic coordinates
 muse_manipulate -S -p ${WP} --mgeom ${OUTSURF}/${GEOM}.obj --type SAMPLES --sub ${GEOM}
@@ -236,11 +235,7 @@ muse_manipulate -S -p ${WP} --mgeom ${OUTSURF}/${GEOM}.obj --type GEOMETRY --geo
 muse_manipulate -T -p ${WP} --sttype PROPORTIONAL --type SAMPLES --sub ${GEOM} --top ${GEOM}_top --bot ${GEOM}_bot --name ${GEOM}
 muse_manipulate -T -p ${WP} --sttype PROPORTIONAL --type GEOMETRY --top ${GEOM}_top --bot ${GEOM}_bot --geom ${OUTSURF}/${GEOM}.obj --obj --name ${GEOM}
 
-##Straigraphic geometry is rotated back to the original reference system (x-z plane) using muse-geometry
-muse_geometry -L -p ${WP} -m ${OUTMAN}/geom_${GEOM}.obj --rotaxis X --rotangle -270 --obj
-
-
-
+exit
 
 
 
