@@ -283,7 +283,10 @@ void SurfaceMesh<M,V,E,P>::quads_split_on_edge()
 template<class M, class V, class E, class P>
 void SurfaceMesh<M,V,E,P>::rotate(const MUSE::Rotation &bound_Rotation, bool reverse)
 {
-    cinolib::vec3d rot_axis_vec (bound_Rotation.rotation_axis_vec.at(0), bound_Rotation.rotation_axis_vec.at(1), bound_Rotation.rotation_axis_vec.at(2));
+    // get_rotation_axis sceglie rotation_axis_vec (rotazioni auto-allineate) o
+    // set_rotation_axis(rotation_axis) (rotazioni manuali --rotaxis): usare solo
+    // rotation_axis_vec darebbe asse nullo per le rotazioni manuali.
+    cinolib::vec3d rot_axis_vec = get_rotation_axis(bound_Rotation);
     cinolib::vec3d c (bound_Rotation.rotation_center_x, bound_Rotation.rotation_center_y, bound_Rotation.rotation_center_z);
  
     double sign = 1.0;

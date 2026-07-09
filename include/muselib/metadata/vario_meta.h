@@ -202,6 +202,14 @@ public:
 
     const MUSE::EllipseParameter           &getSummary  () const    { return  summary; }
 
+    // Anisotropy ellipse expressed in the local x-y computational plane (before
+    // back-rotation to the original plane). Populated only when a rotation was
+    // applied to align the data to x-y (see align_points_to_xyplane); semiaxes
+    // are the same as getSummary(), but max_direction/min_direction/phi_rad are
+    // measured in the rotated frame, consistent with roll=pitch=0 in the kriging
+    // search ellipsoid (see MUSE::Rotation / covariance::setrot in GeoStatsLib).
+    const MUSE::EllipseParameter           &getSummaryLocal () const { return  summary_local; }
+
     // Multi-plane 3D workflow: per-plane variographic analysis and fitted anisotropy ellipsoid
     const std::vector<MUSE::plane_vario_methods> &getPlanesVariog () const           { return  planes_vario; }
     const MUSE::plane_vario_methods &getPlaneVariog (const unsigned int i) const     { return  planes_vario.at(i); }
@@ -227,6 +235,7 @@ public:
     void setFitExpVariog    (const std::vector<MUSE::variogram_methods> &d)    { fit_experimental_vario = d; }
 
     void setSummary         (const MUSE::EllipseParameter &d)   { summary = d; }
+    void setSummaryLocal    (const MUSE::EllipseParameter &d)   { summary_local = d; }
 
     // Multi-plane 3D workflow setters (extension fields, harmless for simpler use cases)
     void setPlanesVariog    (const std::vector<MUSE::plane_vario_methods> &d) { planes_vario = d; }
@@ -268,6 +277,14 @@ public:
             ar (CEREAL_NVP(ellipsoid));
         }
         catch (const cereal::Exception &) { /* legacy file without 3D ellipsoid info: keep defaults */ }
+
+        // Local (x-y computational plane) counterpart of summary: appended at the end,
+        // guarded to preserve compatibility with JSON files written before this field existed
+        try
+        {
+            ar (CEREAL_NVP(summary_local));
+        }
+        catch (const cereal::Exception &) { /* legacy file without local-plane ellipse: keep defaults */ }
     }
 
     template <class Archive>
@@ -296,6 +313,14 @@ public:
             ar (CEREAL_NVP(ellipsoid));
         }
         catch (const cereal::Exception &) { /* legacy file without 3D ellipsoid info: keep defaults */ }
+
+        // Local (x-y computational plane) counterpart of summary: guarded to keep reading
+        // legacy JSON files written before this field existed
+        try
+        {
+            ar (CEREAL_NVP(summary_local));
+        }
+        catch (const cereal::Exception &) { /* legacy file without local-plane ellipse: keep defaults */ }
     }
 #endif
 
@@ -317,6 +342,7 @@ private:
     std::vector<MUSE::variogram_methods> fit_experimental_vario;
 
     MUSE::EllipseParameter summary;
+    MUSE::EllipseParameter summary_local; // ellisse nel piano x-y locale (pre-backrotation), vedi getSummaryLocal()
 
     // Multi-plane 3D workflow: per-plane analyses and fitted 3D anisotropy ellipsoid
     // (both remain empty/default in the simpler 1D/2D/3Dxy/3Dz use cases)

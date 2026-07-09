@@ -6,6 +6,7 @@
 #include <cinolib/meshes/abstract_mesh.h>
 #include <muselib/input/load_vtk.h>
 #include <muselib/output/save_vtk.h>
+#include "muselib/geometry/tools.h"
 
 namespace MUSE
 {
@@ -177,6 +178,30 @@ void VolumeMesh<M,V,E,F,P>::write_poly_VTK(const char * filename)
     {
         std::cerr << "ERROR while writing vtk file: " << filename << std::endl;
         exit(1);
+    }
+}
+
+template<class M, class V, class E, class F, class P>
+void VolumeMesh<M,V,E,F,P>::rotate(const MUSE::Rotation &bound_Rotation, bool reverse)
+{
+    // Stesso pattern di SurfaceMesh::rotate / rotation_on_trimesh: get_rotation_axis
+    // sceglie rotation_axis_vec (rotazioni auto-allineate) o set_rotation_axis(rotation_axis)
+    // (rotazioni manuali --rotaxis), cosicché entrambe le sorgenti di rotazione siano gestite.
+    cinolib::vec3d rot_axis_vec = get_rotation_axis(bound_Rotation);
+    cinolib::vec3d c (bound_Rotation.rotation_center_x, bound_Rotation.rotation_center_y, bound_Rotation.rotation_center_z);
+
+    double sign = 1.0;
+    if(reverse)
+        sign = -1.0;
+
+    for(size_t i=0; i< this->num_verts(); i++)
+    {
+        cinolib::vec3d sample (this->vert(i).x(), this->vert(i).y(), this->vert(i).z());
+        sample = point_rotation(sample, rot_axis_vec, sign * bound_Rotation.rotation_angle, c);
+
+        this->vert(i).x() = sample.x();
+        this->vert(i).y() = sample.y();
+        this->vert(i).z() = sample.z();
     }
 }
 

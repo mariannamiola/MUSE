@@ -798,29 +798,6 @@ int main(int argc, char** argv)
             std::vector<std::string> id;
             std::vector<double> xCoord, yCoord, zCoord;
 
-            /* // LAMBDA FUNCTION TO APPLY ROTATION (IF SET):
-            auto apply_rotation = [&](const MUSE::Rotation& rot)
-            {
-                cinolib::vec3d axis = set_rotation_axis(rot.rotation_axis);
-                cinolib::vec3d c (rot.rotation_center_x, rot.rotation_center_y, rot.rotation_center_z);
-
-                for(size_t i=0; i< xCoord.size(); i++)
-                {
-                    //rotazione coordinate all'inidice i
-                    cinolib::vec3d sample (xCoord.at(i), yCoord.at(i), zCoord.at(i));
-                    sample = point_rotation(sample, axis, rot.rotation_angle, c);
-
-                    xCoord.at(i) = sample.x();
-                    yCoord.at(i) = sample.y();
-                    zCoord.at(i) = sample.z();
-                }
-
-                std::cout << "=== Rotation is activate on data ... " << rot.rotation << std::endl;
-                std::cout << "=== Rotation axis: " << rot.rotation_axis << std::endl;
-                std::cout << "=== Rotation center: [" << rot.rotation_center_x << "; " << rot.rotation_center_y << "; " << rot.rotation_center_z << "]" <<  std::endl;
-                std::cout << "=== Rotation angle (degree): " << rot.rotation_angle << std::endl;
-            }; */
-            
             // ================================
             // 1. LOADING COORDINATES AND ID
             // ================================
@@ -926,26 +903,13 @@ int main(int argc, char** argv)
                 std::cerr << "=== WARNING: mismatch coordinates (" << xCoord.size() << " vs " << n_sample << ")." << std::endl;
             }
 
-            // if(!stratCondition.isSet() && setRotAxis.isSet()) //Se non sono in coordinate stratigrafiche, posso applicare una rotazione ai dati grezzi prima di qualsiasi altra operazione
-            // {
-            //     std::cout << "=== Applying rotation on data before any other operation ... " << std::endl;
-
-            //     MUSE::Rotation dataRotation_vario;
-
-            //     dataRotation_vario.rotation = true;
-            //     dataRotation_vario.rotation_axis = setRotAxis.getValue();
-            //     dataRotation_vario.rotation_center_x = setRotCenterX.getValue();
-            //     dataRotation_vario.rotation_center_y = setRotCenterY.getValue();
-            //     dataRotation_vario.rotation_center_z = setRotCenterZ.getValue();
-            //     dataRotation_vario.rotation_angle = setRotAngle.getValue();
-
-            //     apply_rotation(dataRotation_vario);
-            //     metavario.setRotation(dataRotation_vario);
-            //     std::cout << FGRN("=== Rotation on data ... COMPLETED.") << std::endl;
-            // }
-
             std::vector<std::string> corr_id;
-            std::vector<double> conv_values, corr_x, corr_y, corr_z; //sampled data 
+            std::vector<double> conv_values, corr_x, corr_y, corr_z; //sampled data
+
+            // Rotazione (se presente) propagata da muse-manipulate -E: unica fonte di verità,
+            // riusata più sotto (blocco DIR-2D) invece di essere ristimata indipendentemente.
+            MUSE::Rotation propagatedRotation;
+
             if(subDataset.isSet())
             {
                 std::cout << "=== Sub-dataset is set on " << subDataset.getValue() << ". Variogram is computed on the sub-dataset selected by muse-manipulate." << std::endl;
@@ -1020,22 +984,45 @@ int main(int argc, char** argv)
                 }
                 else //no stratigraphic transformation, quindi le coordinate non sono state ancora filtrate e ordinate secondo il vettore 'indices'
                 {
-                    //1) VERIFICARE ROTAZIONE DATI
-                    // std::cout << "=== Checking rotation on data for sub-dataset extraction ... " << std::endl;
-                    // MUSE::Rotation dataRotation = extrmeta.getRotation();
-                    // if(dataRotation.rotation == true)
-                    // {
-                    //     std::cout << std::endl;
-                    //     std::cout << "Rotation is activate on data ... " << dataRotation.rotation << std::endl;
-                    //     std::cout << "Rotation axis: " << dataRotation.rotation_axis << std::endl;
-                    //     std::cout << "Rotation center: [" << dataRotation.rotation_center_x << "; " << dataRotation.rotation_center_y << "; " << dataRotation.rotation_center_z << "]" <<  std::endl;
-                    //     std::cout << "Rotation angle (degree): " << dataRotation.rotation_angle << std::endl;
-                    //     std::cout << std::endl;
+                    //1) VERIFICARE ROTAZIONE DATI: riuso la stessa rotazione (unica fonte di verità)
+                    //   già usata da muse-manipulate -E per allineare mesh e campioni, invece di
+                    //   ristimarla in autonomia sul sotto-dataset (si veda blocco DIR-2D più sotto).
+                    propagatedRotation = extrmeta.getRotation();
+                    if(propagatedRotation.rotation == true)
+                    {
+                        std::cout << std::endl;
+                        std::cout << "Rotation is activate on data ... " << propagatedRotation.rotation << std::endl;
+                        std::cout << "Rotation axis vec: [" << propagatedRotation.rotation_axis_vec.at(0) << "; " << propagatedRotation.rotation_axis_vec.at(1) << "; " << propagatedRotation.rotation_axis_vec.at(2) << "]" << std::endl;
+                        std::cout << "Rotation center: [" << propagatedRotation.rotation_center_x << "; " << propagatedRotation.rotation_center_y << "; " << propagatedRotation.rotation_center_z << "]" <<  std::endl;
+                        std::cout << "Rotation angle (degree): " << propagatedRotation.rotation_angle << std::endl;
+                        std::cout << std::endl;
 
-                    //     // Applicare la rotazione ai dati originali prima di filtrare con gli indici
-                    //     apply_rotation(dataRotation);
-                    //     metavario.setRotation(dataRotation);
-                    // }
+                        // Applicare la rotazione ai dati originali (non ancora filtrati) prima di
+                        // estrarre il sotto-dataset con gli indici, in modo che i campioni finiscano
+                        // sullo stesso piano locale x-y della mesh usata da muse-manipulate -E.
+                        std::vector<Point3D> rawPoints;
+                        rawPoints.reserve(xCoord.size());
+                        for(size_t i = 0; i < xCoord.size(); i++)
+                        {
+                            Point3D p;
+                            p.x = xCoord.at(i);
+                            p.y = yCoord.at(i);
+                            p.z = zCoord.at(i);
+                            rawPoints.push_back(p);
+                        }
+
+                        apply_rotation_to_points(rawPoints, propagatedRotation, false);
+
+                        for(size_t i = 0; i < rawPoints.size(); i++)
+                        {
+                            xCoord.at(i) = rawPoints.at(i).x;
+                            yCoord.at(i) = rawPoints.at(i).y;
+                            zCoord.at(i) = rawPoints.at(i).z;
+                        }
+
+                        metavario.setRotation(propagatedRotation);
+                        std::cout << FGRN("=== Rotation on data ... COMPLETED.") << std::endl;
+                    }
 
                     for(uint i:indices)
                     {
@@ -1107,10 +1094,21 @@ int main(int argc, char** argv)
             MUSE::Rotation rotation;
             if((varioDirection.isSet() && varioDirection.getValue().compare("DIR") == 0) && (varioDimension.isSet() && varioDimension.getValue().compare("2D") == 0))
             {
-                std::cout << "Checking coordinates points (x,y,z) on x-y plane to operate on 2D directional variograms (fixed on x-y plane) ... " << std::endl;
-                if(check_align_points_to_xyplane (corr_x, corr_y, corr_z))
-                    align_points_to_xyplane (corr_x, corr_y, corr_z, rotation);
- 
+                if(propagatedRotation.rotation == true)
+                {
+                    // I campioni sono già stati allineati al piano x-y locale con la rotazione
+                    // propagata da muse-manipulate -E (unica fonte di verità, condivisa con la
+                    // geometria): la riuso invece di ristimarla sul sotto-dataset.
+                    std::cout << "Reusing rotation propagated from muse-manipulate -E to operate on 2D directional variograms (already fixed on x-y plane) ... " << std::endl;
+                    rotation = propagatedRotation;
+                }
+                else
+                {
+                    std::cout << "Checking coordinates points (x,y,z) on x-y plane to operate on 2D directional variograms (fixed on x-y plane) ... " << std::endl;
+                    if(check_align_points_to_xyplane (corr_x, corr_y, corr_z))
+                        align_points_to_xyplane (corr_x, corr_y, corr_z, rotation);
+                }
+
                 metavario.setRotation(rotation);
             }
 
@@ -1862,15 +1860,49 @@ int main(int argc, char** argv)
                                 std::cout << FMAG("NOTA BENE: Questa soluzione sottostima il range massimo!!") << std::endl;
                                 std::cout << std::endl;
 
-                                auto fig = biv_plot_leg(h_plot, "Rose Diagram of Ranges", "hx", "hy", false, "Dir degree");
+                                auto fig = biv_plot_leg(h_plot, "Rose Diagram of Ranges (XY plane)", "hx", "hy", false, "Dir degree");
 
                                 matplot::hold(matplot::on);
                                 ellipse_plot(fig, summary, setEps.getValue());
 
-                                matplot::save(app_folder + "/" + data.getName() + std::to_string(categ.at(cat)) + "_RangesDiagram", "jpeg");
+                                matplot::save(app_folder + "/" + data.getName() + std::to_string(categ.at(cat)) + "_RangesDiagram_XY", "jpeg");
                                 matplot::cla();
 
-                                metavario.setSummary(summary);
+                                // Riproiezione e refit dell'ellisse sul piano originale: stesso pattern
+                                // già usato per le variabili numeriche (si veda back_rotate_ellipse_to_original_plane
+                                // più sotto nel file), applicato qui alla singola categoria indicatrice.
+                                EllipseParameter summary_orig;
+                                EllipseOriented3D ellipse_orig =
+                                    back_rotate_ellipse_to_original_plane(summary, h_plot, rotation, summary_orig);
+
+                                std::cout << "=== Ellipse in original plane: MAX dir = " << summary_orig.max_direction
+                                << " deg;  MIN dir = " << summary_orig.min_direction << " deg" << std::endl;
+
+                                if(rotation.autoalign)
+                                {
+                                    auto fig_orig = biv_plot_leg(h_plot, // vedi nota in back_rotate_ellipse_to_original_plane
+                                                                "Rose Diagram of Ranges (original plane)",
+                                                                "hx", "hy", false, "Dir degree");
+                                    matplot::hold(matplot::on);
+                                    ellipse_plot(fig_orig, summary_orig, setEps.getValue());
+                                    matplot::save(app_folder + "/" + data.getName() + std::to_string(categ.at(cat)) + "_RangesDiagram", "jpeg");
+                                    matplot::cla();
+                                }
+                                else
+                                {
+                                    // Piano già XY: comportamento identico a prima
+                                    auto fig_same = biv_plot_leg(h_plot, "Rose Diagram of Ranges", "hx", "hy", false, "Dir degree");
+                                    matplot::hold(matplot::on);
+                                    ellipse_plot(fig_same, summary, setEps.getValue());
+                                    matplot::save(app_folder + "/" + data.getName() + std::to_string(categ.at(cat)) + "_RangesDiagram", "jpeg");
+                                    matplot::cla();
+                                }
+
+                                // Salva nei metadati con direzioni nel piano originale, più la controparte
+                                // nel piano x-y locale (pre-backrotation) usata da muse-compute per un
+                                // azimuth coerente col piano su cui la ricerca di kriging viene eseguita.
+                                metavario.setSummary(summary_orig);
+                                metavario.setSummaryLocal(summary);
                             }
 
                             Variogram fvm;
@@ -3148,6 +3180,11 @@ int main(int argc, char** argv)
                                 // Salva nei metadati con direzioni nel piano originale
                                 metavario.setSummary(summary_orig);
                                 vario_frame.setSummary(summary_orig);
+
+                                // Salva anche l'ellisse nel piano x-y locale (pre-backrotation): serve a
+                                // muse-compute per usare un azimuth coerente col piano su cui la ricerca
+                                // di kriging viene effettivamente eseguita quando dati e mesh sono ruotati.
+                                metavario.setSummaryLocal(summary);
                             }
 
                             Variogram fvm;

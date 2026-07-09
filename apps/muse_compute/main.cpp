@@ -748,10 +748,27 @@ int main(int argc, char** argv)
             std::vector<std::string> id;
             std::vector<double> xCoord, yCoord, zCoord;
 
+            // Rotazione effettivamente applicata ai campioni: inizializzata dalla rotazione
+            // che muse-vario ha usato/propagato (unica fonte di verità), eventualmente
+            // sovrascritta più sotto da una rotazione manuale esplicita (--rotaxis) o da
+            // quella letta dall'estrazione di muse-manipulate -E per il sotto-dataset.
+            // Riusata anche per ruotare la mesh di geometria, cosicché dati e geometria
+            // restino sempre nello stesso piano locale.
+            MUSE::Rotation activeRotation = metavario.getRotation();
+
+            // true solo quando xCoord/yCoord/zCoord sono state EFFETTIVAMENTE ruotate con
+            // activeRotation: la mesh (più sotto) va ruotata con la stessa trasformazione
+            // solo se anche i dati lo sono stati, altrimenti dati e mesh finirebbero su
+            // piani diversi (mesh ruotata, dati no) invece che sullo stesso piano locale.
+            bool dataWasRotated = false;
+
             // LAMBDA FUNCTION TO APPLY ROTATION (IF SET):
             auto apply_rotation = [&](const MUSE::Rotation& rot)
             {
-                cinolib::vec3d axis = set_rotation_axis(rot.rotation_axis);
+                //get_rotation_axis sceglie rotation_axis_vec (rotazioni auto-allineate) o
+                //set_rotation_axis(rotation_axis) (rotazioni manuali --rotaxis): usare solo
+                //set_rotation_axis qui darebbe asse nullo per le rotazioni auto-allineate.
+                cinolib::vec3d axis = get_rotation_axis(rot);
                 cinolib::vec3d c (rot.rotation_center_x, rot.rotation_center_y, rot.rotation_center_z);
 
                 for(size_t i=0; i< xCoord.size(); i++)
@@ -861,9 +878,11 @@ int main(int argc, char** argv)
 
                 apply_rotation(dataRotation_vario);
                 metacompute.setRotation(dataRotation_vario);
+                activeRotation = dataRotation_vario; // override esplicito da CLI
+                dataWasRotated = true;
                 std::cout << FGRN("=== Rotation on data ... COMPLETED.") << std::endl;
             }
-                
+
             // String to double Conversion
             std::vector<std::string> corr_id;
             std::vector<double> conv_values, corr_x, corr_y, corr_z; //sampled data
@@ -951,6 +970,8 @@ int main(int argc, char** argv)
 
                         apply_rotation(dataRotation);
                         metacompute.setRotation(dataRotation);
+                        activeRotation = dataRotation; // fonte più specifica per il sotto-dataset
+                        dataWasRotated = true;
                     }
 
                     for(uint i:indices)
@@ -985,11 +1006,24 @@ int main(int argc, char** argv)
                             std::cerr << "=== Invalid Value string: '" << val_str << "'" << std::endl;
                         }
                     }
-                }    
+                }
             }
             else
+            {
+                // Nessun --sub / --rotaxis: se muse-vario ha comunque stimato una rotazione
+                // on-the-fly (--dir DIR --dim 2D su dataset grezzo), la riapplico qui ai dati
+                // grezzi, cosicché restino coerenti con la mesh (ruotata più sotto con la
+                // stessa activeRotation) e con l'azimuth locale letto da summary_local.
+                if(activeRotation.rotation == true)
+                {
+                    std::cout << std::endl;
+                    std::cout << "=== Rotation propagated from muse-vario's on-the-fly estimate is applied on data before computation ... " << std::endl;
+                    apply_rotation(activeRotation);
+                    dataWasRotated = true;
+                }
                 string_to_double_conversion_vectors(data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
-            
+            }
+
             std::cout << std::endl;
 
             int n_conv_samples = conv_values.size(); //numero campioni convertiti da stringa a double
@@ -1076,6 +1110,11 @@ int main(int argc, char** argv)
                     //cinolib::Quadmesh<> surf_mesh;
                     surf_mesh.load(geomModel.getValue().c_str());
 
+                    // Ruoto la mesh con la stessa rotazione applicata ai campioni, in modo che
+                    // dati e geometria condividano lo stesso piano locale per il kriging/simulazione.
+                    if(dataWasRotated)
+                        surf_mesh.rotate(activeRotation, false);
+
                     for(uint pid=0; pid<surf_mesh.num_polys(); pid++)
                     {
                         point3d p = point3d({surf_mesh.poly_centroid(pid).x(), surf_mesh.poly_centroid(pid).y(), surf_mesh.poly_centroid(pid).z()});
@@ -1088,6 +1127,11 @@ int main(int argc, char** argv)
 
                    // MUSE::VolumeMesh<> vol_mesh;
                     vol_mesh.load(geomModel.getValue().c_str());
+
+                    // Ruoto la mesh con la stessa rotazione applicata ai campioni, in modo che
+                    // dati e geometria condividano lo stesso piano locale per il kriging/simulazione.
+                    if(dataWasRotated)
+                        vol_mesh.rotate(activeRotation, false);
 
                     for(uint pid=0; pid<vol_mesh.num_polys(); pid++)
                     {
@@ -1174,7 +1218,17 @@ int main(int argc, char** argv)
                             fvm_cat.set_range(metavario_cat.getSummary().min_semiaxis, metavario_cat.getSummary().max_semiaxis);
 
 
-                        fvm_cat.set_azimuth(metavario_cat.getSummary().max_direction);
+                        // Se i dati sono stati ruotati sul piano x-y locale (autoalign), l'azimuth deve
+                        // essere quello misurato in quel piano (summary_local), coerente col piano su cui
+                        // dati e mesh sono stati portati sopra; altrimenti (nessuna rotazione, o JSON
+                        // generato prima di questa modifica) uso l'azimuth nel piano originale come prima.
+                        double azimuth_cat = metavario_cat.getSummary().max_direction;
+                        if(metavario_cat.getRotation().rotation && metavario_cat.getSummaryLocal().max_semiaxis > 0.0)
+                            azimuth_cat = metavario_cat.getSummaryLocal().max_direction;
+                        else if(metavario_cat.getRotation().rotation)
+                            std::cout << FYEL("WARNING: rotation is active but summary_local is missing in the vario JSON (generated before this feature) - re-run muse_vario to get a geometrically correct azimuth for kriging. Falling back to the original-plane azimuth.") << std::endl;
+
+                        fvm_cat.set_azimuth(azimuth_cat);
                         //std::cout << "Azimuth is set on max continuity direction: " << fvm_cat.get_azimuth() << " degree from North" << std::endl;
 
                         //Settati sulla massima direzione, ma non cambiano (per costruzione -> calcolo automatico del vario direzionale)
@@ -1209,7 +1263,8 @@ int main(int argc, char** argv)
                     std::cout << FMAG("=== (Prior to simulation) Check variogram parameters ... ") << std::endl;
                     std::string string_type;
                     convert_to_str(string_type, fvm_cat.type);
-                    std::cout << " | Azimuth is set on max continuity direction: " << fvm_cat.get_azimuth() << " degree from North" << std::endl;
+                    std::cout << " | Azimuth is set on max continuity direction: " << fvm_cat.get_azimuth() << " degree from North"
+                               << (dataWasRotated ? " (local x-y computational plane, matching rotated data+mesh)" : " (original plane)") << std::endl;
                     std::cout << " | Type = " << string_type << std::endl;
                     std::cout << " | Dir max (azimuth) = " << fvm_cat.get_azimuth() << " degree from North." << std::endl;
                     std::cout << " | Range max = " << fvm_cat.get_maxrange() << std::endl;
@@ -1397,7 +1452,17 @@ int main(int argc, char** argv)
                         fvm.set_range(metavario.getSummary().min_semiaxis, metavario.getSummary().max_semiaxis);
 
 
-                    fvm.set_azimuth(metavario.getSummary().max_direction);
+                    // Se i dati sono stati ruotati sul piano x-y locale (autoalign), l'azimuth deve
+                    // essere quello misurato in quel piano (summary_local), coerente col piano su cui
+                    // dati e mesh sono stati portati sopra; altrimenti (nessuna rotazione, o JSON
+                    // generato prima di questa modifica) uso l'azimuth nel piano originale come prima.
+                    double azimuth = metavario.getSummary().max_direction;
+                    if(dataWasRotated && metavario.getSummaryLocal().max_semiaxis > 0.0)
+                        azimuth = metavario.getSummaryLocal().max_direction;
+                    else if(dataWasRotated)
+                        std::cout << FYEL("WARNING: rotation is active but summary_local is missing in the vario JSON (generated before this feature) - re-run muse_vario to get a geometrically correct azimuth for kriging. Falling back to the original-plane azimuth.") << std::endl;
+
+                    fvm.set_azimuth(azimuth);
                     //std::cout << "Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North" << std::endl;
 
                     //Settati sulla massima direzione, ma non cambiano (per costruzione -> calcolo automatico del vario direzionale)
@@ -1442,7 +1507,8 @@ int main(int argc, char** argv)
                 std::cout << FMAG("=== (Prior to simulation) Check variogram parameters ... ") << std::endl;
                 std::string string_type;
                 convert_to_str(string_type, fvm.type);
-                std::cout << " | Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North" << std::endl;
+                std::cout << " | Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North"
+                           << (dataWasRotated ? " (local x-y computational plane, matching rotated data+mesh)" : " (original plane)") << std::endl;
                 std::cout << " | Type = " << string_type << std::endl;
                 std::cout << " | Dir max (azimuth) = " << fvm.get_azimuth() << " degree from North." << std::endl;
                 std::cout << " | Range max = " << fvm.get_maxrange() << std::endl;
@@ -1546,6 +1612,11 @@ int main(int argc, char** argv)
                     MUSE::SurfaceMesh<> surf_mesh;
                     surf_mesh.load(geomModel.getValue().c_str());
                     sim.n_elements = surf_mesh.num_polys();
+
+                    // Ruoto la mesh con la stessa rotazione applicata ai campioni, in modo che
+                    // dati e geometria condividano lo stesso piano locale per la simulazione.
+                    if(dataWasRotated)
+                        surf_mesh.rotate(activeRotation, false);
 
                     timing_logger.stop("mesh_loading");
 
@@ -1755,6 +1826,11 @@ int main(int argc, char** argv)
 
                     MUSE::VolumeMesh<> vol_mesh;
                     vol_mesh.load(geomModel.getValue().c_str());
+
+                    // Ruoto la mesh con la stessa rotazione applicata ai campioni, in modo che
+                    // dati e geometria condividano lo stesso piano locale per la simulazione.
+                    if(dataWasRotated)
+                        vol_mesh.rotate(activeRotation, false);
 
                     sim.n_elements = vol_mesh.num_polys();
                     timing_logger.stop("mesh_loading");
@@ -2791,6 +2867,19 @@ int main(int argc, char** argv)
             metavario.read(out_vario + "/" + setVario.getValue());
             std::cout << "### Set fixed variogram from JSON file: " << setVario.getValue() << std::endl;
 
+            // Rotazione effettivamente applicata ai campioni: inizializzata dalla rotazione
+            // che muse-vario ha usato/propagato (unica fonte di verità), eventualmente
+            // sovrascritta più sotto da una rotazione manuale esplicita (--rotaxis). Riusata
+            // anche per ruotare la mesh di geometria, cosicché dati e geometria restino
+            // sempre nello stesso piano locale.
+            MUSE::Rotation activeRotation = metavario.getRotation();
+
+            // true solo quando xCoord/yCoord/zCoord sono state EFFETTIVAMENTE ruotate con
+            // activeRotation: la mesh (più sotto) va ruotata con la stessa trasformazione
+            // solo se anche i dati lo sono stati, altrimenti dati e mesh finirebbero su
+            // piani diversi (mesh ruotata, dati no) invece che sullo stesso piano locale.
+            bool dataWasRotated = false;
+
 
             /// CREATION OF COMPUTE METADATA
             ComputeMeta metacompute;
@@ -2935,6 +3024,8 @@ int main(int argc, char** argv)
                         zCoord.at(i) = sample.z();
                     }
                     metacompute.setRotation(dataRotation_vario);
+                    activeRotation = dataRotation_vario; // override esplicito da CLI
+                    dataWasRotated = true;
                     std::cout << FGRN("Rotation on data ... COMPLETED.") << std::endl;
                 }
 
@@ -2993,7 +3084,36 @@ int main(int argc, char** argv)
                     // std::cout << FGRN("Extraction sub-dataset ... COMPLETED.") << std::endl;
                 }
                 else
+                {
+                    // Nessun --sub / --rotaxis: se muse-vario ha comunque stimato una rotazione
+                    // on-the-fly (--dir DIR --dim 2D su dataset grezzo), la riapplico qui ai dati
+                    // grezzi, cosicché restino coerenti con la mesh (ruotata più sotto con la
+                    // stessa activeRotation) e con l'azimuth locale letto da summary_local.
+                    if(activeRotation.rotation == true)
+                    {
+                        std::cout << std::endl;
+                        std::cout << "=== Rotation propagated from muse-vario's on-the-fly estimate is applied on data before computation ... " << std::endl;
+                        std::vector<Point3D> rawPoints;
+                        rawPoints.reserve(xCoord.size());
+                        for(size_t i = 0; i < xCoord.size(); i++)
+                        {
+                            Point3D p;
+                            p.x = xCoord.at(i);
+                            p.y = yCoord.at(i);
+                            p.z = zCoord.at(i);
+                            rawPoints.push_back(p);
+                        }
+                        apply_rotation_to_points(rawPoints, activeRotation, false);
+                        for(size_t i = 0; i < rawPoints.size(); i++)
+                        {
+                            xCoord.at(i) = rawPoints.at(i).x;
+                            yCoord.at(i) = rawPoints.at(i).y;
+                            zCoord.at(i) = rawPoints.at(i).z;
+                        }
+                        dataWasRotated = true;
+                    }
                     string_to_double_conversion_vectors(data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
+                }
             }
             else
             {
@@ -3205,8 +3325,19 @@ int main(int argc, char** argv)
                         fvm.set_range(metavario.getSummary().min_semiaxis, metavario.getSummary().max_semiaxis);
 
 
-                    fvm.set_azimuth(metavario.getSummary().max_direction);
-                    std::cout << "Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North" << std::endl;
+                    // Se i dati sono stati ruotati sul piano x-y locale (autoalign), l'azimuth deve
+                    // essere quello misurato in quel piano (summary_local), coerente col piano su cui
+                    // dati e mesh sono stati portati sopra; altrimenti (nessuna rotazione, o JSON
+                    // generato prima di questa modifica) uso l'azimuth nel piano originale come prima.
+                    double azimuth = metavario.getSummary().max_direction;
+                    if(dataWasRotated && metavario.getSummaryLocal().max_semiaxis > 0.0)
+                        azimuth = metavario.getSummaryLocal().max_direction;
+                    else if(dataWasRotated)
+                        std::cout << FYEL("WARNING: rotation is active but summary_local is missing in the vario JSON (generated before this feature) - re-run muse_vario to get a geometrically correct azimuth for kriging. Falling back to the original-plane azimuth.") << std::endl;
+
+                    fvm.set_azimuth(azimuth);
+                    std::cout << "Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North"
+                               << (dataWasRotated ? " (local x-y computational plane, matching rotated data+mesh)" : " (original plane)") << std::endl;
 
                     //Settati sulla massima direzione, ma non cambiano (per costruzione -> calcolo automatico del vario direzionale)
                     fvm.nugget = metavario.getFitExpVariog(0).nugget;
@@ -3308,6 +3439,11 @@ int main(int argc, char** argv)
 
                     MUSE::SurfaceMesh<> surf_mesh;
                     surf_mesh.load(geomModel.getValue().c_str());
+
+                    // Ruoto la mesh con la stessa rotazione applicata ai campioni, in modo che
+                    // dati e geometria condividano lo stesso piano locale per la simulazione.
+                    if(dataWasRotated)
+                        surf_mesh.rotate(activeRotation, false);
 
                     sim.n_elements = surf_mesh.num_polys();
 
@@ -3505,6 +3641,11 @@ int main(int argc, char** argv)
 
                     MUSE::VolumeMesh<> vol_mesh;
                     vol_mesh.load(geomModel.getValue().c_str());
+
+                    // Ruoto la mesh con la stessa rotazione applicata ai campioni, in modo che
+                    // dati e geometria condividano lo stesso piano locale per la simulazione.
+                    if(dataWasRotated)
+                        vol_mesh.rotate(activeRotation, false);
 
                     sim.n_elements = vol_mesh.num_polys();
 

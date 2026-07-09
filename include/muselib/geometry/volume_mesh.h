@@ -2,6 +2,7 @@
 #define VOLUME_MESH_H
 
 #include <cinolib/meshes/polyhedralmesh.h>
+#include "muselib/data_structures/rotation.h"
 
 namespace MUSE
 {
@@ -59,6 +60,8 @@ public:
     ;
 
     void write_poly_VTK(const char * filename);
+
+    void rotate(const MUSE::Rotation &bound_Rotation, bool reverse);
 
 private:
 
