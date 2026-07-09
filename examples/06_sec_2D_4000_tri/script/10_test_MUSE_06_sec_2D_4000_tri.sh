@@ -240,29 +240,25 @@ muse_geometry -P -p ${WP} --tri --polygon ${INGEOM}/${GMOD}.xyz --opt ${OPT} --s
 #manip:
 ##########  MANIPULATE  ###########
 muse_manipulate -E -p ${WP} --geom ${OUTSURF}/${GMOD}.obj
-exit
+
 
 #vario:
 ##########  VARIO  ###########
 muse_vario -V -p ${WP} -v ${VAR1} --nscore YES --dir ${DIR} --dim ${DIM} --vario MODEL --dirs 0,70,80,90,110 --degtol 15 --vclean 5 --weight --eps 5.0 --nugget 0.18
-exit
+
 
 #compute:
 ##########  COMPUTE  ###########
-if [[ $OUTSGS == 'MEAN'* ]]; then
-  muse_compute -C -p ${WP} -v ${VAR1} --rotaxis X --rotangle 270 -m ${OUTSURF}/${GMOD}.obj --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --bnscore --extr Extr --minextr 0 --maxextr 1 --octant --scaleradius 1.5 --input 10 --simulated 6
-else
-  muse_compute -C -p ${WP} -v ${VAR1} --rotaxis X --rotangle 270 -m ${OUTSURF}/${GMOD}.obj --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --octant --scaleradius 1.5 --input 10 --simulated 6
+muse_compute -C -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --nsim ${NSIM} --dir ${DIR} --dim ${DIM} --out ${OUTSGS} --octant --scaleradius 1.5 --input 10 --simulated 6
 
-  #stats:
-  muse_compute -S -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --csv
+#stats:
+muse_compute -S -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --csv
 
-  #back:
-  muse_compute -B -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --extr Extr --minextr 0 --maxextr 1 --csv
-  
-  #statsback:
-  muse_compute -S -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --space VAR --csv
-fi
+#back:
+muse_compute -B -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --extr Extr --minextr 0 --maxextr 1 --csv
+
+#statsback:
+muse_compute -S -p ${WP} -v ${VAR1} -m ${OUTSURF}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --space VAR --csv
 
 
 #clean:
@@ -285,11 +281,11 @@ fi
 
 #variosis:
 ##########  VARIO  ###########
-muse_vario -V -p ${WP} -v ${VAR2} --rotaxis X --rotangle 270 --vario MODEL --dir ${DIR} --dim ${DIM} --dirs 0,70,80,90,110 --degtol 15 --vclean 10 --itype SPHERICAL!6 --itype SPHERICAL!8 --inugget 0!1 --inugget 0!2 --inugget 0!3 --inugget 0!4 --inugget 0!5 --inugget 0!6 --inugget 0!7 --inugget 0!8
+muse_vario -V -p ${WP} -v ${VAR2} --vario MODEL --dir ${DIR} --dim ${DIM} --dirs 0,70,80,90,110 --degtol 15 --vclean 10 --itype SPHERICAL!6 --itype SPHERICAL!8 --inugget 0!1 --inugget 0!2 --inugget 0!3 --inugget 0!4 --inugget 0!5 --inugget 0!6 --inugget 0!7 --inugget 0!8
 
 #computesis:
 ##########  COMPUTE  ###########
-muse_compute -C -p ${WP} -v ${VAR2} --rotaxis X --rotangle 270 --dir ${DIR} --dim ${DIM} -m ${OUTSURF}/${GMOD}.obj --crit SISIM --nsim ${NSIM}
+muse_compute -C -p ${WP} -v ${VAR2} --dir ${DIR} --dim ${DIM} -m ${OUTSURF}/${GMOD}.obj --crit SISIM --nsim ${NSIM}
 
 ################################
 export OUTCOMP=${OUTWP}/compute/${VAR2}_${DIR}${DIM}_${GMOD}
