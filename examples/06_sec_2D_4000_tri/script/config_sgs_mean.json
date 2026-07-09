@@ -7,7 +7,7 @@
   "units": "-",
 
   "geometry": {
-    "name": "sec_xz_rot",
+    "name": "sec_xz",
     "sub": "",
     "ext": "obj"
   },
