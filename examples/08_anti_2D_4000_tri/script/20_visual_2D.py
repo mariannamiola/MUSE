@@ -19,7 +19,68 @@ paraview.simple._DisableFirstRenderCameraReset()
 # ----------------------------------------------------------------
 
 script_dir=os.path.dirname(os.path.realpath(__file__))
-config_path = os.path.join(script_dir, "config.json")
+
+## ask user to select config file
+
+def ask(script_dir):
+    config_files = sorted(
+        name for name in os.listdir(script_dir)
+        if name.startswith("config") and name.endswith(".json")
+    )
+
+    if not config_files:
+        raise FileNotFoundError("No config*.json file found in script folder.")
+
+    if "config.json" in config_files:
+        default_name = "config.json"
+    else:
+        default_name = config_files[0]
+
+    options = {str(i + 1): name for i, name in enumerate(config_files)}
+
+    print("Select config file:")
+    for key, name in options.items():
+        suffix = " (default)" if name == default_name else ""
+        print(f"{key}) {name}{suffix}")
+    print(f"Press Enter for default: {default_name}")
+
+    prompt_lines = [
+        f"Choice [1-{len(config_files)}]",
+        "",
+        "Available",
+    ]
+    prompt_lines.extend(
+        f"{key}) {name}{' (default)' if name == default_name else ''}"
+        for key, name in options.items()
+    )
+    prompt_lines.append("\nEnter selection number")
+    #prompt_lines.append(f"Press Enter for default: {default_name}")
+
+    try:
+        choice = input("\n".join(prompt_lines)).strip()
+    except (EOFError, KeyboardInterrupt):
+        return None
+
+    if choice.lower() in {"exit", "quit", "q"}:
+        return None
+
+    if not choice:
+        selected_name = default_name
+    elif choice in options:
+        selected_name = options[choice]
+    elif choice in config_files:
+        selected_name = choice
+    else:
+        print(f"Invalid selection ({choice}). Falling back to {default_name}.")
+        selected_name = default_name
+
+    return os.path.join(script_dir, selected_name)
+
+config_path = ask(script_dir)
+
+if config_path is None:
+    print("Selection canceled. Exiting without changes.")
+    raise RuntimeError("Selection canceled by user.")
 
 with open(config_path, "r") as f:
     config = json.load(f)
@@ -79,11 +140,23 @@ print("Samples CSV: ", samplescsv_file)
 
 
 # ----------------------------------------------------------------
+# Pre processing samples csv file - remove headers 
+# ----------------------------------------------------------------
+with open(samplescsv_file, 'r') as f:
+    lines = f.readlines()
+
+header = lines[0]
+data = [header] + lines[6:]
+samplescsv_file_clean = os.path.join(script_dir, "..", "data", "samples.csv")
+with open(samplescsv_file_clean, 'w') as f:
+    f.writelines(data)
+
+
+# ----------------------------------------------------------------
 # CSV Readers - sample points
 # ----------------------------------------------------------------
-
 # create a new 'CSV Reader'
-samplescsv = CSVReader(registrationName=sample_csv, FileName=[samplescsv_file])
+samplescsv = CSVReader(registrationName=sample_csv, FileName=[samplescsv_file_clean])
 samplescsv.UseStringDelimiter = 0
 samplescsv.HaveHeaders = 1
 samplescsv.FieldDelimiterCharacters = ';'
@@ -230,40 +303,18 @@ ColorBy(appendAttributes1Display, ('CELLS', config["columns"]["scalarfield"]["va
 
 # reset view to fit data bounds
 renderView1.ResetCamera()
-
-view_plane = config.get("view", {}).get("plane", "XY").upper()
-dist_factor = config.get("view", {}).get("distance_factor", 1.5)
-
-bounds = appendAttributes1.GetDataInformation().GetBounds()
-cx = (bounds[0] + bounds[1]) / 2.0
-cy = (bounds[2] + bounds[3]) / 2.0
-cz = (bounds[4] + bounds[5]) / 2.0
-extent = max(bounds[1]-bounds[0], bounds[3]-bounds[2], bounds[5]-bounds[4])
-distance = extent * dist_factor
-
-camera_settings = {
-    "XY": {"pos": [cx, cy, cz + distance], "up": [0, 1, 0]},
-    "XZ": {"pos": [cx, cy + distance, cz], "up": [0, 0, 1]},
-    "YZ": {"pos": [cx - distance, cy, cz], "up": [0, 0, 1]},
-}
-
-cam = camera_settings.get(view_plane, camera_settings["XY"])
-renderView1.CameraFocalPoint = [cx, cy, cz]
-renderView1.CameraPosition   = cam["pos"]
-renderView1.CameraViewUp     = cam["up"]
-renderView1.CameraParallelProjection = 1
+#renderView1.CameraPosition = [23.673108484339377, 26.10432893807473, 136.60254037844388]
+#renderView1.CameraFocalPoint = [23.673108484339377, 26.10432893807473, 0.0]
+#renderView1.CameraFocalDisk = 1.0
 
 # To save a specific target resolution, rather than using the
 # the current view (or layout) size, and override the color palette.
-viewsize = [1000, 1000]
-renderView1.ViewSize = viewsize
-
 if config["output"]["save"]:
     directory = os.path.join(script_dir, '..', '..', project_folder, config["output"]["dir"])
     if not os.path.exists(directory): 
 	    os.mkdir(directory)
 
-    SaveScreenshot(os.path.join(directory, sim_name + '.' + config["output"]["format"]), renderView1, ImageResolution=viewsize, FontScaling=False, OverrideColorPalette='WhiteBackground', TransparentBackground=False)
+    SaveScreenshot(os.path.join(directory, sim_name + '.' + config["output"]["format"]), renderView1, ImageResolution=[3000, 3000], FontScaling=True, OverrideColorPalette='WhiteBackground', TransparentBackground=False)
     #SaveScreenshot(os.path.join(directory, sim_name + '.png'), renderView1, FontScaling=True, OverrideColorPalette='WhiteBackground', TransparentBackground=False)
 
 

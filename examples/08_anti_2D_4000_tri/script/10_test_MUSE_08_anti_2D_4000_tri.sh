@@ -134,7 +134,7 @@ export VAR2=class ##categorical variable to be simulated
 # 2. Export flags
 #######################################################################
 #For geometry
-export OPT=a0.01
+export OPT=a0.1
 
 #For vario
 export DIR=DIR
@@ -235,7 +235,6 @@ muse_manipulate -S -p ${WP} --mgeom ${OUTSURF}/${GEOM}.obj --type GEOMETRY --geo
 muse_manipulate -T -p ${WP} --sttype PROPORTIONAL --type SAMPLES --sub ${GEOM} --top ${GEOM}_top --bot ${GEOM}_bot --name ${GEOM}
 muse_manipulate -T -p ${WP} --sttype PROPORTIONAL --type GEOMETRY --top ${GEOM}_top --bot ${GEOM}_bot --geom ${OUTSURF}/${GEOM}.obj --obj --name ${GEOM}
 
-exit
 
 
 
@@ -275,8 +274,6 @@ fi
 
 
 
-
-
 ############################## INDICATOR VARIOGRAM AND SIS COMPUTATION ##############################
 
 read -p "VARIOGRAM - INDICATOR ... Press any key to continue ... " -n1 -s
@@ -303,21 +300,6 @@ done
 
 
 
-
-
-
-# #db:
-# ##########  DATABASE  ###########
-# if [[ $OUTSGS == 'MEAN'* ]]; then
-#   echo "Database creation for MEAN SGS method ... NOT IMPLEMENTED!"
-# else
-#   muse_compute -D -p ${WP} -v ${VAR} --sub ${GEOM} -m ${OUTMAN}/${GMOD}.obj --dir ${DIR} --dim ${DIM} --space VAR
-# fi
-
-
-#plot:
-##########  PLOT  ###########
-#-H -p ${WP} -v <FILE>
 
 ####################################################################### MUSE END
 

@@ -2,12 +2,12 @@
   "work_folder": "MUSE_test",
   "project_name": "08_anti_2D_4000_tri",
 
-  "samples": "samples.csv",
+  "samples": "anti_4000_phi_class.csv",
   "varname": "class",
   "units": "-",
 
   "geometry": {
-    "name": "anti_rot",
+    "name": "anti",
     "sub": "anti",
     "ext": "obj"
   },
@@ -43,11 +43,6 @@
       "cat": true,
       "n_cat": 8
     }
-  },
-
-  "view": {
-    "plane": "XZ",
-    "distance_factor": 1.5
   },
 
   "output": {
