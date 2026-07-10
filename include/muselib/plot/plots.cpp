@@ -90,16 +90,18 @@ matplot::figure_handle biv_plot_leg (const MUSE::PlotStruct &dataplot, const std
 }
 
 ///
-/// \brief ellipsoid_plot draws the fitted 3D anisotropy ellipsoid as a wireframe, together with
-/// the directional range points used for the fitting: it is the summary picture of the 3D fit.
-/// The wireframe is generated parametrically from the principal axes stored in the structure,
+/// \brief ellipsoid_plot draws the fitted 3D anisotropy ellipsoid as a translucent red surface
+/// with a matching wireframe, together with the directional range points (blue) used for the
+/// fitting: it is the summary picture of the 3D fit, using the same red-fit/blue-data color
+/// convention as ellipse_plot() for the 2D case.
+/// The surface is generated parametrically from the principal axes stored in the structure,
 /// so the drawn orientation reflects exactly the fitted azimuth/roll/pitch.
 ///
 matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid_par, const MUSE::PlotStruct &range_points, const std::string &title)
 {
     auto fig = matplot::figure(true);
     fig->backend()->run_command("unset warnings");
-    fig->size(800, 700);
+    fig->size(900, 800);
 
     // Shortcuts for the semi-axes and the principal directions of the fitted ellipsoid
     const double a = ellipsoid_par.max_semiaxis;
@@ -124,44 +126,33 @@ matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid
 
     matplot::hold(matplot::on);
 
-    const int n_iso = 12;   //number of wireframe iso-lines per family
-    const int n_samp = 60;  //number of samples along each iso-line
+    // Fitted ellipsoid, drawn as a translucent shaded surface with a matching wireframe,
+    // both in red -- the same "fit in red / data in blue" convention used by ellipse_plot()
+    // for the 2D anisotropy ellipse.
+    const int n_u = 14;  //latitude samples (pole to pole)
+    const int n_v = 22;  //longitude samples (around the equator)
 
-    // Wireframe, first family: meridians at constant v (from pole to pole)
-    for(int k=0; k<n_iso; k++)
+    std::vector<std::vector<double>> X(n_u+1, std::vector<double>(n_v+1)),
+                                      Y(n_u+1, std::vector<double>(n_v+1)),
+                                      Z(n_u+1, std::vector<double>(n_v+1));
+    for(int i=0; i<=n_u; i++)
     {
-        double v = k * (2.0*M_PI/n_iso);
-
-        std::vector<double> x, y, z;
-        for(int i=0; i<=n_samp; i++)
+        double u = -M_PI/2.0 + i*(M_PI/n_u);
+        for(int j=0; j<=n_v; j++)
         {
-            double u = -M_PI/2.0 + i*(M_PI/n_samp);
-            double px, py, pz;
-            surf_point(u, v, px, py, pz);
-            x.push_back(px); y.push_back(py); z.push_back(pz);
+            double v = j*(2.0*M_PI/n_v);
+            surf_point(u, v, X[i][j], Y[i][j], Z[i][j]);
         }
-        auto l = matplot::plot3(x, y, z);
-        l->line_width(0.5);
-        l->color("#D95F02"); //orange wires
     }
 
-    // Wireframe, second family: parallels at constant u (closed rings)
-    for(int k=1; k<n_iso/2; k++)
-    {
-        double u = -M_PI/2.0 + k*(M_PI/(n_iso/2));
+    // A single-color colormap turns the (otherwise height-driven) surface palette into one
+    // flat crimson fill, regardless of z -- i.e. a plain solid-red ellipsoid.
+    matplot::colormap({{0.80, 0.10, 0.12}});
 
-        std::vector<double> x, y, z;
-        for(int i=0; i<=n_samp; i++)
-        {
-            double v = i*(2.0*M_PI/n_samp);
-            double px, py, pz;
-            surf_point(u, v, px, py, pz);
-            x.push_back(px); y.push_back(py); z.push_back(pz);
-        }
-        auto l = matplot::plot3(x, y, z);
-        l->line_width(0.5);
-        l->color("#D95F02");
-    }
+    auto s = matplot::surf(X, Y, Z);
+    s->face_alpha(0.28f);              //translucent, so the axes and points stay visible through it
+    s->edge_color({0.f, 0.545f, 0.f, 0.f}); //dark red wireframe, matching the fill
+    s->line_width(0.75f);
 
     // Principal axes of the ellipsoid, drawn as thicker segments through the origin
     const std::vector<const std::vector<double>*> axes_dir = {&ea, &eb, &ec};
@@ -174,19 +165,26 @@ matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid
 
         auto l = matplot::plot3(x, y, z);
         l->line_width(2.5);
-        l->color("#444444"); //dark gray principal axes
+        // NB: color() must be given a 4-element {alpha,R,G,B} array -- a 3-element one leaves
+        // the line's "user_color" flag unset, so matplot silently overrides it with the next
+        // auto-cycled colororder color instead of keeping this explicit gray.
+        l->color({0.f, 0.267f, 0.267f, 0.267f}); //dark gray principal axes
     }
 
     // Directional range points used for the ellipsoid fitting (fit quality at a glance)
     auto pts = matplot::plot3(range_points.x, range_points.y, range_points.z, "o");
-    pts->marker_size(7);
+    pts->marker_size(8);
     pts->marker_face(true);
-    pts->color("#1F77B4"); //blue markers
+    pts->color({0.f, 0.f, 0.447f, 0.741f}); //blue markers, same convention as ellipse_plot()
 
-    matplot::title(title);
     matplot::xlabel("X (East)");
     matplot::ylabel("Y (North)");
     matplot::zlabel("Z");
+
+    // Light, unobtrusive grid behind everything else
+    auto gl = matplot::gca()->grid_line_style();
+    gl.color({0.25f, 0.55f, 0.55f, 0.55f}); //color_array is {alpha, R, G, B}
+    matplot::gca()->grid_line_style(gl);
     matplot::grid(matplot::on);
 
     // Equal scale on all axes: the largest semi-axis defines the cube half-side.
@@ -199,6 +197,16 @@ matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid
     matplot::xlim({-r_max, r_max});
     matplot::ylim({-r_max, r_max});
     matplot::zlim({-r_max, r_max});
+
+    // Title placed below the plot instead of matplot's default top position: a borderless helper
+    // axes spanning a thin strip at the bottom of the figure, with its own (bold, black, enlarged)
+    // title as the only thing drawn on it. A raw "set label" command would be simpler, but it does
+    // not survive: matplot issues a "reset" at the start of every redraw, which wipes any gnuplot
+    // command not re-emitted by matplot itself on every draw -- title() on a tracked axes is.
+    auto caption_axes = fig->add_axes({0.05f, 0.f, 0.9f, 0.001f});
+    caption_axes->axis(false);            //hide box/ticks, keep the title only
+    caption_axes->title(title);
+    caption_axes->title_font_size_multiplier(1.35f);
 
     return fig;
 }
