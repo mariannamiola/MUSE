@@ -90,12 +90,11 @@ matplot::figure_handle biv_plot_leg (const MUSE::PlotStruct &dataplot, const std
 }
 
 ///
-/// \brief ellipsoid_plot draws the fitted 3D anisotropy ellipsoid as a translucent red surface
-/// with a matching wireframe, together with the directional range points (blue) used for the
-/// fitting: it is the summary picture of the 3D fit, using the same red-fit/blue-data color
-/// convention as ellipse_plot() for the 2D case.
-/// The surface is generated parametrically from the principal axes stored in the structure,
-/// so the drawn orientation reflects exactly the fitted azimuth/roll/pitch.
+/// \brief ellipsoid_plot draws the fitted 3D anisotropy ellipsoid as a red wireframe tracing its
+/// parallels/meridians, together with the directional range points (blue) used for the fitting:
+/// it is the summary picture of the 3D fit. The wireframe is generated parametrically from the
+/// principal axes stored in the structure, so the drawn orientation reflects exactly the fitted
+/// azimuth/roll/pitch.
 ///
 matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid_par, const MUSE::PlotStruct &range_points, const std::string &title)
 {
@@ -126,33 +125,46 @@ matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid
 
     matplot::hold(matplot::on);
 
-    // Fitted ellipsoid, drawn as a translucent shaded surface with a matching wireframe,
-    // both in red -- the same "fit in red / data in blue" convention used by ellipse_plot()
-    // for the 2D anisotropy ellipse.
-    const int n_u = 14;  //latitude samples (pole to pole)
-    const int n_v = 22;  //longitude samples (around the equator)
+    // NB: matplot++'s surf() (used for a shaded ellipsoid body) always draws its quad grid with
+    // a hard-coded black hairline in gnuplot's hidden3d/pm3d renderer -- edge_color() has no
+    // effect on it, and it does not get less visible at higher grid resolutions (more quads just
+    // means more total black hairline, confirmed experimentally). There is no public matplot++
+    // knob to remove or recolor it, so the shaded body is dropped entirely here in favor of a
+    // clean red wireframe only -- no unwanted black lines this way.
 
-    std::vector<std::vector<double>> X(n_u+1, std::vector<double>(n_v+1)),
-                                      Y(n_u+1, std::vector<double>(n_v+1)),
-                                      Z(n_u+1, std::vector<double>(n_v+1));
-    for(int i=0; i<=n_u; i++)
+    // Red wireframe tracing a handful of parallels and meridians, each resampled at
+    // n_wire_samples points (independently of the fill grid) so they read as smooth ellipses --
+    // explicit plot3() lines, since surf()'s own edge coloring can't be trusted (see note above).
+    const matplot::color_array wire_color{0.f, 0.82f, 0.10f, 0.10f};
+    const int n_wire_lat = 6;  //parallels drawn
+    const int n_wire_lon = 10; //meridians drawn
+    const int n_wire_samples = 60;
+    for(int k=0; k<=n_wire_lat; k++) //parallels (latitude rings)
     {
-        double u = -M_PI/2.0 + i*(M_PI/n_u);
-        for(int j=0; j<=n_v; j++)
+        double u = -M_PI/2.0 + k*(M_PI/n_wire_lat);
+        std::vector<double> px(n_wire_samples+1), py(n_wire_samples+1), pz(n_wire_samples+1);
+        for(int s=0; s<=n_wire_samples; s++)
         {
-            double v = j*(2.0*M_PI/n_v);
-            surf_point(u, v, X[i][j], Y[i][j], Z[i][j]);
+            double v = s*(2.0*M_PI/n_wire_samples);
+            surf_point(u, v, px[s], py[s], pz[s]);
         }
+        auto wl = matplot::plot3(px, py, pz);
+        wl->color(wire_color);
+        wl->line_width(1.f);
     }
-
-    // A single-color colormap turns the (otherwise height-driven) surface palette into one
-    // flat crimson fill, regardless of z -- i.e. a plain solid-red ellipsoid.
-    matplot::colormap({{0.80, 0.10, 0.12}});
-
-    auto s = matplot::surf(X, Y, Z);
-    s->face_alpha(0.28f);              //translucent, so the axes and points stay visible through it
-    s->edge_color({0.f, 0.545f, 0.f, 0.f}); //dark red wireframe, matching the fill
-    s->line_width(0.75f);
+    for(int k=0; k<=n_wire_lon; k++) //meridians (longitude arcs)
+    {
+        double v = k*(2.0*M_PI/n_wire_lon);
+        std::vector<double> mx(n_wire_samples+1), my(n_wire_samples+1), mz(n_wire_samples+1);
+        for(int s=0; s<=n_wire_samples; s++)
+        {
+            double u = -M_PI/2.0 + s*(M_PI/n_wire_samples);
+            surf_point(u, v, mx[s], my[s], mz[s]);
+        }
+        auto wl = matplot::plot3(mx, my, mz);
+        wl->color(wire_color);
+        wl->line_width(1.f);
+    }
 
     // Principal axes of the ellipsoid, drawn as thicker segments through the origin
     const std::vector<const std::vector<double>*> axes_dir = {&ea, &eb, &ec};
@@ -173,7 +185,7 @@ matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid
 
     // Directional range points used for the ellipsoid fitting (fit quality at a glance)
     auto pts = matplot::plot3(range_points.x, range_points.y, range_points.z, "o");
-    pts->marker_size(8);
+    pts->marker_size(5);
     pts->marker_face(true);
     pts->color({0.f, 0.f, 0.447f, 0.741f}); //blue markers, same convention as ellipse_plot()
 
@@ -183,7 +195,8 @@ matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid
 
     // Light, unobtrusive grid behind everything else
     auto gl = matplot::gca()->grid_line_style();
-    gl.color({0.25f, 0.55f, 0.55f, 0.55f}); //color_array is {alpha, R, G, B}
+    gl.color({0.6f, 0.8f, 0.8f, 0.8f}); //color_array is {alpha, R, G, B} -- pale, mostly-transparent gray
+    gl.line_width(0.5f);
     matplot::gca()->grid_line_style(gl);
     matplot::grid(matplot::on);
 
