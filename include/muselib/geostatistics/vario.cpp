@@ -532,7 +532,8 @@ exp_variog exp_variogram_varlag (const vector<double> & values, const vector<dou
 {
     exp_variog ev;
 
-    std::cout << "\033[0;33mLimit distance is set on: " << limit_dist << "\033[0m" << std::endl;
+    if(limit_dist > -DBL_MAX)
+        std::cout << "\033[0;33mLimit distance is set on: " << limit_dist << "\033[0m" << std::endl;
 
     double max_dist = -DBL_MAX;
     double min_dist = DBL_MAX;
@@ -751,8 +752,10 @@ std::vector<exp_variog> dir_exp_variogram_lagconst (const vector<double> &values
         std::cout << "### ID direction: " << dir << std::endl;
         std::cout << "Direction (degree): " << seq.at(dir) << std::endl;
         std::cout << "Degree tolerance (degree): " << degree_tolerance << std::endl;
-        std::cout << "\033[0;33mBandwidth is set on: " << bandwidth << "\033[0m" << std::endl;
-        std::cout << "\033[0;33mLimit distance is set on: " << limit_dist << "\033[0m" << std::endl;
+        if(bandwidth < DBL_MAX)
+            std::cout << "\033[0;33mBandwidth is set on: " << bandwidth << "\033[0m" << std::endl;
+        if(limit_dist > -DBL_MAX)
+            std::cout << "\033[0;33mLimit distance is set on: " << limit_dist << "\033[0m" << std::endl;
 
         double max_dist = -DBL_MAX;
         double min_dist = DBL_MAX;
@@ -991,9 +994,12 @@ std::vector<exp_variog> dir3DH_exp_variogram (const vector<double> &values, cons
         std::cout << "Vertical direction (degree): " << vert_seq << std::endl;
         std::cout << "Horizontal angle tolerance (degree): " << hor_degree_tolerance << std::endl;
         std::cout << "Vertical angle tolerance (degree): " << vert_degree_tolerance << std::endl;
-        std::cout << FYEL("Horizontal bandwidth is set on: ") << hor_bandwidth << std::endl;
-        std::cout << FYEL("Vertical bandwidth is set on: ") << vert_bandwidth << std::endl;
-        std::cout << FYEL("Limit distance is set on: ") << limit_dist << std::endl;
+        if(hor_bandwidth < DBL_MAX)
+            std::cout << FYEL("Horizontal bandwidth is set on: ") << hor_bandwidth << std::endl;
+        if(vert_bandwidth < DBL_MAX)
+            std::cout << FYEL("Vertical bandwidth is set on: ") << vert_bandwidth << std::endl;
+        if(limit_dist > -DBL_MAX)
+            std::cout << FYEL("Limit distance is set on: ") << limit_dist << std::endl;
 
         double max_dist = -DBL_MAX;
         double min_dist = DBL_MAX;
@@ -1112,8 +1118,8 @@ std::vector<exp_variog> dir3DH_exp_variogram (const vector<double> &values, cons
                 //min_dist = coverage;
             }
 
-            std::cout << "\033[0;33mWARNING: Step factor is set on: " << step << "\033[0m" << std::endl;
-            std::cout << "\033[0;33mWARNING: n points is set on: " << n_points << "\033[0m" << std::endl;
+            std::cout << "Step factor is set on: " << step << std::endl;
+            std::cout << "n points is set on: " << n_points << std::endl;
             dev[dir].h = lagvar_new(coverage, min_dist, n_points, step, tol_factor, tol);
         }
 
@@ -1375,8 +1381,10 @@ std::vector<exp_variog> dir3DV_exp_variogram (const vector<double> &values, cons
         std::cout << "### ID direction: " << dir << std::endl;
         std::cout << "Vertical direction (degree): " << seq.at(dir) << std::endl;
         std::cout << "Vertical angle tolerance (degree): " << vert_degree_tolerance << std::endl;
-        std::cout << FYEL("Vertical bandwidth is set on: ") << vert_bandwidth << std::endl;
-        std::cout << FYEL("Limit distance is set on: ") << limit_dist << std::endl;
+        if(vert_bandwidth < DBL_MAX)
+            std::cout << FYEL("Vertical bandwidth is set on: ") << vert_bandwidth << std::endl;
+        if(limit_dist > -DBL_MAX)
+            std::cout << FYEL("Limit distance is set on: ") << limit_dist << std::endl;
 
         double max_dist = -DBL_MAX;
         double min_dist = DBL_MAX;
@@ -1481,8 +1489,8 @@ std::vector<exp_variog> dir3DV_exp_variogram (const vector<double> &values, cons
         else
         {
             dev[dir].h = lagvar_new(coverage, min_dist, n_points, step, tol_factor, tol);
-            std::cout << "\033[0;33mWARNING: Step factor is set on: " << step << "\033[0m" << std::endl;
-            std::cout << "\033[0;33mWARNING: n points is set on: " << n_points << "\033[0m" << std::endl;
+            std::cout << "Step factor is set on: " << step << std::endl;
+            std::cout << "n points is set on: " << n_points << std::endl;
         }
 
 
@@ -2099,8 +2107,10 @@ std::vector<exp_variog> dir_exp_variogram_lagvar (const vector<double> &values, 
         std::cout << "### ID direction: " << dir << std::endl;
         std::cout << "Direction (degree): " << seq.at(dir) << std::endl;
         std::cout << "Degree tolerance (degree): " << degree_tolerance << std::endl;
-        std::cout << "\033[0;33mBandwidth is set on: " << bandwidth << "\033[0m" << std::endl;
-        std::cout << "\033[0;33mLimit distance is set on: " << limit_dist << "\033[0m" << std::endl;
+        if(bandwidth < DBL_MAX)
+            std::cout << "\033[0;33mBandwidth is set on: " << bandwidth << "\033[0m" << std::endl;
+        if(limit_dist > -DBL_MAX)
+            std::cout << "\033[0;33mLimit distance is set on: " << limit_dist << "\033[0m" << std::endl;
 
         double max_dist = -DBL_MAX;
         double min_dist = DBL_MAX;
@@ -2182,8 +2192,8 @@ std::vector<exp_variog> dir_exp_variogram_lagvar (const vector<double> &values, 
         vector<double> tol;
         dev[dir].h = lagvar_new(coverage, min_dist, n_points, step, tol_factor, tol);
 
-        std::cout << "\033[0;33mWARNING: Step factor is set on: " << step << "\033[0m" << std::endl;
-        std::cout << "\033[0;33mWARNING: n points is set on: " << n_points << "\033[0m" << std::endl;
+        std::cout << "Step factor is set on: " << step << std::endl;
+        std::cout << "n points is set on: " << n_points << std::endl;
 
         dev[dir].N.resize(dev[dir].h.size(), 0.0);
         dev[dir].gamma.resize(dev[dir].h.size());

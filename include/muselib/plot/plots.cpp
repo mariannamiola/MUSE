@@ -562,9 +562,14 @@ void tri_plot (const MUSE::PlotStruct &dataplot, const std::string &title, const
 
 
 
-void ellipse_plot (matplot::figure_handle fig, const MUSE::EllipseParameter &ellipse_par, const double &eps)
+void ellipse_plot (matplot::figure_handle fig, const MUSE::EllipseParameter &ellipse_par, const double &eps, const std::string &caption)
 {
-    fig->size(600, 600);   // golden ratio
+    // Wider than the original 600x600 square when there's a caption to fit -- gnuplot titles
+    // don't wrap, so a long caption needs real horizontal room instead of a tiny font.
+    if(!caption.empty())
+        fig->size(900, 650);
+    else
+        fig->size(600, 600);   // golden ratio
 
     //Estrazione punti sull'ellisse
     std::vector<double> x_points, y_points;
@@ -606,6 +611,20 @@ void ellipse_plot (matplot::figure_handle fig, const MUSE::EllipseParameter &ell
     // --- GRIGLIA LEGGERA ---
     matplot::grid(matplot::on);
 
+    if(!caption.empty())
+    {
+        // Shrink the main axes to free up a strip at the bottom of the figure -- otherwise the
+        // caption below collides with the x-axis label, since this 2D plot has none of the 3D
+        // viewport's built-in bottom margin that ellipsoid_plot()'s caption relies on.
+        matplot::gca()->position({0.09f, 0.16f, 0.88f, 0.76f});
+
+        // Same borderless bottom-strip trick as ellipsoid_plot()'s caption -- see the note
+        // there for why a raw "set label" command would not survive matplot's per-draw reset.
+        auto caption_axes = fig->add_axes({0.02f, 0.f, 0.96f, 0.001f});
+        caption_axes->axis(false);
+        caption_axes->title(caption);
+        caption_axes->title_font_size_multiplier(0.85f);
+    }
 }
 
 

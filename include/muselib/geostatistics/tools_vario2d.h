@@ -6,12 +6,6 @@
 
 #include <cinolib/geometry/vec_mat.h>
 
-MUSE::EllipseOriented3D back_rotate_ellipse_to_original_plane(
-        const EllipseParameter&  ellipse_xy,
-        const PlotStruct&        h_plot_xy,      // punti di range sul piano XY
-        const MUSE::Rotation&    dataRotation,
-        EllipseParameter&        summary_updated); // ellisse rifittata, aggiorna quella esistente
-
 MUSE::BackprojectedEllipse backproject_ellipse_to_original_plane(const MUSE::EllipseParameter &ellipse_xy, const std::vector<double> &range_pts_x, const std::vector<double> &range_pts_y, const MUSE::Rotation &rotation);
 
 #ifndef STATIC_MUSELIB

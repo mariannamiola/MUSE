@@ -100,47 +100,48 @@ namespace MUSE {
         #endif
     };
 
-    struct EllipseOriented3D
-    {
-        // Semi-assi (stessa unità dei dati)
-        double max_semiaxis = 0.0;   // range massimo
-        double min_semiaxis = 0.0;   // range minimo
-
-        // Direzione dell'asse massimo nel piano originale (gradi da Nord, CW)
-        double max_direction_deg = 0.0;
-        double min_direction_deg = 0.0;
-
-        // Vettore 3D dell'asse massimo nel sistema di riferimento originale
-        std::vector<double> max_axis_vec3d = {1,0,0};
-        std::vector<double> min_axis_vec3d = {0,1,0};
-
-        // Normale al piano originale (utile per chi consuma il risultato)
-        std::vector<double> plane_normal = {0,0,1};
-
-        bool valid = false;
-    };
-
     // ---------------------------------------------------------------------------
     // Result structure returned by backproject_ellipse_to_original_plane
+    //
+    // The original plane is described the same general way for ANY orientation
+    // (horizontal, gently dipping, vertical, any strike) using the standard
+    // structural-geology (dip azimuth, dip, pitch) triple -- the 2D analogue of
+    // the 3D ellipsoid's (azimuth, roll, pitch): "azimuth from North" and "angle
+    // from vertical" are each only meaningful for a narrow range of dips (near-0
+    // and near-90 respectively), whereas pitch-from-strike is well defined for
+    // every dip in between, with no special-cased/degenerate branch needed.
     // ---------------------------------------------------------------------------
     struct BackprojectedEllipse
     {
-        // Updated EllipseParameter: semiaxes unchanged, directions and phi_rad
-        // expressed in the original plane frame.
+        // Updated EllipseParameter: semiaxes unchanged. phi_rad and max_direction/
+        // min_direction are expressed in the PLOT frame (strike_vec, up_dip_vec)
+        // below, i.e. max_direction/min_direction are now a PITCH in degrees from
+        // strike toward up-dip (0 = along strike, 90 = straight up-dip) -- not an
+        // azimuth from North. The (strike_vec, up_dip_vec, normal) triple is RIGHT-
+        // handed (strike x up_dip = +normal), so the rose diagram reads as the plane
+        // seen from the +normal side, WITHOUT the left-right mirror that the down-dip
+        // frame (strike x dip_dir = -normal) would introduce.
         EllipseParameter ellipse;
-    
-        // Range points projected onto the local (e1, e2) axes of the original plane.
-        // x_proj[i] = dot( range_point_3d[i], e1 )
-        // y_proj[i] = dot( range_point_3d[i], e2 )
-        // Ready to be fed directly to biv_plot_leg / ellipse_plot.
+
+        // Range points projected onto the local PLOT axes (strike_vec, up_dip_vec) of
+        // the original plane. x_proj[i] = dot(range_point_3d[i], strike_vec);
+        // y_proj[i] = dot(range_point_3d[i], up_dip_vec). Ready to be fed directly
+        // to biv_plot_leg / ellipse_plot (up-dip is "up" on the plot, like a natural
+        // cross-section view).
         std::vector<double> x_proj;
         std::vector<double> y_proj;
-    
-        // The two orthonormal axes that span the original plane (world coordinates).
-        // Stored for debugging or downstream use.
-        std::vector<double> e1; // "North" direction in the original plane
-        std::vector<double> e2; // "East"  direction in the original plane
-        std::vector<double> plane_normal; // unit normal of the original plane
+
+        // The orthonormal in-plane axes (world coordinates), always well defined
+        // for any non-horizontal plane (no fallback/degenerate case needed):
+        std::vector<double> strike_vec;  // horizontal line within the plane (plot x-axis)
+        std::vector<double> up_dip_vec;  // in-plane, points up-dip (partly upward) -- plot y-axis
+        std::vector<double> dip_dir_vec; // in-plane, points down-dip = -up_dip_vec; kept for the
+                                         // geological dip-azimuth of the plane (down-dip direction)
+        std::vector<double> plane_normal; // unit normal of the original plane (upward)
+
+        // Orientation of the plane itself, standard geological convention:
+        double dip_azimuth_deg = 0.0; // compass direction (deg CW from North) the plane dips toward
+        double dip_deg         = 0.0; // dip from horizontal (0 = horizontal, 90 = vertical)
     };
 
 

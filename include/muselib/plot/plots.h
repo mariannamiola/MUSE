@@ -35,7 +35,7 @@ void biv_plot       (const MUSE::PlotStruct &dataplot, const std::string &title,
 matplot::figure_handle biv_plot_leg   (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label, bool set_legend, std::string legend);
 
 void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, const std::string &title, const std::string &x_label, const std::string &y_label, const size_t &N = 100);
-void ellipse_plot   (matplot::figure_handle fig, const MUSE::EllipseParameter &ellipse_par, const double &eps);
+void ellipse_plot   (matplot::figure_handle fig, const MUSE::EllipseParameter &ellipse_par, const double &eps, const std::string &caption = "");
 
 //Summary picture of the FULL 3D fit: wireframe of the fitted anisotropy ellipsoid (drawn from
 //its principal axes) together with the directional range points used for the fitting

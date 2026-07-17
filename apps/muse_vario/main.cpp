@@ -1745,8 +1745,8 @@ int main(int argc, char** argv)
                                 if ((setIndModel.isSet() && mod_setcat) && (setIndNugget.isSet() && nug_setcat))
                                 {
                                     std::cout << "Fit variogram with fixed model type: " << fix_mod << " and fixed nugget: " << fix_nug << std::endl;
-                                    std::cout << FRED("Weight on nugget is not active!") << std::endl;
-                                    std::cout << FMAG("Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd") << std::endl;
+                                    std::cout << FYEL("=== WARNING: Weight on nugget is not active! Set the flag --weight to enable the command") << std::endl;
+                                    // Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd
                                     variogram_type model_type;
                                     convert_from_str(fix_mod, model_type);
 
@@ -1755,8 +1755,8 @@ int main(int argc, char** argv)
                                 else if(setIndNugget.isSet() && nug_setcat)
                                 {
                                     std::cout << "Fit variogram with fixed nugget: " << fix_nug << std::endl;
-                                    std::cout << FRED("Weight on nugget is not active!") << std::endl;
-                                    std::cout << FMAG("Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd") << std::endl;
+                                    std::cout << FYEL("=== WARNING: Weight on nugget is not active! Set the flag --weight to enable the command") << std::endl;
+                                    // Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd
                                     vv = fit_ind_dir_variogram_1par (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), fix_nug, var_cat, true, w_type);
                                 }
                                 else if(setIndModel.isSet() && mod_setcat)
@@ -1847,7 +1847,6 @@ int main(int argc, char** argv)
                                 EllipseParameter summary;
                                 fit_anisotropy_ellipse(h_plot.x, h_plot.y, summary);
 
-                                std::cout << FMAG("phi in gradi = ") << get_degrees(summary.phi_rad) << std::endl;
                                 summary.max_direction = 90 - get_degrees(summary.phi_rad);
                                 if(summary.max_direction < 0)
                                     summary.max_direction = 180 + summary.max_direction;
@@ -1856,44 +1855,76 @@ int main(int argc, char** argv)
                                 if(summary.min_direction < 0)
                                     summary.min_direction = 180 + summary.min_direction;
 
-                                                            std::cout << "Computing: MAX direction "<< summary.max_direction << " degree from North; MIN direction "<< summary.min_direction << " degree from North."<< std::endl;
-                                std::cout << FMAG("NOTA BENE: Questa soluzione sottostima il range massimo!!") << std::endl;
+                                std::cout << "=== Ellipse on XY-plane: MAX dir = " << summary.max_direction << " deg;  MIN dir = " << summary.min_direction << " deg" << std::endl;
                                 std::cout << std::endl;
 
-                                auto fig = biv_plot_leg(h_plot, "Rose Diagram of Ranges (XY plane)", "hx", "hy", false, "Dir degree");
-
-                                matplot::hold(matplot::on);
-                                ellipse_plot(fig, summary, setEps.getValue());
-
-                                matplot::save(app_folder + "/" + data.getName() + std::to_string(categ.at(cat)) + "_RangesDiagram_XY", "jpeg");
-                                matplot::cla();
-
-                                // Riproiezione e refit dell'ellisse sul piano originale: stesso pattern
-                                // già usato per le variabili numeriche (si veda back_rotate_ellipse_to_original_plane
-                                // più sotto nel file), applicato qui alla singola categoria indicatrice.
                                 EllipseParameter summary_orig;
-                                EllipseOriented3D ellipse_orig =
-                                    back_rotate_ellipse_to_original_plane(summary, h_plot, rotation, summary_orig);
-
-                                std::cout << "=== Ellipse in original plane: MAX dir = " << summary_orig.max_direction
-                                << " deg;  MIN dir = " << summary_orig.min_direction << " deg" << std::endl;
 
                                 if(rotation.autoalign)
                                 {
-                                    auto fig_orig = biv_plot_leg(h_plot, // vedi nota in back_rotate_ellipse_to_original_plane
-                                                                "Rose Diagram of Ranges (original plane)",
-                                                                "hx", "hy", false, "Dir degree");
+                                    // Piano dati non orizzontale: il fit 2D è stato calcolato sul piano
+                                    // orizzontale locale, quindi servono due immagini distinte: il fit
+                                    // "grezzo" su quel piano di calcolo, e il ribaltamento completo
+                                    // (punti + ellisse, nello stesso sistema di riferimento) sul piano
+                                    // di allocazione dei dati originali.
+                                    char caption_xy[192];
+                                    snprintf(caption_xy, sizeof(caption_xy),
+                                             "Anisotropy (local horizontal plane): range max=%.1f  min=%.1f  azimuth=%.1f deg (local North, CW)",
+                                             summary.max_semiaxis, summary.min_semiaxis, summary.max_direction);
+
+                                    auto fig = biv_plot_leg(h_plot, "Rose Diagram of Ranges (local horizontal plane)", "h East (local)", "h North (local)", false, "Dir degree");
                                     matplot::hold(matplot::on);
-                                    ellipse_plot(fig_orig, summary_orig, setEps.getValue());
+                                    ellipse_plot(fig, summary, setEps.getValue(), caption_xy);
+                                    matplot::save(app_folder + "/" + data.getName() + std::to_string(categ.at(cat)) + "_RangesDiagram_XY", "jpeg");
+                                    matplot::cla();
+
+                                    // backproject_ellipse_to_original_plane ri-proietta punti ED ellisse nello
+                                    // stesso sistema di riferimento (direzione di immersione/quotatura) del
+                                    // piano originale -- valido per QUALSIASI orientazione (non solo piani poco
+                                    // inclinati: niente casi speciali per piani verticali o di qualunque strike),
+                                    // usando la convenzione geologica standard (dip azimuth, dip, pitch), analoga
+                                    // a quella già usata per l'ellissoide 3D (azimuth/roll/pitch). Punti ed ellisse
+                                    // sono sempre nello stesso frame destrorso (strike, up-dip): mai specchiati.
+                                    BackprojectedEllipse back = backproject_ellipse_to_original_plane(summary, h_plot.x, h_plot.y, rotation);
+
+                                    summary_orig = back.ellipse; // phi_rad e max/min_direction = pitch da strike verso up-dip (non azimuth da Nord)
+
+                                    PlotStruct h_plot_orig;
+                                    h_plot_orig.x = back.x_proj; // lungo lo strike
+                                    h_plot_orig.y = back.y_proj; // lungo l'up-dip (verso l'alto sul piano)
+
+                                    std::cout << "=== Ellipse in original plane: pitch MAX = " << summary_orig.max_direction
+                                    << " deg;  pitch MIN = " << summary_orig.min_direction
+                                    << " deg;  dip azimuth = " << back.dip_azimuth_deg
+                                    << " deg;  dip = " << back.dip_deg << " deg" << std::endl;
+
+                                    char caption_orig[192];
+                                    snprintf(caption_orig, sizeof(caption_orig),
+                                             "Anisotropy (original plane): range max=%.1f  min=%.1f  pitch=%.1f deg (from strike, toward up-dip)  dip azimuth=%.1f deg  dip=%.1f deg",
+                                             summary_orig.max_semiaxis, summary_orig.min_semiaxis, summary_orig.max_direction,
+                                             back.dip_azimuth_deg, back.dip_deg);
+
+                                    auto fig_orig = biv_plot_leg(h_plot_orig, "Rose Diagram of Ranges (original plane)", "h Strike", "h Dip direction", false, "Dir degree");
+                                    matplot::hold(matplot::on);
+                                    ellipse_plot(fig_orig, summary_orig, setEps.getValue(), caption_orig);
                                     matplot::save(app_folder + "/" + data.getName() + std::to_string(categ.at(cat)) + "_RangesDiagram", "jpeg");
                                     matplot::cla();
                                 }
                                 else
                                 {
-                                    // Piano già XY: comportamento identico a prima
-                                    auto fig_same = biv_plot_leg(h_plot, "Rose Diagram of Ranges", "hx", "hy", false, "Dir degree");
+                                    // Piano dati già orizzontale (X-Y): il piano di calcolo COINCIDE col piano
+                                    // originale, quindi una singola immagine basta -- non si salva più un
+                                    // duplicato identico.
+                                    summary_orig = summary;
+
+                                    char caption_xy[192];
+                                    snprintf(caption_xy, sizeof(caption_xy),
+                                             "Anisotropy: range max=%.1f  min=%.1f  azimuth=%.1f deg (from North, CW)",
+                                             summary.max_semiaxis, summary.min_semiaxis, summary.max_direction);
+
+                                    auto fig = biv_plot_leg(h_plot, "Rose Diagram of Ranges (X-Y plane)", "h East", "h North", false, "Dir degree");
                                     matplot::hold(matplot::on);
-                                    ellipse_plot(fig_same, summary, setEps.getValue());
+                                    ellipse_plot(fig, summary, setEps.getValue(), caption_xy);
                                     matplot::save(app_folder + "/" + data.getName() + std::to_string(categ.at(cat)) + "_RangesDiagram", "jpeg");
                                     matplot::cla();
                                 }
@@ -3003,8 +3034,8 @@ int main(int argc, char** argv)
                                 if (setModel.isSet() && setNugget.isSet())
                                 {
                                     std::cout << "Fit variogram with fixed model type: " << setModel.getValue() << " and fixed nugget: " << setNugget.getValue() << std::endl;
-                                    std::cout << FRED("Weight on nugget is not active!") << std::endl;
-                                    std::cout << FMAG("Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd") << std::endl;
+                                    std::cout << FYEL("=== WARNING: Weight on nugget is not active! Set the flag --weight to enable the command") << std::endl;
+                                    // Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd
                                     variogram_type model_type;
                                     convert_from_str(setModel.getValue(), model_type);
 
@@ -3013,8 +3044,8 @@ int main(int argc, char** argv)
                                 else if(setNugget.isSet())
                                 {
                                     std::cout << "Fit variogram with fixed nugget: " << setNugget.getValue() << std::endl;
-                                    std::cout << FRED("Weight on nugget is not active!") << std::endl;
-                                    std::cout << FMAG("Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd") << std::endl;
+                                    std::cout << FYEL("=== WARNING: Weight on nugget is not active! Set the flag --weight to enable the command") << std::endl;
+                                    // Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd
                                     vv = fit_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNugget.getValue(), true, w_type);
                                 }
                                 else if(setModel.isSet())
@@ -3119,7 +3150,6 @@ int main(int argc, char** argv)
                                 EllipseParameter summary;
                                 fit_anisotropy_ellipse(h_plot.x, h_plot.y, summary);
 
-                                std::cout << FMAG("phi in gradi = ") << get_degrees(summary.phi_rad) << std::endl;
                                 summary.max_direction = 90 - get_degrees(summary.phi_rad);
                                 if(summary.max_direction < 0)
                                     summary.max_direction = 180 + summary.max_direction;
@@ -3129,54 +3159,90 @@ int main(int argc, char** argv)
                                     summary.min_direction = 180 + summary.min_direction;
 
                                 std::cout << "=== Ellipse on XY-plane: MAX dir = " << summary.max_direction << " deg;  MIN dir = " << summary.min_direction << " deg" << std::endl;
-                                //std::cout << FMAG("NOTA BENE: Questa soluzione sottostima il range massimo!!") << std::endl;
                                 std::cout << std::endl;
 
                                 // -------------------------------------------------------
-                                // [A] Rose diagram sul piano XY (salvataggio per debug)
+                                // [A]/[B]/[C]: se il piano dati non è orizzontale, il fit 2D sopra è stato
+                                // calcolato sul piano orizzontale locale, quindi servono due immagini
+                                // distinte: il fit "grezzo" su quel piano di calcolo [A], e il ribaltamento
+                                // completo (punti + ellisse, nello stesso sistema di riferimento) sul piano
+                                // di allocazione dei dati originali [B]/[C]. Se il piano è già orizzontale,
+                                // il piano di calcolo COINCIDE col piano originale: una sola immagine basta.
                                 // -------------------------------------------------------
-                                auto fig_xy = biv_plot_leg(h_plot,
-                                                        "Rose Diagram of Ranges (XY plane)",
-                                                        "hx", "hy", false, "Dir degree");
-                                matplot::hold(matplot::on);
-                                ellipse_plot(fig_xy, summary, setEps.getValue());
-                                matplot::save(app_folder + "/" + data.getName() + "_RangesDiagram_XY", "jpeg");
-                                matplot::cla();
-                                
-
-                                // [B] Riproiezione e refit dell'ellisse sul piano originale
                                 EllipseParameter summary_orig;
-                                EllipseOriented3D ellipse_orig =
-                                    back_rotate_ellipse_to_original_plane(summary, h_plot, rotation, summary_orig);
-                                
-                                // summary_orig contiene max_direction/min_direction nel piano originale
-                                // da usare per i metadati e il plot
-                                std::cout << "=== Ellipse in original plane: MAX dir = " << summary_orig.max_direction
-                                << " deg;  MIN dir = " << summary_orig.min_direction << " deg" << std::endl;
-                                
-                                // [C] Rose diagram nel piano originale
+
                                 if(rotation.autoalign)
                                 {
-                                    auto fig_orig = biv_plot_leg(h_plot, // vedi nota
-                                                                "Rose Diagram of Ranges (original plane)",
-                                                                "hx", "hy", false, "Dir degree");
+                                    // [A] Rose diagram sul piano orizzontale locale (debug/riferimento)
+                                    char caption_xy[192];
+                                    snprintf(caption_xy, sizeof(caption_xy),
+                                             "Anisotropy (local horizontal plane): range max=%.1f  min=%.1f  azimuth=%.1f deg (local North, CW)",
+                                             summary.max_semiaxis, summary.min_semiaxis, summary.max_direction);
+
+                                    auto fig_xy = biv_plot_leg(h_plot,
+                                                            "Rose Diagram of Ranges (local horizontal plane)",
+                                                            "h East (local)", "h North (local)", false, "Dir degree");
                                     matplot::hold(matplot::on);
-                                    ellipse_plot(fig_orig, summary_orig, setEps.getValue());
+                                    ellipse_plot(fig_xy, summary, setEps.getValue(), caption_xy);
+                                    matplot::save(app_folder + "/" + data.getName() + "_RangesDiagram_XY", "jpeg");
+                                    matplot::cla();
+
+                                    // [B] Ribaltamento sul piano originale: backproject_ellipse_to_original_plane
+                                    // ri-proietta punti ED ellisse nello stesso sistema di riferimento (direzione
+                                    // di immersione/quotatura) del piano originale -- valido per QUALSIASI
+                                    // orientazione (niente casi speciali per piani verticali o di qualunque
+                                    // strike), usando la convenzione geologica standard (dip azimuth, dip,
+                                    // pitch), analoga a quella già usata per l'ellissoide 3D (azimuth/roll/pitch).
+                                    // Punti ed ellisse sono sempre nello stesso frame destrorso (strike, up-dip):
+                                    // mai specchiati.
+                                    BackprojectedEllipse back = backproject_ellipse_to_original_plane(summary, h_plot.x, h_plot.y, rotation);
+
+                                    summary_orig = back.ellipse; // phi_rad e max/min_direction = pitch da strike verso up-dip (non azimuth da Nord)
+
+                                    PlotStruct h_plot_orig;
+                                    h_plot_orig.x = back.x_proj; // lungo lo strike
+                                    h_plot_orig.y = back.y_proj; // lungo l'up-dip (verso l'alto sul piano)
+
+                                    std::cout << "=== Ellipse in original plane: pitch MAX = " << summary_orig.max_direction
+                                    << " deg;  pitch MIN = " << summary_orig.min_direction
+                                    << " deg;  dip azimuth = " << back.dip_azimuth_deg
+                                    << " deg;  dip = " << back.dip_deg << " deg" << std::endl;
+
+                                    // [C] Rose diagram nel piano originale
+                                    char caption_orig[192];
+                                    snprintf(caption_orig, sizeof(caption_orig),
+                                             "Anisotropy (original plane): range max=%.1f  min=%.1f  pitch=%.1f deg (from strike, toward up-dip)  dip azimuth=%.1f deg  dip=%.1f deg",
+                                             summary_orig.max_semiaxis, summary_orig.min_semiaxis, summary_orig.max_direction,
+                                             back.dip_azimuth_deg, back.dip_deg);
+
+                                    auto fig_orig = biv_plot_leg(h_plot_orig,
+                                                                "Rose Diagram of Ranges (original plane)",
+                                                                "h Strike", "h Up-dip", false, "Dir degree");
+                                    matplot::hold(matplot::on);
+                                    ellipse_plot(fig_orig, summary_orig, setEps.getValue(), caption_orig);
                                     matplot::save(app_folder + "/" + data.getName() + "_RangesDiagram", "jpeg");
                                     matplot::cla();
                                 }
                                 else
                                 {
-                                    // Piano già XY: comportamento identico a prima
+                                    // Piano dati già orizzontale: una singola immagine basta -- non si salva
+                                    // più un duplicato identico.
+                                    summary_orig = summary;
+
+                                    char caption_xy[192];
+                                    snprintf(caption_xy, sizeof(caption_xy),
+                                             "Anisotropy: range max=%.1f  min=%.1f  azimuth=%.1f deg (from North, CW)",
+                                             summary.max_semiaxis, summary.min_semiaxis, summary.max_direction);
+
                                     auto fig = biv_plot_leg(h_plot,
-                                                            "Rose Diagram of Ranges",
-                                                            "hx", "hy", false, "Dir degree");
+                                                            "Rose Diagram of Ranges (X-Y plane)",
+                                                            "h East", "h North", false, "Dir degree");
                                     matplot::hold(matplot::on);
-                                    ellipse_plot(fig, summary, setEps.getValue());
+                                    ellipse_plot(fig, summary, setEps.getValue(), caption_xy);
                                     matplot::save(app_folder + "/" + data.getName() + "_RangesDiagram", "jpeg");
                                     matplot::cla();
                                 }
-                                
+
                                 // Salva nei metadati con direzioni nel piano originale
                                 metavario.setSummary(summary_orig);
                                 vario_frame.setSummary(summary_orig);
