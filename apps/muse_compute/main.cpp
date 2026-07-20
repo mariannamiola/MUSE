@@ -28,6 +28,8 @@
 
 #include "muselib/geostatistics/stats.h"
 
+#include "muselib/plot/plots.h"
+
 #include "geostatslib/../utils/geom_utils.h"
 #include "geostatslib/statistics/data_structures.h"
 #include "geostatslib/statistics/normal_score.h"
@@ -360,6 +362,21 @@ int main(int argc, char** argv)
      * @example -S -p /path/to/project_directory --var temperature --geom mesh_model --dir DIR --dim 2D --space VAR
      */
     ValueArg<std::string> setSpace      ("", "space", "Set space type for statistical analysis", false, "NORMAL", &allowedValsSPACE, cmd);
+
+    // Option: plot the cumulative probability distribution function (cpdf) of the simulation results.
+    /**
+     * @brief Plot the cumulative probability distribution function (cpdf) reconstructed from the
+     * equiprobable simulated values. The cpdf is rebuilt in normal-score space (local Gaussian) and
+     * back-transformed with the MUSE normal score, then saved as an image in the _varspace folder.
+     * @note Used together with -B (back normal score), which provides the loaded realizations and the
+     * normal-score transform. Combine with --ncell to select the target: an integer plots the cpdf of
+     * that single cell, "all" overlays the cpdf of every cell in one plot.
+     * @example -B --cpdf --ncell 42  (single cell)     -B --cpdf --ncell all  (all cells)
+     */
+    SwitchArg doCpdfPlot                 ("", "cpdf", "Plot the cpdf of the simulation results (use with -B and --ncell)", cmd, false); //booleano
+    ValueArg<std::string> setNcell       ("", "ncell", "cpdf target: \"all\" = one cdf per realization (global uncertainty); integer = local cpdf of that cell", false, "all", "int|all", cmd);
+    ValueArg<double> setCpdfRadius       ("", "radius", "cpdf local: radius around the target cell to include neighbouring cells (0 = target cell only)", false, 0.0, "double", cmd);
+    MultiArg<double> setCpdfThreshold    ("", "threshold", "cpdf local: threshold value drawn as a red dotted vertical line (repeatable)", false, "double", cmd);
 
     // Option 2. Back normal score
     /**
@@ -1452,14 +1469,21 @@ int main(int argc, char** argv)
                         fvm.set_range(metavario.getSummary().min_semiaxis, metavario.getSummary().max_semiaxis);
 
 
-                    // Se i dati sono stati ruotati sul piano x-y locale (autoalign), l'azimuth deve
-                    // essere quello misurato in quel piano (summary_local), coerente col piano su cui
-                    // dati e mesh sono stati portati sopra; altrimenti (nessuna rotazione, o JSON
-                    // generato prima di questa modifica) uso l'azimuth nel piano originale come prima.
+                    // Se muse-vario ha stimato una rotazione (autoalign), l'anisotropia è stata
+                    // misurata sul piano x-y locale: uso quell'azimuth (summary_local), coerente col
+                    // piano su cui vario ha fittato l'ellisse. Il gate è la rotazione registrata nel
+                    // JSON (come nel ramo categoriale), NON dataWasRotated: nel percorso stratigrafico
+                    // i dati non vengono ri-ruotati qui (dataWasRotated=false) ma summary.max_direction
+                    // ora contiene un pitch, non l'azimuth. Se summary_local manca (JSON vecchio)
+                    // ripiego sull'azimuth del piano originale.
+                    bool used_local_azimuth = false;
                     double azimuth = metavario.getSummary().max_direction;
-                    if(dataWasRotated && metavario.getSummaryLocal().max_semiaxis > 0.0)
+                    if(metavario.getRotation().rotation && metavario.getSummaryLocal().max_semiaxis > 0.0)
+                    {
                         azimuth = metavario.getSummaryLocal().max_direction;
-                    else if(dataWasRotated)
+                        used_local_azimuth = true;
+                    }
+                    else if(metavario.getRotation().rotation)
                         std::cout << FYEL("WARNING: rotation is active but summary_local is missing in the vario JSON (generated before this feature) - re-run muse_vario to get a geometrically correct azimuth for kriging. Falling back to the original-plane azimuth.") << std::endl;
 
                     fvm.set_azimuth(azimuth);
@@ -1508,7 +1532,7 @@ int main(int argc, char** argv)
                 std::string string_type;
                 convert_to_str(string_type, fvm.type);
                 std::cout << " | Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North"
-                           << (dataWasRotated ? " (local x-y computational plane, matching rotated data+mesh)" : " (original plane)") << std::endl;
+                           << ((metavario.getRotation().rotation && metavario.getSummaryLocal().max_semiaxis > 0.0) ? " (local x-y anisotropy plane from vario)" : " (original plane)") << std::endl;
                 std::cout << " | Type = " << string_type << std::endl;
                 std::cout << " | Dir max (azimuth) = " << fvm.get_azimuth() << " degree from North." << std::endl;
                 std::cout << " | Range max = " << fvm.get_maxrange() << std::endl;
@@ -2584,6 +2608,14 @@ int main(int argc, char** argv)
 
                 std::vector<MUSE::Data> multi_output;
 
+                // Accumulate realizations only if a cpdf plot was requested:
+                //  - "--ncell all" (Fig. 4): one cdf per realization over the domain -> variable space.
+                //  - "--ncell <idx>"       : local cpdf from the cell's equiprobable values -> normal-score space.
+                const bool cpdf_on       = doCpdfPlot.getValue();
+                const bool cpdf_all_mode = (setNcell.getValue() == "all");
+                std::vector<std::vector<double>> sims_var;      // variable-space realizations
+                std::vector<std::vector<double>> sims_nscore;   // normal-score realizations
+
                 if(!filesystem::exists(var_path + name_json + ".json"))
                     filesystem::copy(norm_json, var_path + name_json + ".json");
 
@@ -2599,6 +2631,12 @@ int main(int argc, char** argv)
                     std::vector<double> trasformed_values = back_normal_score(result_sgs, normal_val, setExtrType.getValue(), setMinExtr.getValue(), setMaxExtr.getValue());
                     export1d_xyz (var_path + "/" + get_basename(get_filename(s)) + ext, trasformed_values);
 
+                    if(cpdf_on)
+                    {
+                        if(cpdf_all_mode) sims_var.push_back(trasformed_values);
+                        else              sims_nscore.push_back(result_sgs);
+                    }
+
                     // sim.est_mean = mean(trasformed_values);
                     // sim.est_var = variance(trasformed_values);
 
@@ -2611,6 +2649,121 @@ int main(int argc, char** argv)
                 }
                 meta_output.setMultiData(multi_output);
                 meta_output.write(var_path + "/_" + Variable.getValue() + ".json");
+
+                // --- cpdf plot of the simulation results (leverages the MUSE normal score) ---
+                if(cpdf_on)
+                {
+                    MUSE::Data vinfo = data.getData(0);
+                    std::string xlab = vinfo.getName() + " [" + vinfo.getUnit() + "]";
+                    std::string ylab = "Cumulative frequency";
+
+                    if(cpdf_all_mode)
+                    {
+                        // Fig. 4: one cdf per realization over the whole domain, overlaid
+                        if(sims_var.empty() || sims_var.front().empty())
+                            std::cerr << FRED("cpdf: no realizations loaded, plot skipped.") << std::endl;
+                        else
+                        {
+                            cpdf_plot_sims(sims_var,
+                                           "cpdf per realization (" + std::to_string(sims_var.size()) + " sims)",
+                                           xlab, ylab);
+                            matplot::save(var_path + "/" + vinfo.getName() + "_cpdf_sims", "jpeg");
+                            matplot::cla();
+                            std::cout << FGRN("cpdf (per realization) plot saved in _varspace.") << std::endl;
+                        }
+                    }
+                    else
+                    {
+                        // Local cpdf of a single cell from its equiprobable values
+                        if(sims_nscore.empty() || sims_nscore.front().empty())
+                            std::cerr << FRED("cpdf: no realizations loaded, plot skipped.") << std::endl;
+                        else
+                        {
+                            const size_t n_real  = sims_nscore.size();
+                            const size_t n_cells = sims_nscore.front().size();
+                            bool ok = true;
+                            size_t idx = 0;
+                            try { idx = static_cast<size_t>(std::stoul(setNcell.getValue())); }
+                            catch(...) { ok = false; }
+
+                            if(!ok)
+                                std::cerr << FRED("cpdf: invalid --ncell '") << setNcell.getValue()
+                                          << FRED("' (use an integer or \"all\"), plot skipped.") << std::endl;
+                            else if(idx >= n_cells)
+                                std::cerr << FRED("cpdf: --ncell ") << idx << FRED(" out of range [0, ")
+                                          << (n_cells-1) << FRED("], plot skipped.") << std::endl;
+                            else
+                            {
+                                // target cell values across realizations
+                                std::vector<double> target(n_real);
+                                for(size_t r=0; r<n_real; r++)
+                                    target[r] = sims_nscore[r][idx];
+
+                                // neighbouring cells within 'radius': needs the cell centroids from the mesh
+                                // (muse_compute reads the mesh before the simulations; here we reload it just
+                                //  to pick the neighbours -- distances between centroids are rotation-invariant).
+                                std::vector<std::vector<double>> neighbours;
+                                double radius = setCpdfRadius.getValue();
+                                if(radius > 0.0)
+                                {
+                                    std::string ext_mesh = get_extension(get_filename(geomModel.getValue()));
+                                    std::vector<double> cx, cy, cz;
+
+                                    if(ext_mesh.compare(".off")==0 || ext_mesh.compare(".obj")==0)
+                                    {
+                                        MUSE::SurfaceMesh<> m;
+                                        m.load(geomModel.getValue().c_str());
+                                        for(uint pid=0; pid<m.num_polys(); pid++)
+                                        { cx.push_back(m.poly_centroid(pid).x()); cy.push_back(m.poly_centroid(pid).y()); cz.push_back(m.poly_centroid(pid).z()); }
+                                    }
+                                    else if(ext_mesh.compare(".mesh")==0 || ext_mesh.compare(".vtk")==0)
+                                    {
+                                        MUSE::VolumeMesh<> m;
+                                        m.load(geomModel.getValue().c_str());
+                                        for(uint pid=0; pid<m.num_polys(); pid++)
+                                        { cx.push_back(m.poly_centroid(pid).x()); cy.push_back(m.poly_centroid(pid).y()); cz.push_back(m.poly_centroid(pid).z()); }
+                                    }
+
+                                    if(cx.size() != n_cells)
+                                        std::cerr << FRED("cpdf: mesh cells (") << cx.size() << FRED(") != values (")
+                                                  << n_cells << FRED("); neighbours skipped.") << std::endl;
+                                    else
+                                    {
+                                        const double r2 = radius * radius;
+                                        std::vector<std::pair<double,size_t>> near;
+                                        for(size_t c=0; c<n_cells; c++)
+                                        {
+                                            if(c == idx) continue;
+                                            double dx=cx[c]-cx[idx], dy=cy[c]-cy[idx], dz=cz[c]-cz[idx];
+                                            double d2 = dx*dx + dy*dy + dz*dz;
+                                            if(d2 <= r2) near.push_back(std::make_pair(d2, c));
+                                        }
+                                        std::sort(near.begin(), near.end());
+                                        const size_t max_nb = 200;                 // keep the plot readable
+                                        if(near.size() > max_nb) near.resize(max_nb);
+                                        for(const std::pair<double,size_t> &pr : near)
+                                        {
+                                            std::vector<double> nb(n_real);
+                                            for(size_t r=0; r<n_real; r++)
+                                                nb[r] = sims_nscore[r][pr.second];
+                                            neighbours.push_back(nb);
+                                        }
+                                        std::cout << "cpdf local: " << neighbours.size()
+                                                  << " neighbour cells within radius " << radius << "." << std::endl;
+                                    }
+                                }
+
+                                cpdf_plot_local(target, neighbours, normal_val,
+                                                "cpdf - cell " + std::to_string(idx) + " (local)",
+                                                xlab, ylab, setCpdfThreshold.getValue(),
+                                                setExtrType.getValue(), setMinExtr.getValue(), setMaxExtr.getValue());
+                                matplot::save(var_path + "/" + vinfo.getName() + "_cpdf_cell" + std::to_string(idx), "jpeg");
+                                matplot::cla();
+                                std::cout << FGRN("cpdf (local cell) plot saved in _varspace.") << std::endl;
+                            }
+                        }
+                    }
+                }
             }
             metacompute.setSimulation(sim);
             metacompute.write(var_path + name_json + ".json");
@@ -3325,19 +3478,26 @@ int main(int argc, char** argv)
                         fvm.set_range(metavario.getSummary().min_semiaxis, metavario.getSummary().max_semiaxis);
 
 
-                    // Se i dati sono stati ruotati sul piano x-y locale (autoalign), l'azimuth deve
-                    // essere quello misurato in quel piano (summary_local), coerente col piano su cui
-                    // dati e mesh sono stati portati sopra; altrimenti (nessuna rotazione, o JSON
-                    // generato prima di questa modifica) uso l'azimuth nel piano originale come prima.
+                    // Se muse-vario ha stimato una rotazione (autoalign), l'anisotropia è stata
+                    // misurata sul piano x-y locale: uso quell'azimuth (summary_local), coerente col
+                    // piano su cui vario ha fittato l'ellisse. Il gate è la rotazione registrata nel
+                    // JSON (come nel ramo categoriale), NON dataWasRotated: nel percorso stratigrafico
+                    // i dati non vengono ri-ruotati qui (dataWasRotated=false) ma summary.max_direction
+                    // ora contiene un pitch, non l'azimuth. Se summary_local manca (JSON vecchio)
+                    // ripiego sull'azimuth del piano originale.
+                    bool used_local_azimuth = false;
                     double azimuth = metavario.getSummary().max_direction;
-                    if(dataWasRotated && metavario.getSummaryLocal().max_semiaxis > 0.0)
+                    if(metavario.getRotation().rotation && metavario.getSummaryLocal().max_semiaxis > 0.0)
+                    {
                         azimuth = metavario.getSummaryLocal().max_direction;
-                    else if(dataWasRotated)
+                        used_local_azimuth = true;
+                    }
+                    else if(metavario.getRotation().rotation)
                         std::cout << FYEL("WARNING: rotation is active but summary_local is missing in the vario JSON (generated before this feature) - re-run muse_vario to get a geometrically correct azimuth for kriging. Falling back to the original-plane azimuth.") << std::endl;
 
                     fvm.set_azimuth(azimuth);
                     std::cout << "Azimuth is set on max continuity direction: " << fvm.get_azimuth() << " degree from North"
-                               << (dataWasRotated ? " (local x-y computational plane, matching rotated data+mesh)" : " (original plane)") << std::endl;
+                               << (used_local_azimuth ? " (local x-y anisotropy plane from vario)" : " (original plane)") << std::endl;
 
                     //Settati sulla massima direzione, ma non cambiano (per costruzione -> calcolo automatico del vario direzionale)
                     fvm.nugget = metavario.getFitExpVariog(0).nugget;

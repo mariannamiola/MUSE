@@ -2,6 +2,7 @@
 
 #include <geostatslib/statistics/data_structures.h>
 #include <geostatslib/statistics/stats.h>
+#include <geostatslib/statistics/normal_score.h>
 
 #include "muselib/geostatistics/utils.h"
 
@@ -625,6 +626,184 @@ void ellipse_plot (matplot::figure_handle fig, const MUSE::EllipseParameter &ell
         caption_axes->title(caption);
         caption_axes->title_font_size_multiplier(0.85f);
     }
+}
+
+
+
+// Gaussian quantiles for a common probability grid p_k = (k+0.5)/n_levels, cached per call.
+static void fill_prob_grid(size_t n_levels, std::vector<double> &p_grid, std::vector<double> &qz)
+{
+    p_grid.resize(n_levels);
+    qz.resize(n_levels);
+    for(size_t k=0; k<n_levels; k++)
+    {
+        double p = (k + 0.5) / static_cast<double>(n_levels);   // strictly in (0,1)
+        p_grid[k] = p;
+        qz[k] = NormalCDFInverse(p);
+    }
+}
+
+///
+/// \brief cpdf_plot_local plots the LOCAL cumulative distribution function of a target cell (bold)
+/// and of its neighbouring cells (thin), reproducing Fig. 8 of Zuccolini et al. (2025).
+///
+/// Every cell is populated by a set of equiprobable NORMAL-SCORE values; the local conditional
+/// distribution is Gaussian, so each cpdf is reconstructed by estimating m*, sigma* from the cell's
+/// scores, sampling a Gaussian quantile grid z = m* + sigma*·qnorm(p) and mapping it back to variable
+/// space through the SAME MUSE normal-score transform (back_normal_score on ns). The target cell also
+/// shows its raw equiprobable values as points. `thresholds` draws red dotted vertical lines
+/// (e.g. regulatory limits). All curves are back-transformed in a single call for efficiency.
+///
+matplot::figure_handle cpdf_plot_local (const std::vector<double> &target_nscores,
+                                        const std::vector<std::vector<double>> &neighbor_nscores,
+                                        const normalscore &ns,
+                                        const std::string &title, const std::string &x_label, const std::string &y_label,
+                                        const std::vector<double> &thresholds,
+                                        const std::string &type_extrapolation, const double &min_value, const double &max_value,
+                                        const size_t &n_levels)
+{
+    auto fig = matplot::figure(true);
+    fig->backend()->run_command("unset warnings");
+    fig->size(800, 600);
+
+    std::vector<double> p_grid, qz;
+    fill_prob_grid(n_levels, p_grid, qz);
+
+    // Concatenate the Gaussian quantile grids of target + neighbours (+ target empirical scores),
+    // then back-transform everything through the MUSE normal score in ONE call.
+    const size_t M = 1 + neighbor_nscores.size();
+    const size_t N = target_nscores.size();
+
+    std::vector<double> all_scores;
+    all_scores.reserve(M * n_levels + N);
+
+    auto push_cell_grid = [&](const std::vector<double> &cv)
+    {
+        const double m_star = mean(cv);
+        const double s_star = (cv.size() > 1) ? stdev(cv) : 0.0;
+        for(size_t k=0; k<n_levels; k++)
+            all_scores.push_back(m_star + s_star * qz[k]);
+    };
+
+    push_cell_grid(target_nscores);                                   // block 0: target smooth
+    for(const auto &nb : neighbor_nscores)                            // blocks 1..M-1: neighbours
+        push_cell_grid(nb);
+
+    std::vector<double> target_sorted(target_nscores);               // tail: target empirical scores
+    std::sort(target_sorted.begin(), target_sorted.end());
+    for(double z : target_sorted)
+        all_scores.push_back(z);
+
+    std::vector<double> all_x = back_normal_score(all_scores, ns, type_extrapolation, min_value, max_value);
+
+    matplot::hold(matplot::on);
+
+    // Neighbours (thin grey), blocks 1..M-1
+    for(size_t j=1; j<M; j++)
+    {
+        std::vector<double> x(all_x.begin() + j * n_levels, all_x.begin() + (j + 1) * n_levels);
+        auto l = matplot::plot(x, p_grid);
+        l->line_width(0.7);
+        l->color({0.55f, 0.35f, 0.35f, 0.35f});   // {alpha, r, g, b}: faint grey
+    }
+
+    // Target cell (bold black), block 0
+    {
+        std::vector<double> x(all_x.begin(), all_x.begin() + n_levels);
+        auto lc = matplot::plot(x, p_grid);
+        lc->line_width(2.5);
+        lc->color({1.0f, 0.0f, 0.0f, 0.0f});
+        lc->display_name("target cell");
+    }
+
+    // Target empirical points (tail block)
+    {
+        std::vector<double> x_emp(all_x.end() - N, all_x.end());
+        std::vector<double> p_emp(N);
+        for(size_t i=0; i<N; i++)
+            p_emp[i] = (i + 0.5) / static_cast<double>(N);
+        auto pe = matplot::scatter(x_emp, p_emp);
+        pe->marker_style(matplot::line_spec::marker_style::circle);
+        pe->marker_size(8);
+        pe->marker_face(true);
+        pe->display_name("equiprobable values");
+    }
+
+    // Threshold reference lines (red dotted vertical)
+    for(double t : thresholds)
+    {
+        std::vector<double> ty(21), tx(21);
+        for(size_t i=0; i<ty.size(); i++) { ty[i] = i / 20.0; tx[i] = t; }
+        auto tl = matplot::plot(tx, ty);
+        tl->line_width(2.0);
+        tl->line_style("--");
+        tl->color("red");
+    }
+
+    matplot::title(title);
+    matplot::xlabel(x_label);
+    matplot::ylabel(y_label);
+    matplot::ylim({0.0, 1.0});
+    matplot::grid(matplot::on);
+
+    return fig;
+}
+
+
+
+///
+/// \brief cpdf_plot_sims overlays ONE cumulative distribution function per SIMULATION in a single
+/// plot, reproducing Fig. 4 of Zuccolini et al. (2025): each curve is the cdf of one realization
+/// computed over the whole domain, in variable space.
+///
+/// `sims[r]` are the values of realization r over all cells (already back-transformed via the MUSE
+/// normal score). For each realization the values are sorted and sampled on a common probability
+/// grid (n_levels) so the curve is light and smooth. Overlapping curves indicate low global
+/// uncertainty; a wide spread indicates high global uncertainty.
+///
+matplot::figure_handle cpdf_plot_sims (const std::vector<std::vector<double>> &sims,
+                                       const std::string &title, const std::string &x_label, const std::string &y_label,
+                                       const size_t &n_levels)
+{
+    auto fig = matplot::figure(true);
+    fig->backend()->run_command("unset warnings");
+    fig->size(800, 600);
+
+    // Common probability grid (0,1)
+    std::vector<double> p_grid(n_levels);
+    for(size_t k=0; k<n_levels; k++)
+        p_grid[k] = (k + 0.5) / static_cast<double>(n_levels);
+
+    matplot::hold(matplot::on);
+    for(size_t r=0; r<sims.size(); r++)
+    {
+        if(sims[r].empty())
+            continue;
+
+        std::vector<double> v(sims[r]);
+        std::sort(v.begin(), v.end());
+        const size_t n = v.size();
+
+        // cdf sampled at the common probability levels (nearest-rank quantiles)
+        std::vector<double> xq(n_levels);
+        for(size_t k=0; k<n_levels; k++)
+        {
+            size_t idx = static_cast<size_t>(std::llround(p_grid[k] * (n - 1)));
+            xq[k] = v[idx];
+        }
+
+        auto l = matplot::plot(xq, p_grid);
+        l->line_width(1.0);
+        l->color({0.85f, 0.0f, 0.0f, 0.0f});   // {alpha, r, g, b}: near-solid black
+    }
+
+    matplot::title(title);
+    matplot::xlabel(x_label);
+    matplot::ylabel(y_label);
+    matplot::ylim({0.0, 1.0});
+    matplot::grid(matplot::on);
+
+    return fig;
 }
 
 
