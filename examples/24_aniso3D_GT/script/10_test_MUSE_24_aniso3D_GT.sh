@@ -37,7 +37,16 @@ done
 export PATH=${MUSE}/bin:$PATH
 
 export DATA_SOURCE=${MUSE}/examples/${setPROJECT_NAME}/data
-export WORK=${1:-${MUSE}/examples/MUSE_test}
+
+# Working directory: default to examples/MUSE_test like every other example.
+# Override ONLY via an explicit -w|--work <dir> (do NOT treat an arbitrary
+# positional argument as WORK: a relative value would create the executed
+# project inside this script folder instead of MUSE_test).
+export WORK=${MUSE}/examples/MUSE_test
+if [ "$1" = "-w" ] || [ "$1" = "--work" ]; then
+  [ -n "$2" ] && export WORK="$2"
+fi
+
 export PROJ=${setPROJECT_NAME}
 export DATA=data.csv
 export VAR=phi
