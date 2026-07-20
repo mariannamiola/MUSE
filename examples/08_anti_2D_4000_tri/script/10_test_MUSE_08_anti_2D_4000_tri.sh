@@ -238,7 +238,7 @@ muse_manipulate -T -p ${WP} --sttype PROPORTIONAL --type GEOMETRY --top ${GEOM}_
 
 
 
-read -p "VARIOGRAM - CONTINUOUS ... Press any key to continue ... " -n1 -s
+#read -p "VARIOGRAM - CONTINUOUS ... Press any key to continue ... " -n1 -s
 
 ############################## (CONTINUOUS) VARIOGRAM AND SGS COMPUTATION ##############################
 
@@ -276,7 +276,7 @@ fi
 
 ############################## INDICATOR VARIOGRAM AND SIS COMPUTATION ##############################
 
-read -p "VARIOGRAM - INDICATOR ... Press any key to continue ... " -n1 -s
+#read -p "VARIOGRAM - INDICATOR ... Press any key to continue ... " -n1 -s
 
 #variosis:
 ##########  VARIO  ###########
@@ -284,7 +284,7 @@ muse_vario -V -p ${WP} -v ${VAR2} --sttype PROPORTIONAL -f samples_${GEOM} --sub
 
 #computesis:
 ##########  COMPUTE  ###########
-read -p "SIS ... Press any key to continue ... " -n1 -s
+#read -p "SIS ... Press any key to continue ... " -n1 -s
 
 muse_compute -C -p ${WP} -v ${VAR2} --sub ${GEOM} --dir ${DIR} --dim ${DIM} -m ${OUTMAN}/geom_${GEOM}.obj --crit SISIM --nsim ${NSIM} --scaleradius 1.5 --octant --simulated 6 --input 10
 
