@@ -1,0 +1,54 @@
+{
+  "work_folder": "MUSE_test",
+  "project_name": "07_sec_anti_2D_4000_md_tri_uncorrect",
+
+  "samples": "D_data.csv",
+  "varname": "phi",
+  "units": "-",
+
+  "geometry": {
+    "name": "D_merge",
+    "sub": "",
+    "ext": "obj"
+  },
+
+  "vario": {
+    "dir": "DIR",
+    "dim": "2D"
+  },
+
+  "compute": {
+    "space": "",
+    "where": "",
+    "sim_folder": "",
+    "var": "D_merge",
+    "units": "-",
+    "geom": ""
+  },
+
+  "columns": {
+    "samples": {
+      "x": "X",
+      "y": "Y",
+      "z": "Z",
+      "value": "phi",
+      "cat": false,
+      "n_cat": 8
+    },
+
+    "scalarfield": {
+      "x": "Field 0",
+      "y": "Field 0",
+      "z": "Field 0",
+      "value": "Field 0",
+      "cat": false,
+      "n_cat": 8
+    }
+  },
+
+  "output": {
+    "save": true,
+    "dir": "_fig",
+    "format": "png"
+  }
+}
