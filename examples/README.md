@@ -18,16 +18,21 @@ Every example is self-contained in its own folder with the same layout:
     └── config_*.json            plotting/analysis configurations
 ```
 
+**Prerequisite:** build MUSE first (see the repository [README](../README.md)). Each
+`10_test_*` script automatically adds the build output directory `../../../bin` to the
+`PATH`, so the MUSE executables are found without any manual setup.
+
 To run an example:
 
 ```bash
 cd <example>/script
-./10_test_MUSE_<name>.sh          # optional argument: working directory (default ../MUSE_test)
+./10_test_MUSE_<name>.sh          # optional: -w <dir> working dir, -s <n> n. simulations, -h help
 python 20_visual_2D.py            # or 20_visual_3D.py
 ```
 
-By default the pipeline creates the MUSE project under `MUSE_test/` inside the example
-folder (this is the working/output directory, not an input).
+By default the pipeline creates the MUSE project under `examples/MUSE_test/<project>`
+(this shared working/output directory is created next to the examples, not inside the
+input `data/` folder). Use `-w <dir>` to write the output elsewhere.
 
 ## Summary of the examples
 
