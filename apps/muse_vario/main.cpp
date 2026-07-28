@@ -43,8 +43,6 @@
 #include "muselib/geometry/tools.h"
 #include "muselib/stratigraphic_trasformation/coord_transf.h"
 
-
-
 #include "ellipse_fit.h"
 
 //for filesystem
@@ -54,10 +52,8 @@
     using namespace std;
 #endif
 
-
 using namespace MUSE;
 using namespace TCLAP;
-
 
 ///////////////////////////////////////////////////
 // Function to convert string to weightsType enum
@@ -69,7 +65,6 @@ weightsType stringToWeightsType(const std::string& criterion) {
     // Default fallback
     return CRESSIE_WEIGHTED_MODIFIED;
 }
-
 
 int main(int argc, char** argv)
 {
@@ -85,7 +80,6 @@ int main(int argc, char** argv)
 
     try {
     CmdLine cmd("MUSE - Modelling Uncertainty as a Support of Environment. MUSE-vario application", ' ', "version 0.0");
-
 
     // ---------------------------------------------------------------------------------------------------------
     // MAIN FUNCTIONALITIES:
@@ -138,51 +132,6 @@ int main(int argc, char** argv)
     ValueArg<std::string> subDataset        ("", "sub", "Set extracted sub-dataset referring to specified geometry domain", false, "subdataset-name", "string", cmd);
 
     /**
-     * @brief Set rotation axis for data rotation. This option allows you to specify the axis around which the data will be rotated. The rotation can be applied to the spatial coordinates of the data, which may be useful for aligning the data with a particular orientation or for performing certain types of analyses that require a specific coordinate system.
-     * @default NO (no rotation is applied)
-     * @format string value (X, Y, Z)
-     * @note When using this flag, you typically need to specify the rotation angle (with --rotangle) and the rotation center coordinates (with --rotcx, --rotcy, --rotcz) to fully define the rotation transformation. The rotation axis can be set to X, Y, or Z depending on the desired rotation direction.
-     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
-     */
-    ValueArg<std::string> setRotAxis        ("", "rotaxis", "Set rotation axis for data rotation (X, Y, Z)", false, "NO", "string", cmd);
-    
-    /**
-     * @brief Set rotation angle (clockwise) for data rotation. This option allows you to specify the angle by which the data will be rotated in a clockwise direction. The rotation is applied around the axis specified with --rotaxis and centered at the coordinates specified with --rotcx, --rotcy, and --rotcz.
-     * @default 0.0 (no rotation)
-     * @format double value (rotation angle in degrees)
-     * @note When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation center coordinates (with --rotcx, --rotcy, --rotcz) to fully define the rotation transformation. The rotation angle should be provided in degrees, and the rotation will be applied in a clockwise direction based on the specified axis and center.
-     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
-     */
-    ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise) for data rotation", false, 0.0, "double", cmd);
-    
-    /**
-     * @brief Set rotation center x coordinate for data rotation. This option allows you to specify the x-coordinate of the center point around which the data will be rotated. The rotation is applied based on the axis specified with --rotaxis and the angle specified with --rotangle.
-     * @default 0.0 (rotation around the origin)
-     * @format double value (x coordinate of rotation center)
-     * @note Default is 0.0 (rotation around the origin). When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation angle (with --rotangle) to fully define the rotation transformation. The rotation center coordinates (rotcx, rotcy, rotcz) define the point in space around which the rotation will occur. The x-coordinate (rotcx) is used in conjunction with the y and z coordinates (rotcy, rotcz) to specify the full rotation center.
-     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
-     */
-    ValueArg<double> setRotCenterX          ("", "rotcx", "Set rotation center x coordinate for data rotation", false, 0.0, "double", cmd);
-    
-    /**
-     * @brief Set rotation center y coordinate for data rotation. This option allows you to specify the y-coordinate of the center point around which the data will be rotated. The rotation is applied based on the axis specified with --rotaxis and the angle specified with --rotangle.
-     * @default 0.0 (rotation around the origin)
-     * @format double value (y coordinate of rotation center)
-     * @note Default is 0.0 (rotation around the origin). When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation angle (with --rotangle) to fully define the rotation transformation. The rotation center coordinates (rotcx, rotcy, rotcz) define the point in space around which the rotation will occur. The y-coordinate (rotcy) is used in conjunction with the x and z coordinates (rotcx, rotcz) to specify the full rotation center.
-     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
-     */
-    ValueArg<double> setRotCenterY          ("", "rotcy", "Set rotation center y coordinate for data rotation", false, 0.0, "double", cmd);
-    
-    /**
-     * @brief Set rotation center z coordinate for data rotation. This option allows you to specify the z-coordinate of the center point around which the data will be rotated. The rotation is applied based on the axis specified with --rotaxis and the angle specified with --rotangle.
-     * @default 0.0 (rotation around the origin)
-     * @format double value (z coordinate of rotation center)
-     * @note Default is 0.0 (rotation around the origin). When using this flag, you typically need to specify the rotation axis (with --rotaxis) and the rotation angle (with --rotangle) to fully define the rotation transformation. The rotation center coordinates (rotcx, rotcy, rotcz) define the point in space around which the rotation will occur. The z-coordinate (rotcz) is used in conjunction with the x and y coordinates (rotcx, rotcy) to specify the full rotation center.
-     * @example --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
-     */
-    ValueArg<double> setRotCenterZ          ("", "rotcz", "Set rotation center z coordinate for data rotation", false, 0.0, "double", cmd);
-
-    /**
      * @brief Set performing normal score transformation on continuous variables. This option allows you to specify whether to apply a normal score transformation to continuous variables before computing the variogram. Normal score transformation is a common technique used in geostatistics to transform data to follow a normal distribution, which can improve the performance of variogram modeling and kriging.
      * @default NO (no normal score transformation is applied). 
      * @note When using normal score transformation, requires:
@@ -226,7 +175,6 @@ int main(int argc, char** argv)
      */
     ValueArg<int> setNStep                  ("", "nstep", "Set number of grid translation steps for 2D declustering", false, 0, "int", cmd);
 
-
     // Option: variography on stratigraphic coordinates model (ref. manipulate)
     std::vector<std::string> allowedStratigraphicCondition = {"PROPORTIONAL","TRUNCATION","ONLAP","COMBINATION"};
     ValuesConstraint<std::string> allowedValsSC(allowedStratigraphicCondition);
@@ -254,7 +202,6 @@ int main(int argc, char** argv)
      * @example --sttype PROPORTIONAL --filestrat /path/to/samples-strat.dat
      */
     ValueArg<std::string> filenameStrat     ("f", "filestrat", "Set filename containing samples converted in stratigraphic coordinate system (generated by muse-manipulate)", false, "path/to/samples-strat.dat", "string", cmd);
-
 
     std::vector<std::string> allowedVarioType = {"EXPERIMENTAL","MODEL"};
     ValuesConstraint<std::string> allowedValsVT(allowedVarioType);
@@ -461,7 +408,6 @@ int main(int argc, char** argv)
    
     //ValueArg<double> setRange               ("", "range", "Set range for model variogram fitting", false, 0.0, "double", cmd);
 
-
     // Option: set model parameters - INDICATOR VARIOGRAMS
     /**
      * @brief Set type of model variogram for indicators. This option allows you to specify the type of theoretical variogram model to be fitted to the experimental variogram for indicator variables when using the --vario MODEL option. The category for indicators is specified by its value (it must be an integer), which allows for fitting different variogram models for different categories of indicator variables.
@@ -490,7 +436,6 @@ int main(int argc, char** argv)
     
     //MultiArg<std::string> setIndSill        ("", "isill", "Set sull for indicators", false, "0.0|ncat", cmd);
 
-
     // Option: different criteria for fitting variogram models for mse computation (active only for continuous variables)
     std::vector<std::string> allowedMSEcrit = {"CRESSIE","CRESSIE_WEIGHTED","CRESSIE_WEIGHTED_MODIFIED","DEFAULT"};
     ValuesConstraint<std::string> allowedValsMSE(allowedMSEcrit);
@@ -508,7 +453,6 @@ int main(int argc, char** argv)
      */
     ValueArg<std::string> setMSEcriterion ("", "mse", "Set mse criterion for fitting variogram. (Active only for continuos variables).", false, "CRESSIE_WEIGHTED_MODIFIED", &allowedValsMSE, cmd);
 
-
     allowedStratigraphicCondition.clear();
     allowedVarioType.clear();
     allowedVarioDir.clear();
@@ -516,7 +460,6 @@ int main(int argc, char** argv)
     allowedLag.clear();
     allowedModel.clear();
     allowedMSEcrit.clear();
-
 
     // ---------------------------------------------------------------------------------------------------------
     // ADDITIONAL FUNCTIONALITIES:
@@ -638,13 +581,11 @@ int main(int argc, char** argv)
      */
     ValueArg<std::string> setVariableFile ("", "file", "Set variable input file", false, "filename-variable", "string", cmd);
 
-
     // ---------------------------------------------------------------------------------------------------------
     // PARSING:
 
     // Parse the argv array.
     cmd.parse(argc, argv);
-
 
     // ---------------------------------------------------------------------------------------------------------
     // SETTINGS:
@@ -653,7 +594,6 @@ int main(int argc, char** argv)
     MUSE::Project Project;
     Project.folder = projectFolder.getValue(); //percorso progetto
     Project.name = Project.folder.substr(Project.folder.find_last_of("/")+1, Project.folder.length()); //nome progetto
-
 
     // 0) Commands
     std::cout << FCYN("###### Execution command ...") << std::endl;
@@ -690,13 +630,10 @@ int main(int argc, char** argv)
     std::cout << FCYN("###### ###### ###### ######") << std::endl;
     std::cout << std::endl;
 
-
     // 0) Set folder (in/out)
     std::string out_folder      = Project.folder + "/out";
     std::string metadata_folder = out_folder + "/" + app_data + "/metadata";
     std::string data_folder     = out_folder + "/" + app_data + "/data";
-
-
 
     // 0) Define meta for vario
     VarioMeta metavario;
@@ -708,8 +645,6 @@ int main(int argc, char** argv)
 
     // 0) Define meta for vario - dependencies
     std::vector<std::string> depsvario;
-
-
 
     // ---------------------------------------------------------------------------------------------------------
     // STARTS:
@@ -790,10 +725,8 @@ int main(int argc, char** argv)
 
             app_folder += "_" + varioDirection.getValue() + varioDimension.getValue();
 
-
             filesystem::create_directory(app_folder);
             std::string vario_filename = app_folder + "/" + infovar.v_name;
-
 
             std::vector<std::string> id;
             std::vector<double> xCoord, yCoord, zCoord;
@@ -877,7 +810,6 @@ int main(int argc, char** argv)
             processingData.stratigraphic_transf = stratCondition.getValue();
             processingData.filename = filenameStrat.getValue();
 
-
             // ================================
             // 3. LOAD VALUES
             // ================================
@@ -889,7 +821,6 @@ int main(int argc, char** argv)
             MUSE::Data data = meta_input.getData(0); //gli input hanno un unico header!!
             data.setType(data.flag);
             readTextValues(l + "/data/" + infovar.v_name + ".dat", data.text_values);
-
 
             DataSummary sumdata;
             sumdata.setSummary(data);
@@ -1061,7 +992,6 @@ int main(int argc, char** argv)
             else
                 string_to_double_conversion_vectors(data.text_values, id, xCoord, yCoord, zCoord, conv_values, corr_id, corr_x, corr_y, corr_z);
 
-
             std::cout << std::endl;
 
             metavario.setDependencies(depsvario); //added dependencies
@@ -1086,7 +1016,6 @@ int main(int argc, char** argv)
 
             std::cout << "\033[0;32mReading MUSE format and data analysis... COMPLETED.\033[0m" << std::endl;
             std::cout << std::endl;
-
 
             // ================================
             // 3-1. CHECKING COORDINATES LOCATIONS AND ALIGNING TO X-Y PLANE (VARIO DIR 2D)
@@ -1151,7 +1080,6 @@ int main(int argc, char** argv)
                     double var_cat = variance(indicator_var);
                     std::cout << "### Data variance related to category " << categ.at(cat) << " is " << var_cat << std::endl;
 
-
                     bool dist_setcat = false;
                     double fix_dist = -DBL_MAX;
                     if(setIndMaxDistance.isSet())
@@ -1212,7 +1140,6 @@ int main(int argc, char** argv)
                         }
                     }
 
-
                     // 3) Per il calcolo del fitting mi serve il valore della varianza dei dati -> calcolo varianza degli indicatori per ogni cateogoria
                     // (NON LAVORO CON VARIABILE NORMALE INFATTI, LA CUI VARIANZA È UNITARIA, ovvero corrispondente all sill massimo raggiungibile nel vario modello)
 
@@ -1254,7 +1181,6 @@ int main(int argc, char** argv)
                                 exit(1);
                             }
 
-
                             VarioMeta::InfoVariogram info_vario;
                             info_vario.dimension = varioDimension.getValue();
                             info_vario.direction = varioDirection.getValue();
@@ -1264,14 +1190,12 @@ int main(int argc, char** argv)
                             info_vario.n_min_points_for_clean = setVarioCleanPoints.getValue();
                             metavario.setInfoVariogram(info_vario);
 
-
                             if(setVarioCleanPoints.isSet())
                             {
                                 std::cout << "Clean experimental variogram ..." << std::endl;
                                 exp_var = clean_exp_variogram (exp_var, setVarioCleanPoints.getValue());
                                 std::cout << "Clean experimental variogram ... COMPLETED." << std::endl;
                             }
-
 
                             std::vector<MUSE::exp_variog_methods> variov;
 
@@ -1287,8 +1211,6 @@ int main(int argc, char** argv)
                             metavario.setDirExpVariog(variov);
 
                             std::cout << std::endl;
-
-
 
                             // Plotting experimental variogram
                             PlotStruct gamma_h;
@@ -1311,7 +1233,6 @@ int main(int argc, char** argv)
                             info_vario.dimension = varioDimension.getValue();
                             info_vario.direction = varioDirection.getValue();
                             //info_vario.n_directions = 180/setDegree.getValue();
-
 
                             // Compute the experimenatal variogram - DIRECTIONAL
 
@@ -1368,12 +1289,10 @@ int main(int argc, char** argv)
                                 exit(1);
                             }
 
-
                             if(setVarioCleanPoints.isSet())
                                 info_vario.clean_is_set = true;
                             info_vario.n_min_points_for_clean = setVarioCleanPoints.getValue();
                             metavario.setInfoVariogram(info_vario);
-
 
                             // 2) Clean directional variograms
                             int nzeros = 0;
@@ -1399,7 +1318,6 @@ int main(int argc, char** argv)
 
                             }
                             metavario.setDirExpVariog(variov);
-
 
                             // 3) Plot directional variograms
                             int i_dir = 0;
@@ -1434,7 +1352,6 @@ int main(int argc, char** argv)
                         if(setMSEcriterion.isSet())
                             w_type = stringToWeightsType(setMSEcriterion.getValue());
                         std::cout << "=== MSE criterion for fitting is set on: " << setMSEcriterion.getValue() << std::endl;
-
 
                         switch (dir)
                         {
@@ -1486,14 +1403,12 @@ int main(int argc, char** argv)
                             info_vario.n_min_points_for_clean = setVarioCleanPoints.getValue();
                             metavario.setInfoVariogram(info_vario);
 
-
                             if(setVarioCleanPoints.isSet())
                             {
                                 std::cout << "Clean experimental variogram ..." << std::endl;
                                 exp_var = clean_exp_variogram (exp_var, setVarioCleanPoints.getValue());
                                 std::cout << "Clean experimental variogram ... COMPLETED." << std::endl;
                             }
-
 
                             std::vector<MUSE::exp_variog_methods> variov;
 
@@ -1507,7 +1422,6 @@ int main(int argc, char** argv)
                             variov.push_back(variovv);
 
                             metavario.setDirExpVariog(variov);
-
 
                             std::cout << std::endl;
 
@@ -1558,9 +1472,6 @@ int main(int argc, char** argv)
 
                             metavario.setFitExpVariog(fitvario);
 
-
-
-
                             // Plotting experimental variogram + model
                             PlotStruct gamma_h;
                             for(size_t i=0; i < exp_var.gamma.size(); i++)
@@ -1569,8 +1480,6 @@ int main(int argc, char** argv)
                                 gamma_h.y.push_back(exp_var.gamma.at(i));      //gamma (variogramma)
                             }
                             variogram_plot(gamma_h, fitted_exp_var, "Fitted Experimental Variogram Model", "Lag distance", "Semivariogram", setNxvis.getValue());
-
-
 
                             if(subDataset.isSet())
                                 matplot::save(app_folder + "/" + data.getName() + std::to_string(categ.at(cat)) + "_" + subDataset.getValue(), "jpeg");
@@ -1657,13 +1566,10 @@ int main(int argc, char** argv)
                                 exit(1);
                             }
 
-
-
                             if(setVarioCleanPoints.isSet())
                                 info_vario.clean_is_set = true;
                             info_vario.n_min_points_for_clean = setVarioCleanPoints.getValue();
                             metavario.setInfoVariogram(info_vario);
-
 
                             // 2) Clean directional variograms
                             std::vector<int> zeros;
@@ -1685,7 +1591,6 @@ int main(int argc, char** argv)
                                 zeros.resize(dir_ex_var.size(), 0.0);
                             }
 
-
                             std::vector<MUSE::exp_variog_methods> variov;
                             for(size_t i=0; i<dir_ex_var.size(); i++)
                             {
@@ -1702,8 +1607,6 @@ int main(int argc, char** argv)
 
                             }
                             metavario.setDirExpVariog(variov);
-
-
 
                             std::vector<double> weight;
                             weight.resize(zeros.size(), 1);
@@ -1737,7 +1640,6 @@ int main(int argc, char** argv)
                                 std::cout << FGRN("Penalty function (based on number of zeros in exmperimental variogram computation for each direction)... COMPLETED.") << std::endl;
                                 std::cout << std::endl;
                             }
-
 
                             vector<variogram> vv;
                             try
@@ -1784,7 +1686,6 @@ int main(int argc, char** argv)
                                 std::cerr << "ERROR Computing directional variogram modeling ... " << e.what() << std::endl;
                             }
 
-
                             if(vv.empty())
                                 std::cout << "fitting vector is empty ###########################" << std::endl;
 
@@ -1807,7 +1708,6 @@ int main(int argc, char** argv)
                             }
                             metavario.setFitExpVariog(fitvario);
 
-
                             // 3) Plot directional variograms
                             int i_dir = 0;
                             for(const exp_variog &v:dir_ex_var)
@@ -1827,7 +1727,6 @@ int main(int argc, char** argv)
                                 i_dir++;
                             }
 
-
                             //PLOT OF RANGES AND ELLIPSE FITTING (ON PLANE X-Y)
                             if(varioDimension.getValue().compare("3Dz") !=0)
                             {
@@ -1842,7 +1741,6 @@ int main(int argc, char** argv)
                                     h_plot.x.push_back(get_rangex(v.range, 180 + directions.at(i)));
                                     h_plot.y.push_back(get_rangey(v.range, 180 + directions.at(i)));
                                 }
-
 
                                 EllipseParameter summary;
                                 fit_anisotropy_ellipse(h_plot.x, h_plot.y, summary);
@@ -1972,9 +1870,6 @@ int main(int argc, char** argv)
                 }
             }
 
-
-
-
             else
             {
                 // VARIO - VARIABILE CONTINUA
@@ -2072,17 +1967,14 @@ int main(int argc, char** argv)
                                 exit(1);
                             }
 
-
                             VarioMeta::InfoVariogram info_vario;
                             info_vario.dimension = varioDimension.getValue();
                             info_vario.direction = varioDirection.getValue();
-
 
                             if(setVarioCleanPoints.isSet())
                                 info_vario.clean_is_set = true;
                             info_vario.n_min_points_for_clean = setVarioCleanPoints.getValue();
                             metavario.setInfoVariogram(info_vario);
-
 
                             if(setVarioCleanPoints.isSet())
                             {
@@ -2091,7 +1983,6 @@ int main(int argc, char** argv)
                                 exp_var = clean_exp_variogram (exp_var, setVarioCleanPoints.getValue());
                                 std::cout << "=== Clean experimental variogram ... COMPLETED." << std::endl;
                             }
-
 
                             // Plotting experimental variogram
                             std::cout << "=== Plotting experimental variogram ..." << std::endl;
@@ -2183,7 +2074,6 @@ int main(int argc, char** argv)
                             info_vario.n_min_points_for_clean = setVarioCleanPoints.getValue();
                             metavario.setInfoVariogram(info_vario);
 
-
                             // 2) Clean directional variograms
                             int nzeros = 0;
                             if(setVarioCleanPoints.isSet())
@@ -2209,7 +2099,6 @@ int main(int argc, char** argv)
                             }
                             metavario.setDirExpVariog(variov);
 
-
                             // 3) Plot directional variograms
                             std::cout << "=== Plotting experimental variogram ..." << std::endl;
                             int i_dir = 0;
@@ -2234,7 +2123,6 @@ int main(int argc, char** argv)
 
                         break;
                     } //close case EXPERIMENTAL
-
 
                     case VarioType::MODEL:
                     {
@@ -2293,7 +2181,6 @@ int main(int argc, char** argv)
                                 }
                             }
 
-
                             VarioMeta::InfoVariogram info_vario;
                             info_vario.dimension = varioDimension.getValue();
                             info_vario.direction = varioDirection.getValue();
@@ -2303,7 +2190,6 @@ int main(int argc, char** argv)
                             info_vario.n_min_points_for_clean = setVarioCleanPoints.getValue();
                             metavario.setInfoVariogram(info_vario);
 
-
                             if(setVarioCleanPoints.isSet())
                             {
                                 std::cout << "Clean experimental variogram ..." << std::endl;
@@ -2311,7 +2197,6 @@ int main(int argc, char** argv)
                                 exp_var = clean_exp_variogram (exp_var, setVarioCleanPoints.getValue());
                                 std::cout << "Clean experimental variogram ... COMPLETED." << std::endl;
                             }
-
 
                             std::vector<MUSE::exp_variog_methods> variov;
 
@@ -2329,7 +2214,6 @@ int main(int argc, char** argv)
                             std::cout << std::endl;
 
                             variogram fitted_exp_var;
-
 
                             if (setModel.isSet() && setNugget.isSet())
                             {
@@ -2365,9 +2249,6 @@ int main(int argc, char** argv)
                                 fitted_exp_var = fit_variogram(exp_var, setRangeStep.getValue(), setNuggetStep.getValue(), w_type);
                             }
 
-
-
-
                             std::vector<MUSE::variogram_methods> fitvario;
 
                             MUSE::variogram_methods fitvariov;
@@ -2383,8 +2264,6 @@ int main(int argc, char** argv)
                             metavario.setFitExpVariog(fitvario);
                             vario_frame.setVario(fitvariov);
 
-
-
                             // Plotting experimental variogram + model
                             PlotStruct gamma_h;
                             for(size_t i=0; i < exp_var.gamma.size(); i++)
@@ -2393,7 +2272,6 @@ int main(int argc, char** argv)
                                 gamma_h.y.push_back(exp_var.gamma.at(i));      //gamma (variogramma)
                             }
                             variogram_plot(gamma_h, fitted_exp_var, plot_title, "Lag distance", "Semivariogram", setNxvis.getValue());
-
 
                             if(subDataset.isSet())
                                 matplot::save(app_folder + "/" + data.getName() + "_" + subDataset.getValue(), "jpeg");
@@ -2404,7 +2282,6 @@ int main(int argc, char** argv)
                             std::cout << std::endl;
 
                             //FINE PLOT
-
 
                         break;
                         } //close case OMNI
@@ -2438,7 +2315,6 @@ int main(int argc, char** argv)
 
                                 info_vario.n_directions = directions.size();
                             }
-
 
                             if(varioDimension.getValue().compare("3D") == 0)
                             {
@@ -2942,7 +2818,6 @@ int main(int argc, char** argv)
 
                             std::cout << std::endl;
 
-
                             if(setVarioCleanPoints.isSet())
                             {
                                 info_vario.clean_is_set = true;
@@ -2950,7 +2825,6 @@ int main(int argc, char** argv)
                                 std::cout << "Clean directional experimental variogram is set!" << std::endl;
                             }
                             info_vario.n_min_points_for_clean = setVarioCleanPoints.getValue();
-
 
                             // 2) Clean directional variograms
                             std::vector<int> zeros;
@@ -2973,7 +2847,6 @@ int main(int argc, char** argv)
                                 zeros.resize(dir_ex_var.size(), 0);
                             }
 
-
                             std::vector<MUSE::exp_variog_methods> variov;
                             for(size_t i=0; i<dir_ex_var.size(); i++)
                             {
@@ -2990,8 +2863,6 @@ int main(int argc, char** argv)
 
                             }
                             metavario.setDirExpVariog(variov);
-
-
 
                             std::vector<double> weight;
                             weight.resize(zeros.size(), 1);
@@ -3026,7 +2897,6 @@ int main(int argc, char** argv)
                                 info_vario.penalty_function = true;
                             }
                             metavario.setInfoVariogram(info_vario);
-
 
                             vector<variogram> vv;
                             try
@@ -3078,8 +2948,6 @@ int main(int argc, char** argv)
                                 std::cerr << "ERROR Directional variogram " << e.what() << std::endl;
                             }
 
-
-
                             std::vector<MUSE::variogram_methods> fitvario;
                             for(size_t i=0; i<vv.size(); i++)
                             {
@@ -3101,7 +2969,6 @@ int main(int argc, char** argv)
                                 fitvario.push_back(fitvariov);
                             }
                             metavario.setFitExpVariog(fitvario);
-
 
                             // 3) Plot directional variograms
                             int i_dir = 0;
@@ -3298,8 +3165,6 @@ int main(int argc, char** argv)
             vec_vario_frame.push_back(vario_frame);
         }
 
-
-
         /////////////////////////////
         //////////SUMMARY FOR FRAMES
         ///
@@ -3312,7 +3177,6 @@ int main(int argc, char** argv)
         else
             vario_mf.write(out_folder + "/" + app_name + "/"+ Variable.getValue() + "_" + varioDirection.getValue() + varioDimension.getValue() + "_multiframe.json");
     }
-
 
     if(setVarioDiagnose.isSet())
     {
@@ -3343,11 +3207,7 @@ int main(int argc, char** argv)
         std::cout << "=== Variogram diagnose ... COMPLETED." << std::endl;
     }
 
-
-
     } catch (ArgException &e)  // catch exceptions
     { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; }
 
 }
-
-

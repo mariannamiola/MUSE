@@ -36,8 +36,9 @@ int main(int argc, char** argv)
 
     // Option 0.
     /**
-     * @brief File List
-     * @param list Enable file list
+     * @brief Recursively list the files of a given type contained in a project directory.
+     * @default false (file listing is disabled by default).
+     * @format boolean flag
      * @note Operation mode selection (mutually exclusive):
      * - -L/--list: File listing operation
      * - -Q/--query: Query path creation
@@ -45,81 +46,91 @@ int main(int argc, char** argv)
      * When using file listing:
      * - --pdir: Directory path (optional)
      * - --type: File type filter (optional)
-     * @example -L --pdir /project --type JSON
+     * @example muse_utility -L --pdir /project --type JSON
      */
 
     SwitchArg fileList                  ("L", "list", "File List", cmd, false); //booleano
     /**
-     * @brief Directory
-     * @param pdir Path to directory
-     * @note Used with -L/--list flag for file listing operations
-     * Specifies the directory to search for files
+     * @brief Directory to search for files. Specifies the directory that is recursively scanned for the requested file type.
+     * @format string (path to a directory)
+     * @default "Directory" (placeholder value, should be replaced with an actual directory path).
+     * @note Used with -L/--list flag for file listing operations.
+     * @example muse_utility -L --pdir /project --type JSON
      */
 
     ValueArg<std::string> projectFolder ("p", "pdir", "Directory", false, "Directory", "path", cmd);
     /**
-     * @brief Type of file
-     * @param type Path to type of file
-     * @note Used with -L/--list flag for file filtering
-     * Available types: JSON, MESH
+     * @brief Type of file used to filter the listing. Selects which file extension is matched during the recursive listing (JSON -> .json, MESH -> .off).
+     * @format string
+     * @default "Directory" (placeholder value, should be replaced with an actual file type).
+     * @values JSON, MESH
+     * @note Used with -L/--list flag for file filtering.
+     * @example muse_utility -L --pdir /project --type JSON
      */
 
     ValueArg<std::string> fileType      ("", "type", "Type of file", false, "Directory", "path", cmd);
 
     // Option 1. TO DO ...
     /**
-     * @brief Query for creation path
-     * @param query Enable query for creation path
-     * @note Mutually exclusive with -L/--list and -H/--history
-     * Operation mode for path creation queries
+     * @brief Query for creation path. Operation mode for path creation queries.
+     * @default false (query mode is disabled by default).
+     * @format boolean flag
+     * @note Mutually exclusive with -L/--list and -H/--history.
+     * @example muse_utility -Q
      */
 
     SwitchArg Query                     ("Q", "query", "Query for creation path", cmd, false); //booleano
 
     // Option 2. Print processing history following JSONs
     /**
-     * @brief Set JSON history
-     * @param history Enable set json history
-     * @note Mutually exclusive with -L/--list and -Q/--query
+     * @brief Set JSON history. Reconstructs and prints the processing history of a project by following the dependencies recorded in the JSON metadata files.
+     * @default false (history analysis is disabled by default).
+     * @format boolean flag
+     * @note Mutually exclusive with -L/--list and -Q/--query.
      * History analysis operation requires:
      * - --json: JSON file path (mandatory)
      * OPTIONAL history navigation flags:
      * - --back: Recursive backward navigation
      * - --forward: Recursive forward navigation
      * - --more: Forward navigation with commands
-     * @example -H --json /path/to/history.json --more
+     * @example muse_utility -H --json /path/to/history.json --more
      */
 
     SwitchArg setHistory                ("H", "history", "Set JSON history", cmd, false); //booleano
     /**
-     * @brief Set json file
-     * @param json Path to set json file
-     * @note Required when using -H/--history flag
-     * Specifies the JSON file containing processing history
+     * @brief Set JSON file. Specifies the JSON metadata file whose processing history has to be analysed.
+     * @required true (this parameter is mandatory when using the -H/--history flag).
+     * @format string (path to a .json file)
+     * @default "path" (placeholder value, should be replaced with an actual JSON file path).
+     * @note Required when using -H/--history flag.
+     * @example muse_utility -H --json /path/to/history.json
      */
 
     ValueArg<std::string> setJSON       ("", "json", "Set json file", false, "path", "string", cmd);
     /**
-     * @brief Set JSON history (recursively - back)
-     * @param back Enable set json history (recursively - back)
-     * @note Optional modifier for -H/--history operations
-     * Enables recursive backward navigation through history
+     * @brief Set JSON history (recursively - back). Enables recursive backward navigation through the dependency history.
+     * @default false (backward navigation is disabled by default).
+     * @format boolean flag
+     * @note Optional modifier for -H/--history operations.
+     * @example muse_utility -H --json /path/to/history.json --back
      */
 
     SwitchArg setBackInfo               ("", "back", "Set JSON history (recursively - back)", cmd, false); //booleano
     /**
-     * @brief Set JSON history (recursively - forward)
-     * @param forward Enable set json history (recursively - forward)
-     * @note Optional modifier for -H/--history operations
-     * Enables recursive forward navigation through history
+     * @brief Set JSON history (recursively - forward). Enables recursive forward navigation through the dependency history and builds the corresponding graph.
+     * @default false (forward navigation is disabled by default).
+     * @format boolean flag
+     * @note Optional modifier for -H/--history operations.
+     * @example muse_utility -H --json /path/to/history.json --forward
      */
 
     SwitchArg setForwardInfo            ("", "forward", "Set JSON history (recursively - forward)", cmd, false); //booleano
     /**
-     * @brief Set JSON history (recursively - forward) and commands
-     * @param more Enable set json history (recursively - forward) and commands
-     * @note Optional modifier for -H/--history operations
-     * Provides detailed forward navigation with command information
+     * @brief Set JSON history (recursively - forward) and commands. Provides detailed forward navigation, annotating each node with the command that generated it.
+     * @default false (detailed forward navigation is disabled by default).
+     * @format boolean flag
+     * @note Optional modifier for -H/--history operations. Used together with --forward.
+     * @example muse_utility -H --json /path/to/history.json --forward --more
      */
 
     SwitchArg setMoreInfo               ("", "more", "Set JSON history (recursively - forward) and commands", cmd, false); //booleano

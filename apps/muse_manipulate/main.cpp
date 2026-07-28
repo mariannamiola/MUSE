@@ -112,80 +112,100 @@ int main(int argc, char** argv)
     // Option 0. Index extraction from geometry model
     /**
      * @brief Extraction data basing on geometry model. This option allows to extract data from a geometry model, such as a surface or volume mesh, based on specified criteria. The extracted data can be used for further analysis or visualization.
+     * @default false (extraction is disabled by default).
+     * @format boolean flag
      * @note When using -E/--extract, requires:
      * - --geom: Geometry model to extract from (mandatory)
      * - --zcoord: Coordinate Z to use for extraction (optional, used for 3D models)
-     * @example -E -p /path/to/project --geom model.obj
+     * @example muse_manipulate -E -p /path/to/project --geom model.obj
      */
     SwitchArg setExtract                    ("E", "extract", "Set extraction data based on geometry model", cmd, false); //booleano
 
     /**
      * @brief Set project directory. This is the main directory where the project files are located. It is a required argument for running the application, as it specifies the context in which the manipulation will occur. The project directory should contain all necessary data and geometry files for the operations to be performed.
-     * @note This argument is mandatory for running the application. The project directory should be organized according to the expected structure of the MUSE project, with subdirectories for data, geometry, and output as needed.
-     * @example -p /path/to/project
+     * @required true (this parameter is mandatory for running the application).
+     * @format string (path to the project directory)
+     * @default "path/to/project" (placeholder value, should be replaced with an actual path).
+     * @note The project directory should be organized according to the expected structure of the MUSE project, with subdirectories for data, geometry, and output as needed.
+     * @example muse_manipulate -E -p /path/to/project --geom model.obj
      */
     ValueArg<std::string> projectFolder     ("p", "pdir", "Set project directory", true, "path/to/project", "string", cmd);
 
     /**
      * @brief Set geometry model. This argument specifies the geometry model to be used for data extraction when the -E/--extract flag is enabled. The geometry model can be a surface mesh, volume mesh, or any other supported geometric representation. The specified model must exist within the project directory and will be used as the basis for extracting data according to the defined criteria.
-     * @example -E --geom model.obj
+     * @format string (geometry model name)
+     * @default "geometry-name" (placeholder value, should be replaced with an actual geometry model name).
+     * @note Required when using -E/--extract.
+     * @example muse_manipulate -E -p /path/to/project --geom model.obj
      */
     ValueArg<std::string> geomModel         ("", "geom", "Set geometry model", false, "geometry-name", "string", cmd);
 
     /**
      * @brief Set coordinate Z. This argument specifies the coordinate Z to be used for data extraction when the -E/--extract flag is enabled. It is optional and used for 3D models.
-     * @example -E --geom model.obj --zcoord elevation
+     * @format string (name of the variable used as Z coordinate)
+     * @default "z_name" (placeholder value, should be replaced with an actual variable name).
+     * @note Optional. Used with -E/--extract for 3D models. ⚠ Partially implemented: only the PRESENCE of -z/--zcoord is currently used; the passed value is not read (the Z variable name is taken from the project metadata), so the flag currently behaves as a boolean switch.
+     * @example muse_manipulate -E -p /path/to/project --geom model.obj --zcoord elevation
      */
     ValueArg<std::string> setZcoord         ("z", "zcoord", "Set coordinate Z", false, "z_name", "string", cmd);
 
     // Option 1. Index extraction from interval
     /**
-     * @brief Set extraction data from interval
-     * @param intextr Enable extraction data from interval
+     * @brief Set extraction data from interval. Extracts the subset of samples whose value of a given variable falls within the [inf, sup] interval.
+     * @default false (interval extraction is disabled by default).
+     * @format boolean flag
      * @note When using -I/--intextr, requires:
      * - --sup: Superior interval limit (mandatory)
      * - --inf: Inferior interval limit (mandatory)
      * - --nvar: Variable name to check (mandatory)
-     * @example -I --sup 100 --inf 0 --nvar temperature
+     * @example muse_manipulate -I -p /path/to/project --sup 100 --inf 0 --nvar temperature
      */
     SwitchArg setIntervalExtraction         ("I", "intextr", "Set extraction data from interval", cmd, false); //booleano
 
     /**
-     * @brief Set sup interval
-     * @param sup sup interval
-     * @note Used with -I/--intextr flag. Required for interval extraction
-     * Must be used together with --inf and --nvar
+     * @brief Set sup interval. Superior limit of the interval used to select samples during interval extraction.
+     * @format int
+     * @default 0
+     * @note Used with -I/--intextr flag. Required for interval extraction. Must be used together with --inf and --nvar.
+     * @example muse_manipulate -I -p /path/to/project --sup 100 --inf 0 --nvar temperature
      */
     ValueArg<int> supInterval               ("", "sup", "Set sup interval", false, 0, "int", cmd);
 
     /**
-     * @brief Set inf interval
-     * @param inf inf interval
-     * @note Used with -I/--intextr flag. Required for interval extraction
-     * Must be used together with --sup and --nvar
+     * @brief Set inf interval. Inferior limit of the interval used to select samples during interval extraction.
+     * @format int
+     * @default 0
+     * @note Used with -I/--intextr flag. Required for interval extraction. Must be used together with --sup and --nvar.
+     * @example muse_manipulate -I -p /path/to/project --sup 100 --inf 0 --nvar temperature
      */
 
     ValueArg<int> infInterval               ("", "inf", "Set inf interval", false, 0, "int", cmd);
 
     /**
-     * @brief Set variable to check
-     * @param nvar Name of set variable to check
-     * @note Used with -I/--intextr flag. Required for interval extraction
-     * Must be used together with --sup and --inf
+     * @brief Set variable to check. Name of the variable whose values are tested against the [inf, sup] interval.
+     * @format string (variable name)
+     * @default "var_name" (placeholder value, should be replaced with an actual variable name).
+     * @note Used with -I/--intextr flag. Required for interval extraction. Must be used together with --sup and --inf.
+     * @example muse_manipulate -I -p /path/to/project --sup 100 --inf 0 --nvar temperature
      */
     ValueArg<std::string> nameVar           ("", "nvar", "Set variable to check", false, "var_name", "string", cmd);
 
     /**
-     * @brief Set sub dataset extraction based on geometry
-     * @param sub extraction sub dataset basing on geometry
+     * @brief Set sub dataset extraction based on geometry. Name of the sub-dataset produced by extracting the samples contained in the given geometry.
+     * @format string (sub-dataset name)
+     * @default "name" (placeholder value, should be replaced with an actual sub-dataset name).
+     * @note Used with -E/--extract.
+     * @example muse_manipulate -E -p /path/to/project --geom model.obj --sub my_subset
      */
     ValueArg<std::string> subDataset        ("", "sub", "Set sub dataset extraction based on geometry", false, "name", "path", cmd);
 
 
 
     /**
-     * @brief Set rotation axis
-     * @param rotaxis rotation axis
+     * @brief Set rotation axis. Axis around which the geometry/points are rotated; NO disables the rotation.
+     * @format string
+     * @default "NO" (no rotation is applied).
+     * @values X, Y, Z, NO
      * @note When using rotation, these flags work together:
      * - --rotaxis: Rotation axis (X, Y, Z)
      * - --rotangle: Rotation angle (required if rotaxis != NO)
@@ -195,35 +215,47 @@ int main(int argc, char** argv)
     ValueArg<std::string> setRotAxis        ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
 
     /**
-     * @brief Set rotation angle (clockwise)
-     * @param rotangle rotation angle (clockwise)
-     * @note Used together with --rotaxis flag. Required when rotaxis != NO
+     * @brief Set rotation angle (clockwise), expressed in degrees.
+     * @format double (degrees)
+     * @default 0.0
+     * @note Used together with --rotaxis flag. Required when rotaxis != NO.
+     * @example muse_manipulate -E -p /path/to/project --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
     ValueArg<double> setRotAngle            ("", "rotangle", "Set rotation angle (clockwise)", false, 0.0, "double", cmd);
     
     /**
-     * @brief Set rotation center x
-     * @param rotcx rotation center x
+     * @brief Set rotation center x. X coordinate of the rotation center.
+     * @format double
+     * @default 0.0
+     * @note Used together with --rotaxis and --rotangle.
+     * @example muse_manipulate -E -p /path/to/project --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
     ValueArg<double> setRotCenterX          ("", "rotcx", "Set rotation center x", false, 0.0, "double", cmd);
     
     /**
-     * @brief Set rotation center y
-     * @param rotcy rotation center y
+     * @brief Set rotation center y. Y coordinate of the rotation center.
+     * @format double
+     * @default 0.0
+     * @note Used together with --rotaxis and --rotangle.
+     * @example muse_manipulate -E -p /path/to/project --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
     ValueArg<double> setRotCenterY          ("", "rotcy", "Set rotation center y", false, 0.0, "double", cmd);
     
     /**
-     * @brief Set rotation center z
-     * @param rotcz rotation center z
+     * @brief Set rotation center z. Z coordinate of the rotation center.
+     * @format double
+     * @default 0.0
+     * @note Used together with --rotaxis and --rotangle.
+     * @example muse_manipulate -E -p /path/to/project --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
     ValueArg<double> setRotCenterZ          ("", "rotcz", "Set rotation center z", false, 0.0, "double", cmd);
 
 
     // Option 2. Point projection on surfaces
     /**
-     * @brief Points projection on surfaces
-     * @param prsurf Enable points projection on surfaces
+     * @brief Points projection on surfaces. Projects the input points onto one or more surface meshes.
+     * @default false (surface projection is disabled by default).
+     * @format boolean flag
      * @note Projection mode selection (mutually exclusive):
      * - -P/--prsurf: Surface projection
      * - -S/--prsect: Section projection (2D)
@@ -234,53 +266,76 @@ int main(int argc, char** argv)
     
     /**
      * @brief Compute points projection on top/bottom boundary (2D section case).
-     * @param prsect Flag to compute points projection on boundary (2d section case).
-     * @note Mutually exclusive with -P/--prsurf and -R/--prqsect
-     * Use for 2D section projection operations
+     * @default false (section projection is disabled by default).
+     * @format boolean flag
+     * @note Mutually exclusive with -P/--prsurf and -R/--prqsect. Use for 2D section projection operations.
      */
     SwitchArg setProjectionOnSection        ("S", "prsect", "Compute points projection on top/bottom boundary (2D section case).", cmd, false);
     
     /**
-     * @brief Points projection on quads sections
-     * @param prqsect Enable points projection on quads sections
-     * @note Mutually exclusive with -P/--prsurf and -S/--prsect
-     * Use for quad-based section projection operations
+     * @brief Points projection on quads sections. Projects the input points onto quad-based section meshes.
+     * @default false (quad-section projection is disabled by default).
+     * @format boolean flag
+     * @note Mutually exclusive with -P/--prsurf and -S/--prsect. Use for quad-based section projection operations.
      */
     SwitchArg setProjectionOnQSection       ("R", "prqsect", "Points projection on quads sections", cmd, false);
 
     /**
-     * @brief Compute points projection on boundary (3D volumetric case).
-     * @param prvol Flag to compute points projection on boundary (3d volumetric case).
+     * @brief Compute points projection on boundary (3D volumetric case). Projects the input points onto the boundary of a volumetric mesh.
+     * @default false (volumetric projection is disabled by default).
+     * @format boolean flag
+     * @note Projection mode for the 3D volumetric case.
      */
     SwitchArg setProjectionOnVolume         ("V", "prvol", "Compute points projection on boundary (3D volumetric case).", cmd, false);
 
     /**
-     * @brief Set number of steps for geometry model
-     * @param step Number of set number of steps for geometry model
+     * @brief Set number of steps for geometry model. Discretization step used when building/scanning the geometry during projection.
+     * @format double
+     * @default 0.0 (the step is chosen automatically).
+     * @note Used with the projection operations (-P/-S/-R/-V).
+     * @example muse_manipulate -P -p /path/to/project -m surf.obj --step 1.0
      */
     ValueArg<double> setStepGeometry        ("", "step", "Set number of steps for geometry model", false, 0.0, "double", cmd);
     
     /**
-     * @brief Set tolerance to enlarge bounding box
-     * @param epsilon tolerance to enlarge bounding box
+     * @brief Set tolerance to enlarge bounding box. Epsilon used to expand the bounding box so that boundary points are not discarded during projection.
+     * @format double
+     * @default 1.0
+     * @note Used with the projection operations (-P/-S/-R/-V).
+     * @example muse_manipulate -P -p /path/to/project -m surf.obj --epsilon 0.5
      */
     ValueArg<double> setBBEpsilon           ("", "epsilon", "Set tolerance to enlarge bounding box", false, 1.0, "double", cmd);
 
     //SwitchArg setProjectionOnVolume        ("Q", "prqvol", "Points qprojection on volumes", cmd, false);
     //SwitchArg setProjectionOnVolume2        ("R", "prvol2", "Points projection on volumes2", cmd, false);
+    /**
+     * @brief Multi-geometry to pass. One or more geometry (mesh) files used as targets for the projection operations. Repeat the flag to pass several geometries.
+     * @format string (path/name of a geometry file); repeatable
+     * @default empty (no geometry is passed when the flag is not used).
+     * @note Used with the projection operations (-P/-S/-R/-V).
+     * @example muse_manipulate -P -p /path/to/project -m top.obj -m bottom.obj
+     */
     MultiArg<std::string> meshFiles         ("m", "mgeom", "Multi-geometry to pass", false, "string", cmd );
 
     /**
-     * @brief Set direction of projection
-     * @param prdir Path to set direction of projection
+     * @brief Set direction of projection. Axis along which the points are projected onto the target geometry.
+     * @format string
+     * @default "Y" (projection along the Y axis).
+     * @values X, Y, Z
+     * @note Used with the projection operations (-P/-S/-R/-V).
+     * @example muse_manipulate -P -p /path/to/project -m surf.obj --prdir Z
      */
     ValueArg<std::string> setProjDir        ("", "prdir", "Set direction of projection", false, "Y", "string", cmd);
 
     std::vector<std::string> allowedType = {"SAMPLES","TET","HEX","VOLUME","GEOMETRY","QUADMESH"};
     ValuesConstraint<std::string> allowedValsT(allowedType);
     /**
-     * @brief Set type
-     * @param type type
+     * @brief Set type of the geometry/data handled by the operation (kind of mesh or sample set to process).
+     * @format string
+     * @default "SAMPLES" (operate on the point samples).
+     * @values SAMPLES, TET, HEX, VOLUME, GEOMETRY, QUADMESH
+     * @note Selects how the input is interpreted during extraction/projection.
+     * @example muse_manipulate -E -p /path/to/project --geom model.vtk --type TET
      */
     ValueArg<std::string> setType           ("", "type", "Set type", false, "SAMPLES", &allowedValsT, cmd);
     allowedType.clear();
@@ -291,38 +346,55 @@ int main(int argc, char** argv)
     ValuesConstraint<std::string> allowedValsSC(allowedStratigraphicCondition);
 
     /**
-     * @brief Points projection on surfaces
-     * @param strat Enable points projection on surfaces
+     * @brief Stratigraphic coordinate transformation. Maps the points into a stratigraphic reference frame defined by a top and a bottom surface.
+     * @default false (stratigraphic transformation is disabled by default).
+     * @format boolean flag
+     * @note When using -T/--strat, requires --top, --bot and --sttype (stratigraphic condition).
+     * @example muse_manipulate -T -p /path/to/project --top top.obj --bot bot.obj --sttype PROPORTIONAL
      */
     SwitchArg setStratigraphicTransf        ("T", "strat", "Points projection on surfaces", cmd, false);
 
     /**
-     * @brief Name of geometry model
-     * @param name Name of name of geometry model
+     * @brief Name of geometry model. Name assigned to the geometry produced/handled by the operation.
+     * @format string (geometry model name)
+     * @default "name" (placeholder value, should be replaced with an actual geometry model name).
+     * @example muse_manipulate -T -p /path/to/project --name strat_grid --top top.obj --bot bot.obj
      */
     ValueArg<std::string> geomName          ("", "name", "Name of geometry model", false, "name", "string", cmd);
     
     /**
-     * @brief Set type of stratigraphic transformation
-     * @param sttype type of stratigraphic transformation
+     * @brief Set type of stratigraphic transformation (the stratigraphic condition applied between the top and bottom surfaces).
+     * @format string
+     * @default "NO" (no stratigraphic condition).
+     * @values PROPORTIONAL, TRUNCATION, ONLAP, COMBINATION
+     * @note Used with -T/--strat.
+     * @example muse_manipulate -T -p /path/to/project --top top.obj --bot bot.obj --sttype PROPORTIONAL
      */
     ValueArg<std::string> stratCondition    ("", "sttype", "Set type of stratigraphic transformation", false, "NO", &allowedValsSC, cmd);
     
     /**
-     * @brief Top geometry model
-     * @param top top geometry model
+     * @brief Top geometry model. Name of the surface used as the top boundary of the stratigraphic transformation.
+     * @format string (geometry model name)
+     * @default "name top geometry" (placeholder value, should be replaced with an actual geometry model name).
+     * @note Used with -T/--strat.
+     * @example muse_manipulate -T -p /path/to/project --top top.obj --bot bot.obj --sttype PROPORTIONAL
      */
     ValueArg<std::string> topSurface        ("", "top", "Top geometry model", false, "name top geometry", "string", cmd);
     
     /**
-     * @brief Bottom geometry model
-     * @param bot bottom geometry model
+     * @brief Bottom geometry model. Name of the surface used as the bottom boundary of the stratigraphic transformation.
+     * @format string (geometry model name)
+     * @default "name bottom geometry" (placeholder value, should be replaced with an actual geometry model name).
+     * @note Used with -T/--strat.
+     * @example muse_manipulate -T -p /path/to/project --top top.obj --bot bot.obj --sttype PROPORTIONAL
      */
     ValueArg<std::string> botSurface        ("", "bot", "Bottom geometry model", false, "name bottom geometry", "string", cmd);
     
     /**
-     * @brief Set region growing
-     * @param reggrow Enable set region growing
+     * @brief Set region growing. Enables a region-growing step to segment/label the geometry during the operation.
+     * @default false (region growing is disabled by default).
+     * @format boolean flag
+     * @example muse_manipulate -E -p /path/to/project --geom model.vtk --reggrow
      */
     SwitchArg setRegionGrowing              ("", "reggrow", "Set region growing", cmd, false); //booleano
 
@@ -331,34 +403,46 @@ int main(int argc, char** argv)
     // ADDITIONAL FUNCTIONALITIES:
 
     /**
-     * @brief Saving trimesh in obj format
-     * @param obj Enable saving trimesh in obj format
+     * @brief Saving trimesh in obj format. Writes the resulting triangular mesh as an OBJ file.
+     * @default false (OBJ output is disabled by default).
+     * @format boolean flag
+     * @note Optional output format.
+     * @example muse_manipulate -E -p /path/to/project --geom model.obj --obj
      */
     SwitchArg objConversion                 ("", "obj", "Saving trimesh in obj format", cmd, false); //booleano
     
     /**
-     * @brief Saving tetmesh in vtk format
-     * @param vtk Enable saving tetmesh in vtk format
+     * @brief Saving tetmesh in vtk format. Writes the resulting tetrahedral mesh as a VTK file.
+     * @default false (VTK output is disabled by default).
+     * @format boolean flag
+     * @note Optional output format.
+     * @example muse_manipulate -E -p /path/to/project --geom model.vtk --type TET --vtk
      */
     SwitchArg vtkConversion                 ("", "vtk", "Saving tetmesh in vtk format", cmd, false); //booleano
     
     /**
-     * @brief Saving extraction as set of points
-     * @param save Enable saving extraction as set of points
+     * @brief Saving extraction as set of points. Writes the extracted/projected result as a point set.
+     * @default false (the extraction is not saved by default).
+     * @format boolean flag
+     * @note Optional output. Typically used with -E/--extract.
+     * @example muse_manipulate -E -p /path/to/project --geom model.obj --save
      */
     SwitchArg saveExtraction                ("", "save", "Saving extraction as set of points", cmd, false); //booleano
     
     /**
-     * @brief Variable
-     * @param var Name of variable
+     * @brief Variable. Name of the variable to analyse/carry along during the manipulation.
+     * @format string (variable name)
+     * @default "variable to analyse" (placeholder value, should be replaced with an actual variable name).
+     * @example muse_manipulate -E -p /path/to/project --geom model.obj -v temperature
      */
     ValueArg<std::string> Variable          ("v", "var", "Variable", false, "variable to analyse", "name", cmd);
 
     /**
      * @brief Set path to data file. This argument allows the user to specify the path to a data file that will be used in the manipulation process. The data file should contain relevant information that the application can read and process. It is optional.
-     * @param file Path to path file
+     * @format string (path to a data file)
+     * @default "string" (placeholder value; when not set the default project directory structure is used).
      * @note If not set, the application will look for data files in the default project directory structure. If set, the specified file will be used for data manipulation.
-     * @example -E --file path/to/datafile.dat
+     * @example muse_manipulate -E -p /path/to/project --file path/to/datafile.dat
      */
     ValueArg<std::string> setFileData       ("", "file", "Set path to data file", false, "string", "path/to/data", cmd);
 

@@ -63,42 +63,49 @@ int main(int argc, char** argv)
 
     // Option 0. New project creation
     /**
-     * @brief Initialize a new project directory structure for storing (source point) data
-     * @param new_project If set, creates `in/data` and `out/data` subdirectories under the path specified by `-pdir`
-     * @note Boolean flag, default: false. Requires `--pdir` to be set and `--input` to optionally copy data file(s)
+     * @brief Initialize a new project directory structure for storing (source point) data. Creates the in/data and out/data subdirectories under the path specified by --pdir.
+     * @default false (project initialization is disabled by default).
+     * @format boolean flag
+     * @note Requires --pdir to be set; use --input to optionally copy data file(s) into the project.
      * @example muse_data -N -p /path/to/project/dir --input user/path/filename.csv
      */
     SwitchArg projectCreation           ("N", "new_project", "Initialize a new project directory structure for storing (source point) data", cmd, false); //booleano
     
     /**
-     * @brief Specify the directory path where the project is created
-     * @param pdir Absolute path to the project root directory (mandatory)
-     * @note Required when using --new_project flag
-     * @example -p /path/to/project/dir
+     * @brief Specify the directory path where the project is created (the project root directory).
+     * @required true (this parameter is mandatory for every operation).
+     * @format string (absolute path to the project root directory)
+     * @default "/path/to/project/dir" (placeholder value, should be replaced with an actual path).
+     * @note Required when using --new_project, --converter and --read flags.
+     * @example muse_data -N -p /path/to/project/dir
      */
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "/path/to/project/dir", "string", cmd);
 
     /**
-     * @brief Copy input file(s) in the input data project directory (path/project/in/data) to replace manual data copy
-     * @param input One or more file paths to copy into `data/in/` of the project root.
-     * Multiple files can be specified by repeating the flag.
-     * @note Optional. Recommended with `-N` to populate the input directory without manual file copying.
-     * @example --input user/path1/file1.csv --input user/path2/file2.csv
+     * @brief Copy input file(s) into the input data project directory (project/in/data), replacing manual data copy. Multiple files can be specified by repeating the flag.
+     * @format string (path to an input file); repeatable
+     * @default empty (no file is copied when the flag is not used).
+     * @note Optional. Recommended with -N to populate the input directory without manual file copying.
+     * @example muse_data -N -p /path/to/project/dir --input user/path1/file1.csv --input user/path2/file2.csv
      */
     MultiArg<std::string> setInput ("i", "input", "Copy input file(s) in the project directory (in/data/)", false, "string", cmd );
 
 
     // Option 0a. Project creation - optional: setting project EPSG
     /**
-     * @brief Set project EPSG coordinate system
-     * @param setEPSG EPSG authority code (default: Unknown)
+     * @brief Set project EPSG coordinate system (projected coordinates).
+     * @format string in the form EPSG:<code>
+     * @default "Unknown" (no coordinate reference system is assigned by default).
+     * @note Optional parameter, used with --new_project flag.
+     * @example muse_data -N -p /path/to/project/dir --setEPSG EPSG:32633
      */
     ValueArg<std::string> setEPSG       ("", "setEPSG", "Set project EPSG", false, "Unknown", "authority", cmd);
 
     // Option 1. Project creation - optional: setting coordinate columns
     /**
-     * @brief Enable manual setting of coordinate column numbers
-     * @param setIDXYZ Flag to set coordinate column numbers
+     * @brief Enable manual setting of coordinate column numbers, overriding the automatic detection of ID/X/Y/Z columns.
+     * @default false (columns are detected automatically by default).
+     * @format boolean flag
      * @note When using -S/--setIDXYZ, these column flags work together:
      *       - --setID: ID column number
      *       - --setX: X coordinate column number
@@ -109,26 +116,38 @@ int main(int argc, char** argv)
     SwitchArg setIDXYZ                  ("S", "setIDXYZ", "Set n. column coordinate", cmd, false); //booleano
     
     /**
-     * @brief Set ID column number
-     * @param setID Column number for ID field
+     * @brief Set ID column number (0-based index of the identifier column in the input CSV).
+     * @format int
+     * @default 0 (first column).
+     * @note Used together with -S/--setIDXYZ.
+     * @example muse_data -C -p /path/to/project/dir -S --setID 0 --setX 1 --setY 2
      */
     ValueArg<int> Colid                 ("", "setID", "Set ID", false, 0, "int" , cmd);
     
     /**
-     * @brief Set X coordinate column number
-     * @param setX Column number for X coordinate
+     * @brief Set X coordinate column number (0-based index of the X column in the input CSV).
+     * @format int
+     * @default 0 (first column).
+     * @note Used together with -S/--setIDXYZ.
+     * @example muse_data -C -p /path/to/project/dir -S --setID 0 --setX 1 --setY 2
      */
     ValueArg<int> Colx                  ("", "setX", "Set coordinate x", false, 0, "int" , cmd);
     
     /**
-     * @brief Set Y coordinate column number
-     * @param setY Column number for Y coordinate
+     * @brief Set Y coordinate column number (0-based index of the Y column in the input CSV).
+     * @format int
+     * @default 0 (first column).
+     * @note Used together with -S/--setIDXYZ.
+     * @example muse_data -C -p /path/to/project/dir -S --setID 0 --setX 1 --setY 2
      */
     ValueArg<int> Coly                  ("", "setY", "Set coordinate y", false, 0, "int" , cmd);
     
     /**
-     * @brief Set Z coordinate column number
-     * @param setZ Column number for Z coordinate
+     * @brief Set Z coordinate column number (0-based index of the Z column in the input CSV).
+     * @format int
+     * @default 0 (first column).
+     * @note Optional. Used together with -S/--setIDXYZ for 3D datasets.
+     * @example muse_data -C -p /path/to/project/dir -S --setID 0 --setX 1 --setY 2 --setZ 3
      */
     ValueArg<int> Colz                  ("", "setZ", "Set coordinate z", false, 0, "int" , cmd);
 
@@ -137,22 +156,27 @@ int main(int argc, char** argv)
     ValuesConstraint<std::string> allowedValsD(allowedDel);
     
     /**
-     * @brief Set CSV delimiter type
-     * @param setDel Type of CSV delimiter (DEFAULT or COMMA)
+     * @brief Set CSV delimiter type used to parse the input file. DEFAULT uses the semicolon ';', COMMA uses ','.
+     * @format string
+     * @default "DEFAULT" (semicolon ';' delimiter).
+     * @values DEFAULT, COMMA
+     * @note Used with -C/--converter.
+     * @example muse_data -C -p /path/to/project/dir --setDel COMMA
      */
     ValueArg<std::string> Delimiter     ("", "setDel", "Set type of csv delimiter", false, "DEFAULT", &allowedValsD, cmd);
     allowedDel.clear();
 
     // Option 2a. Converter function - SINGLE DATASET
     /**
-     * @brief Convert CSV format data into MUSE format
-     * @param converter Flag to enable data conversion
+     * @brief Convert CSV format data into MUSE format (per-variable .dat/.json files).
+     * @default false (conversion is disabled by default).
+     * @format boolean flag
      * @note When using -C/--converter, these flags are commonly used:
      *       - --pdir: Project directory (REQUIRED)
      *       - --setDel: CSV delimiter type (optional)
      *       - --inf, --sup: Value limits (optional)
      *       - -S/--setIDXYZ: Manual column mapping (optional)
-     * @example -C --pdir /project --setDel COMMA --inf 0.0 --sup 100.0
+     * @example muse_data -C -p /project --setDel COMMA --inf 0.0 --sup 100.0
      */
     SwitchArg converterFunction         ("C", "converter", "Converter data (csv format) into MUSE format", cmd, false); //booleano
     //UnlabeledValueArg<int> n_rowsHeader ("n_rows_header", "Number of header rows", false, 6, "int", cmd);
@@ -161,14 +185,20 @@ int main(int argc, char** argv)
     //ValueArg<double> scaleFactor        ("", "scale", "Set scale factor unity (only for compositional variables)", false, 1.0, "double", cmd);
     
     /**
-     * @brief Set inferior limit for variable values
-     * @param inf Inferior limit value
+     * @brief Set inferior limit for variable values. Values below this limit are flagged during conversion.
+     * @format double
+     * @default 0 (inferior limit set to 0).
+     * @note Used with -C/--converter, together with --sup.
+     * @example muse_data -C -p /project --inf 0.0 --sup 100.0
      */
     ValueArg<double> infLimit           ("", "inf", "Set inf limit", false, 0, "inf", cmd);
     
     /**
-     * @brief Set superior limit for variable values
-     * @param sup Superior limit value
+     * @brief Set superior limit for variable values. Values above this limit are flagged during conversion.
+     * @format double
+     * @default 1 (superior limit set to 1).
+     * @note Used with -C/--converter, together with --inf.
+     * @example muse_data -C -p /project --inf 0.0 --sup 100.0
      */
     ValueArg<double> supLimit           ("", "sup", "Set sup limit", false, 1, "sup", cmd);
 
@@ -177,55 +207,76 @@ int main(int argc, char** argv)
 //    ValueArg<int> FlagRow               ("r", "row", "Set row ", false, 0, "row", cmd);
 
 
+    /**
+     * @brief Set tolerance used when comparing point coordinates (e.g. to decide whether two points are duplicated).
+     * @format double
+     * @default 1.0
+     * @note Used together with --check-duplicates / --remove-duplicates.
+     * @example muse_data -C -p /project --check-duplicates --tol 0.001
+     */
     ValueArg<double> setTolerance        ("", "tol", "Set tolerance", false, 1.0, "double", cmd);
 
     // Option 3. Reading MUSE format
     /**
-     * @brief Enable reading of MUSE format files
-     * @param read Flag to enable MUSE format reading
+     * @brief Enable reading of MUSE format files and print a summary of the stored data.
+     * @default false (reading is disabled by default).
+     * @format boolean flag
      * @note When using -R/--read, these flags work together:
      *       - --pdir: Project directory (REQUIRED)
      *       - --var: Variable name (default: ALL_INPUT)
      *       - --nrealiz: Number of realizations (optional)
      *       - --hist: Enable histogram plotting (optional)
-     * @example -R --pdir /project --var temperature --hist --nbin 20
+     * @example muse_data -R -p /project --var temperature --hist --nbin 20
      */
     SwitchArg readFunction              ("R", "read", "Reading MUSE format", cmd, false); //booleano
     
     /**
-     * @brief Specify variable name to read
-     * @param var Variable name (default: ALL_INPUT)
+     * @brief Specify variable name to read. Use ALL_INPUT to process every input variable.
+     * @format string (variable name)
+     * @default "ALL_INPUT" (all input variables are read).
+     * @note Used with -R/--read.
+     * @example muse_data -R -p /project --var temperature
      */
     ValueArg<std::string> Variable      ("v", "var", "Variable", false, "ALL_INPUT", "name", cmd);
     
     /**
-     * @brief Set number of realization to process
-     * @param nrealiz Number of realization (default: 0)
+     * @brief Set number of realizations to process.
+     * @format int
+     * @default 0 (no simulated realization is read).
+     * @note Used with -R/--read.
+     * @example muse_data -R -p /project --var temperature --nrealiz 100
      */
     ValueArg<int> setNrealization       ("n", "nrealiz", "Set number of realization", false, 0, "int", cmd);
 
 
     // Option 3a. Options for histograms
     /**
-     * @brief Enable histogram computation and plotting
-     * @param hist Flag to compute histogram plots
-     * @note When using --hist, these flags work together:
+     * @brief Enable histogram computation and plotting for the read variable(s).
+     * @default false (histogram computation is disabled by default).
+     * @format boolean flag
+     * @note Used with -R/--read. When using --hist, these flags work together:
      *       - --nval: Minimum number of values for plotting (default: 20)
      *       - --nbin: Number of histogram bins (default: 1)
      *       Requires sufficient data points (>= nval threshold)
-     * @example --hist --nval 50 --nbin 25
+     * @example muse_data -R -p /project --var temperature --hist --nval 50 --nbin 25
      */
     SwitchArg getHistogram              ("", "hist", "Compute plot - hitogram", cmd, false); //booleano
     
     /**
-     * @brief Set minimum number of values for histogram plotting
-     * @param nval Minimum number of values (default: 20)
+     * @brief Set minimum number of values for histogram plotting. The histogram is drawn only if the valid samples are at least this many.
+     * @format int
+     * @default 20
+     * @note Used with --hist.
+     * @example muse_data -R -p /project --var temperature --hist --nval 50
      */
     ValueArg<int> setNMaxValues         ("", "nval", "Set min number of values, sufficient for histogram plot", false, 20, "int", cmd);
     
     /**
-     * @brief Set number of bins for histogram plot
-     * @param nbin Number of bins for histogram (default: 1)
+     * @brief Set number of bins for histogram plot. Controls histogram resolution and detail level.
+     * @format size_t
+     * @default 1 (when not set, the number of bins is chosen automatically).
+     * @note Used with --hist.
+     * @example muse_data -R -p /project --var temperature --hist --nbin 25
      */
     ValueArg<size_t> setNbins           ("", "nbin", "Set number of bins for histogram plot", false, 1, "size_t", cmd);
 
@@ -234,13 +285,30 @@ int main(int argc, char** argv)
     // ADDITIONAL FUNCTIONALITIES:
 
     /**
-     * @brief Enable CSV format for output files
-     * @param csv Flag to save files in CSV format
+     * @brief Enable CSV format for output files (in addition to the MUSE format).
+     * @default false (output is saved only in MUSE format by default).
+     * @format boolean flag
+     * @note Optional additional output format.
+     * @example muse_data -C -p /project --csv
      */
     SwitchArg csvConversion             ("", "csv", "Saving file as csv", cmd, false); //booleano
 
 
+    /**
+     * @brief Enable check of duplicated points. Reports points sharing the same coordinates (within --tol) without modifying the data.
+     * @default false (duplicate checking is disabled by default).
+     * @format boolean flag
+     * @note Used with -C/--converter. The comparison tolerance is set with --tol.
+     * @example muse_data -C -p /project --check-duplicates --tol 0.001
+     */
     SwitchArg setCheckDuplicates        ("", "check-duplicates", "Enable check of duplicated points", cmd, false); //booleano
+    /**
+     * @brief Enable removal of duplicated points. Removes points sharing the same coordinates (within --tol) from the converted dataset.
+     * @default false (duplicate removal is disabled by default).
+     * @format boolean flag
+     * @note Used with -C/--converter. The comparison tolerance is set with --tol.
+     * @example muse_data -C -p /project --remove-duplicates --tol 0.001
+     */
     SwitchArg setRemoveDuplicates       ("", "remove-duplicates", "Enable remvoval of duplicated points", cmd, false); //booleano
 
 

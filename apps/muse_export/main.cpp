@@ -104,62 +104,59 @@ int main(int argc, char **argv)
 
         // Define main functionalities options
         /**
-         * @brief Project directory
-         * @param pdir Path to project directory
-         * @note MANDATORY for all export operations
-         * The project directory must contain MUSE data files
+         * @brief Project directory. Path to the MUSE project whose computed results are exported; data are read from its out/ subfolders.
+         * @required true (mandatory for all export operations).
+         * @format string (path to the project directory)
+         * @default "Directory" (placeholder value, should be replaced with an actual project directory path).
+         * @note The project directory must contain MUSE data files.
+         * @example muse_export -p /path/to/project -v forecast -m su_liguria.obj --csv -o export.csv
          */
 
         ValueArg<std::string> projectFolder("p", "pdir", "Project directory", true, "Directory", "path", cmd);
         /**
-         * @brief Variable
-         * @param var Name of variable
-         * @note MANDATORY for all export operations
-         * The variable must exist in the project data
+         * @brief Variable. Name of the variable whose results are exported.
+         * @required true (mandatory for all export operations).
+         * @format string (variable name)
+         * @default "name_var" (placeholder value, should be replaced with an actual variable name).
+         * @note The variable must exist in the project data.
+         * @example muse_export -p /path/to/project -v forecast -m su_liguria.obj --csv -o export.csv
          */
 
         ValueArg<std::string> variable("v", "var", "Variable", true, "name_var", "string", cmd);
         /**
-         * @brief Geometry model
-         * @param geom geometry model
-         * @note Often required depending on export type
-         * The geometry model must be available in the project
+         * @brief Geometry model. Name of the geometry model (surface or volumetric mesh) on which the variable has been computed.
+         * @format string (geometry model name, e.g. mesh file name)
+         * @default "name_geometry" (placeholder value, should be replaced with an actual geometry model name).
+         * @note Often required depending on export type. The geometry model must be available in the project.
+         * @example muse_export -p /path/to/project -v forecast -m su_liguria.obj --csv -o export.csv
          */
 
         ValueArg<std::string> geomModel("m", "geom", "Geometry model", false, "name_geometry", "string", cmd);
         /**
-
-         * @brief Output directory
-
-         * @param out Path to output directory
-
+         * @brief Output file/directory. Path of the file (or directory) where the exported table is written.
+         * @format string (output path)
+         * @default "output_directory" (placeholder value, should be replaced with an actual output path).
+         * @example muse_export -p /path/to/project -v forecast -m su_liguria.obj --csv -o ../export.csv
          */
 
         ValueArg<std::string> output("o", "out", "Output directory", false, "output_directory", "path", cmd);
 
         /**
-
-
-         * @brief Type of analysis
-
-
-         * @param type type of analysis
-
-
+         * @brief Type of analysis. Selects which computed statistics are exported; use "INDICATOR" to export the results of an indicator analysis (the "_best" values), otherwise the statistical moments computed in the variogram space are exported.
+         * @format string
+         * @default "type" (placeholder value; when not INDICATOR the statistical-moments export is used).
+         * @note Used to locate the correct compute output subfolder.
+         * @example muse_export -p /path/to/project -v forecast -m mesh.obj --type INDICATOR --csv -o export.csv
          */
 
 
         ValueArg<std::string> analysis("", "type", "Type of analysis", false, "type", "string", cmd);
 
         /**
-
-
-         * @brief multiframe name
-
-
-         * @param mf multiframe name
-
-
+         * @brief Multiframe name. Name of the multiframe (time frame) whose compute results are exported; when set, results are read from out/compute/<mf>/...
+         * @format string (multiframe identifier)
+         * @default "multiframe" (placeholder value; when not set, non-multiframe results are exported).
+         * @example muse_export -p /path/to/project -v forecast -m mesh.obj --mf 120320181400 --csv -o export.csv
          */
 
 
@@ -168,12 +165,12 @@ int main(int argc, char **argv)
         std::vector<std::string> allowedVarioDir = {"OMNI", "DIR"};
         ValuesConstraint<std::string> allowedValsVD(allowedVarioDir);
         /**
-         * @brief type of variogram direction
-         * @param dir Path to type of variogram direction
-         * @note Used with variogram export operations
-         * Works together with --dim for variogram configuration
-         * Available options: OMNI, DIR
-         * @example --dir DIR --dim 3D
+         * @brief Type of variogram direction. Identifies the directional setting used during the computation, needed to locate the correct compute output folder.
+         * @format string
+         * @default "OMNI" (omnidirectional).
+         * @values OMNI, DIR
+         * @note Used with variogram export operations. Works together with --dim for variogram configuration.
+         * @example muse_export -p /path/to/project -v forecast -m mesh.obj --dir DIR --dim 3D --csv -o export.csv
          */
 
         ValueArg<std::string> varioDirection("", "dir", "type of variogram direction", false, "OMNI", &allowedValsVD, cmd);
@@ -182,57 +179,73 @@ int main(int argc, char **argv)
         std::vector<std::string> allowedVarioDim = {"3D", "3Dxy", "3Dz", "2D", "1Dz", "1D"};
         ValuesConstraint<std::string> allowedValsVDm(allowedVarioDim);
         /**
-         * @brief type of variogram dimension
-         * @param dim type of variogram dimension
-         * @note Used with variogram export operations
-         * Works together with --dir for variogram configuration
-         * Available options: 3D, 3Dxy, 3Dz, 2D, 1Dz, 1D
-         * @example --dir OMNI --dim 2D
+         * @brief Type of variogram dimension. Identifies the dimensional setting used during the computation, needed to locate the correct compute output folder.
+         * @format string
+         * @default "3D"
+         * @values 3D, 3Dxy, 3Dz, 2D, 1Dz, 1D
+         * @note Used with variogram export operations. Works together with --dir for variogram configuration.
+         * @example muse_export -p /path/to/project -v forecast -m mesh.obj --dir OMNI --dim 2D --csv -o export.csv
          */
 
         ValueArg<std::string> varioDimension("", "dim", "type of variogram dimension", false, "3D", &allowedValsVDm, cmd);
 
         // Define number of simulations option
         /**
-         * @brief Number of simulations to export
-         * @param nsim Number of number of simulations to export
-         * @note Used for exporting multiple simulation results
-         * Requires simulation data to be available in project
+         * @brief Number of simulations to export. When greater than 0, the individual simulation realizations are appended to the exported table.
+         * @format int
+         * @default 0 (no individual simulations are exported; only the statistics).
+         * @note Used for exporting multiple simulation results. Requires simulation data to be available in project.
+         * @example muse_export -p /path/to/project -v forecast -m mesh.obj -N 10 --csv -o export.csv
          */
 
         ValueArg<int> numSim("N", "nsim", "Number of simulations to export", false, 0, "int", cmd);
 
         // Define append existing table
         /**
-
-         * @brief Append existing table (csv)
-
-         * @param append_csv_table append existing table (csv)
-
+         * @brief Append existing table (csv). Path to an existing CSV table whose columns are merged into the exported CSV output.
+         * @format string (path to an existing .csv file)
+         * @default "append_table" (placeholder value; when not set nothing is appended).
+         * @note Use with the --csv output format.
+         * @example muse_export -p /path/to/project -v forecast -m mesh.obj --csv --append_csv_table base.csv -o export.csv
          */
 
         ValueArg<std::string> appendTable("", "append_csv_table", "Append existing table (csv)", false, "append_table", "path", cmd);
         /**
-
-         * @brief Separator for append table
-
-         * @param append_sep separator for append table
-
+         * @brief Separator for append table. Field separator used to read the CSV table provided with --append_csv_table.
+         * @format string (single character)
+         * @default ";" (semicolon).
+         * @note Used together with --append_csv_table.
+         * @example muse_export -p /path/to/project -v forecast -m mesh.obj --csv --append_csv_table base.csv --append_sep "," -o export.csv
          */
 
         ValueArg<std::string> appendSep("", "append_sep", "Separator for append table", false, ";", "string", cmd);
         // Define append existing gpkg table
         /**
-         * @brief Append existing table (gpkg)
-         * @param append_gpkg append existing table (gpkg)
-         * @note Requires existing geopackage file at specified path
-         * Use with --geopkg output format
+         * @brief Append existing table (gpkg). Path to an existing GeoPackage whose layer is used as a base to which the exported columns are added.
+         * @format string (path to an existing .gpkg file)
+         * @default "append_table" (placeholder value; when not set nothing is appended).
+         * @note Requires an existing GeoPackage file at the specified path. Use with the --geopkg output format.
+         * @example muse_export -p /path/to/project -v forecast -m mesh.obj --geopkg --append_gpkg base.gpkg -o export.gpkg
          */
 
         ValueArg<std::string> appendGpkg("", "append_gpkg", "Append existing table (gpkg)", false, "append_table", "path", cmd);
 
         // Define export options
+        /**
+         * @brief Export to GeoPackage. Writes the exported table as a GeoPackage (.gpkg) vector layer.
+         * @default false (GeoPackage export is disabled by default).
+         * @format boolean flag
+         * @note Output format selection (choose --geopkg or --csv). Combine with --append_gpkg to extend an existing GeoPackage.
+         * @example muse_export -p /path/to/project -v forecast -m mesh.obj --geopkg -o export.gpkg
+         */
         SwitchArg geopkg("", "geopkg", "Export to geopkg", cmd);
+        /**
+         * @brief Export to CSV. Writes the exported table as a comma/semicolon separated values (.csv) file.
+         * @default false (CSV export is disabled by default).
+         * @format boolean flag
+         * @note Output format selection (choose --geopkg or --csv). Combine with --append_csv_table to extend an existing CSV table.
+         * @example muse_export -p /path/to/project -v forecast -m mesh.obj --csv -o export.csv
+         */
         SwitchArg csv("", "csv", "Export to csv", cmd);
 
         // Parse the argv array

@@ -44,67 +44,70 @@ int main(int argc, char** argv)
 
     // Option 0.
     /**
-     * @brief Creation histogram plot
-     * @param histogram Enable creation histogram plot
+     * @brief Creation histogram plot. Draws the frequency histogram of a single numerical variable read from a .dat file.
+     * @default false (histogram plot is disabled by default).
+     * @format boolean flag
      * @note Plot type selection (mutually exclusive):
      * - -H/--histogram: Histogram plot (choose this OR others)
      * - -B/--bivariate_plot: Bivariate plot
      * - -E/--error_plot: Error plot
      * - -T/--triangular_plot: Triangular plot
      * When using histogram, configure with:
+     * - --val: File of values to plot (mandatory)
      * - --nval: Minimum number of values (default: 20)
      * - --nbin: Number of bins (default: 1)
-     * @example -H --nval 50 --nbin 25
+     * @example muse_plot -H -p /path/to/project --val temperature.dat --nval 50 --nbin 25
      */
 
     SwitchArg histogramPlot             ("H", "histogram", "Creation histogram plot", cmd, false); //booleano
     /**
-
-     * @brief Project directory
-
-     * @param pdir Path to project directory
-
+     * @brief Project directory. Path to the MUSE project on which the plots are generated; the tool reads data and metadata from its out/ subfolders and writes the figures under out/plot.
+     * @required true (this parameter is mandatory for every plot type).
+     * @format string (path to the project directory)
+     * @default "Directory" (placeholder value, should be replaced with an actual project directory path).
+     * @example muse_plot -H -p /path/to/project --val temperature.dat
      */
 
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "Directory", "path", cmd);
     /**
-
-     * @brief Set values
-
-     * @param val values
-
+     * @brief Set values. Path to the .dat file containing the values to be plotted (used by the histogram plot).
+     * @format string (path to a .dat file)
+     * @default "File path" (placeholder value, should be replaced with an actual file path).
+     * @note Used with -H/--histogram flag.
+     * @example muse_plot -H -p /path/to/project --val /path/to/project/out/data/data/temperature.dat
      */
 
     ValueArg<std::string> setValues     ("v", "val", "Set values", false, "File path", "file", cmd);
 
     /**
-
-
-     * @brief Set min number of values, sufficient for histogram plot
-
-
-     * @param nval Number of set min number of values, sufficient for histogram plot
-
-
+     * @brief Set min number of values, sufficient for histogram plot. The histogram is created only if the number of valid samples is greater than or equal to this threshold.
+     * @format int
+     * @default 20 (a histogram is drawn only with at least 20 valid samples).
+     * @note Used with -H/--histogram flag.
+     * @example muse_plot -H -p /path/to/project --val temperature.dat --nval 50
      */
 
 
     ValueArg<int> setNMaxValues         ("", "nval", "Set min number of values, sufficient for histogram plot", false, 20, "int", cmd);
     /**
-     * @brief Set number of bins for histogram plot
-     * @param nbin Number of set number of bins for histogram plot
-     * @note Used with -H/--histogram flag
-     * Controls histogram resolution and detail level
+     * @brief Set number of bins for histogram plot. Controls histogram resolution and detail level.
+     * @format size_t
+     * @default 1 (when not set, the number of bins is chosen automatically).
+     * @note Used with -H/--histogram flag.
+     * @example muse_plot -H -p /path/to/project --val temperature.dat --nbin 25
      */
 
     ValueArg<size_t> setNbins           ("", "nbin", "Set number of bins for histogram plot", false, 1, "size_t", cmd);
 
     /**
-     * @brief Name variable1
-     * @param x_variable Name of name variable1
+     * @brief Name of the first variable (X axis). Name of the variable used along the X axis of bivariate, error and triangular plots.
+     * @format string (variable name)
+     * @default "File path" (placeholder value, should be replaced with an actual variable name).
      * @note Required for:
      * - -B/--bivariate_plot: X-axis variable (must use with --y_variable)
+     * - -E/--error_plot: first input variable (must use with --y_variable)
      * - -T/--triangular_plot: First variable (must use with --y_variable and --z_variable)
+     * @example muse_plot -B -p /path/to/project --x_variable temperature --y_variable pressure
      */
 
 
@@ -112,53 +115,62 @@ int main(int argc, char** argv)
 
     // Option 1a.
     /**
-     * @brief Creation bivariate plot
-     * @param bivariate_plot Enable creation bivariate plot
-     * @note Mutually exclusive with -H/--histogram, -E/--error_plot, -T/--triangular_plot
+     * @brief Creation bivariate plot. Draws a scatter plot of two numerical variables.
+     * @default false (bivariate plot is disabled by default).
+     * @format boolean flag
+     * @note Mutually exclusive with -H/--histogram, -E/--error_plot, -T/--triangular_plot.
      * Requires both:
      * - --x_variable: X-axis variable (mandatory)
      * - --y_variable: Y-axis variable (mandatory)
-     * @example -B --x_variable temperature --y_variable pressure
+     * @example muse_plot -B -p /path/to/project --x_variable temperature --y_variable pressure
      */
 
     SwitchArg bivariatePlot             ("B", "bivariate_plot", "Creation bivariate plot", cmd, false); //booleano
     /**
-     * @brief Name variable2
-     * @param y_variable Name of name variable2
+     * @brief Name of the second variable (Y axis). Name of the variable used along the Y axis of bivariate, error and triangular plots.
+     * @format string (variable name)
+     * @default "File path" (placeholder value, should be replaced with an actual variable name).
      * @note Required for:
      * - -B/--bivariate_plot: Y-axis variable (must use with --x_variable)
+     * - -E/--error_plot: second input variable (must use with --x_variable)
      * - -T/--triangular_plot: Second variable (must use with --x_variable and --z_variable)
+     * @example muse_plot -B -p /path/to/project --x_variable temperature --y_variable pressure
      */
 
     ValueArg<std::string> Variable2     ("y", "y_variable", "Name variable2", false, "File path", "file", cmd);
 
     // Option 2.
     /**
-     * @brief Creation error plot
-     * @param error_plot Enable creation error plot
-     * @note Mutually exclusive with -H/--histogram, -B/--bivariate_plot, -T/--triangular_plot
+     * @brief Creation error plot. Draws a scatter plot with error bars; one of the two input variables must be of ERROR type, and the reference (parent) variable is retrieved automatically.
+     * @default false (error plot is disabled by default).
+     * @format boolean flag
+     * @note Mutually exclusive with -H/--histogram, -B/--bivariate_plot, -T/--triangular_plot.
+     * Requires both --x_variable and --y_variable (one of them of ERROR type).
+     * @example muse_plot -E -p /path/to/project --x_variable temperature --y_variable temperature_err
      */
 
     SwitchArg errorPlot                 ("E", "error_plot", "Creation error plot", cmd, false); //booleano
 
     // Option 3.
     /**
-     * @brief Creation triangular plot
-     * @param triangular_plot Enable creation triangular plot
-     * @note Mutually exclusive with -H/--histogram, -B/--bivariate_plot, -E/--error_plot
+     * @brief Creation triangular plot. Draws a ternary/triangular plot of three numerical variables.
+     * @default false (triangular plot is disabled by default).
+     * @format boolean flag
+     * @note Mutually exclusive with -H/--histogram, -B/--bivariate_plot, -E/--error_plot.
      * Requires all three variables:
      * - --x_variable: First variable (mandatory)
      * - --y_variable: Second variable (mandatory)
      * - --z_variable: Third variable (mandatory)
-     * @example -T --x_variable var1 --y_variable var2 --z_variable var3
+     * @example muse_plot -T -p /path/to/project --x_variable var1 --y_variable var2 --z_variable var3
      */
 
     SwitchArg triangularPlot            ("T", "triangular_plot", "Creation triangular plot", cmd, false); //booleano
     /**
-     * @brief Name variable3
-     * @param z_variable Name of name variable3
-     * @note Required for -T/--triangular_plot
-     * Must be used together with --x_variable and --y_variable
+     * @brief Name of the third variable (Z axis). Name of the variable used along the Z axis of the triangular plot.
+     * @format string (variable name)
+     * @default "File path" (placeholder value, should be replaced with an actual variable name).
+     * @note Required for -T/--triangular_plot. Must be used together with --x_variable and --y_variable.
+     * @example muse_plot -T -p /path/to/project --x_variable var1 --y_variable var2 --z_variable var3
      */
 
     ValueArg<std::string> Variable3     ("z", "z_variable", "Name variable3", false, "File path", "file", cmd);

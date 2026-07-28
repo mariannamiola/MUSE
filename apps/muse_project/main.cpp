@@ -91,7 +91,8 @@ int main(int argc, char** argv)
 
     /**
      * @brief Creation of a new project. With this flag that needs -p (--pdir) and -n (--name) options, MUSE-project create a filesystem space where organize hyerarchically all the information about input, output and metadata files.
-     * @param new_project Flag to enable new project creation (mandatory)
+     * @default false (project creation is disabled by default).
+     * @format boolean flag
      * @note When using --new_project, the following flags are typically used together:
      *       - --pdir (required): Specify project directory
      *       - --name (required): Specify project name
@@ -102,15 +103,18 @@ int main(int argc, char** argv)
     
     /**
      * @brief Specify the directory path where the project is created
-     * @param pdir Path where the project is created (mandatory)
+     * @required true (this parameter is mandatory to create a new project).
+     * @format string (path to the directory that will contain the project)
+     * @default "/path/to/project/dir" (placeholder value, should be replaced with an actual path).
      * @note Required when using --new_project flag
-     * @example -p /path/to/project/dir
+     * @example muse_project -N -p /path/to/project/dir -n 00_test
      */
     ValueArg<std::string> projectFolder ("p", "pdir", "Project directory", true, "/path/to/project/dir", "string", cmd);
     
     /**
-     * @brief Specify name of the new project
-     * @param name Project name to be created (default: <project_name>). Check the project name and, if exists, the project is not created.
+     * @brief Specify name of the new project. Check the project name and, if it exists, the project is not created (unless --overwrite or --timestamp are used).
+     * @format string (name of the project)
+     * @default "project_name" (placeholder value, should be replaced with the actual project name).
      * @note Required when using --new_project flag. The project name will be used as:
      *       - Directory name: /path/to/project/dir/project_name
      *       - JSON config file in output folder: /path/to/project/dir/project_name/out/project_name.json
@@ -124,21 +128,22 @@ int main(int argc, char** argv)
 
     /**
      * @brief Set project EPSG coordinate reference system in projected coordinates. At the moment, no geographic coordinates are permitted.
-     * @param setEPSG EPSG authority code for the project coordinate system (mandatory)
+     * @format string in the form EPSG:<code> (projected coordinate reference system)
+     * @default "unknown" (no coordinate reference system is assigned by default).
      * @note Optional parameter, used with --new_project flag
-     *       Common EPSG codes:
-     *       - EPSG:4326 (WGS84 Geographic)
+     *       Common projected EPSG codes:
      *       - EPSG:3857 (Web Mercator)
      *       - EPSG:32633 (UTM Zone 33N)
-     * @example --setEPSG EPSG:4326
+     * @example muse_project -N -p /path/to/project/dir -n 00_test --setEPSG EPSG:32633
      */
     ValueArg<std::string> setEPSG       ("", "setEPSG", "Set project EPSG code", false, "unknown", "EPSG:n", cmd);
 
 
     /**
-     * @brief Check project name and, if exists, create a new folder as "project_YYYY-MM-DD_HH-MM-SS"
-     * @param timestamp
-     * @note Optional parameter
+     * @brief Check project name and, if it exists, create a new folder as "project_YYYY-MM-DD_HH-MM-SS"
+     * @default false (timestamp renaming is disabled by default).
+     * @format boolean flag
+     * @note Optional parameter. Mutually exclusive with --overwrite.
      * @example muse_project -N -p /path/to/project/dir -n 00_test --timestamp
      */
     SwitchArg timestamp                 ("", "timestamp", "Rename the project folder with timestamp", cmd, false);
@@ -146,8 +151,9 @@ int main(int argc, char** argv)
 
     /**
      * @brief Check project name and overwrite the existing project
-     * @param overwrite
-     * @note Optional parameter
+     * @default false (existing projects are not overwritten by default).
+     * @format boolean flag
+     * @note Optional parameter. Mutually exclusive with --timestamp.
      * @example muse_project -N -p /path/to/project/dir -n 00_test --overwrite
      */
     SwitchArg overwrite                 ("", "overwrite", "Overwrite existing project", cmd, false);

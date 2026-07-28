@@ -27,7 +27,6 @@
 *                                                                               *
 *********************************************************************************/
 
-
 #include <iostream>
 #include <algorithm>
 #include <filesystem>
@@ -91,15 +90,12 @@
 
 #include "muselib/geometry/well_creation.h"
 
-
-
 //for filesystem
 #ifdef __APPLE__
     using namespace std::__fs;
 #else
     using namespace std;
 #endif
-
 
 //color: 32 green
 //color: 31
@@ -120,14 +116,14 @@ int main(int argc, char** argv)
     try {
     CmdLine cmd("MUSE - Modelling Uncertainty as a Support of Environment. MUSE-geometry application", ' ', "version 0.0");
 
-
     // ---------------------------------------------------------------------------------------------------------
     // MAIN FUNCTIONALITIES:
 
     // Option 0. New project creation
     /**
      * @brief Creation of new geometry environment in Project directory
-     * @param geometry Flag to creation of new geometry environment in Project directory
+     * @default false (geometry environment creation is disabled by default).
+     * @format boolean flag
      * @note This command initializes a new geometry environment within the specified project directory. 
      * It sets up the necessary folder structure (--pdir path/to/project/dir) to store geometrical items and models created by various geospatial input data sources and processing methods (computational geometry techniques). 
      * It is used with:
@@ -139,7 +135,8 @@ int main(int argc, char** argv)
 
     /**
      * @brief Project directory
-     * @param pdir Path where the project is created
+     * @format string (path to the project directory)
+     * @default "/path/to/project/dir" (placeholder value, should be replaced with an actual path).
      * @note Used with -N/--geometry for geometry environment creation (and in other cases in which the project locations must be specified). 
      * Required to specify the project directory where the geometry environment will be created. 
      * The command initializes the necessary folder structure within the project directory to store geometrical items and models created by various geospatial input data sources and processing methods (computational geometry techniques).
@@ -150,24 +147,19 @@ int main(int argc, char** argv)
     // Option 0a. Project creation - optional: setting project EPSG
     /**
      * @brief Set project EPSG
-     * @param setEPSG project epsg
+     * @format string in the form EPSG:<code>
+     * @default "Unknown" (no coordinate reference system is assigned by default).
+     * @note Optional parameter, used with -N/--geometry.
+     * @example muse_geometry -N -p /path/to/project --setEPSG EPSG:32633
      */
     ValueArg<std::string> setEPSG        ("", "setEPSG", "Set project EPSG", false, "Unknown", "authority", cmd);
-
-    /**
-     * @brief Copy input file(s) in the data project directory (path/project/in/geometry) to replace manual data copy
-     * @param input File path of the input(s) to copy in the data folder project
-     * @note To be used with -N swith flag, when create a new geometry environment in the project
-     * @example --input user/path1/box.gpkg
-     */
-    MultiArg<std::string> setInput ("i", "input", "Copy input files in the project directory (in/geometry/)", false, "string", cmd );
-
 
     // Option 1. Reading vector file (+ flag for triangulation)
     // Include: shape (.shp), geopackage (.gpkg)
     /**
      * @brief Load Vector file
-     * @param vector Enable load vector file
+     * @default false (vector loading is disabled by default).
+     * @format boolean flag
      * @note Mutually exclusive with -R/--raster and -P/--pcl
      * Used with -N/--geometry for geometry creation
      * Supports: .shp, .gpkg formats
@@ -179,22 +171,26 @@ int main(int argc, char** argv)
     
     /**
      * @brief Saving data content of geospatial files
-     * @param save Enable saving data content of geospatial files
+     * @default false (data content is not saved by default).
+     * @format boolean flag
+     * @note Optional modifier for -V/--vector.
      */
     SwitchArg setSave                   ("", "save", "Saving data content of geospatial files", cmd, false); //booleano
     
     /**
      * @brief Save attribute table from geospatial file
-     * @param attribute Enable save attribute table from geospatial file
+     * @default false (attribute table is not saved by default).
+     * @format boolean flag
+     * @note Optional modifier for -V/--vector.
      */
     SwitchArg setSaveAttributesTable    ("", "attribute", "Save attribute table from geospatial file", cmd, false); //booleano
-
 
     // Option 2. Reading raster file (+ flag for triangulation)
     // Include: ASCIIGRID (.ASCII)
     /**
      * @brief Load Raster file
-     * @param raster Enable load raster file
+     * @default false (raster loading is disabled by default).
+     * @format boolean flag
      * @note Mutually exclusive with -V/--vector and -P/--pcl
      * Used with -N/--geometry for geometry creation
      * Supports: .ASCII format
@@ -206,7 +202,8 @@ int main(int argc, char** argv)
     // Include: yxz, dat, txt
     /**
      * @brief Load point cloud
-     * @param pcl Enable load point cloud
+     * @default false (point cloud loading is disabled by default).
+     * @format boolean flag
      * @note Mutually exclusive with -V/--vector and -R/--raster
      * Used with -N/--geometry for geometry creation
      * Supports: .xyz, .dat, .txt formats
@@ -220,7 +217,9 @@ int main(int argc, char** argv)
 
      * @brief Load filename as POINTS geometry type
 
-     * @param points Path to load filename as points geometry type
+     * @format string (path to a file loaded as POINTS geometry)
+     * @default empty (no points file is loaded).
+     * @note Used with -P/--pcl.
 
      */
 
@@ -229,7 +228,9 @@ int main(int argc, char** argv)
 
      * @brief Load filename as POLYGON geometry type
 
-     * @param polygon Path to load filename as polygon geometry type
+     * @format string (path to a file loaded as POLYGON geometry)
+     * @default empty (no polygon file is loaded).
+     * @note Used with -P/--pcl.
 
      */
 
@@ -237,15 +238,24 @@ int main(int argc, char** argv)
 
     /**
      * @brief Grid data - test
-     * @param gridata Enable grid data - test
+     * @default false (grid data test is disabled by default).
+     * @format boolean flag
      */
     SwitchArg gridData                  ("G", "gridata", "Grid data - test", cmd, false); //booleano
+    /**
+     * @brief Set bounding box points. Coordinates of the points defining the bounding box used by the grid-data test. Repeat the flag to pass several points.
+     * @format string (point coordinates, e.g. "x,y,z"); repeatable
+     * @default empty (no bounding box points are set).
+     * @note Used with -G/--gridata.
+     * @example muse_geometry -G --bbp 0,0,0 --bbp 10,10,0
+     */
     MultiArg<std::string> setBBPoints   ("", "bbp", "Set bounding box points", false, "string", cmd );
-
 
     /**
      * @brief Set rotation axis
-     * @param rotaxis rotation axis
+     * @format string
+     * @default "NO" (no rotation is applied).
+     * @values X, Y, Z, NO
      * @note When using rotation, these flags work together:
      * - --rotaxis: Rotation axis (X, Y, Z)
      * - --rotangle: Rotation angle (required if rotaxis != NO)
@@ -253,12 +263,11 @@ int main(int argc, char** argv)
      * @example For Z-axis rotation: --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0
      */
 
-
-
     ValueArg<std::string> setRotAxis    ("", "rotaxis", "Set rotation axis", false, "NO", "rot_axis", cmd);
     /**
      * @brief Set clockwise rotation angle (in degree)
-     * @param rotangle clockwise rotation angle (in degree)
+     * @format double (degrees)
+     * @default 0.0
      * @note Used together with --rotaxis flag. Required when rotaxis != NO
      */
 
@@ -267,7 +276,8 @@ int main(int argc, char** argv)
 
      * @brief Set coordinte X of rotation center
 
-     * @param rotcx coordinte x of rotation center
+     * @format double
+     * @default 0.0
 
      */
 
@@ -276,7 +286,8 @@ int main(int argc, char** argv)
 
      * @brief Set coordinte Y of rotation center
 
-     * @param rotcy coordinte y of rotation center
+     * @format double
+     * @default 0.0
 
      */
 
@@ -285,16 +296,17 @@ int main(int argc, char** argv)
 
      * @brief Set coordinte Z of rotation center
 
-     * @param rotcz coordinte z of rotation center
+     * @format double
+     * @default 0.0
 
      */
 
     ValueArg<double> setRotCenterZ      ("", "rotcz", "Set coordinte Z of rotation center", false, 0.0, "double", cmd);
 
-
     /**
      * @brief Set triangulation for 2D meshing
-     * @param tri Enable set triangulation for 2d meshing
+     * @default false (triangulation is disabled by default).
+     * @format boolean flag
      * @note Mutually exclusive with --grid meshing method
      * Used with -N/--geometry for mesh creation
      * Triangulation configuration (choose one):
@@ -306,19 +318,19 @@ int main(int argc, char** argv)
      * @example --tri --convex OR --tri --concave --boundary /path/to/boundary.shp
      */
 
-
-
     SwitchArg triFlag                   ("", "tri", "Set triangulation for 2D meshing", cmd, false); //booleano
     /**
      * @brief Set convex hull for points triangulation
-     * @param convex Enable set convex hull for points triangulation
+     * @default false (convex hull triangulation is disabled by default).
+     * @format boolean flag
      * @note Used with --tri flag. Mutually exclusive with --concave
      */
 
     SwitchArg convexFlag                ("", "convex", "Set convex hull for points triangulation", cmd, false); //booleano
     /**
      * @brief Set concave hull for points triangulation
-     * @param concave Enable set concave hull for points triangulation
+     * @default false (concave hull triangulation is disabled by default).
+     * @format boolean flag
      * @note Used with --tri flag. Mutually exclusive with --convex
      */
 
@@ -327,7 +339,9 @@ int main(int argc, char** argv)
 
      * @brief Set external boundary for points triangulation
 
-     * @param boundary external boundary for points triangulation
+     * @format string (path to a boundary file)
+     * @default empty (no external boundary is used).
+     * @note Optional. Used with --tri.
 
      */
 
@@ -335,7 +349,8 @@ int main(int argc, char** argv)
     
     /**
      * @brief Set optimization flags to optimize triangulation (e.g., "pq20" for preserve+quality 20) or tetrahedralization (e.g., "pq20" for preserve+quality 20 in TetGen)
-     * @param opt optimization flags to optimize triangulation or tetrahedralization
+     * @format string (Triangle/TetGen optimization flags, e.g. "pq20")
+     * @default empty (no optimization flags are passed).
      * @note Used with --tri flag for triangulation optimization and with --tet flag for tetrahedralization optimization. 
      * Refer to Triangle and TetGen documentation for available flags and options.
      * @example For Triangle: --tri --opt "pq20" OR For TetGen: --tet --opt "pq20"
@@ -345,7 +360,8 @@ int main(int argc, char** argv)
     // Option 4. Set grid
     /**
      * @brief Set grid for 2D meshing
-     * @param grid Enable set grid for 2d meshing
+     * @default false (grid meshing is disabled by default).
+     * @format boolean flag
      * @note Mutually exclusive with --tri triangulation method
      * Used with -N/--geometry for mesh creation
      * Grid configuration requires:
@@ -359,7 +375,8 @@ int main(int argc, char** argv)
     SwitchArg gridFlag                  ("", "grid", "Set grid for 2D meshing", cmd, false); //booleano
     /**
      * @brief Set x resolution
-     * @param resx x resolution
+     * @format double
+     * @default 1.0
      * @note Used with --grid flag. Required for grid meshing
      * Must be used together with --resy
      */
@@ -367,7 +384,8 @@ int main(int argc, char** argv)
     ValueArg<double> setResx            ("", "resx", "Set x resolution", false, 1.0, "double", cmd);
     /**
      * @brief Set y resolution
-     * @param resy y resolution
+     * @format double
+     * @default 1.0
      * @note Used with --grid flag. Required for grid meshing
      * Must be used together with --resx
      */
@@ -377,7 +395,9 @@ int main(int argc, char** argv)
 
      * @brief Set z resolution
 
-     * @param resz z resolution
+     * @format double
+     * @default 1.0
+     * @note Optional. Used with --grid for 3D grids.
 
      */
 
@@ -385,30 +405,25 @@ int main(int argc, char** argv)
 
     /**
 
-
      * @brief Set generic polygon mesh for 2D meshing
 
-
-     * @param poly Enable set generic polygon mesh for 2d meshing
-
+     * @default false (generic polygon meshing is disabled by default).
+     * @format boolean flag
 
      */
-
 
     SwitchArg polygonFlag               ("", "poly", "Set generic polygon mesh for 2D meshing", cmd, false); //booleano
     //ValueArg<std::string> setFeatures   ("", "features", "Set features", false, "DEFAULT", "string" , cmd);
 
     /**
 
-
      * @brief Set (random) subset of points
 
-
-     * @param subset (random) subset of points
-
+     * @format int (number of points in the random subset)
+     * @default 10
+     * @note Optional. Extracts a random subset of the input points.
 
      */
-
 
     ValueArg<int> subSet                ("", "subset", "Set (random) subset of points", false, 10,"int", cmd); //booleano
 
@@ -420,7 +435,9 @@ int main(int argc, char** argv)
 
      * @brief Set method for z values
 
-     * @param meth method for z values
+     * @format string
+     * @default "CONSTANT"
+     * @values MEAN, CONSTANT, NEAR, KRIGING
 
      */
 
@@ -429,120 +446,143 @@ int main(int argc, char** argv)
 
      * @brief Set const z values for new points
 
-     * @param setz const z values for new points
+     * @format double
+     * @default 0.0
+     * @note Used with --meth CONSTANT.
 
      */
 
     ValueArg<double> setNewZ            ("", "setz", "Set const z values for new points", false, 0.0, "double", cmd);
-
 
     // Option 6. Apply offset on mesh (only extrusion in z direction is enabled)
     /**
 
      * @brief Load polygon mesh and apply offset
 
-     * @param offset Enable load polygon mesh and apply offset
+     * @default false (offset is disabled by default).
+     * @format boolean flag
 
      */
 
     SwitchArg setOffset                 ("O", "offset", "Load polygon mesh and apply offset", cmd, false); //booleano
     /**
      * @brief Set DELTA offset
-     * @param delta Enable set delta offset
+     * @default false (delta offset is disabled by default).
+     * @format boolean flag
+     * @note Used with -O/--offset. Mutually exclusive with --abs.
      */
 
     SwitchArg deltazExtrusion           ("", "delta", "Set DELTA offset", cmd, false); //booleano
     /**
      * @brief Set ABSOLUTE ELEVATION offset
-     * @param abs Enable set absolute elevation offset
+     * @default false (absolute-elevation offset is disabled by default).
+     * @format boolean flag
+     * @note Used with -O/--offset. Mutually exclusive with --delta.
      */
 
     SwitchArg abszExtrusion             ("", "abs", "Set ABSOLUTE ELEVATION offset", cmd, false); //booleano
     /**
      * @brief Set offset in Z direction
-     * @param zoffset offset in z direction
+     * @format double
+     * @default 0.0
+     * @note Used with -O/--offset.
      */
 
     ValueArg<double> zOffset            ("z", "zoffset", "Set offset in Z direction", false, 0.0, "double" , cmd);
 
-
     /**
      * @brief Append meshes
-     * @param append Enable append meshes
+     * @default false (mesh appending is disabled by default).
+     * @format boolean flag
      */
     SwitchArg appendMeshes              ("A", "append", "Append meshes", cmd, false); //booleano
-
 
     // Option 4. Creating triobject: lateral closure of meshes
     /**
 
      * @brief Load trimeshes and create an object closed by surface meshes
 
-     * @param triobj Flag to load trimeshes and create an object closed by surface meshes
+     * @default false (tri-object creation is disabled by default).
+     * @format boolean flag
 
      */
 
     SwitchArg createTriObject           ("T", "triobj", "Load trimeshes and create an object closed by surface meshes", cmd, false); //booleano
+    /**
+     * @brief Set (multi) mesh files. One or more mesh files used as input for the object-creation operations (e.g. -T/--triobj, -Q/--quadobj). Repeat the flag to pass several meshes.
+     * @format string (path to a mesh file); repeatable
+     * @default empty (no mesh file is passed).
+     * @note Used with the object-creation operations.
+     * @example muse_geometry -T -p /path/to/project -m top.off -m bottom.off
+     */
     MultiArg<std::string> meshFiles     ("m", "mesh", "Set (multi) mesh files", false, "string", cmd );
 
     /**
 
-
      * @brief Load quadmeshes and create an object closed by surface meshes
 
-
-     * @param quadobj Flag to load quadmeshes and create an object closed by surface meshes
-
+     * @default false (quad-object creation is disabled by default).
+     * @format boolean flag
 
      */
-
 
     SwitchArg createQuadObject          ("Q", "quadobj", "Load quadmeshes and create an object closed by surface meshes", cmd, false); //booleano
     /**
 
      * @brief Clean quadrilateral mesh from isolated polys
 
-     * @param clean Enable clean quadrilateral mesh from isolated polys
+     * @default false (cleaning is disabled by default).
+     * @format boolean flag
+     * @note Used with -Q/--quadobj.
 
      */
 
     SwitchArg cleanPoly                 ("", "clean", "Clean quadrilateral mesh from isolated polys", cmd, false); //booleano
 
-
     // Option 7. Creating volumetric object
     /**
      * @brief Load polygonal mesh and create polyedral mesh
-     * @param volmesh Flag to load polygonal mesh and create polyedral mesh
+     * @default false (volumetric object creation is disabled by default).
+     * @format boolean flag
      */
     SwitchArg createVolObject           ("M", "volmesh", "Load polygonal mesh and create polyedral mesh", cmd, false); //booleano
 
     /**
      * @brief Set tetrahedralization
-     * @param tet Enable set tetrahedralization
+     * @default false (tetrahedralization is disabled by default).
+     * @format boolean flag
+     * @note Used with -M/--volmesh.
      */
     SwitchArg tetFlag                   ("", "tet", "Set tetrahedralization (using TetGen C++ library)", cmd, false); //booleano
 
     /**
      * @brief Set voxel as polyedralmesh
-     * @param vox Enable set voxel as polyedralmesh
+     * @default false (voxel meshing is disabled by default).
+     * @format boolean flag
+     * @note Used with -M/--volmesh.
      */
     SwitchArg voxFlag                   ("", "vox", "Set voxel as polyedralmesh", cmd, false); //booleano
     
     /**
      * @brief Set hexmesh as polyedral
-     * @param hex Enable set hexmesh as polyedral
+     * @default false (hexmesh meshing is disabled by default).
+     * @format boolean flag
+     * @note Used with -M/--volmesh.
      */
     SwitchArg hexFlag                   ("", "hex", "Set hexmesh as polyedral", cmd, false); //booleano
 
     /**
      * @brief Set n max voxel per side
-     * @param nmaxvox Number of set n max voxel per side
+     * @format int
+     * @default 1
+     * @note Used with --vox.
      */
     ValueArg<int> setMaxVoxelperSide    ("", "nmaxvox", "Set n max voxel per side", false, 1, "int", cmd);
 
     /**
      * @brief Load (closed) polygonal mesh and create a tetrahedral mesh constrained to specific well(s)
-     * @param vmwells Flag to load (closed) polygonal mesh and create a tetrahedral mesh constrained to specific well(s)
+     * @default false (well-constrained volume creation is disabled by default).
+     * @format boolean flag
      * @note When using this option, these flags work together:
      * - -W/--vmwells: Load (closed) polygonal mesh and create a tetrahedral mesh constrained to specific well(s)
      * - --well: Specify well(s) file(s) (can be used multiple times for multiple wells)
@@ -551,67 +591,128 @@ int main(int argc, char** argv)
     SwitchArg createVolObjectwithWells ("W", "vmwells", "Load (closed) polygonal mesh and create a tetrahedral mesh constrained to well(s)", cmd, false); //booleano
 
     // Well creation configuration
+    /**
+     * @brief Generate a box mesh with the given dimensions (width,height,depth) to be used as input geometry for the well-constrained volume creation.
+     * @format string in the form "width,height,depth" (e.g. "10,5,8")
+     * @default empty (no box is generated).
+     * @note Used with -W/--vmwells as an alternative to loading an input mesh.
+     * @example muse_geometry -W --generate-box "10,5,8" -o box.off
+     */
     ValueArg<std::string> generate_box_arg("", "generate-box", "Generate box with dimensions: width,height,depth (e.g., \"10,5,8\")", false, "", "string", cmd);
 
+    /**
+     * @brief Output triangle mesh file. Path of the .off file where the generated/remeshed triangle mesh is written.
+     * @format string (path to an .off file)
+     * @default empty (a default output name is used).
+     * @note Used with -W/--vmwells / --generate-box.
+     * @example muse_geometry -W --generate-box "10,5,8" -o box.off
+     */
     ValueArg<std::string> output_mesh_arg("o", "output", "Output triangle mesh file (.off format)", false, "", "string", cmd);
 
+    /**
+     * @brief Well specification. Defines one or more wells (cylindrical, box or polygonal) to constrain the tetrahedral mesh. Repeat the flag to add several wells. Each value encodes the well shape and geometry; see @format for the accepted encodings.
+     * @format string encoding SHAPE:MODE:params — SHAPE in {CYL, BOX, POLY}; MODE in {XYZH, XYZB, XYH, XYB, XY} (H = numeric signed height, B = extrude to bottom surface, no H/B = only embed the top cap ring on the surface); rel_z_sub values are relative to the top z. Repeatable.
+     * @default empty (no well is created).
+     * @note Used with -W/--vmwells.
+     * @example muse_geometry -W --vmwells --well CYL:XYH:100,200,50,5 --well BOX:XYB:100,200,10,10
+     */
     MultiArg<std::string> wells_arg("w", "well", "Well specification: CYL:XYZH:x,y,z,height,radius[,rel_z_sub,...] | CYL:XYZB:x,y,z,radius | CYL:XYH:x,y,height,radius[,rel_z_sub,...] | CYL:XYB:x,y,radius | CYL:XY:x,y,radius | BOX:XYZH:x,y,z,height,diag_x,diag_y[,rel_z_sub,...] | BOX:XYZB:x,y,z,diag_x,diag_y | BOX:XYH:x,y,height,diag_x,diag_y[,rel_z_sub,...] | BOX:XYB:x,y,diag_x,diag_y | BOX:XY:x,y,diag_x,diag_y | POLY:XYZH:z,height,num_vertices,x1,y1,...,xn,yn[,rel_z_sub,...] | POLY:XYZB:z,num_vertices,x1,y1,...,xn,yn | POLY:XYH:height,num_vertices,x1,y1,...,xn,yn[,rel_z_sub,...] | POLY:XYB:num_vertices,x1,y1,...,xn,yn | POLY:XY:num_vertices,x1,y1,...,xn,yn (H = numeric signed height, B = extrude to bottom surface, formats without H/B only embed the top cap ring on the surface; rel_z_sub values are relative to the top z)", false, "string", cmd);
 
+    /**
+     * @brief Target edge length for remeshing. Desired edge length used when remeshing the input/generated surface before tetrahedralization.
+     * @format double (length; -1 = automatic)
+     * @default -1.0 (auto: derived from the input mesh).
+     * @note Used with -W/--vmwells.
+     * @example muse_geometry -W --vmwells --edge-length 2.0
+     */
     ValueArg<double> edge_length_arg("e", "edge-length", "Target edge length for remeshing (default: auto from input mesh)", false, -1.0, "double", cmd);
 
+    /**
+     * @brief Refine cylinder mesh by halving the target edge length, producing a finer discretization of the cylindrical wells.
+     * @default false (cylinder refinement is disabled by default).
+     * @format boolean flag
+     * @note Used with -W/--vmwells.
+     */
     SwitchArg refine_cylinders_arg("", "refine-cylinders", "Refine cylinder mesh by halving the target edge length", cmd, false);
 
+    /**
+     * @brief Scale factor for cylinder edge length. Multiplies the target edge length used for cylindrical wells (e.g. 0.5 for finer, 2.0 for coarser).
+     * @format double (scale factor)
+     * @default 1.0 (same edge length as the rest of the mesh).
+     * @note Used with -W/--vmwells.
+     * @example muse_geometry -W --vmwells --cylinder-edge-scale 0.5
+     */
     ValueArg<double> cylinder_edge_scale_arg("", "cylinder-edge-scale", "Scale factor for cylinder edge length (e.g., 0.5 for finer, 2.0 for coarser)", false, 1.0, "double", cmd);
 
+    /**
+     * @brief Enable verbose output, printing additional diagnostic information during the well/tetrahedralization process.
+     * @default false (verbose output is disabled by default).
+     * @format boolean flag
+     */
     SwitchArg verbose_arg("v", "verbose", "Enable verbose output", cmd, false);
 
+    /**
+     * @brief Maximum tetrahedron volume for TetGen. Upper bound on the volume of the generated tetrahedra (quality/size constraint).
+     * @format double (volume; -1 = automatic)
+     * @default -1.0 (auto: chosen by TetGen).
+     * @note Used with -W/--vmwells / --tet.
+     * @example muse_geometry -W --vmwells --max-tet-volume 100.0
+     */
     ValueArg<double> max_tet_volume_arg("", "max-tet-volume", "Maximum tetrahedron volume for TetGen (default: auto)", false, -1.0, "double", cmd);
 
+    /**
+     * @brief Save tetrahedral mesh without wells. Removes the tetrahedra inside the wells and writes the result with suffix _no_wells.mesh.
+     * @default false (this variant is not saved by default).
+     * @format boolean flag
+     * @note Used with -W/--vmwells.
+     */
     SwitchArg save_no_wells_arg("", "save-no-wells", "Save tetrahedral mesh without wells (removes tets inside wells, suffix: _no_wells.mesh)", cmd, false);
 
+    /**
+     * @brief Save tetrahedral mesh with only wells. Removes the tetrahedra outside the wells (label -1) and writes the result with suffix _only_wells.mesh.
+     * @default false (this variant is not saved by default).
+     * @format boolean flag
+     * @note Used with -W/--vmwells.
+     */
     SwitchArg save_only_wells_arg("", "save-only-wells", "Save tetrahedral mesh with only wells (removes tets outside wells, label -1, suffix: _only_wells.mesh)", cmd, false);
-
-
 
     // Option 8. Loading surface mesh
     /**
      * @brief Load trimesh file
-     * @param trimesh Enable load trimesh file
+     * @default false (trimesh loading is disabled by default).
+     * @format boolean flag
      */
     SwitchArg loadSurface               ("L", "trimesh", "Load trimesh file", cmd, false); //booleano
 
     /**
      * @brief Set polys split method
-     * @param splmet polys split method
+     * @format string (split method name)
+     * @default "CENTROID"
+     * @note Used with -L/--trimesh.
      */
     ValueArg<std::string> splitMethod   ("", "splmet", "Set polys split method", false, "CENTROID", "string", cmd);
     
     /**
      * @brief Set remeshing
-     * @param remesh Enable set remeshing
+     * @default false (remeshing is disabled by default).
+     * @format boolean flag
      */
     SwitchArg setRemeshing              ("", "remesh", "Set remeshing", cmd, false); //booleano
     
     /**
      * @brief Set marked boundary edges for remeshing
-     * @param mark Enable set marked boundary edges for remeshing
+     * @default false (edge marking is disabled by default).
+     * @format boolean flag
+     * @note Used with --remesh.
      */
     SwitchArg setMarkedEdge             ("", "mark", "Set marked boundary edges for remeshing", cmd, false); //booleano
     
     /**
 
-     * @brief Set collapse on edge to simplify mesh boundary
-
-     * @param collapse Enable set collapse on edge to simplify mesh boundary
-
-     */
-
-    SwitchArg setEdgeCollpase           ("", "collapse", "Set collapse on edge to simplify mesh boundary", cmd, false);
-    /**
-
      * @brief Set extract boundary points
 
-     * @param extractbp Enable set extract boundary points
+     * @default false (boundary-point extraction is disabled by default).
+     * @format boolean flag
 
      */
 
@@ -620,7 +721,9 @@ int main(int argc, char** argv)
 
      * @brief Set number of iterations
 
-     * @param it Number of set number of iterations
+     * @format int
+     * @default 1
+     * @note Number of iterations used by the iterative operations (e.g. remeshing).
 
      */
 
@@ -628,13 +731,15 @@ int main(int argc, char** argv)
 
     /**
      * @brief Set scale mesh
-     * @param scale Enable set scale mesh
+     * @default false (mesh scaling is disabled by default).
+     * @format boolean flag
      */
     SwitchArg setScaleMesh              ("", "scale", "Set scale mesh", cmd, false);
 
     /**
      * @brief Set translate mesh of the quantity specified by the string (e.g., "10,20,5"). This can be used to translate the loaded surface mesh by the specified amounts in the x, y, and z directions. For example, if the string is "10,20,5", the mesh will be translated by 10 units in the x direction, 20 units in the y direction, and 5 units in the z direction.
-     * @param translate Enable set translate mesh of the quantity specified by the string
+     * @format string in the form "x,y,z" (translation along each axis)
+     * @default "0,0,0" (no translation).
      * @note The string must be in the format "x,y,z" where x, y, and z are the translation values in each direction. The command is able for loading surface switch.
      * @example -L -p /path/to/project -m /path/to/mesh.off --translate 10,20,5
      */
@@ -642,13 +747,17 @@ int main(int argc, char** argv)
 
     /**
      * @brief Set scale factor in X direction
-     * @param sx scale factor in x direction
+     * @format double
+     * @default 1.0
+     * @note Used with --scale.
      */
     ValueArg<double> setScaleFactorX    ("", "sx", "Set scale factor in X direction", false, 1.0, "double" , cmd);
 
     /**
      * @brief Set scale factor in Y direction
-     * @param sy scale factor in y direction
+     * @format double
+     * @default 1.0
+     * @note Used with --scale.
      */
     ValueArg<double> setScaleFactorY    ("", "sy", "Set scale factor in Y direction", false, 1.0, "double" , cmd);
 
@@ -656,7 +765,9 @@ int main(int argc, char** argv)
 
      * @brief Set scale factor in Z direction
 
-     * @param sz scale factor in z direction
+     * @format double
+     * @default 1.0
+     * @note Used with --scale.
 
      */
 
@@ -667,7 +778,8 @@ int main(int argc, char** argv)
 
      * @brief Load tetmesh file
 
-     * @param tetmesh Enable load tetmesh file
+     * @default false (tetmesh loading is disabled by default).
+     * @format boolean flag
 
      */
 
@@ -676,43 +788,45 @@ int main(int argc, char** argv)
 
      * @brief Extract surface from volume
 
-     * @param surf Enable extract surface from volume
+     * @default false (surface extraction is disabled by default).
+     * @format boolean flag
+     * @note Used with -Z/--tetmesh.
 
      */
 
     SwitchArg extractSurface            ("", "surf", "Extract surface from volume", cmd, false); //booleano
 
-
     // Format conversion for saving meshes
     /**
      * @brief Saving surface mesh in obj format
-     * @param obj Enable saving mesh in obj format
+     * @default false (OBJ output is disabled by default; default is .off).
+     * @format boolean flag
      * @example muse_geometry -L -p .. --obj
      */
     SwitchArg objConversion             ("", "obj", "Saving surface mesh in obj format (default: .off)", cmd, false); //booleano
     
     /**
      * @brief Saving volume mesh in vtk format
-     * @param vtk Enable saving mesh in vtk format
+     * @default false (VTK output is disabled by default; default is .mesh).
+     * @format boolean flag
      * @example muse_geometry -M -p .. --vtk
      */
     SwitchArg vtkConversion             ("", "vtk", "Saving volume mesh in vtk format (default: .mesh)", cmd, false); //booleano
 
-
     // Format conversion for saving text file (default: .dat)
     /**
-     * @brief
-     * 
+     * @brief Saving text file in xyz format (instead of the default .dat).
+     * @default false (xyz output is disabled by default).
+     * @format boolean flag
      */
     SwitchArg xyzFormat                 ("", "xyz", "Saving text file in xyz format", cmd, false); //booleano
 
     /**
-     * @brief
-     * 
+     * @brief Saving text file in csv format (instead of the default .dat).
+     * @default false (csv output is disabled by default).
+     * @format boolean flag
      */
     SwitchArg csvFormat                 ("", "csv", "Saving text file in csv format", cmd, false); //booleano
-
-
 
     // ---------------------------------------------------------------------------------------------------------
     // ADDITIONAL FUNCTIONALITIES:
@@ -722,7 +836,8 @@ int main(int argc, char** argv)
 
      * @brief Merge two trimesh
 
-     * @param merge Enable merge two trimesh
+     * @default false (mesh merging is disabled by default).
+     * @format boolean flag
 
      */
 
@@ -731,7 +846,9 @@ int main(int argc, char** argv)
 
      * @brief Set proximaty threshold
 
-     * @param proxthresh proximaty threshold
+     * @format int
+     * @default 0
+     * @note Used with -U/--merge.
 
      */
 
@@ -739,50 +856,52 @@ int main(int argc, char** argv)
 
     /**
 
-
      * @brief Split two trimesh
 
-
-     * @param split Enable split two trimesh
-
+     * @default false (mesh splitting is disabled by default).
+     * @format boolean flag
 
      */
 
-
     SwitchArg extractMeshes             ("S", "split", "Split two trimesh", cmd, false); //booleano
-
 
     /**
      * @brief Create scalar field from centroids configuration and real samples
-     * @param cscalar Flag to create scalar field from centroids configuration and real samples
+     * @default false (scalar field creation is disabled by default).
+     * @format boolean flag
      */
     SwitchArg createScalarField             ("F", "cscalar", "Create scalar field from centroids configuration and real samples", cmd, false); //booleano
     
     /**
      * @brief Set samples mesh associated to (real) values
-     * @param smesh samples mesh associated to (real) values
+     * @format string (path to the samples mesh)
+     * @default empty (no samples mesh is set).
+     * @note Used with -F/--cscalar.
      */
     ValueArg<std::string> setSamplesMesh    ("","smesh","Set samples mesh associated to (real) values", false, "", "string", cmd);
     
     /**
      * @brief Set samples values associated to each vertex of samples mesh
-     * @param sval samples values associated to each vertex of samples mesh
+     * @format string (path to the samples values)
+     * @default empty (no samples values are set).
+     * @note Used with -F/--cscalar.
      */
     ValueArg<std::string> setSamplesValues  ("","sval","Set samples values associated to each vertex of samples mesh", false, "", "string", cmd);
 
     /**
      * @brief Restore scalar field from centroids configuration and real samples
-     * @param rscalar Enable restore scalar field from centroids configuration and real samples
+     * @default false (scalar field restore is disabled by default).
+     * @format boolean flag
      */
     SwitchArg restoreScalarField            ("", "rscalar", "Restore scalar field from centroids configuration and real samples", cmd, false); //booleano
-
 
     // Option 9. Multi-resolution approach (associate a scalar field to meshes with different resolutions)
     /**
 
      * @brief Set multiresolution
 
-     * @param res Enable set multiresolution
+     * @default false (multiresolution is disabled by default).
+     * @format boolean flag
 
      */
 
@@ -791,7 +910,9 @@ int main(int argc, char** argv)
 
      * @brief Set scalar field file
 
-     * @param file Path to set scalar field file
+     * @format string (path to the scalar field file)
+     * @default "Directory" (placeholder value, should be replaced with an actual path).
+     * @note Used with -D/--res.
 
      */
 
@@ -800,7 +921,9 @@ int main(int argc, char** argv)
 
      * @brief Geometry model
 
-     * @param refmod geometry model
+     * @format string (geometry model name)
+     * @default "name_geometry" (placeholder value, should be replaced with an actual geometry model name).
+     * @note Used with -D/--res.
 
      */
 
@@ -808,20 +931,29 @@ int main(int argc, char** argv)
 
     /**
      * @brief Set folder to save outputs
-     * @param outf Path to set folder to save outputs
+     * @format string (path to the output folder)
+     * @default "Directory" (placeholder value, should be replaced with an actual output folder).
      */
     ValueArg<std::string> setOutFolder      ("", "outf", "Set folder to save outputs", false, "Directory", "string", cmd);
 
+    /**
+     * @brief Set precision. Number of decimal digits used when writing numerical outputs.
+     * @format int (number of decimal digits)
+     * @default 6
+     */
     ValueArg<int> setPrecision              ("", "prec", "Set precision", false, 6, "int" , cmd);
+    /**
+     * @brief Set tolerance. Numerical tolerance used in geometric comparisons (e.g. point/vertex matching).
+     * @format double
+     * @default 1e-02
+     */
     ValueArg<double> setTolerance           ("", "tol", "Set tolerance", false, 1e-02, "double" , cmd);
-
 
     // ---------------------------------------------------------------------------------------------------------
     // PARSING:
 
     // Parse the argv array.
     cmd.parse(argc, argv);
-
 
     // ---------------------------------------------------------------------------------------------------------
     // SETTINGS:
@@ -871,13 +1003,11 @@ int main(int argc, char** argv)
     std::cout << FCYN("###### ###### ###### ######") << std::endl;
     std::cout << std::endl;
 
-
     // 0) Set folder (in/out)
     std::string in_geometry = Project.folder + "/in/"+ app_name;
     std::string out_geometry = Project.folder + "/out/" + app_name;
     std::string out_surf = out_geometry +"/surf";
     std::string out_volume = out_geometry +"/volume";
-
 
     // 0) Define file extension - surface
     std::string ext_surf = ".off";
@@ -895,7 +1025,6 @@ int main(int argc, char** argv)
         ext_txt = ".xyz";
     else if(csvFormat.isSet())
         ext_txt = ".csv";
-
 
     // ---------------------------------------------------------------------------------------------------------
     // STARTS:
@@ -971,7 +1100,6 @@ int main(int argc, char** argv)
                         exit(1);
                     }
 
-
                     if(setSaveAttributesTable.isSet())
                     {
                         auto csv_path = out_surf + "/" + get_basename(get_filename(file)) + ext_txt;
@@ -1004,7 +1132,6 @@ int main(int argc, char** argv)
                         exit(0);
                     }
 
-                    
                     // Applicazione trasformazioni
                     // applyCoordTransform(boundaries);
                     // applyCoordTransform(datasets);
@@ -1021,7 +1148,6 @@ int main(int argc, char** argv)
                     std::vector<std::string> deps = {filesystem::relative(file, Project.folder)};
                     geometa.setDependencies(deps);
                     geometa.setGeospatialData(Geometry);
-
 
                     //per salvataggio mesh
                     std::string out_mesh = out_surf + "/"+ Geometry.name;
@@ -1080,7 +1206,6 @@ int main(int argc, char** argv)
                                 dataSummary.setDataSummary(data_tmp); //saving original data (boundaries + datasets) summary in metadata
                                 geometa.setDataSummary(dataSummary);
 
-
                                 //Rimozione duplicati (per evitare problemi di triangolazione)
                                 std::vector<Point3D> boundaries_unique, dataset_unique;
                                 remove_duplicates_test_opt(boundaries[k], boundaries_unique, setTolerance.getValue());
@@ -1103,7 +1228,6 @@ int main(int argc, char** argv)
                                     out_mesh += "_" + Geometry.id_subdomain;
                                 }
                                 out_mesh += ext_surf;
-
 
                                 /////////////////////ROTAZIONEEEEEEE ---- DA QUI IN POI MODIFICARE
                                 MUSE::Rotation otfRotation;
@@ -1499,8 +1623,6 @@ int main(int argc, char** argv)
             geometa.setDependencies(deps);
             geometa.setGeospatialData(Geometry);
 
-
-        
             switch (Geometry.geom_type)
             {
             case POLYGON:
@@ -1578,7 +1700,6 @@ int main(int argc, char** argv)
                             out_mesh += "_" + Geometry.id_subdomain;
                         }
                         out_mesh += ext_surf;
-
 
                         ///////////////////////
                         MUSE::Rotation otfRotation;
@@ -1696,7 +1817,6 @@ int main(int argc, char** argv)
                     dataSummary.setDataSummary(datasets.at(i)); //saving original data (datasets) summary in metadata
                     geometa.setDataSummary(dataSummary);
 
-
                     std::vector<Point3D> data_unique;
                     remove_duplicates_test_opt(datasets.at(i), data_unique, setTolerance.getValue());
 
@@ -1713,7 +1833,6 @@ int main(int argc, char** argv)
                     }
                     out_mesh += ext_surf;
 
-                     
                     MUSE::Rotation otfRotation;
 
                     if(triFlag.isSet())
@@ -1723,8 +1842,6 @@ int main(int argc, char** argv)
 
                         cinolib::Trimesh<> trimesh;
                         trimesh.clear();
-
-                        
 
                         paramSurface.type = "TRIMESH";
                         paramSurface.opt = "";
@@ -1798,7 +1915,6 @@ int main(int argc, char** argv)
                             
                             std::cout << "\033[0;32mTriangulation with concave hull ... COMPLETED.\033[0m" << std::endl;
                         }
-
 
                         // External boundary from cmd
                         else if (setBoundary.isSet()) //se gli passo da linea di comando un bordo esterno: 1) leggi 2) triangola i punti vincolati al bordo
@@ -1895,8 +2011,6 @@ int main(int argc, char** argv)
         }
         std::cout << "\033[0;32m=== Vector processing ... COMPLETED.\033[0m" << std::endl;
     }
-
-
 
     ///
     /// Surface modeling from loading raster files
@@ -2128,8 +2242,6 @@ int main(int argc, char** argv)
         }
     }
 
-
-
     if(loadPointCloud.isSet())
     {
         // Check on input files (.txt, .dat)
@@ -2146,7 +2258,6 @@ int main(int argc, char** argv)
             exit(1);
         }
 
-
         if(triFlag.isSet() || gridFlag.isSet())
         {
             if(!filesystem::exists(out_surf))
@@ -2157,7 +2268,6 @@ int main(int argc, char** argv)
             std::cout << FRED("ERROR: Set --tri/--grid for creating mesh.") << std::endl;
             exit(1);
         }
-
 
         MUSE::SurfaceMeta geometa;
         geometa.setProject(Project);
@@ -2211,11 +2321,9 @@ int main(int argc, char** argv)
         geometa.setGeospatialData(Geometry);
         geometa.setDependencies(deps);
 
-
         //per salvataggio mesh
         std::string out_mesh = out_surf + "/"+ Geometry.name;
         out_mesh = out_mesh + ext_surf;
-
 
         // Procedo con la triangolazione in base al tipo di geometria
         MUSE::Surface Surface;
@@ -2362,7 +2470,6 @@ int main(int argc, char** argv)
             MUSE::SurfaceMeta::DataSummary dataSummary;
             dataSummary.setDataSummary(data);
             geometa.setDataSummary(dataSummary);
-
 
             if(subSet.isSet())
             {
@@ -2592,8 +2699,6 @@ int main(int argc, char** argv)
         }
     }
 
-
-
     if(gridData.isSet())
     {
         std::vector<std::string> excommands;
@@ -2705,7 +2810,6 @@ int main(int argc, char** argv)
 
     }
 
-
     //passare una superficie in lettura
     if(appendMeshes.isSet() && meshFiles.getValue().size()>=2)
     {
@@ -2730,7 +2834,6 @@ int main(int argc, char** argv)
         std::string filename = filename_mesh0.substr(filename_mesh0.find_last_of("/")+1, filename_mesh0.length());
         std::string basename = get_basename (filename);
 
-
         cinolib::Polygonmesh<> mesh;
         mesh.load(filename_mesh0.c_str());
 
@@ -2749,8 +2852,6 @@ int main(int argc, char** argv)
         std::cout << "\033[0;32mExport mesh file: " << out_mesh << " ... COMPLETED.\033[0m" << std::endl;
     }
 
-
-
     //passare una superficie in lettura
     if(setOffset.isSet())
     {
@@ -2766,7 +2867,6 @@ int main(int argc, char** argv)
             exit(1);
         }
 
-
         std::cout << FMAG("##########################################") << std::endl;
         std::cout << FMAG("NOTA BENE: l'estrusione è solo abilitata in direzione z") << std::endl;
         std::cout << FMAG("##########################################") << std::endl;
@@ -2776,7 +2876,6 @@ int main(int argc, char** argv)
 
         MUSE::SurfaceMeta georef;
         georef.read(get_basename(files.at(0)) + ".json");
-
 
         MUSE::SurfaceMeta geometa;
         geometa.setProject(Project);
@@ -2794,8 +2893,6 @@ int main(int argc, char** argv)
         geometa.setDataSummary(georef.getDataSummary());
         geometa.setDataRotation(georef.getDataRotation());
 
-
-
         //cinolib::Trimesh<> trimesh;
         cinolib::Polygonmesh <> mesh;
         mesh.load(files.at(0).c_str());
@@ -2805,7 +2902,6 @@ int main(int argc, char** argv)
         basename = get_basename (basename);
 
         std::string out_name = out_surf +"/" + basename;
-
 
         MUSE::SurfaceMeta::Extrusion objinfo;
 
@@ -2827,7 +2923,6 @@ int main(int argc, char** argv)
                 out_name = out_name + "_d" + objinfo.direction;
             }
         }
-
 
         else if(abszExtrusion.isSet()) //estrusione fino ad una quota assoluta fissata
         {
@@ -2874,7 +2969,6 @@ int main(int argc, char** argv)
         mesh.save((out_name + ext_surf).c_str());
         std::cout << "\033[0;32mExport mesh file: " << out_name + ext_surf << " ... COMPLETED.\033[0m" << std::endl;
 
-
         MUSE::Surface summary;
         summary.setSummary(mesh);
 
@@ -2883,8 +2977,6 @@ int main(int argc, char** argv)
 
         geometa.write(out_name + ".json");
     }
-
-
 
     if(createTriObject.isSet() && meshFiles.getValue().size() == 2)
     {
@@ -2910,7 +3002,6 @@ int main(int argc, char** argv)
         std::cout << "bb1 completa: " << trimesh1.bbox()<< std::endl;
         std::cout << "bb0 completa: " << trimesh0.bbox()<< std::endl;
 
-
         //Creazione json del triobject
         MUSE::SurfaceMeta geometa;
         geometa.setProject(Project);
@@ -2928,8 +3019,6 @@ int main(int argc, char** argv)
 //        if(files.at(1).find("geometry/") != std::string::npos)
 //            deps.push_back(get_basename(files.at(1).substr(files.at(1).find("geometry/"))) + ".json");
         geometa.setDependencies(deps);
-
-
 
         // 5) Creazione superficie laterale
         // 5.1) Vector indici dei punti sul convex hull nelle rispettive mesh
@@ -2959,7 +3048,6 @@ int main(int argc, char** argv)
         std::cout << FGRN("Check on boundary ... COMPLETED.") << std::endl;
         std::cout << std::endl;
 
-
         // INTEGRAZIONE CODICE DI GEO3D -> VALIDA E FUNZIONANTE PER PUNTI TRIANGOLATI CON CONVEX HULL! DA ESTENDERE CON BOUNDARY/CONCAVE
         // TO DO ...
         if(n != or_idch0.size()) //CONDIZIONE SU BORDI UGUALE
@@ -2970,7 +3058,6 @@ int main(int argc, char** argv)
             std::cout << FMAG("RIFERIMENTO: implementazione di GEO3D") << std::endl;
             std::cout << FMAG("##########################################") << std::endl;
             std::cout << std::endl;
-
 
             // Criterio di scelta del bordo: area mesh
             std::vector<double> polygon_area (2);
@@ -3040,7 +3127,6 @@ int main(int argc, char** argv)
              trimesh1.clear();
              trimesh1 = points_triangulation(sub_verts2, "c");
 
-
              std::vector<Point3D> ch1_tmp, ch2_tmp, ch;
              for(uint i : trimesh0.get_ordered_boundary_vertices())
              {
@@ -3063,7 +3149,6 @@ int main(int argc, char** argv)
              ch = ch1_tmp;
              ch.insert(ch.end(), ch2_tmp.begin(), ch2_tmp.end());
 
-
              // ////////////////////////////////////////////////////////////////////////
              // CH_0
              // ////////////////////////////////////////////////////////////////////////
@@ -3078,7 +3163,6 @@ int main(int argc, char** argv)
 
              std::cout << new_points_chf.size() << " points to estimate z value for first level." << std::endl;
              std::cout << std::endl;
-
 
              std::vector<Point3D> verts_1, verts_2;
              for(uint vid=0; vid < trimesh0.num_verts(); vid++)
@@ -3115,7 +3199,6 @@ int main(int argc, char** argv)
                  }
              }
              points_exf.insert(points_exf.end(), chf.begin(), chf.end());
-
 
              // ////////////////////////////////////////////////////////////////////////
              // CH_1
@@ -3158,7 +3241,6 @@ int main(int argc, char** argv)
                  jj++;
              }
 
-
              std::vector<Point3D> points_exs;
              for(uint vid=0; vid<trimesh1.num_verts(); vid++)
              {
@@ -3172,7 +3254,6 @@ int main(int argc, char** argv)
                  }
              }
              points_exs.insert(points_exs.end(), chs.begin(), chs.end());
-
 
              trimesh0.clear();
              trimesh1.clear();
@@ -3194,9 +3275,6 @@ int main(int argc, char** argv)
              trimesh1.update_bbox();
         }
 
-
-
-
 /*
 //             // 1. Estrazione bordo di riferimento: boundary/ch/concave -> lo leggo dal json
 //             std::vector<Point3D> ref_bound;
@@ -3214,7 +3292,6 @@ int main(int argc, char** argv)
 //                 p2d.y = p.y;
 //                 ref_bound2d.push_back(p2d);
 //             }
-
 
 //             // Vettore vertici <- mesh2
 //             //std::vector<cinolib::vec3d> verts1 = trimesh1.vector_verts();
@@ -3241,7 +3318,6 @@ int main(int argc, char** argv)
 //             trimesh1.clear();
 //             //SE NON è CONVEX HULL?? CAMBIARE LA TRIANGOLAZIONE! DA VINCOLARE AL BORDO
 
-
 //             fittedPlane plane1 = fitPlane(verts1);
 //             for(unsigned int i=0; i<ref_bound.size(); i++)
 //                 ref_bound.at(i).z = (ref_bound.at(i).x-plane1.meanX)*plane1.meanA0 + (ref_bound.at(i).y-plane1.meanY)*plane1.meanA1 + plane1.meanZ;
@@ -3253,7 +3329,6 @@ int main(int argc, char** argv)
 
 //             //trimesh1 = points_triangulation(sub_verts1, "cV");
 //             std::cout << "Sub-dataset triangulation ... COMPLETED." << std::endl;
-
 
 //            //Extraction boundary
 //             std::vector<Point3D> ch1_tmp, ch2_tmp, ch;
@@ -3278,7 +3353,6 @@ int main(int argc, char** argv)
 //             ch = ch1_tmp;
 //             ch.insert(ch.end(), ch2_tmp.begin(), ch2_tmp.end());
 
-
 //             // ////////////////////////////////////////////////////////////////////////
 //             // CH_0
 //             // ////////////////////////////////////////////////////////////////////////
@@ -3293,7 +3367,6 @@ int main(int argc, char** argv)
 
 //             std::cout << new_points_chf.size() << " points to estimate z value for first level." << std::endl;
 //             std::cout << std::endl;
-
 
 //             std::vector<Point3D> verts_1, verts_2;
 //             for(uint vid=0; vid < trimesh0.num_verts(); vid++)
@@ -3330,7 +3403,6 @@ int main(int argc, char** argv)
 //                 }
 //             }
 //             //points_exf.insert(points_exf.end(), chf.begin(), chf.end());
-
 
 //             // ////////////////////////////////////////////////////////////////////////
 //             // CH_1
@@ -3373,7 +3445,6 @@ int main(int argc, char** argv)
 //                 jj++;
 //             }
 
-
 //             std::vector<Point3D> points_exs;
 //             for(uint vid=0; vid<trimesh1.num_verts(); vid++)
 //             {
@@ -3389,8 +3460,6 @@ int main(int argc, char** argv)
 //             //points_exs.insert(points_exs.end(), chs.begin(), chs.end());
 
 //             std::cout << std::endl;
-
-
 
 //             trimesh0.clear();
 //             trimesh1.clear();
@@ -3412,20 +3481,17 @@ int main(int argc, char** argv)
 ////             std::cerr << or_idch0.size() << " " << or_idch1.size() << std::endl;
 //        }*/
 
-
         or_idch0.clear();
         or_idch1.clear();
 
 //        std::cout << "bb1 completa: " << trimesh1.bbox()<< std::endl;
 //        std::cout << "bb0 completa: " << trimesh0.bbox()<< std::endl;
 
-
         // Check on normals
         double offset = trimesh1.bbox().center().z() - trimesh0.bbox().center().z();
 //        double offset = trimesh1.bbox().max.z() - trimesh0.bbox().min.z();
 //        std::cout << "bb1: " << trimesh1.bbox().max.z()<< std::endl;
 //        std::cout << "bb0: " << trimesh0.bbox().min.z()<< std::endl;
-
 
         std::cout << "Offset in z direction: " << offset << std::endl;
 
@@ -3446,7 +3512,6 @@ int main(int argc, char** argv)
         }
         std::cout << FGRN("Check on normals ... COMPLETED.") << std::endl;
         std::cout << std::endl;
-
 
         cinolib::Trimesh<> closed_m;
         double step = trimesh1.edge_avg_length();
@@ -3476,7 +3541,6 @@ int main(int argc, char** argv)
         closed_m.save(out_closed_mesh.c_str());
         std::cout << "\033[0;32mExport mesh file: " << out_closed_mesh << " ... COMPLETED.\033[0m" << std::endl;
 
-
         MUSE::Surface summary;
         summary.setSummary(closed_m);
         geometa.setMeshSummary(summary);
@@ -3484,10 +3548,8 @@ int main(int argc, char** argv)
         geometa.write(out_surf + "/" + basename0 + "-" + basename1 + ".json");
     }
 
-
     if(createTriObject.isSet()  && meshFiles.getValue().size() > 2)
         std::cerr << "ERROR: Unexpected number of input files!" << std::endl;
-
 
     if(createQuadObject.isSet() && meshFiles.getValue().size() == 2)
     {
@@ -3518,14 +3580,10 @@ int main(int argc, char** argv)
         std::string filename1 = files.at(1).substr(files.at(1).find_last_of("/")+1, files.at(1).length());
         std::string basename1 = get_basename(filename1);
 
-
         MUSE::GeometryMeta::ObjectInfo objinfo;
         objinfo.method = "TWO SURFACES";
         objinfo.surface = basename0;
         //.... da estendere
-
-
-
 
         // 5) Creazione superficie laterale
         // 5.1) Vector indici dei punti sul convex hull nelle rispettive mesh
@@ -3555,7 +3613,6 @@ int main(int argc, char** argv)
         std::cout << FGRN("Check on boundary ... COMPLETED.") << std::endl;
         std::cout << std::endl;
 
-
         // INTEGRAZIONE CODICE DI GEO3D -> VALIDA E FUNZIONANTE PER PUNTI TRIANGOLATI CON CONVEX HULL! DA ESTENDERE CON BOUNDARY/CONCAVE
         // TO DO ...
         if(n != or_idch0.size()) //CONDIZIONE SU BORDI UGUALE
@@ -3563,7 +3620,6 @@ int main(int argc, char** argv)
             std::cout << "\033[0;31mERROR: Meshes boundaries are different!\033[0m" << std::endl;
             exit(1);
         }
-
 
         // Check on normals
         double offset = trimesh1.bbox().center().z() - trimesh0.bbox().center().z();
@@ -3586,7 +3642,6 @@ int main(int argc, char** argv)
         }
         std::cout << FGRN("Check on normals ... COMPLETED.") << std::endl;
         std::cout << std::endl;
-
 
         cinolib::Quadmesh<> closed_m;
         double step = trimesh1.edge_avg_length();
@@ -3613,7 +3668,6 @@ int main(int argc, char** argv)
         closed_m.save(out_closed_mesh.c_str());
         std::cout << "\033[0;32mExport mesh file: " << out_closed_mesh << " ... COMPLETED.\033[0m" << std::endl;
 
-
         MUSE::Surface summary;
         summary.setSummary(closed_m);
         geometa.setMeshSummary(summary);
@@ -3621,15 +3675,12 @@ int main(int argc, char** argv)
         geometa.write(out_surf + "/" + basename0 + "-" + basename1 + ".json");
     }
 
-
-
     //ESTENSIONE APPLICATIVO PER GENERARE MESH TETRAEDRICHE CON ALTRI TIPI DI MESH!! IN BASE ALLA FLAG CHE GLI PASSO: --tet, --hex, --vox
     if(createVolObject.isSet() && meshFiles.getValue().size() == 1)
     {
         // 0) Creazione cartella per il salvataggio delle mesh volumetriche
         if(!filesystem::exists(out_volume))
             filesystem::create_directory(out_volume);
-
 
         // 1) Passaggio meshfile
         std::vector<std::string> files = meshFiles.getValue();
@@ -3645,7 +3696,6 @@ int main(int argc, char** argv)
         std::vector<std::string> deps;
         deps.push_back(filesystem::relative(get_basename(files.at(0)) + ".json", Project.folder));
         geometa.setDependencies(deps);
-
 
         MUSE::Volume summary;
 
@@ -3736,7 +3786,6 @@ int main(int argc, char** argv)
             summary.setSummary(volmesh);
         }
 
-
         if(voxFlag.isSet())
         {
             std::cout << "voxFlag is set ... " << std::endl;
@@ -3771,7 +3820,6 @@ int main(int argc, char** argv)
             summary.setSummary(volmesh);
         }
 
-
         if(hexFlag.isSet())
         {
             std::cout << "hexFlag is set ... " << std::endl;
@@ -3803,11 +3851,8 @@ int main(int argc, char** argv)
         geometa.write(out_volume +"/" + basename + ".json");
     }
 
-
     if(createVolObject.isSet()  && meshFiles.getValue().size() > 1)
         std::cerr << "ERROR: Unexpected number of input files!" << std::endl;
-
-
 
     if(mergeMeshes.isSet() && meshFiles.getValue().size() == 2)
     {
@@ -3818,7 +3863,6 @@ int main(int argc, char** argv)
 
         std::string filename_mesh1 = files.at(1);
         std::string ext1 = get_extension(filename_mesh1);
-
 
         if(ext0.compare(".off") == 0 || ext0.compare(".obj") == 0)
         {
@@ -3964,9 +4008,6 @@ int main(int argc, char** argv)
             exit(1);
         }
     }
-
-
-
 
     if(extractMeshes.isSet() && meshFiles.getValue().size() == 1)
     {
@@ -4160,9 +4201,6 @@ int main(int argc, char** argv)
         std::cout << FGRN("Extracting sub-mesh constrained to boundary ... COMPLETED.") << std::endl;
     }
 
-
-
-
     if(loadSurface.isSet() && setRemeshing.isSet())
     {
         if(!meshFiles.isSet())
@@ -4201,7 +4239,6 @@ int main(int argc, char** argv)
         mesh.load(filename_mesh.c_str());
         std::cout << "\033[0;32mLoading mesh file: " << filename_mesh << " ... COMPLETED.\033[0m" << std::endl;
         std::cout << std::endl;
-
 
         MUSE::Surface surf;
         MUSE::Surface::Parameters surf_par;
@@ -4250,8 +4287,6 @@ int main(int argc, char** argv)
 
         geometa.write(out_mesh + ".json");
     }
-
-
 
     //Lettura vettore di superfici
     //Questo comando permette la lettura di superfici di origine esterna e la creazione del file json corrispondente, secondo la MUSE encoding
@@ -4316,7 +4351,6 @@ int main(int argc, char** argv)
                 mesh.vert(vid) += rotcenter;
             }
         }
-
 
         if(type == MeshType::TRIMESH)
         {
@@ -4438,16 +4472,6 @@ int main(int argc, char** argv)
                 export3d_xyz(out_surf + "/"+ get_basename(get_filename(filename_mesh)) + "_BP.xyz", vec_bv);
             }
 
-            // if(setEdgeCollpase.isSet())
-            // {
-            //     for(uint eid=0; eid < mesh.num_edges(); eid++)
-            //     {
-            //         if(mesh.edge_is_boundary(eid))
-            //         {
-            //             mesh.edge_remove()
-            //         }
-            //     }
-            // }
         }
         else if(type == MeshType::QUADMESH)
         {
@@ -4540,9 +4564,6 @@ int main(int argc, char** argv)
         geometa.write(out_mesh + ".json");
     }
 
-
-
-
     //Comando per estrarre le celle della mesh dove ricadono dei punti (dati in input)
     if(loadSurface.isSet() && setScalarField.isSet())
     {
@@ -4557,7 +4578,6 @@ int main(int argc, char** argv)
             std::cerr << FRED("ERROR. Only a mesh (surface/volume) is supported.") << std::endl;
             exit(1);
         }
-
 
         //0) Definizione file di output
         std::ofstream file_out;
@@ -4576,7 +4596,6 @@ int main(int argc, char** argv)
         MeshType type = mesh.set_meshtype();
         std::cout << "Check mesh type ... " << std::endl;
         std::cout << "Number of verts per poly: " << mesh.verts_per_poly(0) <<  std::endl;
-
 
         //2) Caricamento point cloud
         std::vector<Point3D> values;
@@ -4625,8 +4644,6 @@ int main(int argc, char** argv)
         std::cout << "Saving id polys ... COMPLETED." << std::endl;
     }
 
-
-
     //Lettura vettore di superfici
     if(loadVolume.isSet())
     {
@@ -4655,7 +4672,6 @@ int main(int argc, char** argv)
 //                    deps.push_back(get_basename(filename_mesh.substr(filename_mesh.find("geometry/"))) + ".json");
                 geometa.setDependencies(deps);
             }
-
 
             MUSE::VolumeMesh<>mesh;
             mesh.load(filename_mesh.c_str());
@@ -4766,12 +4782,10 @@ int main(int argc, char** argv)
         }
     }
 
-
     if(createScalarField.isSet() && meshFiles.isSet())
     {
         if(meshFiles.getValue().size() > 1)
             std::cerr << "ERROR: For scalar field (-F), one mesh file is accepted by command -m!" << std::endl;
-
 
         //0) Definizione file di output: scalar_field
         std::ofstream file_out;
@@ -4814,7 +4828,6 @@ int main(int argc, char** argv)
 
         //cinolib::Octree octree_campioni;
         //octree_campioni.build_from_mesh_polys(mesh_campioni);
-
 
         std::vector<double> scalfi;
         for(uint pid=0; pid<mesh.num_polys(); pid++)
@@ -4995,12 +5008,6 @@ int main(int argc, char** argv)
         std::cout << "Creating scalar field associated to mesh ... " << meshFiles.getValue().at(0) << std::endl;
         //std::cout << "Saving scalar field in " << filename << std::endl;
     }
-
-
-
-
-
-
 
     if(setMultiResolution.isSet() && setPolygon.isSet())
     {
@@ -5245,7 +5252,6 @@ int main(int argc, char** argv)
                     cinolib::vec3d v3 = low_mesh.poly_vert(pid2, 2);
                     cinolib::vec3d v4 = low_mesh.poly_vert(pid2, 3);
 
-
                     double sum = 0.0;
                     int count = 0;
 
@@ -5282,7 +5288,6 @@ int main(int argc, char** argv)
             exit(1);
         }
     }
-
 
     //This switch allows to create a volume mesh starting from a surface mesh and a set of wells (defined as strings) with the command -createVolObjectwithWells. 
     //The output is a tetmesh with the wells as cylindrical holes (if generate_tet is set to true) or as cylinders (if generate_tet is set to false). 
@@ -5356,7 +5361,6 @@ int main(int argc, char** argv)
         geometa.write(out_volume + "/" + get_basename(output_mesh_arg.getValue()) + ".json");
         std::cout << "=== Saving JSON ... TO DO!" << std::endl;
     }
-
 
     } catch (ArgException &e)  // catch exceptions
     { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; }

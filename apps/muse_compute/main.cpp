@@ -112,7 +112,8 @@ int main(int argc, char** argv)
      * @default "AUTO" (automatic parameter selection is applied by default).
      * @format string
      * @values AUTO, MANUAL
-     * @note When using this option, the following modes are available for selection:
+     * @note ⚠ Partially implemented: in the current code only the PRESENCE of --mode is used (it switches the input loading path); the AUTO/MANUAL value is not read yet, so the two values behave identically for now.
+     *       When fully implemented, the following modes are foreseen:
      *       - AUTO: Automatic parameter selection
      *       - MANUAL: Manual parameter configuration required
      * @example muse_compute -C -p /path/to/project_directory --var temperature --geom mesh_model --mode AUTO
