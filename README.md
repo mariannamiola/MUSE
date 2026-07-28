@@ -15,7 +15,14 @@ Result visualization is supported through [ParaView](https://www.paraview.org/do
 The repository includes external submodules required by MUSE. Clone it recursively with:
 
 ```bash
-git clone --recursive git@bitbucket.org:marianna_miola/muse.git
+git clone --recursive git@github.com:mariannamiola/MUSE.git
+cd MUSE
+```
+
+Alternatively, over HTTPS:
+
+```bash
+git clone --recursive https://github.com/mariannamiola/MUSE.git
 cd MUSE
 ```
 
@@ -83,31 +90,51 @@ The HTML documentation can be opened with a web browser, while the Markdown docu
 Example data and scripts are provided under the `${ROOT}/examples` directory.
 Each example contains scripts to run the corresponding MUSE workflow and, when available, to visualize the results.
 
-A complete example can be run as follows:
+Each `10_test_*` script automatically adds `${ROOT}/bin` (where the executables are
+generated) to the `PATH`, so **make sure MUSE has been built first** (see
+[Build and executable generation](#build-and-executable-generation)).
+
+A quick, self-contained example can be run as follows:
 
 ```bash
-cd MUSE/examples/05_prism_3D_tet/script
-./10_test_MUSE_05_prism_3D_tet.sh project
+cd ${ROOT}/examples/06_sec_2D_400_tri/script
+./10_test_MUSE_06_sec_2D_400_tri.sh
 ```
 
-The results of this example are saved in:
+By default the results are written under the shared working directory:
 
 ```text
-MUSE/examples/MUSE_test/05_prism_3D_tet
+${ROOT}/examples/MUSE_test/06_sec_2D_400_tri
 ```
 
-More generally, examples can be executed from the corresponding `script` directory using the `10_test_*` script:
+More generally, examples are executed from the corresponding `script` directory using
+the `10_test_*` script:
 
 ```bash
 cd ${ROOT}/examples/<example_name>/script
-./10_test_<example_name>.sh
+./10_test_MUSE_<example_name>.sh
 ```
 
-When a visualization script is provided, results can be visualized by running the corresponding `20_test_*` script from the same `script` directory:
+Each `10_test_*` script accepts the following optional arguments:
+
+```text
+-w, --work <dir>    working directory for the output project (default: ${ROOT}/examples/MUSE_test)
+-s, --sim  <n>      number of stochastic simulations
+-p, --proj <name>   output project name
+-d, --data <file>   input data file name
+-h, --help          show all options
+```
+
+When a visualization script is provided, the results can be plotted with Python from
+the same `script` directory, e.g.:
 
 ```bash
-./20_test_<example_name>.sh
+python 20_visual_2D.py      # 2D examples
+python 20_visual_3D.py      # 3D examples (e.g. 22_Tomography)
 ```
+
+The full list of examples, with a short description of each workflow, is given in
+[`examples/README.md`](examples/README.md).
 
 ## Authors and contacts
 
