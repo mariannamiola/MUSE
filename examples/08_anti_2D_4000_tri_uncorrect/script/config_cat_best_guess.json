@@ -1,0 +1,53 @@
+{
+  "work_folder": "MUSE_test",
+  "project_name": "08_anti_2D_4000_tri_uncorrect",
+
+  "samples": "anti_4000_phi_class.csv",
+  "varname": "class",
+  "units": "-",
+
+  "geometry": {
+    "name": "anti",
+    "sub": "anti",
+    "ext": "obj"
+  },
+
+  "vario": {
+    "dir": "DIR",
+    "dim": "2D"
+  },
+
+  "compute": {
+    "space": "",
+    "where": "_stats",
+    "var": "best",
+    "units": "-",
+    "geom": "anti"
+  },
+
+  "columns": {
+    "samples": {
+      "x": "X",
+      "y": "Y",
+      "z": "Z",
+      "value": "class",
+      "cat": true,
+      "n_cat": 8
+    },
+
+    "scalarfield": {
+      "x": "Field 0",
+      "y": "Field 0",
+      "z": "Field 0",
+      "value": "Field 0",
+      "cat": true,
+      "n_cat": 8
+    }
+  },
+
+  "output": {
+    "save": true,
+    "dir": "_fig",
+    "format": "png"
+  }
+}

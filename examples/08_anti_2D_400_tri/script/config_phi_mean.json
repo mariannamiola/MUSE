@@ -1,0 +1,53 @@
+{
+  "work_folder": "MUSE_test",
+  "project_name": "08_anti_2D_400_tri",
+
+  "samples": "AMGA_400_anti.csv",
+  "varname": "phi",
+  "units": "-",
+
+  "geometry": {
+    "name": "anti",
+    "sub": "anti",
+    "ext": "obj"
+  },
+
+  "vario": {
+    "dir": "DIR",
+    "dim": "2D"
+  },
+
+  "compute": {
+    "space": "_varspace",
+    "where": "_stats",
+    "var": "mean",
+    "units": "-",
+    "geom": "geom_anti"
+  },
+
+  "columns": {
+    "samples": {
+      "x": "X",
+      "y": "Y",
+      "z": "Z",
+      "value": "phi",
+      "cat": false,
+      "n_cat": 8
+    },
+
+    "scalarfield": {
+      "x": "Field 0",
+      "y": "Field 0",
+      "z": "Field 0",
+      "value": "Field 0",
+      "cat": false,
+      "n_cat": 8
+    }
+  },
+
+  "output": {
+    "save": true,
+    "dir": "_fig",
+    "format": "png"
+  }
+}
