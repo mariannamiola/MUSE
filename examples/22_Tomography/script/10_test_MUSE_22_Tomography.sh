@@ -218,71 +218,24 @@ start=${1:-"start"}
 jumpto $start
 
 #project:
-# Check if the current user is root
-if [[ -d ${WP} ]]; then
-    echo "DIRECTORY: " ${WP} " EXISTS."
-    if $RMPROJ; then
-        echo "REMOVING EXISTING PROJECT " ${WP} 
-        rm -r ${WP}
-    
-        ##########  PROJECT  ###########
-        muse_project -N -p ${WORK} --name ${PROJ}
+##########  PROJECT  ###########
+muse_project -N -p ${WORK} --name ${PROJ} --overwrite
    
-        ##########  DATA  ###########
-        muse_data -N -p ${WP}
-        cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
-        muse_data -S -p ${WP}  --setX 1 --setY 2 --setZ 3
-        muse_data -C -p ${WP}
+##########  DATA  ###########
+muse_data -N -p ${WP}
+cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
+muse_data -S -p ${WP}  --setX 1 --setY 2 --setZ 3
+muse_data -C -p ${WP}
         
-        ##########  GEOMETRY  ###########
-        muse_geometry -N -p ${WP}
-        cp -R ${DATA_SOURCE}/${GEOM1} ${INGEOM}
-        muse_geometry -P -p ${WP} --tri --polygon ${INGEOM}/boundary.csv --obj
-        muse_geometry -O -p ${WP} -m ${OUTSURF}/boundary.obj --abs -z -10 --obj
-        muse_geometry -T -p ${WP} -m ${OUTSURF}/boundary.obj -m ${OUTSURF}/boundary_absz.obj --obj
-        muse_geometry -M -p ${WP} -m ${OUTSURF}/boundary-boundary_absz.obj --hex --resx 0.5 --resy 0.5 --resz 0.5 --vtk
-        mv ${OUTVOL}/boundary-boundary_absz.vtk ${OUTVOL}/boundary.vtk
-        mv ${OUTVOL}/boundary-boundary_absz.json ${OUTVOL}/boundary.json
-    else
-        if [[ -d ${OUTMAN} ]]; then
-           rm -r ${OUTMAN}
-        fi
-        if [[ -d ${OUTVARIO} ]]; then
-           rm -r ${OUTVARIO}
-        fi
-        if [[ -d ${OUTCOMP} ]]; then
-           rm -r ${OUTCOMP}
-        fi
-    fi
-else
-    echo "DIRECTORY: " ${WP} " NOT EXISTS."
-    ##########  PROJECT  ###########
-    muse_project -N -p ${WORK} --name ${PROJ}
-    
-    ##########  DATA  ###########
-    muse_data -N -p ${WP}
-    cp -R ${DATA_SOURCE}/${DATA} ${INDATA}
-    muse_data -S -p ${WP}  --setX 1 --setY 2 --setZ 3
-    muse_data -C -p ${WP}
-
-    ##########  GEOMETRY  ###########
-    muse_geometry -N -p ${WP}
-    cp -R ${DATA_SOURCE}/${GEOM1} ${INGEOM}
-    muse_geometry -P -p ${WP} --tri --polygon ${INGEOM}/boundary.csv --obj
-    muse_geometry -O -p ${WP} -m ${OUTSURF}/boundary.obj --abs -z -13 --obj
-    muse_geometry -T -p ${WP} -m ${OUTSURF}/boundary.obj -m ${OUTSURF}/boundary_absz.obj --obj
-    muse_geometry -M -p ${WP} -m ${OUTSURF}/boundary-boundary_absz.obj --hex --resx 0.5 --resy 0.5 --resz 0.5 --vtk
-    mv ${OUTVOL}/boundary-boundary_absz.vtk ${OUTVOL}/boundary.vtk
-    mv ${OUTVOL}/boundary-boundary_absz.json ${OUTVOL}/boundary.json
-fi
-
-
-###routine for gridding and voxel or hexmesh
-#set +e	#do not exit if an error occours
-#muse_geometry -G -p ${WP} -m ${INGEOM}/cube.xyz --boundary ${INGEOM}/cube.xyz --resx 1 --resy 1 --obj
-#muse_geometry -A -m ${OUTSURF}/grid.obj -m ${OUTSURF}/gridabsz-32.obj --obj
-#muse_geometry -M -p ${WP} -m ${OUTSURF}/grid_append.off --vox --nmaxvox 5 --vtk
-#set -e	#exit if an error occours
+##########  GEOMETRY  ###########
+muse_geometry -N -p ${WP}
+cp -R ${DATA_SOURCE}/${GEOM1} ${INGEOM}
+muse_geometry -P -p ${WP} --tri --polygon ${INGEOM}/boundary.csv --obj
+muse_geometry -O -p ${WP} -m ${OUTSURF}/boundary.obj --abs -z -10 --obj
+muse_geometry -T -p ${WP} -m ${OUTSURF}/boundary.obj -m ${OUTSURF}/boundary_absz.obj --obj
+muse_geometry -M -p ${WP} -m ${OUTSURF}/boundary-boundary_absz.obj --hex --resx 0.5 --resy 0.5 --resz 0.5 --vtk
+mv ${OUTVOL}/boundary-boundary_absz.vtk ${OUTVOL}/boundary.vtk
+mv ${OUTVOL}/boundary-boundary_absz.json ${OUTVOL}/boundary.json
 
 
 #vario:
@@ -295,19 +248,12 @@ muse_vario -V -p ${WP} -v ${VAR} --nscore YES --dir ${DIR} --dim 3Dz --lagspac C
 #computesgs:
 ##########  COMPUTE  ###########
 export GMOD=boundary
-if [[ $OUTSGS == 'MEAN'* ]]; then
-  muse_compute -C -p ${WP} -v ${VAR} -m ${OUTVOL}/${GMOD}.vtk --nsim ${NSIM} --out ${OUTSGS} --bnscore --extr Extr --minextr 0 --maxextr 1 --dir ${DIR} --dim ${DIM} --zrange 5.0
-else
-  muse_compute -C -p ${WP} -v ${VAR} -m ${OUTVOL}/${GMOD}.vtk --nsim ${NSIM} --out ${OUTSGS} --dir ${DIR} --dim ${DIM} --zrange 3.0
-
-  muse_compute -S -p ${WP} -v ${VAR} -m ${OUTVOL}/${GMOD}.vtk --csv --dir ${DIR} --dim ${DIM}
-
-  #back:
-  muse_compute -B -p ${WP} -v ${VAR} -m ${OUTVOL}/${GMOD}.vtk --extr None --csv --dir ${DIR} --dim ${DIM}
-
-  #statsback:
-  muse_compute -S -p ${WP} -v ${VAR} -m ${OUTVOL}/${GMOD}.vtk --space VAR --csv --dir ${DIR} --dim ${DIM}
-fi
+muse_compute -C -p ${WP} -v ${VAR} -m ${OUTVOL}/${GMOD}.vtk --nsim ${NSIM} --out ${OUTSGS} --dir ${DIR} --dim ${DIM} --zrange 3.0
+muse_compute -S -p ${WP} -v ${VAR} -m ${OUTVOL}/${GMOD}.vtk --csv --dir ${DIR} --dim ${DIM}
+#back:
+muse_compute -B -p ${WP} -v ${VAR} -m ${OUTVOL}/${GMOD}.vtk --extr None --csv --dir ${DIR} --dim ${DIM}
+#statsback:
+muse_compute -S -p ${WP} -v ${VAR} -m ${OUTVOL}/${GMOD}.vtk --space VAR --csv --dir ${DIR} --dim ${DIM}
 
 
 #clean:
