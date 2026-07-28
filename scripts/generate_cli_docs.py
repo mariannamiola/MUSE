@@ -38,13 +38,34 @@ class TCLAPParser:
             return ""
     
     def _extract_app_name(self) -> str:
-        """Extract application name from file path"""
-        # e.g., /path/to/muse_project/main.cpp -> muse_project
-        parts = Path(self.source_file).parts
-        for i, part in enumerate(parts):
-            if part.startswith('muse_'):
-                return part
-        return "unknown"
+        """Extract application name from file path.
+
+        The primary source (main.cpp) maps to the app folder name, e.g.
+        /path/to/muse_project/main.cpp -> muse_project.
+
+        Secondary executables living in the same folder (e.g. main_raster.cpp,
+        main-tetmesh-generator.cpp) are separate CMake targets, so they get their
+        own documentation page named <app>_<suffix>, e.g.
+        muse_export/main_raster.cpp            -> muse_export_raster
+        muse_geometry/main-tetmesh-generator.cpp -> muse_geometry_tetmesh-generator
+        """
+        path = Path(self.source_file)
+        muse_dir = next((p for p in path.parts if p.startswith('muse_')), None)
+        if muse_dir is None:
+            return "unknown"
+
+        stem = path.stem  # 'main', 'main_raster', 'main-tetmesh-generator'
+        if stem == 'main':
+            return muse_dir
+
+        # Strip the leading 'main' + separator to obtain the executable suffix
+        suffix = stem
+        for pref in ('main-', 'main_', 'main'):
+            if suffix.startswith(pref):
+                suffix = suffix[len(pref):]
+                break
+        suffix = suffix.strip('-_')
+        return f"{muse_dir}_{suffix}" if suffix else muse_dir
     
     def _extract_description(self) -> str:
         """Extract CmdLine description"""
