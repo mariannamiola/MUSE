@@ -38,7 +38,7 @@ cd ${BUILD}
 
 cmake -DCMAKE_BUILD_TYPE=Release ..
 
-cmake --build . --parallel "$(nproc)" #--target \
+cmake --build . #--target \
 	#${project} \
 	#${data} \
 	#${plot} \
