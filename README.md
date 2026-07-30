@@ -143,6 +143,15 @@ The full list of examples, with a short description of each workflow, is given i
 - Simone Pittaluga, CNR-IMATI, Genova, Italy
 - Marino Vetuschi Zuccolini, DISTAV-UNIGE, Genova, Italy
 
+- ## License
+
+MUSE is distributed under a dual-license model.
+
+- **Open-source use:** GNU GPL v3.0 or later.
+- **Commercial use:** available under a separate commercial license.
+
+See the `LICENSE` and `COPYING` files for details.
+
 ## Citation
 
 If you use MUSE in academic work, please cite the following references.
