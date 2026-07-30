@@ -136,12 +136,35 @@ python 20_visual_3D.py      # 3D examples (e.g. 22_Tomography)
 The full list of examples, with a short description of each workflow, is given in
 [`examples/README.md`](examples/README.md).
 
+## Computational histories (EWoPe)
+
+MUSE relies on [EWoPe](https://github.com/DanielaCabiddu/EWOPE) (*Embeddable WOrkflow PErsistence*)
+for workflow metadata management. Every MUSE application writes a JSON metadata descriptor next to
+its outputs, so the computational history of a result can be reconstructed afterwards with the
+standalone `EWOPE_history` executable.
+
+EWoPe must be cloned and built separately, following the instructions in its repository:
+
+```bash
+git clone --recursive https://github.com/DanielaCabiddu/EWOPE.git
+```
+
+Once built, `EWOPE_history` is available in `${EWOPE_ROOT}/bin`. For example, to reconstruct the
+history of the `phi` variable produced by the `06_sec_2D_400_tri` example, run from
+`${EWOPE_ROOT}/bin`:
+
+```bash
+./EWOPE_history -w ${ROOT}/06_sec_2D_400_tri \
+                -j ${ROOT}/06_sec_2D_400_tri/out/compute/phi_DIR2D_sec_xz/_varspace/phi.json \
+                -f
+```
+
 ## Authors and contacts
 
 - Marianna Miola, CNR-IMATI, Genova, Italy, marianna.miola@cnr.it
 - Daniela Cabiddu, CNR-IMATI, Genova, Italy, daniela.cabiddu@cnr.it
-- Simone Pittaluga, CNR-IMATI, Genova, Italy
-- Marino Vetuschi Zuccolini, DISTAV-UNIGE, Genova, Italy
+- Simone Pittaluga, CNR-IMATI, Genova, Italy, simone.pittaluga@cnr.it
+- Marino Vetuschi Zuccolini, DISTAV-UNIGE, Genova, Italy, marino.zuccolini@unige.it
 
 - ## License
 
