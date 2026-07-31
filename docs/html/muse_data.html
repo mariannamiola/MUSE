@@ -261,6 +261,16 @@
         .example strong {
             color: var(--success-color);
         }
+        .required {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--danger-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .required strong {
+            color: var(--danger-color);
+        }
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -318,50 +328,115 @@
         </div>
         <h2>muse_data</h2>
 
-<p><strong>Description:</strong> MUSE = Modelling of Uncertainty as a Support of Environment; Data tool</p>
+<p><strong>Description:</strong> MUSE - Modelling Uncertainty as a Support for Environment. muse-data application</p>
 
 <h3>Usage</h3>
 
-<pre><code class="bash">muse_data [OPTIONS]
+<pre><code class="bash">muse_data -p <PDIR> [OPTIONS]
 </code></pre>
+
+<h3>Options Index</h3>
+
+<ul>
+  <li><a href="#new-project"><code>-N</code>, <code>--new_project</code></a> — Initialize a new project directory structure for storing (source point) data</li>
+  <li><a href="#pdir"><code>-p</code>, <code>--pdir</code></a> — Project directory</li>
+  <li><a href="#input"><code>-i</code>, <code>--input</code></a> — Copy input file(s) in the project directory (in/data/)</li>
+  <li><a href="#setEPSG"><code>--setEPSG</code></a> — Set project EPSG</li>
+  <li><a href="#setIDXYZ"><code>-S</code>, <code>--setIDXYZ</code></a> — Set n. column coordinate</li>
+  <li><a href="#setID"><code>--setID</code></a> — Set ID</li>
+  <li><a href="#setX"><code>--setX</code></a> — Set coordinate x</li>
+  <li><a href="#setY"><code>--setY</code></a> — Set coordinate y</li>
+  <li><a href="#setZ"><code>--setZ</code></a> — Set coordinate z</li>
+  <li><a href="#setDel"><code>--setDel</code></a> — Set type of csv delimiter</li>
+  <li><a href="#converter"><code>-C</code>, <code>--converter</code></a> — Converter data (csv format) into MUSE format</li>
+  <li><a href="#inf"><code>--inf</code></a> — Set inf limit</li>
+  <li><a href="#sup"><code>--sup</code></a> — Set sup limit</li>
+  <li><a href="#tol"><code>--tol</code></a> — Set tolerance</li>
+  <li><a href="#read"><code>-R</code>, <code>--read</code></a> — Reading MUSE format</li>
+  <li><a href="#var"><code>-v</code>, <code>--var</code></a> — Variable</li>
+  <li><a href="#nrealiz"><code>-n</code>, <code>--nrealiz</code></a> — Set number of realization</li>
+  <li><a href="#hist"><code>--hist</code></a> — Compute plot - hitogram</li>
+  <li><a href="#nval"><code>--nval</code></a> — Set min number of values, sufficient for histogram plot</li>
+  <li><a href="#nbin"><code>--nbin</code></a> — Set number of bins for histogram plot</li>
+  <li><a href="#csv"><code>--csv</code></a> — Saving file as csv</li>
+  <li><a href="#check-duplicates"><code>--check-duplicates</code></a> — Enable check of duplicated points</li>
+  <li><a href="#remove-duplicates"><code>--remove-duplicates</code></a> — Enable remvoval of duplicated points</li>
+</ul>
 
 <h3>Options</h3>
 
 <div class="flag-separator"></div>
 
 <h4 id="new-project"><code>-N</code>, <code>--new_project</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Create a new project</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Flag to create a new project</p>
+<p><strong>Description:</strong> Initialize a new project directory structure for storing (source point) data. Creates the in/data and out/data subdirectories under the path specified by --pdir.</p>
+
+<strong>Default:</strong> <code>false (project initialization is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Requires <a href="#pdir">--pdir</a> to be set; use <a href="#input">--input</a> to optionally copy data file(s) into the project.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -N -p /path/to/project/dir --input user/path/filename.csv</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<div class="required"><strong>⚠ Required:</strong> true (this parameter is mandatory for every operation).</div>
 
-<p><strong>Description:</strong> Specify project directory</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p>Path to the project directory (required)</p>
+<strong>Format:</strong> <code>string (absolute path to the project root directory)</code>
+
+<p><strong>Description:</strong> Specify the directory path where the project is created (the project root directory).</p>
+
+<strong>Default:</strong> <code>"/path/to/project/dir" (placeholder value, should be replaced with an actual path).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required when using <a href="#new-project">--new_project</a>, <a href="#converter">--converter</a> and <a href="#read">--read</a> flags.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -N -p /path/to/project/dir</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="input"><code>-i</code>, <code>--input</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code>, repeatable</p>
+
+<strong>Format:</strong> <code>string (path to an input file); repeatable</code>
+
+<p><strong>Description:</strong> Copy input file(s) into the input data project directory (project/in/data), replacing manual data copy. Multiple files can be specified by repeating the flag.</p>
+
+<strong>Default:</strong> <code>empty (no file is copied when the flag is not used).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional. Recommended with -N to populate the input directory without manual file copying.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -N -p /path/to/project/dir --input user/path1/file1.csv --input user/path2/file2.csv</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="setEPSG"><code>--setEPSG</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Set project EPSG coordinate system</p>
+<strong>Format:</strong> <code>string in the form EPSG:<code></code>
 
-<p>EPSG authority code (default: Unknown)</p>
+<p><strong>Description:</strong> Set project EPSG coordinate system (projected coordinates).</p>
+
+<strong>Default:</strong> <code>"Unknown" (no coordinate reference system is assigned by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional parameter, used with <a href="#new-project">--new_project</a> flag.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -N -p /path/to/project/dir --setEPSG EPSG:32633</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="setIDXYZ"><code>-S</code>, <code>--setIDXYZ</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Enable manual setting of coordinate column numbers</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Flag to set coordinate column numbers</p>
+<p><strong>Description:</strong> Enable manual setting of coordinate column numbers, overriding the automatic detection of ID/X/Y/Z columns.</p>
+
+<strong>Default:</strong> <code>false (columns are detected automatically by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> When using -S/<a href="#setIDXYZ">--setIDXYZ</a>, these column flags work together:
 <ul>
@@ -376,56 +451,88 @@
 <div class="flag-separator"></div>
 
 <h4 id="setID"><code>--setID</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
 
-<p><strong>Description:</strong> Set ID column number</p>
+<strong>Format:</strong> <code>int</code>
 
-<p>Column number for ID field</p>
+<p><strong>Description:</strong> Set ID column number (0-based index of the identifier column in the input CSV).</p>
+
+<strong>Default:</strong> <code>0 (first column).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with -S/<a href="#setIDXYZ">--setIDXYZ</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /path/to/project/dir -S --setID 0 --setX 1 --setY 2</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="setX"><code>--setX</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
 
-<p><strong>Description:</strong> Set X coordinate column number</p>
+<strong>Format:</strong> <code>int</code>
 
-<p>Column number for X coordinate</p>
+<p><strong>Description:</strong> Set X coordinate column number (0-based index of the X column in the input CSV).</p>
+
+<strong>Default:</strong> <code>0 (first column).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with -S/<a href="#setIDXYZ">--setIDXYZ</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /path/to/project/dir -S --setID 0 --setX 1 --setY 2</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="setY"><code>--setY</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
 
-<p><strong>Description:</strong> Set Y coordinate column number</p>
+<strong>Format:</strong> <code>int</code>
 
-<p>Column number for Y coordinate</p>
+<p><strong>Description:</strong> Set Y coordinate column number (0-based index of the Y column in the input CSV).</p>
+
+<strong>Default:</strong> <code>0 (first column).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with -S/<a href="#setIDXYZ">--setIDXYZ</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /path/to/project/dir -S --setID 0 --setX 1 --setY 2</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="setZ"><code>--setZ</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
 
-<p><strong>Description:</strong> Set Z coordinate column number</p>
+<strong>Format:</strong> <code>int</code>
 
-<p>Column number for Z coordinate</p>
+<p><strong>Description:</strong> Set Z coordinate column number (0-based index of the Z column in the input CSV).</p>
+
+<strong>Default:</strong> <code>0 (first column).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional. Used together with -S/<a href="#setIDXYZ">--setIDXYZ</a> for 3D datasets.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /path/to/project/dir -S --setID 0 --setX 1 --setY 2 --setZ 3</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="setDel"><code>--setDel</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Set CSV delimiter type</p>
+<strong>Format:</strong> <code>string</code> (<code>DEFAULT</code>, <code>COMMA</code>)
 
-<p>Type of CSV delimiter (DEFAULT or COMMA)</p>
+<p><strong>Description:</strong> Set CSV delimiter type used to parse the input file. DEFAULT uses the semicolon ';', COMMA uses ','.</p>
+
+<strong>Default:</strong> <code>"DEFAULT" (semicolon ';' delimiter).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -C/<a href="#converter">--converter</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /path/to/project/dir --setDel COMMA</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="converter"><code>-C</code>, <code>--converter</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Convert CSV format data into MUSE format</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Flag to enable data conversion</p>
+<p><strong>Description:</strong> Convert CSV format data into MUSE format (per-variable .dat/.json files).</p>
+
+<strong>Default:</strong> <code>false (conversion is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> When using -C/<a href="#converter">--converter</a>, these flags are commonly used:
 <ul>
@@ -435,34 +542,63 @@
   <li>-S/<a href="#setIDXYZ">--setIDXYZ</a>: Manual column mapping (optional)</div></li>
 </ul>
 
-<div class="example"><strong>Example:</strong> <code>-C --pdir /project --setDel COMMA --inf 0.0 --sup 100.0</code></div>
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /project --setDel COMMA --inf 0.0 --sup 100.0</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="inf"><code>--inf</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
 
-<p><strong>Description:</strong> Set inferior limit for variable values</p>
+<strong>Format:</strong> <code>double</code>
 
-<p>Inferior limit value</p>
+<p><strong>Description:</strong> Set inferior limit for variable values. Values below this limit are flagged during conversion.</p>
+
+<strong>Default:</strong> <code>0 (inferior limit set to 0).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -C/<a href="#converter">--converter</a>, together with <a href="#sup">--sup</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /project --inf 0.0 --sup 100.0</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="sup"><code>--sup</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
 
-<p><strong>Description:</strong> Set superior limit for variable values</p>
+<strong>Format:</strong> <code>double</code>
 
-<p>Superior limit value</p>
+<p><strong>Description:</strong> Set superior limit for variable values. Values above this limit are flagged during conversion.</p>
+
+<strong>Default:</strong> <code>1 (superior limit set to 1).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -C/<a href="#converter">--converter</a>, together with <a href="#inf">--inf</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /project --inf 0.0 --sup 100.0</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="tol"><code>--tol</code></h4>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
+
+<p><strong>Description:</strong> Set tolerance used when comparing point coordinates (e.g. to decide whether two points are duplicated).</p>
+
+<strong>Default:</strong> <code>1.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#check-duplicates">--check-duplicates</a> / <a href="#remove-duplicates">--remove-duplicates</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /project --check-duplicates --tol 0.001</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="read"><code>-R</code>, <code>--read</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Enable reading of MUSE format files</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Flag to enable MUSE format reading</p>
+<p><strong>Description:</strong> Enable reading of MUSE format files and print a summary of the stored data.</p>
+
+<strong>Default:</strong> <code>false (reading is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> When using -R/<a href="#read">--read</a>, these flags work together:
 <ul>
@@ -472,70 +608,132 @@
   <li><a href="#hist">--hist</a>: Enable histogram plotting (optional)</div></li>
 </ul>
 
-<div class="example"><strong>Example:</strong> <code>-R --pdir /project --var temperature --hist --nbin 20</code></div>
+<div class="example"><strong>Example:</strong> <code>muse_data -R -p /project --var temperature --hist --nbin 20</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="var"><code>-v</code>, <code>--var</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Specify variable name to read</p>
+<strong>Format:</strong> <code>string (variable name)</code>
 
-<p>Variable name (default: ALL_INPUT)</p>
+<p><strong>Description:</strong> Specify variable name to read. Use ALL_INPUT to process every input variable.</p>
+
+<strong>Default:</strong> <code>"ALL_INPUT" (all input variables are read).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -R/<a href="#read">--read</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -R -p /project --var temperature</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="nrealiz"><code>-n</code>, <code>--nrealiz</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
 
-<p><strong>Description:</strong> Set number of realization to process</p>
+<strong>Format:</strong> <code>int</code>
 
-<p>Number of realization (default: 0)</p>
+<p><strong>Description:</strong> Set number of realizations to process.</p>
+
+<strong>Default:</strong> <code>0 (no simulated realization is read).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -R/<a href="#read">--read</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -R -p /project --var temperature --nrealiz 100</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="hist"><code>--hist</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Enable histogram computation and plotting</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Flag to compute histogram plots</p>
+<p><strong>Description:</strong> Enable histogram computation and plotting for the read variable(s).</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> When using <a href="#hist">--hist</a>, these flags work together:
+<strong>Default:</strong> <code>false (histogram computation is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -R/<a href="#read">--read</a>. When using <a href="#hist">--hist</a>, these flags work together:
 <ul>
   <li><a href="#nval">--nval</a>: Minimum number of values for plotting (default: 20)</li>
   <li><a href="#nbin">--nbin</a>: Number of histogram bins (default: 1)</li>
 </ul>
 Requires sufficient data points (>= nval threshold)</div>
 
-<div class="example"><strong>Example:</strong> <code>--hist --nval 50 --nbin 25</code></div>
+<div class="example"><strong>Example:</strong> <code>muse_data -R -p /project --var temperature --hist --nval 50 --nbin 25</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="nval"><code>--nval</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
 
-<p><strong>Description:</strong> Set minimum number of values for histogram plotting</p>
+<strong>Format:</strong> <code>int</code>
 
-<p>Minimum number of values (default: 20)</p>
+<p><strong>Description:</strong> Set minimum number of values for histogram plotting. The histogram is drawn only if the valid samples are at least this many.</p>
+
+<strong>Default:</strong> <code>20</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#hist">--hist</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -R -p /project --var temperature --hist --nval 50</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="nbin"><code>--nbin</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>size_t</code></p>
 
-<p><strong>Description:</strong> Set number of bins for histogram plot</p>
+<strong>Format:</strong> <code>size_t</code>
 
-<p>Number of bins for histogram (default: 1)</p>
+<p><strong>Description:</strong> Set number of bins for histogram plot. Controls histogram resolution and detail level.</p>
+
+<strong>Default:</strong> <code>1 (when not set, the number of bins is chosen automatically).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#hist">--hist</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -R -p /project --var temperature --hist --nbin 25</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="csv"><code>--csv</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Enable CSV format for output files</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Flag to save files in CSV format</p>
+<p><strong>Description:</strong> Enable CSV format for output files (in addition to the MUSE format).</p>
+
+<strong>Default:</strong> <code>false (output is saved only in MUSE format by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional additional output format.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /project --csv</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="check-duplicates"><code>--check-duplicates</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Enable check of duplicated points. Reports points sharing the same coordinates (within --tol) without modifying the data.</p>
+
+<strong>Default:</strong> <code>false (duplicate checking is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -C/<a href="#converter">--converter</a>. The comparison tolerance is set with <a href="#tol">--tol</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /project --check-duplicates --tol 0.001</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="remove-duplicates"><code>--remove-duplicates</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Enable removal of duplicated points. Removes points sharing the same coordinates (within --tol) from the converted dataset.</p>
+
+<strong>Default:</strong> <code>false (duplicate removal is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -C/<a href="#converter">--converter</a>. The comparison tolerance is set with <a href="#tol">--tol</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_data -C -p /project --remove-duplicates --tol 0.001</code></div>
 
 <div class="flag-separator"></div>
 

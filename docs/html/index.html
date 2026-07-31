@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MUSE - Stochastic-based tool for Modeling Uncertainty as a Support for Enviroments - MUSE Documentation</title>
+    <title>MUSE Command-Line Options Documentation - MUSE Documentation</title>
     <style>
         :root {
             /* Light theme variables */
@@ -261,6 +261,16 @@
         .example strong {
             color: var(--success-color);
         }
+        .required {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--danger-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .required strong {
+            color: var(--danger-color);
+        }
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -316,155 +326,37 @@
                 </button>
             </div>
         </div>
-        <h1>MUSE - Stochastic-based tool for Modeling Uncertainty as a Support for Enviroments</h1>
-MUSE is an open-source stochastic tool for modeling uncertainty as a support for multi-scenario applications in Environments.
+        <h1>MUSE Command-Line Options Documentation</h1>
 
-<p>MUSE is an embedded package (all useful functionalities are self-contained): for this reason, the process from input to output is automatic and implicit, without further coding complications.
-Combining state-of-the-art techniques and advanced algorithms (e.g., parallel computing) guarantees robustness and, at the same time, high computing performances.
-The code is developed in C++ programming language and is tested on different Operating Systems (MacOS and Linux).</p>
+<strong>Auto-generated from source code - Do NOT edit manually</strong>
 
-<p>MUSE is featured by flexible and concise language in a command-line interface.
-The repository contains the entire MUSE package, such as source code for each computational module, a C++ library to collect all functionalities, a set of examples to test the main features, and the documentation. 
-Referring to examples, execution script and data are related to synthetical scenarios or real case studies.
-Results visualization is supported by <a href="https://www.paraview.org/download/">Paraview</a>.</p>
+<p>This document is automatically generated from the application source code.
+When options are modified in the source files, rebuild the project to update this documentation.</p>
 
-<h2>Clone</h2>
-We provide the commands to install MUSE. 
-The repository includes some submodules necessary to make the code work. Please, clone it recursively:
 
-<ul>
-  <li>Clone recursively the repository into your local machine:</li>
-</ul>
-<pre><code class="">git clone --recursive git@bitbucket.org:marianna_miola/muse.git
-</code></pre>
-<ul>
-  <li>If some submodules are not clone/update, plese use git command in the root directory ROOT (where this README lies):</li>
-</ul>
-<pre><code class="">cd ${ROOT}
-git submodule update --init --recursive
-</code></pre>
 
-<h2>Usage</h2>
-MUSE code has some mandatory dependences (included as a submodule in _${ROOT}/external_):
+<p>Muse is....
+Muse does...
+Muse copyright Miola & et al.</p>
 
-<ul>
-  <li>to manage command line arguments and options (tclap);</li>
-  <li>to metadata the computational process (cereal);</li>
-  <li>to geostatistics and stochastic computation (geostatslib);</li>
-  <li>to manage geospatial data (GDAL, PROJ);</li>
-  <li>to process polygonal/polyhedral meshes and offers geometric processing tools (cinolib, libigl, Triangle, Tetgen, fTetWild).</li>
-</ul>
+<p>....</p>
 
-<p>MUSE employs _Paraview_ python scripting and graphical interaface to visualize results.
-Please, download it to use additional functionalities of results visualization and customization.</p>
-
-<h2>Documentation</h2>
-The complete set of options for each MUSE module is available <a href="MUSE_Manual.pdf">here</a>. 
-MUSE can be easily built (see __Building__ section).
-
-<h2>Building</h2>
-To build MUSE, use the <code>00_exe_creation.sh</code> script available, located in the root directory ROOT (where this README lies). 
-It is set to build the code and some external dependencies (_Triangle, Tetgen, fTetWild_) that need building.
-
-<h2>Examples</h2>
-To guarantee replicability, data of our examples are provided in the _example_ folder. 
-If you wish to replicate them, please run bash script file (_10_test_MUSE_example_name.sh_), as follows:
-
-<pre><code class="">cd ${ROOT}/examples/example_name/script
-./10_test_MUSE_example_name.sh
-</code></pre>
-
-<p>Results will be available in the _${ROOT}/examples/MUSE_test/example_name_ folder.
-To visualize results, please run bash script file (_20_test_MUSE_example_name.sh_) located in _script_ folder of the related example:</p>
-
-<pre><code class="">./20_test_MUSE_example_name.sh
-</code></pre>
-
-<h2>Authors contact</h2>
-<ul>
-  <li>Marianna Miola (DISTAV-UNIGE, Genova, Italy), email: marianna.miola@edu.unige.it</li>
-  <li>Daniela Cabiddu (CNR-IMATI, Genova, Italy)</li>
-  <li>Simone Pittaluga (CNR-IMATI, Genova, Italy)</li>
-  <li>Marino Vetuschi Zuccolini (DISTAV-UNIGE, Genova, Italy)</li>
-</ul>
-
-<h2>License</h2>
-
-<p>MUSE is an open-source tool available for academic and research purposes. Please refer to the project repository for specific licensing terms and conditions.</p>
-
-<h2>Citation</h2>
-
-<p>If you use MUSE in your academic projects, please consider citing us using the following BibTeX entry:
-<pre><code class="">@inproceedings {10.2312:stag.20221265,
-booktitle = {Smart Tools and Applications in Graphics - Eurographics Italian Chapter Conference},
-editor = {Cabiddu, Daniela and Schneider, Teseo and Allegra, Dario and Catalano, Chiara Eva and Cherchi, Gianmarco and Scateni, Riccardo},
-title = {{MUSE: Modeling Uncertainty as a Support for Environment}},
-author = {Miola, Marianna and Cabiddu, Daniela and Pittaluga, Simone and Vetuschi Zuccolini, Marino},
-year = {2022},
-publisher = {The Eurographics Association},
-ISSN = {2617-4855},
-ISBN = {978-3-03868-191-5},
-DOI = {10.2312/stag.20221265}
-}</p>
-
-<p>@phdthesis{MIOLA2025PHD,
-title = {MUSE: Modeling Uncertainty as a Support for Environment},
-author = {Marianna Miola},
-year = {2025},
-school = {Università degli Studi di Genova (UNIGE)},
-address = {Genova, Italy}
-}
-</code></pre></p>
-
-<h3>Additional Citations for Specific Components</h3>
-
-<strong>For muse_geometry users:</strong> Please also cite the following paper:
-<pre><code class="">@inproceedings{10.2312:stag.20251318,
-booktitle = {Smart Tools and Applications in Graphics - Eurographics Italian Chapter Conference},
-editor = {Comino Trinidad, Marc and Mancinelli, Claudio and Maggioli, Filippo and Romanengo, Chiara and Cabiddu, Daniela and Giorgi, Daniela},
-title = {{A lightweight open-source tool for Meshing within Geosciences}},
-author = {Miola, Marianna and Cabiddu, Daniela and Pittaluga, Simone and Raviola, Micaela and Zuccolini, Marino Vetuschi},
-year = {2025},
-publisher = {The Eurographics Association},
-ISSN = {2617-4855},
-ISBN = {978-3-03868-296-7},
-DOI = {10.2312/stag.20251318}
-}
-</code></pre>
-
-<strong>For metadata handling in MUSE:</strong> Please also cite the EWoPe paper:
-<pre><code class="">@article{MIOLA2026106099,
-title = {EWoPe: A light Embeddable WOrkflow PErsistence tool for geoscientific pipeline reproducibility},
-journal = {Computers & Geosciences},
-volume = {209},
-pages = {106099},
-year = {2026},
-issn = {0098-3004},
-doi = {https://doi.org/10.1016/j.cageo.2025.106099},
-url = {https://www.sciencedirect.com/science/article/pii/S0098300425002493},
-author = {Marianna Miola and Daniela Cabiddu and Simone Pittaluga and Micaela Raviola and Marino {Vetuschi Zuccolini}},
-keywords = {Scientific workflows, Workflow persistence, Provenance tracking, Metadata, Geoscientific modeling, Computational reproducibility},
-abstract = {Scientific workflows are essential in modern geoscientific research, where complex, multi-stage computational pipelines are used to analyze heterogeneous environmental data. Ensuring the reproducibility and traceability of these workflows is critical but often challenging due to their intricacy and evolving structure. We introduce EWoPe (Embeddable Workflow Persistence), a lightweight and embeddable methodology and C++ library designed to persist and reconstruct scientific workflows over time. Unlike existing workflow systems and provenance tools, our method adds minimal overhead to workflow execution: it does not automate or optimize processes, but instead ensures persistence through lightweight and structured metadata. EWoPe models workflows as directed acyclic graphs (DAGs), in which each data node is linked to computational tasks through metadata. The latter captures input–output dependencies, algorithm parameters, execution commands, and intermediate results, supporting full traceability and reproducibility of computational histories. EWoPe offers dual usability: as a standalone command-line tool or as an embeddable component within larger applications. We show its flexibility and applicability through a case study involving a complex workflow leading to subsurface reaction-transport modeling, starting from boreholes data. The EWoPe library is publicly available and designed to be extensible, making it suitable for a wide range of scientific domains, including geochemistry, geophysics, environmental engineering, and any other fields where transparency and data integrity are critical.}
-}
-</code></pre>
-
-<h2>Acknowledgment</h2>
-This work is supported by PON "Ricerca e Innovazione" 2014-2020, Asse IV "Istruzione e ricerca per il recupero", Azione IV.5 "Dottorati su tematiche green" DM 1061/2021.
+<p>links...</p>
 
 <h2>Available Applications</h2>
 
 <p>The MUSE toolkit consists of the following applications:</p>
 
 <ul>
-  <li><strong><a href="muse_compute.html">muse_compute</a></strong>: MUSE = Modelling of Uncertainty as a Support of Environment; Compute tool</li>
-  <li><strong><a href="muse_data.html">muse_data</a></strong>: MUSE = Modelling of Uncertainty as a Support of Environment; Data tool</li>
+  <li><strong><a href="muse_compute.html">muse_compute</a></strong>: MUSE - Modelling Uncertainty as a Support of Environment. MUSE-compute application</li>
+  <li><strong><a href="muse_data.html">muse_data</a></strong>: MUSE - Modelling Uncertainty as a Support for Environment. muse-data application</li>
   <li><strong><a href="muse_export.html">muse_export</a></strong>: MUSE = Modelling of Uncertainty as a Support of Environment; Export tool</li>
-  <li><strong><a href="muse_geometry.html">muse_geometry</a></strong>: MUSE = Modelling of Uncertainty as a Support of Environment; Geometry tool</li>
+  <li><strong><a href="muse_export_raster.html">muse_export_raster</a></strong>: MUSE = Modelling of Uncertainty as a Support of Environment; Export tool</li>
+  <li><strong><a href="muse_geometry.html">muse_geometry</a></strong>: MUSE - Modelling Uncertainty as a Support of Environment. MUSE-geometry application</li>
+  <li><strong><a href="muse_geometry_tetmesh-generator.html">muse_geometry_tetmesh-generator</a></strong>: MUSE = Modelling of Uncertainty as a Support of Environment; Export tool</li>
   <li><strong><a href="muse_manipulate.html">muse_manipulate</a></strong>: MUSE = Modelling of Uncertainty as a Support of Environment; Manipulate tool</li>
-  <li><strong><a href="muse_plot.html">muse_plot</a></strong>: MUSE = Modelling of Uncertainty as a Support of Environment; Plot tool</li>
-  <li><strong><a href="muse_project.html">muse_project</a></strong>: MUSE = Modelling of Uncertainty as a Support of Environment; Muse Project tool</li>
-  <li><strong><a href="muse_utility.html">muse_utility</a></strong>: MUSE = Modelling of Uncertainty as a Support of Environment; Muse Utility tool</li>
-  <li><strong><a href="muse_vario.html">muse_vario</a></strong>: MUSE = Modelling of Uncertainty as a Support of Environment; Vario tool</li>
+  <li><strong><a href="muse_project.html">muse_project</a></strong>: MUSE - Modelling Uncertainty as a Support of Environment. MUSE-project application</li>
+  <li><strong><a href="muse_vario.html">muse_vario</a></strong>: MUSE - Modelling Uncertainty as a Support of Environment. MUSE-vario application</li>
 </ul>
 
 

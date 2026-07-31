@@ -261,6 +261,16 @@
         .example strong {
             color: var(--success-color);
         }
+        .required {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--danger-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .required strong {
+            color: var(--danger-color);
+        }
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -318,68 +328,168 @@
         </div>
         <h2>muse_geometry</h2>
 
-<p><strong>Description:</strong> MUSE = Modelling of Uncertainty as a Support of Environment; Geometry tool</p>
+<p><strong>Description:</strong> MUSE - Modelling Uncertainty as a Support of Environment. MUSE-geometry application</p>
 
 <h3>Usage</h3>
 
-<pre><code class="bash">muse_geometry [OPTIONS]
+<pre><code class="bash">muse_geometry -p <PDIR> [OPTIONS]
 </code></pre>
+
+<h3>Options Index</h3>
+
+<ul>
+  <li><a href="#geometry"><code>-N</code>, <code>--geometry</code></a> — Creation of new geometry environment in the project folder</li>
+  <li><a href="#pdir"><code>-p</code>, <code>--pdir</code></a> — Set project directory</li>
+  <li><a href="#setEPSG"><code>--setEPSG</code></a> — Set project EPSG</li>
+  <li><a href="#vector"><code>-V</code>, <code>--vector</code></a> — Load Vector file</li>
+  <li><a href="#save"><code>--save</code></a> — Saving data content of geospatial files</li>
+  <li><a href="#attribute"><code>--attribute</code></a> — Save attribute table from geospatial file</li>
+  <li><a href="#raster"><code>-R</code>, <code>--raster</code></a> — Load Raster file</li>
+  <li><a href="#pcl"><code>-P</code>, <code>--pcl</code></a> — Load point cloud</li>
+  <li><a href="#points"><code>--points</code></a> — Load filename as POINTS geometry type</li>
+  <li><a href="#polygon"><code>--polygon</code></a> — Load filename as POLYGON geometry type</li>
+  <li><a href="#gridata"><code>-G</code>, <code>--gridata</code></a> — Grid data - test</li>
+  <li><a href="#bbp"><code>--bbp</code></a> — Set bounding box points</li>
+  <li><a href="#rotaxis"><code>--rotaxis</code></a> — Set rotation axis</li>
+  <li><a href="#rotangle"><code>--rotangle</code></a> — Set clockwise rotation angle (in degree)</li>
+  <li><a href="#rotcx"><code>--rotcx</code></a> — Set coordinte X of rotation center</li>
+  <li><a href="#rotcy"><code>--rotcy</code></a> — Set coordinte Y of rotation center</li>
+  <li><a href="#rotcz"><code>--rotcz</code></a> — Set coordinte Z of rotation center</li>
+  <li><a href="#tri"><code>--tri</code></a> — Set triangulation for 2D meshing</li>
+  <li><a href="#convex"><code>--convex</code></a> — Set convex hull for points triangulation</li>
+  <li><a href="#concave"><code>--concave</code></a> — Set concave hull for points triangulation</li>
+  <li><a href="#boundary"><code>--boundary</code></a> — Set external boundary for points triangulation</li>
+  <li><a href="#opt"><code>--opt</code></a> — Set optimization flags enabled for triangulation or tetrahedralization</li>
+  <li><a href="#grid"><code>--grid</code></a> — Set grid for 2D meshing</li>
+  <li><a href="#resx"><code>--resx</code></a> — Set x resolution</li>
+  <li><a href="#resy"><code>--resy</code></a> — Set y resolution</li>
+  <li><a href="#resz"><code>--resz</code></a> — Set z resolution</li>
+  <li><a href="#poly"><code>--poly</code></a> — Set generic polygon mesh for 2D meshing</li>
+  <li><a href="#subset"><code>--subset</code></a> — Set (random) subset of points</li>
+  <li><a href="#meth"><code>--meth</code></a> — Set method for z values</li>
+  <li><a href="#setz"><code>--setz</code></a> — Set const z values for new points</li>
+  <li><a href="#offset"><code>-O</code>, <code>--offset</code></a> — Load polygon mesh and apply offset</li>
+  <li><a href="#delta"><code>--delta</code></a> — Set DELTA offset</li>
+  <li><a href="#abs"><code>--abs</code></a> — Set ABSOLUTE ELEVATION offset</li>
+  <li><a href="#zoffset"><code>-z</code>, <code>--zoffset</code></a> — Set offset in Z direction</li>
+  <li><a href="#append"><code>-A</code>, <code>--append</code></a> — Append meshes</li>
+  <li><a href="#triobj"><code>-T</code>, <code>--triobj</code></a> — Load trimeshes and create an object closed by surface meshes</li>
+  <li><a href="#mesh"><code>-m</code>, <code>--mesh</code></a> — Set (multi) mesh files</li>
+  <li><a href="#quadobj"><code>-Q</code>, <code>--quadobj</code></a> — Load quadmeshes and create an object closed by surface meshes</li>
+  <li><a href="#clean"><code>--clean</code></a> — Clean quadrilateral mesh from isolated polys</li>
+  <li><a href="#volmesh"><code>-M</code>, <code>--volmesh</code></a> — Load polygonal mesh and create polyedral mesh</li>
+  <li><a href="#tet"><code>--tet</code></a> — Set tetrahedralization (using TetGen C++ library)</li>
+  <li><a href="#vox"><code>--vox</code></a> — Set voxel as polyedralmesh</li>
+  <li><a href="#hex"><code>--hex</code></a> — Set hexmesh as polyedral</li>
+  <li><a href="#nmaxvox"><code>--nmaxvox</code></a> — Set n max voxel per side</li>
+  <li><a href="#vmwells"><code>-W</code>, <code>--vmwells</code></a> — Load (closed) polygonal mesh and create a tetrahedral mesh constrained to well(s)</li>
+  <li><a href="#generate-box"><code>--generate-box</code></a> — Generate box with dimensions: width,height,depth (e.g., \</li>
+  <li><a href="#output"><code>-o</code>, <code>--output</code></a> — Output triangle mesh file (.off format)</li>
+  <li><a href="#well"><code>-w</code>, <code>--well</code></a> — Well specification. Defines one or more wells (cylindrical, box or polygonal) to constrain the tetrahedral mesh. Repeat the flag to add several wells. Each value encodes the well shape and geometry; see</li>
+  <li><a href="#edge-length"><code>-e</code>, <code>--edge-length</code></a> — Target edge length for remeshing (default: auto from input mesh)</li>
+  <li><a href="#refine-cylinders"><code>--refine-cylinders</code></a> — Refine cylinder mesh by halving the target edge length</li>
+  <li><a href="#cylinder-edge-scale"><code>--cylinder-edge-scale</code></a> — Scale factor for cylinder edge length (e.g., 0.5 for finer, 2.0 for coarser)</li>
+  <li><a href="#verbose"><code>-v</code>, <code>--verbose</code></a> — Enable verbose output</li>
+  <li><a href="#max-tet-volume"><code>--max-tet-volume</code></a> — Maximum tetrahedron volume for TetGen (default: auto)</li>
+  <li><a href="#save-no-wells"><code>--save-no-wells</code></a> — Save tetrahedral mesh without wells (removes tets inside wells, suffix: _no_wells.mesh)</li>
+  <li><a href="#save-only-wells"><code>--save-only-wells</code></a> — Save tetrahedral mesh with only wells (removes tets outside wells, label -1, suffix: _only_wells.mesh)</li>
+  <li><a href="#trimesh"><code>-L</code>, <code>--trimesh</code></a> — Load trimesh file</li>
+  <li><a href="#splmet"><code>--splmet</code></a> — Set polys split method</li>
+  <li><a href="#remesh"><code>--remesh</code></a> — Set remeshing</li>
+  <li><a href="#mark"><code>--mark</code></a> — Set marked boundary edges for remeshing</li>
+  <li><a href="#extractbp"><code>--extractbp</code></a> — Set extract boundary points</li>
+  <li><a href="#it"><code>--it</code></a> — Set number of iterations</li>
+  <li><a href="#scale"><code>--scale</code></a> — Set scale mesh</li>
+  <li><a href="#translate"><code>--translate</code></a> — Set translate mesh of the quantity specified by the string</li>
+  <li><a href="#sx"><code>--sx</code></a> — Set scale factor in X direction</li>
+  <li><a href="#sy"><code>--sy</code></a> — Set scale factor in Y direction</li>
+  <li><a href="#sz"><code>--sz</code></a> — Set scale factor in Z direction</li>
+  <li><a href="#tetmesh"><code>-Z</code>, <code>--tetmesh</code></a> — Load tetmesh file</li>
+  <li><a href="#surf"><code>--surf</code></a> — Extract surface from volume</li>
+  <li><a href="#obj"><code>--obj</code></a> — Saving surface mesh in obj format (default: .off)</li>
+  <li><a href="#vtk"><code>--vtk</code></a> — Saving volume mesh in vtk format (default: .mesh)</li>
+  <li><a href="#xyz"><code>--xyz</code></a> — Saving text file in xyz format</li>
+  <li><a href="#csv"><code>--csv</code></a> — Saving text file in csv format</li>
+  <li><a href="#merge"><code>-U</code>, <code>--merge</code></a> — Merge two trimesh</li>
+  <li><a href="#proxthresh"><code>--proxthresh</code></a> — Set proximaty threshold</li>
+  <li><a href="#split"><code>-S</code>, <code>--split</code></a> — Split two trimesh</li>
+  <li><a href="#cscalar"><code>-F</code>, <code>--cscalar</code></a> — Create scalar field from centroids configuration and real samples</li>
+  <li><a href="#smesh"><code>--smesh</code></a> — Set samples mesh associated to (real) values</li>
+  <li><a href="#sval"><code>--sval</code></a> — Set samples values associated to each vertex of samples mesh</li>
+  <li><a href="#rscalar"><code>--rscalar</code></a> — Restore scalar field from centroids configuration and real samples</li>
+  <li><a href="#res"><code>-D</code>, <code>--res</code></a> — Set multiresolution</li>
+  <li><a href="#file"><code>-f</code>, <code>--file</code></a> — Set scalar field file</li>
+  <li><a href="#refmod"><code>--refmod</code></a> — Geometry model</li>
+  <li><a href="#outf"><code>--outf</code></a> — Set folder to save outputs</li>
+  <li><a href="#prec"><code>--prec</code></a> — Set precision</li>
+  <li><a href="#tol"><code>--tol</code></a> — Set tolerance</li>
+</ul>
 
 <h3>Options</h3>
 
 <div class="flag-separator"></div>
 
 <h4 id="geometry"><code>-N</code>, <code>--geometry</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Creation of new geometry</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Flag to creation of new geometry</p>
+<p><strong>Description:</strong> Creation of new geometry environment in Project directory</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> When creating new geometry, requires:
-<ul>
-  <li>Input data source (choose one):</li>
-  <li>-V/<a href="#vector">--vector</a>: Load vector file (.shp, .gpkg)</li>
-  <li>-R/<a href="#raster">--raster</a>: Load raster file (.ASCII)</li>
-  <li>-P/<a href="#pcl">--pcl</a>: Load point cloud (.xyz, .dat, .txt)</li>
-  <li>Processing method (choose one):</li>
-  <li><a href="#tri">--tri</a>: Triangulation for 2D meshing</li>
-  <li><a href="#grid">--grid</a>: Grid for 2D meshing</li>
-</ul>
-OPTIONAL:
+<strong>Default:</strong> <code>false (geometry environment creation is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> This command initializes a new geometry environment within the specified project directory.
+It sets up the necessary folder structure (<a href="#pdir">--pdir</a> path/to/project/dir) to store geometrical items and models created by various geospatial input data sources and processing methods (computational geometry techniques).
+It is used with:
 <ul>
   <li><a href="#pdir">--pdir</a>: Project directory</li>
-  <li><a href="#setEPSG">--setEPSG</a>: Set coordinate system</div></li>
+  <li><a href="#setEPSG">--setEPSG</a>: Set coordinate reference system of geometry environment (optional)</div></li>
 </ul>
 
-<div class="example"><strong>Example:</strong> <code>muse_geometry -N --vector --tri --pdir /path/to/project</code></div>
+<div class="example"><strong>Example:</strong> <code>muse_geometry -N -p /path/to/project</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to the project directory)</code>
 
 <p><strong>Description:</strong> Project directory</p>
 
-<p>Path to project directory</p>
+<strong>Default:</strong> <code>"/path/to/project/dir" (placeholder value, should be replaced with an actual path).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -N/<a href="#geometry">--geometry</a> for geometry environment creation (and in other cases in which the project locations must be specified).
+Required to specify the project directory where the geometry environment will be created.
+The command initializes the necessary folder structure within the project directory to store geometrical items and models created by various geospatial input data sources and processing methods (computational geometry techniques).</div>
+
+<div class="example"><strong>Example:</strong> <code>-p /path/to/project/dir</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="setEPSG"><code>--setEPSG</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string in the form EPSG:<code></code>
 
 <p><strong>Description:</strong> Set project EPSG</p>
 
-<p>project epsg</p>
+<strong>Default:</strong> <code>"Unknown" (no coordinate reference system is assigned by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional parameter, used with -N/<a href="#geometry">--geometry</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -N -p /path/to/project --setEPSG EPSG:32633</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="vector"><code>-V</code>, <code>--vector</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Load Vector file</p>
 
-<p>Enable load vector file</p>
+<strong>Default:</strong> <code>false (vector loading is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -R/<a href="#raster">--raster</a> and -P/<a href="#pcl">--pcl</a>
 Used with -N/<a href="#geometry">--geometry</a> for geometry creation
@@ -393,29 +503,39 @@ OPTIONAL modifiers:
 <div class="flag-separator"></div>
 
 <h4 id="save"><code>--save</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Saving data content of geospatial files</p>
 
-<p>Enable saving data content of geospatial files</p>
+<strong>Default:</strong> <code>false (data content is not saved by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional modifier for -V/<a href="#vector">--vector</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="attribute"><code>--attribute</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Save attribute table from geospatial file</p>
 
-<p>Enable save attribute table from geospatial file</p>
+<strong>Default:</strong> <code>false (attribute table is not saved by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional modifier for -V/<a href="#vector">--vector</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="raster"><code>-R</code>, <code>--raster</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Load Raster file</p>
 
-<p>Enable load raster file</p>
+<strong>Default:</strong> <code>false (raster loading is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -V/<a href="#vector">--vector</a> and -P/<a href="#pcl">--pcl</a>
 Used with -N/<a href="#geometry">--geometry</a> for geometry creation
@@ -424,11 +544,13 @@ Supports: .ASCII format</div>
 <div class="flag-separator"></div>
 
 <h4 id="pcl"><code>-P</code>, <code>--pcl</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Load point cloud</p>
 
-<p>Enable load point cloud</p>
+<strong>Default:</strong> <code>false (point cloud loading is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -V/<a href="#vector">--vector</a> and -R/<a href="#raster">--raster</a>
 Used with -N/<a href="#geometry">--geometry</a> for geometry creation
@@ -442,38 +564,65 @@ Can be used with:
 <div class="flag-separator"></div>
 
 <h4 id="points"><code>--points</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to a file loaded as POINTS geometry)</code>
 
 <p><strong>Description:</strong> Load filename as POINTS geometry type</p>
 
-<p>Path to load filename as points geometry type</p>
+<strong>Default:</strong> <code>empty (no points file is loaded).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -P/<a href="#pcl">--pcl</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="polygon"><code>--polygon</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to a file loaded as POLYGON geometry)</code>
 
 <p><strong>Description:</strong> Load filename as POLYGON geometry type</p>
 
-<p>Path to load filename as polygon geometry type</p>
+<strong>Default:</strong> <code>empty (no polygon file is loaded).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -P/<a href="#pcl">--pcl</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="gridata"><code>-G</code>, <code>--gridata</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Grid data - test</p>
 
-<p>Enable grid data - test</p>
+<strong>Default:</strong> <code>false (grid data test is disabled by default).</code>
+
+<div class="flag-separator"></div>
+
+<h4 id="bbp"><code>--bbp</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code>, repeatable</p>
+
+<strong>Format:</strong> <code>string (point coordinates, e.g. "x,y,z"); repeatable</code>
+
+<p><strong>Description:</strong> Set bounding box points. Coordinates of the points defining the bounding box used by the grid-data test. Repeat the flag to pass several points.</p>
+
+<strong>Default:</strong> <code>empty (no bounding box points are set).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -G/<a href="#gridata">--gridata</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -G --bbp 0,0,0 --bbp 10,10,0</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="rotaxis"><code>--rotaxis</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string</code> (<code>X</code>, <code>Y</code>, <code>Z</code>, <code>NO</code>)
 
 <p><strong>Description:</strong> Set rotation axis</p>
 
-<p>rotation axis</p>
+<strong>Default:</strong> <code>"NO" (no rotation is applied).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> When using rotation, these flags work together:
 <ul>
@@ -487,49 +636,59 @@ Can be used with:
 <div class="flag-separator"></div>
 
 <h4 id="rotangle"><code>--rotangle</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double (degrees)</code>
 
 <p><strong>Description:</strong> Set clockwise rotation angle (in degree)</p>
 
-<p>clockwise rotation angle (in degree)</p>
+<strong>Default:</strong> <code>0.0</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="rotcx"><code>--rotcx</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
 
 <p><strong>Description:</strong> Set coordinte X of rotation center</p>
 
-<p>coordinte x of rotation center</p>
+<strong>Default:</strong> <code>0.0</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="rotcy"><code>--rotcy</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
 
 <p><strong>Description:</strong> Set coordinte Y of rotation center</p>
 
-<p>coordinte y of rotation center</p>
+<strong>Default:</strong> <code>0.0</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="rotcz"><code>--rotcz</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
 
 <p><strong>Description:</strong> Set coordinte Z of rotation center</p>
 
-<p>coordinte z of rotation center</p>
+<strong>Default:</strong> <code>0.0</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="tri"><code>--tri</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set triangulation for 2D meshing</p>
 
-<p>Enable set triangulation for 2d meshing</p>
+<strong>Default:</strong> <code>false (triangulation is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with <a href="#grid">--grid</a> meshing method
 Used with -N/<a href="#geometry">--geometry</a> for mesh creation
@@ -549,51 +708,68 @@ OPTIONAL:
 <div class="flag-separator"></div>
 
 <h4 id="convex"><code>--convex</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set convex hull for points triangulation</p>
 
-<p>Enable set convex hull for points triangulation</p>
+<strong>Default:</strong> <code>false (convex hull triangulation is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#tri">--tri</a> flag. Mutually exclusive with <a href="#concave">--concave</a></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="concave"><code>--concave</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set concave hull for points triangulation</p>
 
-<p>Enable set concave hull for points triangulation</p>
+<strong>Default:</strong> <code>false (concave hull triangulation is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#tri">--tri</a> flag. Mutually exclusive with <a href="#convex">--convex</a></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="boundary"><code>--boundary</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to a boundary file)</code>
 
 <p><strong>Description:</strong> Set external boundary for points triangulation</p>
 
-<p>external boundary for points triangulation</p>
+<strong>Default:</strong> <code>empty (no external boundary is used).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional. Used with <a href="#tri">--tri</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="opt"><code>--opt</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Set optimization flags</p>
+<strong>Format:</strong> <code>string (Triangle/TetGen optimization flags, e.g. "pq20")</code>
 
-<p>optimization flags</p>
+<p><strong>Description:</strong> Set optimization flags to optimize triangulation (e.g., "pq20" for preserve+quality 20) or tetrahedralization (e.g., "pq20" for preserve+quality 20 in TetGen)</p>
+
+<strong>Default:</strong> <code>empty (no optimization flags are passed).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#tri">--tri</a> flag for triangulation optimization and with <a href="#tet">--tet</a> flag for tetrahedralization optimization.
+Refer to Triangle and TetGen documentation for available flags and options.</div>
+
+<div class="example"><strong>Example:</strong> <code>For Triangle: --tri --opt "pq20" OR For TetGen: --tet --opt "pq20"</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="grid"><code>--grid</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set grid for 2D meshing</p>
 
-<p>Enable set grid for 2d meshing</p>
+<strong>Default:</strong> <code>false (grid meshing is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with <a href="#tri">--tri</a> triangulation method
 Used with -N/<a href="#geometry">--geometry</a> for mesh creation
@@ -612,11 +788,13 @@ OPTIONAL:
 <div class="flag-separator"></div>
 
 <h4 id="resx"><code>--resx</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
 
 <p><strong>Description:</strong> Set x resolution</p>
 
-<p>x resolution</p>
+<strong>Default:</strong> <code>1.0</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#grid">--grid</a> flag. Required for grid meshing
 Must be used together with <a href="#resy">--resy</a></div>
@@ -624,11 +802,13 @@ Must be used together with <a href="#resy">--resy</a></div>
 <div class="flag-separator"></div>
 
 <h4 id="resy"><code>--resy</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
 
 <p><strong>Description:</strong> Set y resolution</p>
 
-<p>y resolution</p>
+<strong>Default:</strong> <code>1.0</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#grid">--grid</a> flag. Required for grid meshing
 Must be used together with <a href="#resx">--resx</a></div>
@@ -636,398 +816,758 @@ Must be used together with <a href="#resx">--resx</a></div>
 <div class="flag-separator"></div>
 
 <h4 id="resz"><code>--resz</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
 
 <p><strong>Description:</strong> Set z resolution</p>
 
-<p>z resolution</p>
+<strong>Default:</strong> <code>1.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional. Used with <a href="#grid">--grid</a> for 3D grids.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="poly"><code>--poly</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set generic polygon mesh for 2D meshing</p>
 
-<p>Enable set generic polygon mesh for 2d meshing</p>
+<strong>Default:</strong> <code>false (generic polygon meshing is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="subset"><code>--subset</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
+
+<strong>Format:</strong> <code>int (number of points in the random subset)</code>
 
 <p><strong>Description:</strong> Set (random) subset of points</p>
 
-<p>(random) subset of points</p>
+<strong>Default:</strong> <code>10</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional. Extracts a random subset of the input points.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="meth"><code>--meth</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string</code> (<code>MEAN</code>, <code>CONSTANT</code>, <code>NEAR</code>, <code>KRIGING</code>)
 
 <p><strong>Description:</strong> Set method for z values</p>
 
-<p>method for z values</p>
+<strong>Default:</strong> <code>"CONSTANT"</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="setz"><code>--setz</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
 
 <p><strong>Description:</strong> Set const z values for new points</p>
 
-<p>const z values for new points</p>
+<strong>Default:</strong> <code>0.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#meth">--meth</a> CONSTANT.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="offset"><code>-O</code>, <code>--offset</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Load polygon mesh and apply offset</p>
 
-<p>Enable load polygon mesh and apply offset</p>
+<strong>Default:</strong> <code>false (offset is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="delta"><code>--delta</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set DELTA offset</p>
 
-<p>Enable set delta offset</p>
+<strong>Default:</strong> <code>false (delta offset is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -O/<a href="#offset">--offset</a>. Mutually exclusive with <a href="#abs">--abs</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="abs"><code>--abs</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set ABSOLUTE ELEVATION offset</p>
 
-<p>Enable set absolute elevation offset</p>
+<strong>Default:</strong> <code>false (absolute-elevation offset is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -O/<a href="#offset">--offset</a>. Mutually exclusive with <a href="#delta">--delta</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="zoffset"><code>-z</code>, <code>--zoffset</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
 
 <p><strong>Description:</strong> Set offset in Z direction</p>
 
-<p>offset in z direction</p>
+<strong>Default:</strong> <code>0.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -O/<a href="#offset">--offset</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="append"><code>-A</code>, <code>--append</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Append meshes</p>
 
-<p>Enable append meshes</p>
+<strong>Default:</strong> <code>false (mesh appending is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="triobj"><code>-T</code>, <code>--triobj</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Load trimeshes and create an object closed by surface meshes</p>
 
-<p>Flag to load trimeshes and create an object closed by surface meshes</p>
+<strong>Default:</strong> <code>false (tri-object creation is disabled by default).</code>
+
+<div class="flag-separator"></div>
+
+<h4 id="mesh"><code>-m</code>, <code>--mesh</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code>, repeatable</p>
+
+<strong>Format:</strong> <code>string (path to a mesh file); repeatable</code>
+
+<p><strong>Description:</strong> Set (multi) mesh files. One or more mesh files used as input for the object-creation operations (e.g. -T/--triobj, -Q/--quadobj). Repeat the flag to pass several meshes.</p>
+
+<strong>Default:</strong> <code>empty (no mesh file is passed).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with the object-creation operations.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -T -p /path/to/project -m top.off -m bottom.off</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="quadobj"><code>-Q</code>, <code>--quadobj</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Load quadmeshes and create an object closed by surface meshes</p>
 
-<p>Flag to load quadmeshes and create an object closed by surface meshes</p>
+<strong>Default:</strong> <code>false (quad-object creation is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="clean"><code>--clean</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Clean quadrilateral mesh from isolated polys</p>
 
-<p>Enable clean quadrilateral mesh from isolated polys</p>
+<strong>Default:</strong> <code>false (cleaning is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -Q/<a href="#quadobj">--quadobj</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="volmesh"><code>-M</code>, <code>--volmesh</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Load polygonal mesh and create polyedral mesh</p>
 
-<p>Flag to load polygonal mesh and create polyedral mesh</p>
+<strong>Default:</strong> <code>false (volumetric object creation is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="tet"><code>--tet</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set tetrahedralization</p>
 
-<p>Enable set tetrahedralization</p>
+<strong>Default:</strong> <code>false (tetrahedralization is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -M/<a href="#volmesh">--volmesh</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="vox"><code>--vox</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set voxel as polyedralmesh</p>
 
-<p>Enable set voxel as polyedralmesh</p>
+<strong>Default:</strong> <code>false (voxel meshing is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -M/<a href="#volmesh">--volmesh</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="hex"><code>--hex</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set hexmesh as polyedral</p>
 
-<p>Enable set hexmesh as polyedral</p>
+<strong>Default:</strong> <code>false (hexmesh meshing is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -M/<a href="#volmesh">--volmesh</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="nmaxvox"><code>--nmaxvox</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
+
+<strong>Format:</strong> <code>int</code>
 
 <p><strong>Description:</strong> Set n max voxel per side</p>
 
-<p>Number of set n max voxel per side</p>
+<strong>Default:</strong> <code>1</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#vox">--vox</a>.</div>
+
+<div class="flag-separator"></div>
+
+<h4 id="vmwells"><code>-W</code>, <code>--vmwells</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Load (closed) polygonal mesh and create a tetrahedral mesh constrained to specific well(s)</p>
+
+<strong>Default:</strong> <code>false (well-constrained volume creation is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using this option, these flags work together:
+<ul>
+  <li>-W/<a href="#vmwells">--vmwells</a>: Load (closed) polygonal mesh and create a tetrahedral mesh constrained to specific well(s)</li>
+  <li><a href="#well">--well</a>: Specify well(s) file(s) (can be used multiple times for multiple wells)</div></li>
+</ul>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -M --tet --vmwells --well /path/to/well1.shp --well /path/to/well2.shp</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="generate-box"><code>--generate-box</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string in the form "width,height,depth" (e.g. "10,5,8")</code>
+
+<p><strong>Description:</strong> Generate a box mesh with the given dimensions (width,height,depth) to be used as input geometry for the well-constrained volume creation.</p>
+
+<strong>Default:</strong> <code>empty (no box is generated).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -W/<a href="#vmwells">--vmwells</a> as an alternative to loading an input mesh.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -W --generate-box "10,5,8" -o box.off</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="output"><code>-o</code>, <code>--output</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to an .off file)</code>
+
+<p><strong>Description:</strong> Output triangle mesh file. Path of the .off file where the generated/remeshed triangle mesh is written.</p>
+
+<strong>Default:</strong> <code>empty (a default output name is used).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -W/<a href="#vmwells">--vmwells</a> / <a href="#generate-box">--generate-box</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -W --generate-box "10,5,8" -o box.off</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="well"><code>-w</code>, <code>--well</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code>, repeatable</p>
+
+<strong>Format:</strong> <code>for the accepted encodings.</code>
+
+<p><strong>Description:</strong> Well specification. Defines one or more wells (cylindrical, box or polygonal) to constrain the tetrahedral mesh. Repeat the flag to add several wells. Each value encodes the well shape and geometry; see</p>
+
+<strong>Default:</strong> <code>empty (no well is created).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -W/<a href="#vmwells">--vmwells</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -W --vmwells --well CYL:XYH:100,200,50,5 --well BOX:XYB:100,200,10,10</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="edge-length"><code>-e</code>, <code>--edge-length</code></h4>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double (length; -1 = automatic)</code>
+
+<p><strong>Description:</strong> Target edge length for remeshing. Desired edge length used when remeshing the input/generated surface before tetrahedralization.</p>
+
+<strong>Default:</strong> <code>-1.0 (auto: derived from the input mesh).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -W/<a href="#vmwells">--vmwells</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -W --vmwells --edge-length 2.0</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="refine-cylinders"><code>--refine-cylinders</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Refine cylinder mesh by halving the target edge length, producing a finer discretization of the cylindrical wells.</p>
+
+<strong>Default:</strong> <code>false (cylinder refinement is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -W/<a href="#vmwells">--vmwells</a>.</div>
+
+<div class="flag-separator"></div>
+
+<h4 id="cylinder-edge-scale"><code>--cylinder-edge-scale</code></h4>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double (scale factor)</code>
+
+<p><strong>Description:</strong> Scale factor for cylinder edge length. Multiplies the target edge length used for cylindrical wells (e.g. 0.5 for finer, 2.0 for coarser).</p>
+
+<strong>Default:</strong> <code>1.0 (same edge length as the rest of the mesh).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -W/<a href="#vmwells">--vmwells</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -W --vmwells --cylinder-edge-scale 0.5</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="verbose"><code>-v</code>, <code>--verbose</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Enable verbose output, printing additional diagnostic information during the well/tetrahedralization process.</p>
+
+<strong>Default:</strong> <code>false (verbose output is disabled by default).</code>
+
+<div class="flag-separator"></div>
+
+<h4 id="max-tet-volume"><code>--max-tet-volume</code></h4>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double (volume; -1 = automatic)</code>
+
+<p><strong>Description:</strong> Maximum tetrahedron volume for TetGen. Upper bound on the volume of the generated tetrahedra (quality/size constraint).</p>
+
+<strong>Default:</strong> <code>-1.0 (auto: chosen by TetGen).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -W/<a href="#vmwells">--vmwells</a> / <a href="#tet">--tet</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -W --vmwells --max-tet-volume 100.0</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="save-no-wells"><code>--save-no-wells</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Save tetrahedral mesh without wells. Removes the tetrahedra inside the wells and writes the result with suffix _no_wells.mesh.</p>
+
+<strong>Default:</strong> <code>false (this variant is not saved by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -W/<a href="#vmwells">--vmwells</a>.</div>
+
+<div class="flag-separator"></div>
+
+<h4 id="save-only-wells"><code>--save-only-wells</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Save tetrahedral mesh with only wells. Removes the tetrahedra outside the wells (label -1) and writes the result with suffix _only_wells.mesh.</p>
+
+<strong>Default:</strong> <code>false (this variant is not saved by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -W/<a href="#vmwells">--vmwells</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="trimesh"><code>-L</code>, <code>--trimesh</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Load trimesh file</p>
 
-<p>Enable load trimesh file</p>
+<strong>Default:</strong> <code>false (trimesh loading is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="splmet"><code>--splmet</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (split method name)</code>
 
 <p><strong>Description:</strong> Set polys split method</p>
 
-<p>polys split method</p>
+<strong>Default:</strong> <code>"CENTROID"</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -L/<a href="#trimesh">--trimesh</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="remesh"><code>--remesh</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set remeshing</p>
 
-<p>Enable set remeshing</p>
+<strong>Default:</strong> <code>false (remeshing is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="mark"><code>--mark</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set marked boundary edges for remeshing</p>
 
-<p>Enable set marked boundary edges for remeshing</p>
+<strong>Default:</strong> <code>false (edge marking is disabled by default).</code>
 
-<div class="flag-separator"></div>
-
-<h4 id="collapse"><code>--collapse</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
-
-<p><strong>Description:</strong> Set collapse on edge to simplify mesh boundary</p>
-
-<p>Enable set collapse on edge to simplify mesh boundary</p>
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#remesh">--remesh</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="extractbp"><code>--extractbp</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set extract boundary points</p>
 
-<p>Enable set extract boundary points</p>
+<strong>Default:</strong> <code>false (boundary-point extraction is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="it"><code>--it</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
+
+<strong>Format:</strong> <code>int</code>
 
 <p><strong>Description:</strong> Set number of iterations</p>
 
-<p>Number of set number of iterations</p>
+<strong>Default:</strong> <code>1</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Number of iterations used by the iterative operations (e.g. remeshing).</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="scale"><code>--scale</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set scale mesh</p>
 
-<p>Enable set scale mesh</p>
+<strong>Default:</strong> <code>false (mesh scaling is disabled by default).</code>
+
+<div class="flag-separator"></div>
+
+<h4 id="translate"><code>--translate</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string in the form "x,y,z" (translation along each axis)</code>
+
+<p><strong>Description:</strong> Set translate mesh of the quantity specified by the string (e.g., "10,20,5"). This can be used to translate the loaded surface mesh by the specified amounts in the x, y, and z directions. For example, if the string is "10,20,5", the mesh will be translated by 10 units in the x direction, 20 units in the y direction, and 5 units in the z direction.</p>
+
+<strong>Default:</strong> <code>"0,0,0" (no translation).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> The string must be in the format "x,y,z" where x, y, and z are the translation values in each direction. The command is able for loading surface switch.</div>
+
+<div class="example"><strong>Example:</strong> <code>-L -p /path/to/project -m /path/to/mesh.off --translate 10,20,5</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="sx"><code>--sx</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
 
 <p><strong>Description:</strong> Set scale factor in X direction</p>
 
-<p>scale factor in x direction</p>
+<strong>Default:</strong> <code>1.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#scale">--scale</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="sy"><code>--sy</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
 
 <p><strong>Description:</strong> Set scale factor in Y direction</p>
 
-<p>scale factor in y direction</p>
+<strong>Default:</strong> <code>1.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#scale">--scale</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="sz"><code>--sz</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
 
 <p><strong>Description:</strong> Set scale factor in Z direction</p>
 
-<p>scale factor in z direction</p>
+<strong>Default:</strong> <code>1.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with <a href="#scale">--scale</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="tetmesh"><code>-Z</code>, <code>--tetmesh</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Load tetmesh file</p>
 
-<p>Enable load tetmesh file</p>
+<strong>Default:</strong> <code>false (tetmesh loading is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="surf"><code>--surf</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Extract surface from volume</p>
 
-<p>Enable extract surface from volume</p>
+<strong>Default:</strong> <code>false (surface extraction is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -Z/<a href="#tetmesh">--tetmesh</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="obj"><code>--obj</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Saving mesh in obj format</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Enable saving mesh in obj format</p>
+<p><strong>Description:</strong> Saving surface mesh in obj format</p>
+
+<strong>Default:</strong> <code>false (OBJ output is disabled by default; default is .off).</code>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -L -p .. --obj</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="vtk"><code>--vtk</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Saving mesh in vtk format</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Enable saving mesh in vtk format</p>
+<p><strong>Description:</strong> Saving volume mesh in vtk format</p>
+
+<strong>Default:</strong> <code>false (VTK output is disabled by default; default is .mesh).</code>
+
+<div class="example"><strong>Example:</strong> <code>muse_geometry -M -p .. --vtk</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="xyz"><code>--xyz</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Saving text file in xyz format (instead of the default .dat).</p>
+
+<strong>Default:</strong> <code>false (xyz output is disabled by default).</code>
+
+<div class="flag-separator"></div>
+
+<h4 id="csv"><code>--csv</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Saving text file in csv format (instead of the default .dat).</p>
+
+<strong>Default:</strong> <code>false (csv output is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="merge"><code>-U</code>, <code>--merge</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Merge two trimesh</p>
 
-<p>Enable merge two trimesh</p>
+<strong>Default:</strong> <code>false (mesh merging is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="proxthresh"><code>--proxthresh</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
+
+<strong>Format:</strong> <code>int</code>
 
 <p><strong>Description:</strong> Set proximaty threshold</p>
 
-<p>proximaty threshold</p>
+<strong>Default:</strong> <code>0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -U/<a href="#merge">--merge</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="split"><code>-S</code>, <code>--split</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Split two trimesh</p>
 
-<p>Enable split two trimesh</p>
+<strong>Default:</strong> <code>false (mesh splitting is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="cscalar"><code>-F</code>, <code>--cscalar</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Create scalar field from centroids configuration and real samples</p>
 
-<p>Flag to create scalar field from centroids configuration and real samples</p>
+<strong>Default:</strong> <code>false (scalar field creation is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="smesh"><code>--smesh</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to the samples mesh)</code>
 
 <p><strong>Description:</strong> Set samples mesh associated to (real) values</p>
 
-<p>samples mesh associated to (real) values</p>
+<strong>Default:</strong> <code>empty (no samples mesh is set).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -F/<a href="#cscalar">--cscalar</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="sval"><code>--sval</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to the samples values)</code>
 
 <p><strong>Description:</strong> Set samples values associated to each vertex of samples mesh</p>
 
-<p>samples values associated to each vertex of samples mesh</p>
+<strong>Default:</strong> <code>empty (no samples values are set).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -F/<a href="#cscalar">--cscalar</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="rscalar"><code>--rscalar</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Restore scalar field from centroids configuration and real samples</p>
 
-<p>Enable restore scalar field from centroids configuration and real samples</p>
+<strong>Default:</strong> <code>false (scalar field restore is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="res"><code>-D</code>, <code>--res</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
 
 <p><strong>Description:</strong> Set multiresolution</p>
 
-<p>Enable set multiresolution</p>
+<strong>Default:</strong> <code>false (multiresolution is disabled by default).</code>
 
 <div class="flag-separator"></div>
 
 <h4 id="file"><code>-f</code>, <code>--file</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to the scalar field file)</code>
 
 <p><strong>Description:</strong> Set scalar field file</p>
 
-<p>Path to set scalar field file</p>
+<strong>Default:</strong> <code>"Directory" (placeholder value, should be replaced with an actual path).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -D/<a href="#res">--res</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="refmod"><code>--refmod</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (geometry model name)</code>
 
 <p><strong>Description:</strong> Geometry model</p>
 
-<p>geometry model</p>
+<strong>Default:</strong> <code>"name_geometry" (placeholder value, should be replaced with an actual geometry model name).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -D/<a href="#res">--res</a>.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="outf"><code>--outf</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to the output folder)</code>
 
 <p><strong>Description:</strong> Set folder to save outputs</p>
 
-<p>Path to set folder to save outputs</p>
+<strong>Default:</strong> <code>"Directory" (placeholder value, should be replaced with an actual output folder).</code>
+
+<div class="flag-separator"></div>
+
+<h4 id="prec"><code>--prec</code></h4>
+<p><strong>Type:</strong> Value | <code>int</code></p>
+
+<strong>Format:</strong> <code>int (number of decimal digits)</code>
+
+<p><strong>Description:</strong> Set precision. Number of decimal digits used when writing numerical outputs.</p>
+
+<strong>Default:</strong> <code>6</code>
+
+<div class="flag-separator"></div>
+
+<h4 id="tol"><code>--tol</code></h4>
+<p><strong>Type:</strong> Value | <code>double</code></p>
+
+<strong>Format:</strong> <code>double</code>
+
+<p><strong>Description:</strong> Set tolerance. Numerical tolerance used in geometric comparisons (e.g. point/vertex matching).</p>
+
+<strong>Default:</strong> <code>1e-02</code>
 
 <div class="flag-separator"></div>
 

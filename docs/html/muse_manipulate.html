@@ -261,6 +261,16 @@
         .example strong {
             color: var(--success-color);
         }
+        .required {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--danger-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .required strong {
+            color: var(--danger-color);
+        }
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -325,67 +335,123 @@
 <pre><code class="bash">muse_manipulate [OPTIONS]
 </code></pre>
 
+<h3>Options Index</h3>
+
+<ul>
+  <li><a href="#extract"><code>-E</code>, <code>--extract</code></a> — Set extraction data based on geometry model</li>
+  <li><a href="#pdir"><code>-p</code>, <code>--pdir</code></a> — Set project directory</li>
+  <li><a href="#geom"><code>--geom</code></a> — Set geometry model</li>
+  <li><a href="#zcoord"><code>-z</code>, <code>--zcoord</code></a> — Set coordinate Z</li>
+  <li><a href="#intextr"><code>-I</code>, <code>--intextr</code></a> — Set extraction data from interval</li>
+  <li><a href="#sup"><code>--sup</code></a> — Set sup interval</li>
+  <li><a href="#inf"><code>--inf</code></a> — Set inf interval</li>
+  <li><a href="#nvar"><code>--nvar</code></a> — Set variable to check</li>
+  <li><a href="#sub"><code>--sub</code></a> — Set sub dataset extraction based on geometry</li>
+  <li><a href="#rotaxis"><code>--rotaxis</code></a> — Set rotation axis</li>
+  <li><a href="#rotangle"><code>--rotangle</code></a> — Set rotation angle (clockwise)</li>
+  <li><a href="#rotcx"><code>--rotcx</code></a> — Set rotation center x</li>
+  <li><a href="#rotcy"><code>--rotcy</code></a> — Set rotation center y</li>
+  <li><a href="#rotcz"><code>--rotcz</code></a> — Set rotation center z</li>
+  <li><a href="#prsurf"><code>-P</code>, <code>--prsurf</code></a> — Points projection on surfaces</li>
+  <li><a href="#prsect"><code>-S</code>, <code>--prsect</code></a> — Compute points projection on top/bottom boundary (2D section case).</li>
+  <li><a href="#prqsect"><code>-R</code>, <code>--prqsect</code></a> — Points projection on quads sections</li>
+  <li><a href="#prvol"><code>-V</code>, <code>--prvol</code></a> — Compute points projection on boundary (3D volumetric case).</li>
+  <li><a href="#step"><code>--step</code></a> — Set number of steps for geometry model</li>
+  <li><a href="#epsilon"><code>--epsilon</code></a> — Set tolerance to enlarge bounding box</li>
+  <li><a href="#mgeom"><code>-m</code>, <code>--mgeom</code></a> — Multi-geometry to pass</li>
+  <li><a href="#prdir"><code>--prdir</code></a> — Set direction of projection</li>
+  <li><a href="#type"><code>--type</code></a> — Set type</li>
+  <li><a href="#strat"><code>-T</code>, <code>--strat</code></a> — Points projection on surfaces</li>
+  <li><a href="#name"><code>--name</code></a> — Name of geometry model</li>
+  <li><a href="#sttype"><code>--sttype</code></a> — Set type of stratigraphic transformation</li>
+  <li><a href="#top"><code>--top</code></a> — Top geometry model</li>
+  <li><a href="#bot"><code>--bot</code></a> — Bottom geometry model</li>
+  <li><a href="#reggrow"><code>--reggrow</code></a> — Set region growing</li>
+  <li><a href="#obj"><code>--obj</code></a> — Saving trimesh in obj format</li>
+  <li><a href="#vtk"><code>--vtk</code></a> — Saving tetmesh in vtk format</li>
+  <li><a href="#save"><code>--save</code></a> — Saving extraction as set of points</li>
+  <li><a href="#var"><code>-v</code>, <code>--var</code></a> — Variable</li>
+  <li><a href="#file"><code>--file</code></a> — Set path to data file</li>
+</ul>
+
 <h3>Options</h3>
 
 <div class="flag-separator"></div>
 
 <h4 id="extract"><code>-E</code>, <code>--extract</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Extraction data</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Enable extraction data</p>
+<p><strong>Description:</strong> Extraction data basing on geometry model. This option allows to extract data from a geometry model, such as a surface or volume mesh, based on specified criteria. The extracted data can be used for further analysis or visualization.</p>
+
+<strong>Default:</strong> <code>false (extraction is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> When using -E/<a href="#extract">--extract</a>, requires:
 <ul>
-  <li><a href="#geom">--geom</a>: Geometry model (mandatory)</li>
-</ul>
-OPTIONAL:
-<ul>
-  <li><a href="#zcoord">--zcoord</a>: Z coordinate specification</li>
-  <li><a href="#sub">--sub</a>: Sub-dataset extraction</div></li>
+  <li><a href="#geom">--geom</a>: Geometry model to extract from (mandatory)</li>
+  <li><a href="#zcoord">--zcoord</a>: Coordinate Z to use for extraction (optional, used for 3D models)</div></li>
 </ul>
 
-<div class="example"><strong>Example:</strong> <code>-E --geom mesh_model --zcoord elevation</code></div>
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --geom model.obj</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<div class="required"><strong>⚠ Required:</strong> true (this parameter is mandatory for running the application).</div>
 
-<p><strong>Description:</strong> Project directory</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p>Path to project directory</p>
+<strong>Format:</strong> <code>string (path to the project directory)</code>
+
+<p><strong>Description:</strong> Set project directory. This is the main directory where the project files are located. It is a required argument for running the application, as it specifies the context in which the manipulation will occur. The project directory should contain all necessary data and geometry files for the operations to be performed.</p>
+
+<strong>Default:</strong> <code>"path/to/project" (placeholder value, should be replaced with an actual path).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> The project directory should be organized according to the expected structure of the MUSE project, with subdirectories for data, geometry, and output as needed.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --geom model.obj</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="geom"><code>--geom</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Geometry model</p>
+<strong>Format:</strong> <code>string (geometry model name)</code>
 
-<p>geometry model</p>
+<p><strong>Description:</strong> Set geometry model. This argument specifies the geometry model to be used for data extraction when the -E/--extract flag is enabled. The geometry model can be a surface mesh, volume mesh, or any other supported geometric representation. The specified model must exist within the project directory and will be used as the basis for extracting data according to the defined criteria.</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> Required when using -E/<a href="#extract">--extract</a> flag
-The geometry model must exist in the project</div>
+<strong>Default:</strong> <code>"geometry-name" (placeholder value, should be replaced with an actual geometry model name).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required when using -E/<a href="#extract">--extract</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --geom model.obj</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="zcoord"><code>-z</code>, <code>--zcoord</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Coordinate Z</p>
+<strong>Format:</strong> <code>string (name of the variable used as Z coordinate)</code>
 
-<p>coordinate z</p>
+<p><strong>Description:</strong> Set coordinate Z. This argument specifies the coordinate Z to be used for data extraction when the -E/--extract flag is enabled. It is optional and used for 3D models.</p>
+
+<strong>Default:</strong> <code>"z_name" (placeholder value, should be replaced with an actual variable name).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional. Used with -E/<a href="#extract">--extract</a> for 3D models. ⚠ Partially implemented: only the PRESENCE of -z/<a href="#zcoord">--zcoord</a> is currently used; the passed value is not read (the Z variable name is taken from the project metadata), so the flag currently behaves as a boolean switch.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --geom model.obj --zcoord elevation</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="intextr"><code>-I</code>, <code>--intextr</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Extraction data from interval</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Enable extraction data from interval</p>
+<p><strong>Description:</strong> Set extraction data from interval. Extracts the subset of samples whose value of a given variable falls within the [inf, sup] interval.</p>
+
+<strong>Default:</strong> <code>false (interval extraction is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> When using -I/<a href="#intextr">--intextr</a>, requires:
 <ul>
@@ -394,61 +460,78 @@ The geometry model must exist in the project</div>
   <li><a href="#nvar">--nvar</a>: Variable name to check (mandatory)</div></li>
 </ul>
 
-<div class="example"><strong>Example:</strong> <code>-I --sup 100 --inf 0 --nvar temperature</code></div>
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -I -p /path/to/project --sup 100 --inf 0 --nvar temperature</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="sup"><code>--sup</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
 
-<p><strong>Description:</strong> Set sup interval</p>
+<strong>Format:</strong> <code>int</code>
 
-<p>sup interval</p>
+<p><strong>Description:</strong> Set sup interval. Superior limit of the interval used to select samples during interval extraction.</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
-Must be used together with <a href="#inf">--inf</a> and <a href="#nvar">--nvar</a></div>
+<strong>Default:</strong> <code>0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction. Must be used together with <a href="#inf">--inf</a> and <a href="#nvar">--nvar</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -I -p /path/to/project --sup 100 --inf 0 --nvar temperature</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="inf"><code>--inf</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>int</code></p>
 
-<p><strong>Description:</strong> Set inf interval</p>
+<strong>Format:</strong> <code>int</code>
 
-<p>inf interval</p>
+<p><strong>Description:</strong> Set inf interval. Inferior limit of the interval used to select samples during interval extraction.</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
-Must be used together with <a href="#sup">--sup</a> and <a href="#nvar">--nvar</a></div>
+<strong>Default:</strong> <code>0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction. Must be used together with <a href="#sup">--sup</a> and <a href="#nvar">--nvar</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -I -p /path/to/project --sup 100 --inf 0 --nvar temperature</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="nvar"><code>--nvar</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Set variable to check</p>
+<strong>Format:</strong> <code>string (variable name)</code>
 
-<p>Name of set variable to check</p>
+<p><strong>Description:</strong> Set variable to check. Name of the variable whose values are tested against the [inf, sup] interval.</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction
-Must be used together with <a href="#sup">--sup</a> and <a href="#inf">--inf</a></div>
+<strong>Default:</strong> <code>"var_name" (placeholder value, should be replaced with an actual variable name).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -I/<a href="#intextr">--intextr</a> flag. Required for interval extraction. Must be used together with <a href="#sup">--sup</a> and <a href="#inf">--inf</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -I -p /path/to/project --sup 100 --inf 0 --nvar temperature</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="sub"><code>--sub</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Extraction sub dataset basing on geometry</p>
+<strong>Format:</strong> <code>string (sub-dataset name)</code>
 
-<p>extraction sub dataset basing on geometry</p>
+<p><strong>Description:</strong> Set sub dataset extraction based on geometry. Name of the sub-dataset produced by extracting the samples contained in the given geometry.</p>
+
+<strong>Default:</strong> <code>"name" (placeholder value, should be replaced with an actual sub-dataset name).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -E/<a href="#extract">--extract</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --geom model.obj --sub my_subset</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="rotaxis"><code>--rotaxis</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Set rotation axis</p>
+<strong>Format:</strong> <code>string</code> (<code>X</code>, <code>Y</code>, <code>Z</code>, <code>NO</code>)
 
-<p>rotation axis</p>
+<p><strong>Description:</strong> Set rotation axis. Axis around which the geometry/points are rotated; NO disables the rotation.</p>
+
+<strong>Default:</strong> <code>"NO" (no rotation is applied).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> When using rotation, these flags work together:
 <ul>
@@ -462,49 +545,73 @@ Must be used together with <a href="#sup">--sup</a> and <a href="#inf">--inf</a>
 <div class="flag-separator"></div>
 
 <h4 id="rotangle"><code>--rotangle</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
 
-<p><strong>Description:</strong> Set rotation angle (clockwise)</p>
+<strong>Format:</strong> <code>double (degrees)</code>
 
-<p>rotation angle (clockwise)</p>
+<p><strong>Description:</strong> Set rotation angle (clockwise), expressed in degrees.</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO</div>
+<strong>Default:</strong> <code>0.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> flag. Required when rotaxis != NO.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="rotcx"><code>--rotcx</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
 
-<p><strong>Description:</strong> Set rotation center x</p>
+<strong>Format:</strong> <code>double</code>
 
-<p>rotation center x</p>
+<p><strong>Description:</strong> Set rotation center x. X coordinate of the rotation center.</p>
+
+<strong>Default:</strong> <code>0.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> and <a href="#rotangle">--rotangle</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="rotcy"><code>--rotcy</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
 
-<p><strong>Description:</strong> Set rotation center y</p>
+<strong>Format:</strong> <code>double</code>
 
-<p>rotation center y</p>
+<p><strong>Description:</strong> Set rotation center y. Y coordinate of the rotation center.</p>
+
+<strong>Default:</strong> <code>0.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> and <a href="#rotangle">--rotangle</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="rotcz"><code>--rotcz</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
 
-<p><strong>Description:</strong> Set rotation center z</p>
+<strong>Format:</strong> <code>double</code>
 
-<p>rotation center z</p>
+<p><strong>Description:</strong> Set rotation center z. Z coordinate of the rotation center.</p>
+
+<strong>Default:</strong> <code>0.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#rotaxis">--rotaxis</a> and <a href="#rotangle">--rotangle</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --rotaxis Z --rotangle 45 --rotcx 100 --rotcy 200 --rotcz 0</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="prsurf"><code>-P</code>, <code>--prsurf</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Points projection on surfaces</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Enable points projection on surfaces</p>
+<p><strong>Description:</strong> Points projection on surfaces. Projects the input points onto one or more surface meshes.</p>
+
+<strong>Default:</strong> <code>false (surface projection is disabled by default).</code>
 
 <div class="dependencies"><strong>Dependencies:</strong> Projection mode selection (mutually exclusive):
 <ul>
@@ -517,170 +624,275 @@ Choose only ONE projection mode per operation</div>
 <div class="flag-separator"></div>
 
 <h4 id="prsect"><code>-S</code>, <code>--prsect</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Compute points projection on boundary (2D section case).</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Flag to compute points projection on boundary (2d section case).</p>
+<p><strong>Description:</strong> Compute points projection on top/bottom boundary (2D section case).</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -P/<a href="#prsurf">--prsurf</a> and -R/<a href="#prqsect">--prqsect</a>
-Use for 2D section projection operations</div>
+<strong>Default:</strong> <code>false (section projection is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -P/<a href="#prsurf">--prsurf</a> and -R/<a href="#prqsect">--prqsect</a>. Use for 2D section projection operations.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="prqsect"><code>-R</code>, <code>--prqsect</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Points projection on quads sections</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Enable points projection on quads sections</p>
+<p><strong>Description:</strong> Points projection on quads sections. Projects the input points onto quad-based section meshes.</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -P/<a href="#prsurf">--prsurf</a> and -S/<a href="#prsect">--prsect</a>
-Use for quad-based section projection operations</div>
+<strong>Default:</strong> <code>false (quad-section projection is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Mutually exclusive with -P/<a href="#prsurf">--prsurf</a> and -S/<a href="#prsect">--prsect</a>. Use for quad-based section projection operations.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="prvol"><code>-V</code>, <code>--prvol</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Compute points projection on boundary (3D volumetric case).</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Flag to compute points projection on boundary (3d volumetric case).</p>
+<p><strong>Description:</strong> Compute points projection on boundary (3D volumetric case). Projects the input points onto the boundary of a volumetric mesh.</p>
+
+<strong>Default:</strong> <code>false (volumetric projection is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Projection mode for the 3D volumetric case.</div>
 
 <div class="flag-separator"></div>
 
 <h4 id="step"><code>--step</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
 
-<p><strong>Description:</strong> Set number of steps for geometry model</p>
+<strong>Format:</strong> <code>double</code>
 
-<p>Number of set number of steps for geometry model</p>
+<p><strong>Description:</strong> Set number of steps for geometry model. Discretization step used when building/scanning the geometry during projection.</p>
+
+<strong>Default:</strong> <code>0.0 (the step is chosen automatically).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with the projection operations (-P/-S/-R/-V).</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -P -p /path/to/project -m surf.obj --step 1.0</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="epsilon"><code>--epsilon</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>double</code></p>
 
-<p><strong>Description:</strong> Set tolerance to enlarge bounding box</p>
+<strong>Format:</strong> <code>double</code>
 
-<p>tolerance to enlarge bounding box</p>
+<p><strong>Description:</strong> Set tolerance to enlarge bounding box. Epsilon used to expand the bounding box so that boundary points are not discarded during projection.</p>
+
+<strong>Default:</strong> <code>1.0</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with the projection operations (-P/-S/-R/-V).</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -P -p /path/to/project -m surf.obj --epsilon 0.5</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="mgeom"><code>-m</code>, <code>--mgeom</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code>, repeatable</p>
+
+<strong>Format:</strong> <code>string (path/name of a geometry file); repeatable</code>
+
+<p><strong>Description:</strong> Multi-geometry to pass. One or more geometry (mesh) files used as targets for the projection operations. Repeat the flag to pass several geometries.</p>
+
+<strong>Default:</strong> <code>empty (no geometry is passed when the flag is not used).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with the projection operations (-P/-S/-R/-V).</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -P -p /path/to/project -m top.obj -m bottom.obj</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="prdir"><code>--prdir</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Set direction of projection</p>
+<strong>Format:</strong> <code>string</code> (<code>X</code>, <code>Y</code>, <code>Z</code>)
 
-<p>Path to set direction of projection</p>
+<p><strong>Description:</strong> Set direction of projection. Axis along which the points are projected onto the target geometry.</p>
+
+<strong>Default:</strong> <code>"Y" (projection along the Y axis).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with the projection operations (-P/-S/-R/-V).</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -P -p /path/to/project -m surf.obj --prdir Z</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="type"><code>--type</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Set type</p>
+<strong>Format:</strong> <code>string</code> (<code>SAMPLES</code>, <code>TET</code>, <code>HEX</code>, <code>VOLUME</code>, <code>GEOMETRY</code>, <code>QUADMESH</code>)
 
-<p>type</p>
+<p><strong>Description:</strong> Set type of the geometry/data handled by the operation (kind of mesh or sample set to process).</p>
+
+<strong>Default:</strong> <code>"SAMPLES" (operate on the point samples).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Selects how the input is interpreted during extraction/projection.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --geom model.vtk --type TET</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="strat"><code>-T</code>, <code>--strat</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Points projection on surfaces</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Enable points projection on surfaces</p>
+<p><strong>Description:</strong> Stratigraphic coordinate transformation. Maps the points into a stratigraphic reference frame defined by a top and a bottom surface.</p>
+
+<strong>Default:</strong> <code>false (stratigraphic transformation is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using -T/<a href="#strat">--strat</a>, requires <a href="#top">--top</a>, <a href="#bot">--bot</a> and <a href="#sttype">--sttype</a> (stratigraphic condition).</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -T -p /path/to/project --top top.obj --bot bot.obj --sttype PROPORTIONAL</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="name"><code>--name</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Name of geometry model</p>
+<strong>Format:</strong> <code>string (geometry model name)</code>
 
-<p>Name of name of geometry model</p>
+<p><strong>Description:</strong> Name of geometry model. Name assigned to the geometry produced/handled by the operation.</p>
+
+<strong>Default:</strong> <code>"name" (placeholder value, should be replaced with an actual geometry model name).</code>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -T -p /path/to/project --name strat_grid --top top.obj --bot bot.obj</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="sttype"><code>--sttype</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Set type of stratigraphic transformation</p>
+<strong>Format:</strong> <code>string</code> (<code>PROPORTIONAL</code>, <code>TRUNCATION</code>, <code>ONLAP</code>, <code>COMBINATION</code>)
 
-<p>type of stratigraphic transformation</p>
+<p><strong>Description:</strong> Set type of stratigraphic transformation (the stratigraphic condition applied between the top and bottom surfaces).</p>
+
+<strong>Default:</strong> <code>"NO" (no stratigraphic condition).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -T/<a href="#strat">--strat</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -T -p /path/to/project --top top.obj --bot bot.obj --sttype PROPORTIONAL</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="top"><code>--top</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Top geometry model</p>
+<strong>Format:</strong> <code>string (geometry model name)</code>
 
-<p>top geometry model</p>
+<p><strong>Description:</strong> Top geometry model. Name of the surface used as the top boundary of the stratigraphic transformation.</p>
+
+<strong>Default:</strong> <code>"name top geometry" (placeholder value, should be replaced with an actual geometry model name).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -T/<a href="#strat">--strat</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -T -p /path/to/project --top top.obj --bot bot.obj --sttype PROPORTIONAL</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="bot"><code>--bot</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Bottom geometry model</p>
+<strong>Format:</strong> <code>string (geometry model name)</code>
 
-<p>bottom geometry model</p>
+<p><strong>Description:</strong> Bottom geometry model. Name of the surface used as the bottom boundary of the stratigraphic transformation.</p>
+
+<strong>Default:</strong> <code>"name bottom geometry" (placeholder value, should be replaced with an actual geometry model name).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with -T/<a href="#strat">--strat</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -T -p /path/to/project --top top.obj --bot bot.obj --sttype PROPORTIONAL</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="reggrow"><code>--reggrow</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Set region growing</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Enable set region growing</p>
+<p><strong>Description:</strong> Set region growing. Enables a region-growing step to segment/label the geometry during the operation.</p>
+
+<strong>Default:</strong> <code>false (region growing is disabled by default).</code>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --geom model.vtk --reggrow</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="obj"><code>--obj</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Saving trimesh in obj format</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Enable saving trimesh in obj format</p>
+<p><strong>Description:</strong> Saving trimesh in obj format. Writes the resulting triangular mesh as an OBJ file.</p>
+
+<strong>Default:</strong> <code>false (OBJ output is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional output format.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --geom model.obj --obj</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="vtk"><code>--vtk</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Saving tetmesh in vtk format</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Enable saving tetmesh in vtk format</p>
+<p><strong>Description:</strong> Saving tetmesh in vtk format. Writes the resulting tetrahedral mesh as a VTK file.</p>
+
+<strong>Default:</strong> <code>false (VTK output is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional output format.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --geom model.vtk --type TET --vtk</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="save"><code>--save</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Saving extraction as set of points</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Enable saving extraction as set of points</p>
+<p><strong>Description:</strong> Saving extraction as set of points. Writes the extracted/projected result as a point set.</p>
+
+<strong>Default:</strong> <code>false (the extraction is not saved by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional output. Typically used with -E/<a href="#extract">--extract</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --geom model.obj --save</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="var"><code>-v</code>, <code>--var</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Variable</p>
+<strong>Format:</strong> <code>string (variable name)</code>
 
-<p>Name of variable</p>
+<p><strong>Description:</strong> Variable. Name of the variable to analyse/carry along during the manipulation.</p>
+
+<strong>Default:</strong> <code>"variable to analyse" (placeholder value, should be replaced with an actual variable name).</code>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --geom model.obj -v temperature</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="file"><code>--file</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Path file</p>
+<strong>Format:</strong> <code>string (path to a data file)</code>
 
-<p>Path to path file</p>
+<p><strong>Description:</strong> Set path to data file. This argument allows the user to specify the path to a data file that will be used in the manipulation process. The data file should contain relevant information that the application can read and process. It is optional.</p>
+
+<strong>Default:</strong> <code>"string" (placeholder value; when not set the default project directory structure is used).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> If not set, the application will look for data files in the default project directory structure. If set, the specified file will be used for data manipulation.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_manipulate -E -p /path/to/project --file path/to/datafile.dat</code></div>
 
 <div class="flag-separator"></div>
 

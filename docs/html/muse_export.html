@@ -261,6 +261,16 @@
         .example strong {
             color: var(--success-color);
         }
+        .required {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--danger-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .required strong {
+            color: var(--danger-color);
+        }
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -322,100 +332,239 @@
 
 <h3>Usage</h3>
 
-<pre><code class="bash">muse_export [OPTIONS]
+<pre><code class="bash">muse_export [--geopkg] [--csv] [OPTIONS]
 </code></pre>
+
+<h3>Options Index</h3>
+
+<ul>
+  <li><a href="#pdir"><code>-p</code>, <code>--pdir</code></a> — Project directory</li>
+  <li><a href="#var"><code>-v</code>, <code>--var</code></a> — Variable</li>
+  <li><a href="#geom"><code>-m</code>, <code>--geom</code></a> — Geometry model</li>
+  <li><a href="#out"><code>-o</code>, <code>--out</code></a> — Output directory</li>
+  <li><a href="#type"><code>--type</code></a> — Type of analysis</li>
+  <li><a href="#mf"><code>--mf</code></a> — multiframe name</li>
+  <li><a href="#dir"><code>--dir</code></a> — type of variogram direction</li>
+  <li><a href="#dim"><code>--dim</code></a> — type of variogram dimension</li>
+  <li><a href="#nsim"><code>-N</code>, <code>--nsim</code></a> — Number of simulations to export</li>
+  <li><a href="#append-csv-table"><code>--append_csv_table</code></a> — Append existing table (csv)</li>
+  <li><a href="#append-sep"><code>--append_sep</code></a> — Separator for append table</li>
+  <li><a href="#append-gpkg"><code>--append_gpkg</code></a> — Append existing table (gpkg)</li>
+  <li><a href="#geopkg"><code>--geopkg</code></a> — Export to geopkg</li>
+  <li><a href="#csv"><code>--csv</code></a> — Export to csv</li>
+</ul>
 
 <h3>Options</h3>
 
 <div class="flag-separator"></div>
 
+<h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
+<div class="required"><strong>⚠ Required:</strong> true (mandatory for all export operations).</div>
+
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to the project directory)</code>
+
+<p><strong>Description:</strong> Project directory. Path to the MUSE project whose computed results are exported; data are read from its out/ subfolders.</p>
+
+<strong>Default:</strong> <code>"Directory" (placeholder value, should be replaced with an actual project directory path).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> The project directory must contain MUSE data files.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m su_liguria.obj --csv -o export.csv</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="var"><code>-v</code>, <code>--var</code></h4>
+<div class="required"><strong>⚠ Required:</strong> true (mandatory for all export operations).</div>
+
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (variable name)</code>
+
+<p><strong>Description:</strong> Variable. Name of the variable whose results are exported.</p>
+
+<strong>Default:</strong> <code>"name_var" (placeholder value, should be replaced with an actual variable name).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> The variable must exist in the project data.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m su_liguria.obj --csv -o export.csv</code></div>
+
+<div class="flag-separator"></div>
+
 <h4 id="geom"><code>-m</code>, <code>--geom</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Geometry model</p>
+<strong>Format:</strong> <code>string (geometry model name, e.g. mesh file name)</code>
 
-<p>geometry model</p>
+<p><strong>Description:</strong> Geometry model. Name of the geometry model (surface or volumetric mesh) on which the variable has been computed.</p>
 
-<div class="flag-separator"></div>
+<strong>Default:</strong> <code>"name_geometry" (placeholder value, should be replaced with an actual geometry model name).</code>
 
-<h4 id="label"><code>-l</code>, <code>--label</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<div class="dependencies"><strong>Dependencies:</strong> Often required depending on export type. The geometry model must be available in the project.</div>
 
-<p><strong>Description:</strong> Label</p>
-
-<p>label</p>
-
-<div class="flag-separator"></div>
-
-<h4 id="sis"><code>-s</code>, <code>--sis</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
-
-<p><strong>Description:</strong> Sis simulation</p>
-
-<p>sis simulation</p>
-
-<div class="flag-separator"></div>
-
-<h4 id="nrows"><code>-r</code>, <code>--nrows</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
-
-<p><strong>Description:</strong> Raster number of rows</p>
-
-<p>Number of raster number of rows</p>
-
-<div class="flag-separator"></div>
-
-<h4 id="ncols"><code>-c</code>, <code>--ncols</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
-
-<p><strong>Description:</strong> Raster number of cols</p>
-
-<p>Number of raster number of cols</p>
-
-<div class="flag-separator"></div>
-
-<h4 id="min-x"><code>-x</code>, <code>--min_x</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
-
-<p><strong>Description:</strong> Raster min x</p>
-
-<p>raster min x</p>
-
-<div class="flag-separator"></div>
-
-<h4 id="min-y"><code>-y</code>, <code>--min_y</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
-
-<p><strong>Description:</strong> Raster min y</p>
-
-<p>raster min y</p>
-
-<div class="flag-separator"></div>
-
-<h4 id="max-x"><code>-X</code>, <code>--max_x</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
-
-<p><strong>Description:</strong> Raster max x</p>
-
-<p>raster max x</p>
-
-<div class="flag-separator"></div>
-
-<h4 id="max-y"><code>-Y</code>, <code>--max_y</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
-
-<p><strong>Description:</strong> Raster max y</p>
-
-<p>raster max y</p>
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m su_liguria.obj --csv -o export.csv</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="out"><code>-o</code>, <code>--out</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Output file</p>
+<strong>Format:</strong> <code>string (output path)</code>
 
-<p>Path to output file</p>
+<p><strong>Description:</strong> Output file/directory. Path of the file (or directory) where the exported table is written.</p>
+
+<strong>Default:</strong> <code>"output_directory" (placeholder value, should be replaced with an actual output path).</code>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m su_liguria.obj --csv -o ../export.csv</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="type"><code>--type</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string</code>
+
+<p><strong>Description:</strong> Type of analysis. Selects which computed statistics are exported; use "INDICATOR" to export the results of an indicator analysis (the "_best" values), otherwise the statistical moments computed in the variogram space are exported.</p>
+
+<strong>Default:</strong> <code>"type" (placeholder value; when not INDICATOR the statistical-moments export is used).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used to locate the correct compute output subfolder.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m mesh.obj --type INDICATOR --csv -o export.csv</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="mf"><code>--mf</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (multiframe identifier)</code>
+
+<p><strong>Description:</strong> Multiframe name. Name of the multiframe (time frame) whose compute results are exported; when set, results are read from out/compute/<mf>/...</p>
+
+<strong>Default:</strong> <code>"multiframe" (placeholder value; when not set, non-multiframe results are exported).</code>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m mesh.obj --mf 120320181400 --csv -o export.csv</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="dir"><code>--dir</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string</code> (<code>OMNI</code>, <code>DIR</code>)
+
+<p><strong>Description:</strong> Type of variogram direction. Identifies the directional setting used during the computation, needed to locate the correct compute output folder.</p>
+
+<strong>Default:</strong> <code>"OMNI" (omnidirectional).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with variogram export operations. Works together with <a href="#dim">--dim</a> for variogram configuration.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m mesh.obj --dir DIR --dim 3D --csv -o export.csv</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="dim"><code>--dim</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string</code> (<code>3D</code>, <code>3Dxy</code>, <code>3Dz</code>, <code>2D</code>, <code>1Dz</code>, <code>1D</code>)
+
+<p><strong>Description:</strong> Type of variogram dimension. Identifies the dimensional setting used during the computation, needed to locate the correct compute output folder.</p>
+
+<strong>Default:</strong> <code>"3D"</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used with variogram export operations. Works together with <a href="#dir">--dir</a> for variogram configuration.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m mesh.obj --dir OMNI --dim 2D --csv -o export.csv</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="nsim"><code>-N</code>, <code>--nsim</code></h4>
+<p><strong>Type:</strong> Value | <code>int</code></p>
+
+<strong>Format:</strong> <code>int</code>
+
+<p><strong>Description:</strong> Number of simulations to export. When greater than 0, the individual simulation realizations are appended to the exported table.</p>
+
+<strong>Default:</strong> <code>0 (no individual simulations are exported; only the statistics).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used for exporting multiple simulation results. Requires simulation data to be available in project.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m mesh.obj -N 10 --csv -o export.csv</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="append-csv-table"><code>--append_csv_table</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to an existing .csv file)</code>
+
+<p><strong>Description:</strong> Append existing table (csv). Path to an existing CSV table whose columns are merged into the exported CSV output.</p>
+
+<strong>Default:</strong> <code>"append_table" (placeholder value; when not set nothing is appended).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Use with the <a href="#csv">--csv</a> output format.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m mesh.obj --csv --append_csv_table base.csv -o export.csv</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="append-sep"><code>--append_sep</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (single character)</code>
+
+<p><strong>Description:</strong> Separator for append table. Field separator used to read the CSV table provided with --append_csv_table.</p>
+
+<strong>Default:</strong> <code>";" (semicolon).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Used together with <a href="#append-csv-table">--append_csv_table</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m mesh.obj --csv --append_csv_table base.csv --append_sep "," -o export.csv</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="append-gpkg"><code>--append_gpkg</code></h4>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
+
+<strong>Format:</strong> <code>string (path to an existing .gpkg file)</code>
+
+<p><strong>Description:</strong> Append existing table (gpkg). Path to an existing GeoPackage whose layer is used as a base to which the exported columns are added.</p>
+
+<strong>Default:</strong> <code>"append_table" (placeholder value; when not set nothing is appended).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Requires an existing GeoPackage file at the specified path. Use with the <a href="#geopkg">--geopkg</a> output format.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m mesh.obj --geopkg --append_gpkg base.gpkg -o export.gpkg</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="geopkg"><code>--geopkg</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Export to GeoPackage. Writes the exported table as a GeoPackage (.gpkg) vector layer.</p>
+
+<strong>Default:</strong> <code>false (GeoPackage export is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Output format selection (choose <a href="#geopkg">--geopkg</a> or <a href="#csv">--csv</a>). Combine with <a href="#append-gpkg">--append_gpkg</a> to extend an existing GeoPackage.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m mesh.obj --geopkg -o export.gpkg</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="csv"><code>--csv</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Export to CSV. Writes the exported table as a comma/semicolon separated values (.csv) file.</p>
+
+<strong>Default:</strong> <code>false (CSV export is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Output format selection (choose <a href="#geopkg">--geopkg</a> or <a href="#csv">--csv</a>). Combine with <a href="#append-csv-table">--append_csv_table</a> to extend an existing CSV table.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_export -p /path/to/project -v forecast -m mesh.obj --csv -o export.csv</code></div>
 
 <div class="flag-separator"></div>
 

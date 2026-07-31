@@ -261,6 +261,16 @@
         .example strong {
             color: var(--success-color);
         }
+        .required {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--danger-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .required strong {
+            color: var(--danger-color);
+        }
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -318,11 +328,11 @@
         </div>
         <h2>muse_project</h2>
 
-<p><strong>Description:</strong> MUSE = Modelling of Uncertainty as a Support of Environment; Muse Project tool</p>
+<p><strong>Description:</strong> MUSE - Modelling Uncertainty as a Support of Environment. MUSE-project application</p>
 
 <h3>Usage</h3>
 
-<pre><code class="bash">muse_project -p <PDIR> -n <NAME> [-N] [OPTIONS]
+<pre><code class="bash">muse_project -p <PDIR> -n <NAME> [-N] [--timestamp] [--overwrite] [OPTIONS]
 </code></pre>
 
 <h3>Options</h3>
@@ -330,69 +340,108 @@
 <div class="flag-separator"></div>
 
 <h4 id="new-project"><code>-N</code>, <code>--new_project</code></h4>
-<p><strong>Type:</strong> Switch (flag)</p>
+<p><strong>Type:</strong> Switch</p>
 
-<p><strong>Description:</strong> Create a new project</p>
+<strong>Format:</strong> <code>boolean flag</code>
 
-<p>Flag to enable new project creation</p>
+<p><strong>Description:</strong> Creation of a new project. With this flag that needs -p (--pdir) and -n (--name) options, MUSE-project create a filesystem space where organize hyerarchically all the information about input, output and metadata files.</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> When using -N/<a href="#new-project">--new_project</a>, the following flags are typically used together:
+<strong>Default:</strong> <code>false (project creation is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> When using <a href="#new-project">--new_project</a>, the following flags are typically used together:
 <ul>
   <li><a href="#pdir">--pdir</a> (required): Specify project directory</li>
   <li><a href="#name">--name</a> (required): Specify project name</li>
   <li><a href="#setEPSG">--setEPSG</a> (optional): Set coordinate reference system</div></li>
 </ul>
 
-<div class="example"><strong>Example:</strong> <code>muse_project -N --pdir /path/to/projects --name MyProject --setEPSG EPSG:4326</code></div>
+<div class="example"><strong>Example:</strong> <code>muse_project -N -p /path/to/project/dir -n 00_test --setEPSG EPSG:4326</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="pdir"><code>-p</code>, <code>--pdir</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<div class="required"><strong>⚠ Required:</strong> true (this parameter is mandatory to create a new project).</div>
 
-<p><strong>Description:</strong> Specify project directory path</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p>Path where the project will be created</p>
+<strong>Format:</strong> <code>string (path to the directory that will contain the project)</code>
 
-<div class="dependencies"><strong>Dependencies:</strong> Required when using -N/<a href="#new-project">--new_project</a> flag</div>
+<p><strong>Description:</strong> Specify the directory path where the project is created</p>
 
-<div class="example"><strong>Example:</strong> <code>--pdir /home/user/projects</code></div>
+<strong>Default:</strong> <code>"/path/to/project/dir" (placeholder value, should be replaced with an actual path).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required when using <a href="#new-project">--new_project</a> flag</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_project -N -p /path/to/project/dir -n 00_test</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="name"><code>-n</code>, <code>--name</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Specify name of the new project</p>
+<strong>Format:</strong> <code>string (name of the project)</code>
 
-<p>Project name to be created</p>
+<p><strong>Description:</strong> Specify name of the new project. Check the project name and, if it exists, the project is not created (unless --overwrite or --timestamp are used).</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> Required when using -N/<a href="#new-project">--new_project</a> flag. The project name will be used as:
+<strong>Default:</strong> <code>"project_name" (placeholder value, should be replaced with the actual project name).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Required when using <a href="#new-project">--new_project</a> flag. The project name will be used as:
 <ul>
-  <li>Directory name: {pdir}/{name}</li>
-  <li>JSON config file: {pdir}/{name}/out/{name}.json</div></li>
+  <li>Directory name: /path/to/project/dir/project_name</li>
+  <li>JSON config file in output folder: /path/to/project/dir/project_name/out/project_name.json</div></li>
 </ul>
 
-<div class="example"><strong>Example:</strong> <code>--name MyGeologyProject</code></div>
+<div class="example"><strong>Example:</strong> <code>-n 00_test</code></div>
 
 <div class="flag-separator"></div>
 
 <h4 id="setEPSG"><code>--setEPSG</code></h4>
-<p><strong>Type:</strong> Value (flag)</p>
+<p><strong>Type:</strong> Value | <code>std::string</code></p>
 
-<p><strong>Description:</strong> Set project EPSG coordinate reference system</p>
+<strong>Format:</strong> <code>string in the form EPSG:<code> (projected coordinate reference system)</code>
 
-<p>EPSG authority code for the project coordinate system</p>
+<p><strong>Description:</strong> Set project EPSG coordinate reference system in projected coordinates. At the moment, no geographic coordinates are permitted.</p>
 
-<div class="dependencies"><strong>Dependencies:</strong> Optional parameter, used with -N/<a href="#new-project">--new_project</a> flag
-Common EPSG codes:
+<strong>Default:</strong> <code>"unknown" (no coordinate reference system is assigned by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional parameter, used with <a href="#new-project">--new_project</a> flag
+Common projected EPSG codes:
 <ul>
-  <li>EPSG:4326 (WGS84 Geographic)</li>
   <li>EPSG:3857 (Web Mercator)</li>
   <li>EPSG:32633 (UTM Zone 33N)</div></li>
 </ul>
 
-<div class="example"><strong>Example:</strong> <code>--setEPSG EPSG:4326</code></div>
+<div class="example"><strong>Example:</strong> <code>muse_project -N -p /path/to/project/dir -n 00_test --setEPSG EPSG:32633</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="timestamp"><code>--timestamp</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Check project name and, if it exists, create a new folder as "project_YYYY-MM-DD_HH-MM-SS"</p>
+
+<strong>Default:</strong> <code>false (timestamp renaming is disabled by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional parameter. Mutually exclusive with <a href="#overwrite">--overwrite</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_project -N -p /path/to/project/dir -n 00_test --timestamp</code></div>
+
+<div class="flag-separator"></div>
+
+<h4 id="overwrite"><code>--overwrite</code></h4>
+<p><strong>Type:</strong> Switch</p>
+
+<strong>Format:</strong> <code>boolean flag</code>
+
+<p><strong>Description:</strong> Check project name and overwrite the existing project</p>
+
+<strong>Default:</strong> <code>false (existing projects are not overwritten by default).</code>
+
+<div class="dependencies"><strong>Dependencies:</strong> Optional parameter. Mutually exclusive with <a href="#timestamp">--timestamp</a>.</div>
+
+<div class="example"><strong>Example:</strong> <code>muse_project -N -p /path/to/project/dir -n 00_test --overwrite</code></div>
 
 <div class="flag-separator"></div>
 
