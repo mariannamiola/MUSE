@@ -15,13 +15,6 @@ Result visualization is supported through [ParaView](https://www.paraview.org/do
 The repository includes external submodules required by MUSE. Clone it recursively with:
 
 ```bash
-git clone --recursive git@github.com:mariannamiola/MUSE.git
-cd MUSE
-```
-
-Alternatively, over HTTPS:
-
-```bash
 git clone --recursive https://github.com/mariannamiola/MUSE.git
 cd MUSE
 ```
@@ -166,7 +159,7 @@ history of the `phi` variable produced by the `06_sec_2D_400_tri` example, run f
 - Simone Pittaluga, CNR-IMATI, Genova, Italy, simone.pittaluga@cnr.it
 - Marino Vetuschi Zuccolini, DISTAV-UNIGE, Genova, Italy, marino.zuccolini@unige.it
 
-- ## License
+## License
 
 MUSE is distributed under a dual-license model.
 
