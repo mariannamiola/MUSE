@@ -10,13 +10,12 @@ The repository includes the full MUSE package: source code for the computational
 Example datasets and scripts refer to synthetic scenarios and real case studies.
 Result visualization is supported through [ParaView](https://www.paraview.org/download/).
 
-## Repository cloning
+## Clone
 
-The repository includes external submodules required by MUSE. Clone it recursively with:
+The repository includes external submodules required by MUSE. Please, clone it recursively with:
 
 ```bash
 git clone --recursive https://github.com/mariannamiola/MUSE.git
-cd MUSE
 ```
 
 If the repository was cloned without the `--recursive` option, initialize and update the submodules from the repository root:
@@ -27,24 +26,39 @@ git submodule update --init --recursive
 
 Throughout this README, `${ROOT}` denotes the root directory of the MUSE repository.
 
+
+## Content of the repository
+
+- `00_installDeps.sh`: bash script to install systems dependencies
+- `00_buildDeps.sh`: bash script to build and install external libraries
+- `00_exe_creation.sh`: script to build and install MUSE applications, creating the executable files
+- `apps`: including source code for all applications and CMakeLists.txt file for apps building
+- `docs`: software documentation (html, md)
+- `examples`: test cases (input data and execution/visualization scripts)
+- `external`: external libraries
+- `include`: functionalities library to support source codes (muselib)
+- `scripts`: to auto-generate the software documentation from the source code
+
+
 ## Dependencies
 
 MUSE relies on system dependencies and external libraries. The required system dependencies can be installed through the build scripts provided in the repository.
 
-Some third-party libraries are included as submodules under `${ROOT}/external`, including tools for:
+Some mandatory libraries are included as submodules under `${ROOT}/external`:
 
-- command-line argument parsing and option management, through `tclap`;
-- workflow metadata and persistence, through `cereal`;
-- geostatistical and stochastic computation, through `geostatslib`;
-- geospatial data management, through GDAL and PROJ;
-- polygonal and polyhedral mesh processing, through `cinolib`, `libigl`, Triangle, and TetGen.
+- to manage command line arguments and options: [tclap](https://tclap.sourceforge.net/);
+- to metadata the computational process: `cereal`;
+- to support mesh-based stochastic computation: [GeoStatsLib](https://github.com/DanielaCabiddu/GeoStatsLib);
+- to manage geospatial data: [GDAL](https://github.com/OSGeo/gdal) and [PROJ](https://github.com/OSGeo/PROJ);
+- to process polygonal and polyhedral mesh: [Triangle](https://www.cs.cmu.edu/~quake/triangle.html), [TetGen](https://wias-berlin.de/software), [libigl](https://libigl.github.io), [cinolib](https://github.com/mlivesu/cinolib), [concaveman](https://github.com/sadaszewski/concaveman-cpp);
+- to support ellipse fitting: the C++ impelmentation of [ellipse-fitting](https://scipython.com/blog/direct-linear-least-squares-fitting-of-an-ellipse/).
 
-MUSE also uses ParaView Python scripting and the ParaView graphical interface for result visualization.
-ParaView is not required to compile the core applications, but it is recommended for post-processing, visualization, and customization of the outputs.
+MUSE also uses ParaView Python scripting and its GUI for results visualization.
+
 
 ## Build and executable generation
 
-From the MUSE root directory, run the following commands to install the required system dependencies, build the external dependencies, and generate the MUSE executables:
+To install all required dependencies and generate the MUSE executables, use the following pipeline:
 
 ```bash
 cd MUSE
@@ -53,35 +67,27 @@ cd MUSE
 ./00_exe_creation.sh
 ```
 
-The build workflow is organized as follows:
-
-1. `00_installDeps.sh` installs the required system-level dependencies.
-2. `00_buildDeps.sh all` compiles the external dependencies needed by the MUSE applications.
-3. `00_exe_creation.sh` configures and builds the MUSE applications, creating the executable files.
-
-Triangle and TetGen are managed through `cinolib` during CMake configuration; therefore, no standalone top-level Triangle or TetGen build is required.
-
 If the scripts are not executable on your system, enable execution permissions before running them:
 
 ```bash
 chmod +x 00_installDeps.sh 00_buildDeps.sh 00_exe_creation.sh
 ```
 
+Apps executables will be made available in _${ROOT}/bin_ folder.
+
 ## Documentation
 
-The compilation process also generates the documentation for the available applications. After building MUSE, the generated documentation can be found in one of the following directories, depending on the selected output format:
+The documentation can be found in one of the following directories, depending on the selected output format:
 
 ```text
-MUSE/docs/html
-MUSE/docs/md
+${ROOT}/docs/html
+${ROOT}/docs/md
 ```
-
-The HTML documentation can be opened with a web browser, while the Markdown documentation can be read directly from the generated `.md` files.
 
 ## Examples
 
 Example data and scripts are provided under the `${ROOT}/examples` directory.
-Each example contains scripts to run the corresponding MUSE workflow and, when available, to visualize the results.
+Each example contains input data and scripts to run the corresponding MUSE workflow and, when available, python script to visualize the results.
 
 Each `10_test_*` script automatically adds `${ROOT}/bin` (where the executables are
 generated) to the `PATH`, so **make sure MUSE has been built first** (see
@@ -91,7 +97,7 @@ A quick, self-contained example can be run as follows:
 
 ```bash
 cd ${ROOT}/examples/06_sec_2D_400_tri/script
-./10_test_MUSE_06_sec_2D_400_tri.sh
+./10_test_MUSE_06_sec_2D_400_tri.sh project
 ```
 
 By default the results are written under the shared working directory:
@@ -105,7 +111,7 @@ the `10_test_*` script:
 
 ```bash
 cd ${ROOT}/examples/<example_name>/script
-./10_test_MUSE_<example_name>.sh
+./10_test_MUSE_<example_name>.sh project
 ```
 
 Each `10_test_*` script accepts the following optional arguments:
@@ -131,9 +137,8 @@ The full list of examples, with a short description of each workflow, is given i
 
 ## Computational histories (EWoPe)
 
-MUSE relies on [EWoPe](https://github.com/DanielaCabiddu/EWOPE) (*Embeddable WOrkflow PErsistence*)
-for workflow metadata management. Every MUSE application writes a JSON metadata descriptor next to
-its outputs, so the computational history of a result can be reconstructed afterwards with the
+MUSE relies on a native version of [EWoPe](https://github.com/DanielaCabiddu/EWOPE) (*Embeddable WOrkflow PErsistence*) for metadata and workflow tracker. 
+Every MUSE application writes a customized JSON metadata next to its outputs, so the computational history of a result can be reconstructed afterwards with the
 standalone `EWOPE_history` executable.
 
 EWoPe must be cloned and built separately, following the instructions in its repository:
