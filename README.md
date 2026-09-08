@@ -178,6 +178,15 @@ See the `LICENSE` and `COPYING` files for details.
 If you use MUSE in academic work, please cite the following references.
 
 ```bibtex
+@article{miola2026muse,
+  author  = {Miola, Marianna and Cabiddu, Daniela and Pittaluga, Simone and Vetuschi Zuccolini, Marino},
+  title   = {{MUSE}: A Mesh-Based Geostatistics Framework for Modeling Spatial Uncertainty},
+  journal = {SSRN Electronic Journal},
+  year    = {2026},
+  doi     = {10.2139/ssrn.7422348},
+  note    = {Available at SSRN}
+}
+
 @phdthesis{MIOLA2025PHD,
 title = {{Increase the knowledge of Natural Systems through the evaluation of the uncertainty of environmental data: operational theory and application}},
 author = {Miola, Marianna},
