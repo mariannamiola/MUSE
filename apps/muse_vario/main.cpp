@@ -587,6 +587,9 @@ int main(int argc, char** argv)
     // Parse the argv array.
     cmd.parse(argc, argv);
 
+    // --type AUTO (explicit or default) means automatic model selection: treat it as "model not fixed"
+    const bool isModelFixed = setModel.isSet() && setModel.getValue().compare("AUTO") != 0;
+
     // ---------------------------------------------------------------------------------------------------------
     // SETTINGS:
 
@@ -2215,7 +2218,7 @@ int main(int argc, char** argv)
 
                             variogram fitted_exp_var;
 
-                            if (setModel.isSet() && setNugget.isSet())
+                            if (isModelFixed && setNugget.isSet())
                             {
                                 std::cout << "=== Fit variogram with fixed model type: " << setModel.getValue() << " and fixed nugget: " << setNugget.getValue() << std::endl;
                                 variogram_type model_type;
@@ -2228,7 +2231,7 @@ int main(int argc, char** argv)
                                 std::cout << "=== Fit variogram with fixed nugget: " << setNugget.getValue() << std::endl;
                                 fitted_exp_var = fit_variogram_1par (exp_var, setRangeStep.getValue(), setNugget.getValue(), w_type);
                             }
-                            else if(setModel.isSet())
+                            else if(isModelFixed)
                             {
                                 std::cout << "=== Fit variogram with fixed model type: " << setModel.getValue() << std::endl;
                                 variogram_type model_type;
@@ -2479,7 +2482,7 @@ int main(int argc, char** argv)
                                 double common_sill = 1.0;
                                 bool common_is_set = false;
 
-                                if(setModel.isSet() && setNugget.isSet())
+                                if(isModelFixed && setNugget.isSet())
                                 {
                                     // Structure and nugget both forced from command line: nothing to select
                                     convert_from_str(setModel.getValue(), common_type);
@@ -2520,7 +2523,7 @@ int main(int argc, char** argv)
                                         vector<variogram> vv;
                                         try
                                         {
-                                            if(setModel.isSet())
+                                            if(isModelFixed)
                                             {
                                                 // Structure forced, nugget free (averaged on directions)
                                                 variogram_type model_type;
@@ -2901,7 +2904,7 @@ int main(int argc, char** argv)
                             vector<variogram> vv;
                             try
                             {
-                                if (setModel.isSet() && setNugget.isSet())
+                                if (isModelFixed && setNugget.isSet())
                                 {
                                     std::cout << "Fit variogram with fixed model type: " << setModel.getValue() << " and fixed nugget: " << setNugget.getValue() << std::endl;
                                     std::cout << FYEL("=== WARNING: Weight on nugget is not active! Set the flag --weight to enable the command") << std::endl;
@@ -2918,7 +2921,7 @@ int main(int argc, char** argv)
                                     // Il peso non è attivo poichè non faccio la media dei nugget sulle direzioni (ovvero dove applico i pesi), ma fisso il nugget da cmd
                                     vv = fit_dir_variogram (dir_ex_var, directions, setTol.getValue(), setRangeStep.getValue(), setNugget.getValue(), true, w_type);
                                 }
-                                else if(setModel.isSet())
+                                else if(isModelFixed)
                                 {
                                     std::cout << "Fitting of directional variogram is set using fixed model type: " << setModel.getValue() << std::endl;
                                     variogram_type model_type;
