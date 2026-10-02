@@ -75,6 +75,14 @@ chmod +x 00_installDeps.sh 00_buildDeps.sh 00_exe_creation.sh
 
 Apps executables will be made available in _${ROOT}/bin_ folder.
 
+`muse_export` (and `muse_export_raster`) is optional and not required by the core pipeline. If it fails to build on your system, skip it with:
+
+```bash
+./00_exe_creation.sh --no-export
+```
+
+(equivalent to passing `-DMUSE_BUILD_EXPORT=OFF` to CMake).
+
 ## Documentation
 
 The documentation can be found in one of the following directories, depending on the selected output format:

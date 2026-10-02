@@ -315,4 +315,11 @@ add_subdirectory(muse_geometry)
 add_subdirectory(muse_manipulate)
 add_subdirectory(muse_vario)
 add_subdirectory(muse_compute)
-add_subdirectory(muse_export)
+# muse_export is optional (not required by the core pipeline): disable it with -DMUSE_BUILD_EXPORT=OFF
+# (or ./00_exe_creation.sh --no-export) if it fails to build on your system.
+option(MUSE_BUILD_EXPORT "Build muse_export and muse_export_raster" ON)
+if(MUSE_BUILD_EXPORT)
+    add_subdirectory(muse_export)
+else()
+    message(STATUS "muse_export: build DISABLED (MUSE_BUILD_EXPORT=OFF)")
+endif()

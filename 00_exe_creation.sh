@@ -3,6 +3,16 @@
 (
 set -e	#exit if an error occours
 
+# Options:
+#   --no-export   skip muse_export / muse_export_raster (optional apps; use it if they fail to build)
+BUILD_EXPORT=ON
+for arg in "$@"; do
+	case "$arg" in
+		--no-export) BUILD_EXPORT=OFF ;;
+		*) echo "Unknown option: $arg"; echo "Usage: ./00_exe_creation.sh [--no-export]"; exit 1 ;;
+	esac
+done
+
 # apps
 project=muse_project
 realtime=muse_realtime
@@ -36,7 +46,7 @@ export BUILD=${APPS}/build
 cd ${BUILD}
 #cmake ..
 
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Release -DMUSE_BUILD_EXPORT=${BUILD_EXPORT} ..
 
 cmake --build . #--target \
 	#${project} \
@@ -66,8 +76,12 @@ ln -sf ${BUILD}/muse_geometry/${geometry} ${BIN_FOLDER}
 ln -sf ${BUILD}/muse_vario/${vario} ${BIN_FOLDER}
 ln -sf ${BUILD}/muse_compute/${compute} ${BIN_FOLDER}
 ln -sf ${BUILD}/muse_manipulate/${manipulate} ${BIN_FOLDER}
-ln -sf ${BUILD}/muse_export/${export} ${BIN_FOLDER}
-ln -sf ${BUILD}/muse_export/${export}_raster ${BIN_FOLDER}
+if [ "${BUILD_EXPORT}" = "ON" ]; then
+	ln -sf ${BUILD}/muse_export/${export} ${BIN_FOLDER}
+	ln -sf ${BUILD}/muse_export/${export}_raster ${BIN_FOLDER}
+else
+	echo "muse_export skipped (--no-export)"
+fi
 
 
 
