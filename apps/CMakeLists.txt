@@ -51,16 +51,22 @@ include_directories(BEFORE "../external/cereal/include")
 include_directories(BEFORE "../external/concaveman")
 
 #####
-# Matplot++
-include_directories(BEFORE "../external/matplotplusplus")
-# MESSAGE(STATUS "Building MATPLOTPLUSPLUS ...")
-# set (MATPLOT_DIR ${CMAKE_SOURCE_DIR}/../external/matplotplusplus)
-# add_custom_command(
-#   OUTPUT build_complete
-#   COMMAND mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O2" && cmake --build . --parallel 20 --config Release && sudo cmake --install .
-#   WORKING_DIRECTORY ${MATPLOT_DIR}
-# )
-find_package(Matplot++ REQUIRED)
+# Matplot++ (use the external installed copy built by 00_buildDeps.sh, never the system one)
+set(MATPLOT_EXTERNAL_PREFIX "${CMAKE_SOURCE_DIR}/../external/matplotplusplus/installed")
+# install libdir may be lib or lib64 depending on the platform (GNUInstallDirs)
+set(MATPLOT_EXTERNAL_CMAKE_DIR "")
+foreach(_libdir lib lib64)
+    if(NOT MATPLOT_EXTERNAL_CMAKE_DIR AND EXISTS "${MATPLOT_EXTERNAL_PREFIX}/${_libdir}/cmake/Matplot++/Matplot++Config.cmake")
+        set(MATPLOT_EXTERNAL_CMAKE_DIR "${MATPLOT_EXTERNAL_PREFIX}/${_libdir}/cmake/Matplot++")
+    endif()
+endforeach()
+if(NOT MATPLOT_EXTERNAL_CMAKE_DIR)
+    message(FATAL_ERROR "Matplot++ not found in ${MATPLOT_EXTERNAL_PREFIX}. Build it first with: ./00_buildDeps.sh matplot")
+endif()
+# Force the cache entry: a previously cached Matplot++_DIR (e.g. /usr/local) would otherwise win
+set(Matplot++_DIR "${MATPLOT_EXTERNAL_CMAKE_DIR}" CACHE PATH "Matplot++ CMake config directory" FORCE)
+find_package(Matplot++ CONFIG REQUIRED PATHS "${MATPLOT_EXTERNAL_CMAKE_DIR}" NO_DEFAULT_PATH)
+message(STATUS "Using Matplot++ at: ${Matplot++_DIR}")
 
 
 #####
