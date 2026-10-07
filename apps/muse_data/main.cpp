@@ -535,6 +535,34 @@ int main(int argc, char** argv)
             std::vector<std::vector<std::string>> matrix_data;
             read_csv_with_header(filename, n_rows_header, matrix_header, matrix_data, csv_delimiter); //opzione sul delimitatore da linea di comando; stessa cosa anche sul separatore decimale!
 
+            // Check header format: row 3 must contain only valid flag characters (see flagsTable)
+            {
+                std::vector<Flag> valid_flags;
+                flagsTable(valid_flags);
+
+                bool header_ok = (matrix_header.size() == (size_t)n_rows_header);
+                for(size_t c=0; header_ok && c<matrix_header.at(2).size(); c++)
+                    for(const char ch : matrix_header.at(2).at(c))
+                    {
+                        bool found = (ch == ' ');
+                        for(const Flag &f : valid_flags)
+                            if(ch == f.charFlag)
+                                found = true;
+                        if(!found)
+                        {
+                            std::cerr << "\033[0;31mERROR: invalid flag '" << matrix_header.at(2).at(c) << "' in column " << c+1 << " (row 3) of " << filename << "\033[0m" << std::endl;
+                            header_ok = false;
+                            break;
+                        }
+                    }
+
+                if(!header_ok)
+                {
+                    std::cerr << "\033[0;31mERROR: the input CSV must have " << n_rows_header << " header rows: name, units, flag, parents, description, comments (see README).\033[0m" << std::endl;
+                    exit(1);
+                }
+            }
+
 
             // if(setCheckDuplicates.isSet())
             // {

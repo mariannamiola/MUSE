@@ -92,6 +92,53 @@ ${ROOT}/docs/html
 ${ROOT}/docs/md
 ```
 
+## Input CSV format
+
+The CSV files imported by `muse_data` must start with **6 header rows**, followed by the data rows (one sample per row, one variable per column). The default delimiter is `;` (use `--setDel COMMA` for `,`).
+
+| Row | Content | Notes |
+|-----|---------|-------|
+| 1 | Variable name | Used to name the output files (e.g. `X`, `Y`, `Z`, `phi`) |
+| 2 | Unit of measure | May be empty; `%` is used to rescale compositional data |
+| 3 | Flags | Data type and checks applied to the values (see below) |
+| 4 | Parents | Optional, may be empty |
+| 5 | Description | Optional, may be empty |
+| 6 | Comments | Optional, may be empty |
+
+Example (`examples/06_sec_2D_400_tri/data/samples_sec400.csv`):
+
+```text
+X;Y;Z;phi
+m;m;m;
+R+;R+;D;R+
+;;;
+Longitude;Latitude;Depth;
+;;;
+72.9;1;-1.30;0.43
+14.3;1;-10.83;0.35
+...
+```
+
+A flag is a combination of the following characters:
+
+| Flag | Meaning | Flag | Meaning |
+|------|---------|------|---------|
+| `R` | Real | `K` | Categorical |
+| `N` | Integer | `V` | String |
+| `C` | Compositional | `T` | Time |
+| `P` | Probability | `Y` | Date |
+| `B` | Bounded | `S` | Soft data (`a`, `b`, `c`: soft A/B/C) |
+| `L` | Logarithmic | `H` | Hard data |
+| `E` | Error | `G` | Geodesic |
+| `D` | Depth | `A` | Absolute height |
+| `+` | Positive values (e.g. `R+`) | `-` | Negative values (e.g. `R-`) |
+
+`+`/`-` are not checked when combined with `D` (depth).
+
+If row 3 contains characters that are not valid flags (e.g. because the file has a single header row and row 3 holds data values), `muse_data` stops with an error.
+
+Note: the `samples.csv` files with a single header row found in some example `data` folders are only used to visualize the samples in ParaView and are not `muse_data` input.
+
 ## Examples
 
 Example data and scripts are provided under the `${ROOT}/examples` directory.
