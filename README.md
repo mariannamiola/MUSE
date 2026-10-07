@@ -83,6 +83,37 @@ Apps executables will be made available in _${ROOT}/bin_ folder.
 
 (equivalent to passing `-DMUSE_BUILD_EXPORT=OFF` to CMake).
 
+### Tested platforms
+
+MUSE has been built successfully on the following configurations:
+
+| OS | Compiler | CMake | System libraries |
+|----|----------|-------|------------------|
+| macOS 26.6 (Apple Silicon) | Apple Clang 17.0 | 4.1.1 | Homebrew: armadillo 15.0.3, libomp 21.1.1, boost 1.90.0, lz4 1.10.0, sqlite 3.51.1, libtiff 4.7, eigen 3.4 / 5.0, gnuplot 6.0.3 |
+| Ubuntu (version TBD) | GCC (version TBD) | TBD | apt packages installed by `00_installDeps.sh` |
+
+System dependencies are installed by `00_installDeps.sh` (Homebrew on macOS, apt on Debian/Ubuntu); packages already present are skipped:
+
+| Package (macOS / Ubuntu) | Used by |
+|--------------------------|---------|
+| `cmake` | build system |
+| `pkgconf` / `pkg-config` | apps CMake configuration |
+| `lz4` / `liblz4-dev` | FLANN, GeoStatsLib |
+| `armadillo` / `libarmadillo-dev` | GeoStatsLib |
+| `eigen` / `libeigen3-dev` | linear algebra |
+| `sqlite` / `sqlite3`, `libsqlite3-dev` | PROJ, muse_compute |
+| `libtiff` / `libtiff-dev` | PROJ |
+| `libomp` (macOS only; GCC ships OpenMP) | OpenMP |
+| `boost` / `libboost-dev` | cinolib |
+| `gnuplot` | Matplot++ (needed at runtime to draw plots) |
+
+The external libraries are pinned through git submodules and built by `00_buildDeps.sh`: PROJ (9.x), GDAL (3.11), Matplot++ (1.2.2), cinolib, libigl (2.6), cereal (1.3.2), GeoStatsLib. Clone the repository with `git clone --recursive` (or run `git submodule update --init --recursive`) to get the exact tested versions.
+
+Notes:
+
+- On Linux with glibc older than 2.34 (e.g. Ubuntu 20.04) `pthread` must be linked explicitly; this is handled in the CMake files (`Threads::Threads`).
+- On macOS, `libomp` is searched in the Homebrew prefix (`/opt/homebrew/opt/libomp` or `/usr/local/opt/libomp`).
+
 ## Documentation
 
 The documentation can be found in one of the following directories, depending on the selected output format:
