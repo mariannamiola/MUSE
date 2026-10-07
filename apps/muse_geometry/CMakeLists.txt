@@ -1,5 +1,9 @@
 project(muse_geometry LANGUAGES CXX)
 
+# Explicit pthread link: needed on older glibc (e.g. Ubuntu < 22.04), otherwise
+# "undefined reference to pthread_create ... DSO missing from command line"
+find_package(Threads REQUIRED)
+
 # #####`
 # # VTK
 # find_package(VTK COMPONENTS
@@ -43,7 +47,7 @@ add_executable(${PROJECT_NAME}
   #${PROJ_LIB}
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC muse_cinolib PROJ::proj GDAL::GDAL)
+target_link_libraries(${PROJECT_NAME} PUBLIC muse_cinolib PROJ::proj GDAL::GDAL Threads::Threads)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 	VOLUME_MESHER_EXECUTABLE="${VOLUME_MESHER_EXECUTABLE_PATH}"
@@ -57,5 +61,5 @@ add_executable(${TETGEN_GENERATOR}
   main-tetmesh-generator.cpp
 )
 
-target_link_libraries(${TETGEN_GENERATOR} PUBLIC muse_cinolib)
+target_link_libraries(${TETGEN_GENERATOR} PUBLIC muse_cinolib Threads::Threads)
 
