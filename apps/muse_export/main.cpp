@@ -28,6 +28,7 @@
 #include <vector>
 
 #include <tclap/CmdLine.h>
+#include "muselib/project_check.h"
 
 #include <cinolib/profiler.h>
 #include <cinolib/meshes/abstract_mesh.h>
@@ -253,6 +254,7 @@ int main(int argc, char **argv)
 
         // Project settings
         MUSE::Project Project;
+        MUSE::check_project_folder(projectFolder.getValue()); //stop if -p is not a MUSE project directory
         Project.folder = projectFolder.getValue();                                                           // project path
         Project.name = Project.folder.substr(Project.folder.find_last_of("/") + 1, Project.folder.length()); // project name
 

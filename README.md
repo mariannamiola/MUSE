@@ -123,6 +123,37 @@ ${ROOT}/docs/html
 ${ROOT}/docs/md
 ```
 
+## Running MUSE without scripts
+
+Every MUSE workflow starts by creating a **project directory** with `muse_project`; all the other applications then read and write inside it, and receive it with `-p`.
+
+Note that `-p` has a different meaning in `muse_project` and in the other applications:
+
+- `muse_project -N -p <dir> --name <name>`: `-p` is the folder that will **contain** the project; the project is created in `<dir>/<name>`;
+- all the other applications: `-p` is the **project directory itself**, i.e. `<dir>/<name>`.
+
+At the end of the creation, `muse_project` prints the path to use with `-p`. If `-p` does not point to a MUSE project directory, the applications stop with an error (and suggest the right path if `-p` points to the parent folder).
+
+Minimal sequence (from `examples/06_sec_2D_400_tri`):
+
+```bash
+muse_project -N -p /path/work --name myproj           # creates /path/work/myproj
+P=/path/work/myproj                                    # from now on: -p ${P}
+
+muse_data -N -p ${P}                                   # creates in/data and out/data
+cp samples_sec400.csv ${P}/in/data/                    # input CSV (see "Input CSV format")
+muse_data -S -p ${P} --setX 1 --setY 2 --setZ 3        # set coordinate columns
+muse_data -C -p ${P}                                   # checks and conversion into MUSE format
+
+muse_geometry -N -p ${P}
+muse_geometry -P -p ${P} --tri --polygon <boundary>.xyz --setz -7.5 --obj
+muse_manipulate -E -p ${P} --geom <mesh>.obj
+muse_vario -V -p ${P} -v phi --nscore YES --vario MODEL ...
+muse_compute -C -p ${P} -v phi -m <mesh>.obj --nsim 10 ...
+```
+
+The complete parameters of each step are in the `10_test_*` script of each example and in the documentation (`docs/md`).
+
 ## Input CSV format
 
 The CSV files imported by `muse_data` must start with **6 header rows**, followed by the data rows (one sample per row, one variable per column). The default delimiter is `;` (use `--setDel COMMA` for `,`).

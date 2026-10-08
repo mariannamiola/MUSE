@@ -4,6 +4,7 @@
 #include <filesystem>
 
 #include <tclap/CmdLine.h>
+#include "muselib/project_check.h"
 #include <matplot/matplot.h>
 #include <geostatslib/statistics/stats.h>
 
@@ -324,6 +325,7 @@ int main(int argc, char** argv)
 
     // 0) Project settings
     MUSE::Project Project;
+    MUSE::check_project_folder(projectFolder.getValue()); //stop if -p is not a MUSE project directory
     Project.setFolder(projectFolder.getValue()); //cartella di progetto
     Project.setName(Project.folder.substr(Project.folder.find_last_of("/")+1, Project.folder.length()));
 

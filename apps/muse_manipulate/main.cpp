@@ -34,6 +34,7 @@
 #include <filesystem>
 
 #include <tclap/CmdLine.h>
+#include "muselib/project_check.h"
 //#include <json.hpp>
 
 #include <igl/cotmatrix.h>
@@ -458,6 +459,7 @@ int main(int argc, char** argv)
     // SETTINGS:
 
     MUSE::Project Project;
+    MUSE::check_project_folder(projectFolder.getValue()); //stop if -p is not a MUSE project directory
     Project.folder = projectFolder.getValue(); //percorso progetto
     Project.name = Project.folder.substr(Project.folder.find_last_of("/")+1, Project.folder.length()); //nome progetto
 

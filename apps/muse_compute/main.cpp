@@ -3,6 +3,7 @@
 #include <string>
 
 #include <tclap/CmdLine.h>
+#include "muselib/project_check.h"
 
 #include "geostatslib/statistics/decluster.h"
 #include "muselib/metadata/extraction_meta.h"
@@ -492,6 +493,7 @@ int main(int argc, char** argv)
 
     // 0) Project settings
     MUSE::Project Project;
+    MUSE::check_project_folder(projectFolder.getValue()); //stop if -p is not a MUSE project directory
     Project.folder = projectFolder.getValue(); //percorso progetto
     Project.name = Project.folder.substr(Project.folder.find_last_of("/")+1, Project.folder.length()); //nome progetto
 

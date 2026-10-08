@@ -280,6 +280,10 @@ int main(int argc, char** argv)
         project_json.setProject(Project);
         project_json.setEnv(project_env);
         project_json.write(out_dir + "/"+ Project.name + ".json");
+
+        std::cout << std::endl;
+        std::cout << "\033[0;32mProject directory: " << path_project << "\033[0m" << std::endl;
+        std::cout << "Use -p " << path_project << " in all the following MUSE commands." << std::endl;
     }
 
     } catch (ArgException &e)  // catch exceptions

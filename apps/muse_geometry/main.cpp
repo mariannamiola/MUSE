@@ -34,6 +34,7 @@
 #include <set>
 
 #include <tclap/CmdLine.h>
+#include "muselib/project_check.h"
 
 #include <cinolib/triangle_wrap.h>
 #include <cinolib/meshes/drawable_trimesh.h>
@@ -965,6 +966,7 @@ int main(int argc, char** argv)
         std::cerr << "\033[0;31mInput ERROR: Insert project folder with -p/--pdir flag\033[0m" << std::endl;
         exit(1);
     }
+    MUSE::check_project_folder(projectFolder.getValue()); //stop if -p is not a MUSE project directory
     Project.setFolder(projectFolder.getValue()); //cartella di progetto
     Project.setName(Project.folder.substr(Project.folder.find_last_of("/")+1, Project.folder.length()));
 
