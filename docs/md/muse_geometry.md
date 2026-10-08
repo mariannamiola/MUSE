@@ -82,8 +82,8 @@ muse_geometry -p <PDIR> [OPTIONS]
 - [`--vtk`](#vtk) — Saving volume mesh in vtk format (default: .mesh)
 - [`--xyz`](#xyz) — Saving text file in xyz format
 - [`--csv`](#csv) — Saving text file in csv format
-- [`-U`, `--merge`](#merge) — Merge two trimesh
-- [`--proxthresh`](#proxthresh) — Set proximaty threshold
+- [`-U`, `--merge`](#merge) — Merge two meshes (surfaces or volumes) passed with -m
+- [`--proxthresh`](#proxthresh) — Set proximity threshold for merging volume meshes
 - [`-S`, `--split`](#split) — Split two trimesh
 - [`-F`, `--cscalar`](#cscalar) — Create scalar field from centroids configuration and real samples
 - [`--smesh`](#smesh) — Set samples mesh associated to (real) values
@@ -1145,27 +1145,35 @@ Must be used together with [--resx](#resx)
 
 #### `-U`, `--merge` {#merge}
 
+<div class="required"><strong>⚠ Required:</strong> -p/--pdir (MUSE project directory) and exactly two -m/--mesh.</div>
+
 **Type:** Switch
 
 **Format:** `boolean flag`
 
-**Description:** Merge two trimesh
+**Description:** Merge two meshes (surfaces or volumes) into a single mesh. The two meshes are passed with -m/--mesh (exactly two times) and must be of the same format and type. Surfaces: two surfaces are merged along their boundary (boundary vertices with identical coordinates are fused); two watertight surfaces are merged at coincident vertices; mixing an open and a closed surface is not allowed. Volumes: meshes are merged at coincident vertices within the distance set by --proxthresh. The result is saved as NAME0_NAME1 (NAME0, NAME1: file names of the two input meshes without extension) in PROJECT/out/geometry/surf (surfaces) or PROJECT/out/geometry/volume (volumes).
 
 **Default:** `false (mesh merging is disabled by default).`
+
+**Dependencies:** Optional: [--obj](#obj), [--vtk](#vtk), [--proxthresh](#proxthresh) (volumes only). Merges can be chained by passing the previous output as first mesh.
+
+**Example:** `muse_geometry -U -p /path/to/project -m /path/to/project/out/geometry/surf/S1.obj -m /path/to/project/out/geometry/surf/S2.obj --obj`
 
 ---
 
 #### `--proxthresh` {#proxthresh}
 
-**Type:** Value | `int`
+**Type:** Value | `double`
 
-**Format:** `int`
+**Format:** `double`
 
-**Description:** Set proximaty threshold
+**Description:** Set proximity threshold for merging volume meshes: vertices of the second mesh closer than this distance (in the mesh coordinate units) to a vertex of the first mesh are fused. 0 fuses only exactly coincident vertices.
 
 **Default:** `0`
 
-**Dependencies:** Used with -U/[--merge](#merge).
+**Dependencies:** Used with -U/[--merge](#merge), only for volume meshes (.mesh/.vtk).
+
+**Example:** `--proxthresh 0.001`
 
 ---
 

@@ -835,25 +835,29 @@ int main(int argc, char** argv)
     // Option 7. Merge two meshes
     /**
 
-     * @brief Merge two trimesh
+     * @brief Merge two meshes (surfaces or volumes) into a single mesh. The two meshes are passed with -m/--mesh (exactly two times) and must be of the same kind: two surface meshes (.off/.obj) or two volume meshes (.mesh/.vtk) with the same element type (tetrahedra or hexahedra). Surfaces: two open surfaces are merged along their boundary (boundary vertices with identical coordinates are fused); two closed surfaces are merged at coincident vertices; mixing an open and a closed surface is not allowed. Volumes: meshes are merged at coincident vertices within the distance set by --proxthresh. The result is saved as NAME0_NAME1 (NAME0, NAME1: file names of the two input meshes without extension) in PROJECT/out/geometry/surf (surfaces) or PROJECT/out/geometry/volume (volumes); the output format is set by --obj (surfaces) or --vtk (volumes).
 
      * @default false (mesh merging is disabled by default).
      * @format boolean flag
+     * @required -p/--pdir (MUSE project directory) and exactly two -m/--mesh.
+     * @note Optional: --obj, --vtk, --proxthresh (volumes only). Merges can be chained by passing the previous output as first mesh.
+     * @example muse_geometry -U -p /path/to/project -m /path/to/project/out/geometry/surf/S1.obj -m /path/to/project/out/geometry/surf/S2.obj --obj
 
      */
 
-    SwitchArg mergeMeshes               ("U", "merge", "Merge two trimesh", cmd, false); //booleano
+    SwitchArg mergeMeshes               ("U", "merge", "Merge two meshes (surfaces or volumes) passed with -m", cmd, false); //booleano
     /**
 
-     * @brief Set proximaty threshold
+     * @brief Set proximity threshold for merging volume meshes: vertices of the second mesh closer than this distance (in the mesh coordinate units) to a vertex of the first mesh are fused. 0 fuses only exactly coincident vertices.
 
-     * @format int
+     * @format double
      * @default 0
-     * @note Used with -U/--merge.
+     * @note Used with -U/--merge, only for volume meshes (.mesh/.vtk).
+     * @example --proxthresh 0.001
 
      */
 
-    ValueArg<int> proxThreshold         ("", "proxthresh", "Set proximaty threshold", false, 0, "int" , cmd);
+    ValueArg<double> proxThreshold      ("", "proxthresh", "Set proximity threshold for merging volume meshes", false, 0.0, "double" , cmd);
 
     /**
 
@@ -3856,6 +3860,12 @@ int main(int argc, char** argv)
     if(createVolObject.isSet()  && meshFiles.getValue().size() > 1)
         std::cerr << "ERROR: Unexpected number of input files!" << std::endl;
 
+    if(mergeMeshes.isSet() && meshFiles.getValue().size() != 2)
+    {
+        std::cerr << FRED("ERROR: -U/--merge needs exactly two meshes (-m <mesh0> -m <mesh1>); ") << meshFiles.getValue().size() << FRED(" given.") << std::endl;
+        exit(1);
+    }
+
     if(mergeMeshes.isSet() && meshFiles.getValue().size() == 2)
     {
         std::vector<std::string> files = meshFiles.getValue();
@@ -3871,6 +3881,9 @@ int main(int argc, char** argv)
             if(ext1.compare(".off") == 0 || ext1.compare(".obj") == 0)
             {
                 std::cout << "Meshes are surfaces." << std::endl;
+
+                if(!filesystem::exists(out_surf))
+                    filesystem::create_directories(out_surf);
                 //Le mesh sono superfici (controllo sull'estensione), quindi le carico come trimesh
 
                 MUSE::SurfaceMesh<> trimesh0;
@@ -3917,9 +3930,12 @@ int main(int argc, char** argv)
         }
         else if(ext0.compare(".mesh") == 0 || ext0.compare(".vtk") == 0) //caso volumetrico
         {
-            if(ext1.compare(".mesh") == 0 || ext0.compare(".vtk") == 0)
+            if(ext1.compare(".mesh") == 0 || ext1.compare(".vtk") == 0)
             {
                 std::cout << "Meshes are volumes." << std::endl;
+
+                if(!filesystem::exists(out_volume))
+                    filesystem::create_directories(out_volume);
 
                 MUSE::VolumeMesh<> tetmesh0;
                 //cinolib::Hexmesh<> tetmesh0;
