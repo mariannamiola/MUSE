@@ -167,6 +167,43 @@ void rotation_on_trimesh (cinolib::Trimesh<> &trimesh, const MUSE::Rotation &bou
     }
 }
 
+void rotation_on_trimesh (cinolib::Polygonmesh<> &mesh, const MUSE::Rotation &bound_Rotation, bool reverse)
+{
+    // same as the Trimesh version, for general polygon meshes
+    cinolib::vec3d rot_axis_vec = get_rotation_axis(bound_Rotation);
+    cinolib::vec3d c (bound_Rotation.rotation_center_x, bound_Rotation.rotation_center_y, bound_Rotation.rotation_center_z);
+
+    double sign = 1.0;
+    if(reverse)
+        sign = -1.0;
+
+    for(size_t i=0; i< mesh.num_verts(); i++)
+    {
+        cinolib::vec3d sample (mesh.vert(i).x(), mesh.vert(i).y(), mesh.vert(i).z());
+        sample = point_rotation(sample, rot_axis_vec, sign * bound_Rotation.rotation_angle, c);
+
+        mesh.vert(i).x() = sample.x();
+        mesh.vert(i).y() = sample.y();
+        mesh.vert(i).z() = sample.z();
+    }
+}
+
+MUSE::Rotation rotation_to_xyplane (const std::vector<cinolib::vec3d> &verts)
+{
+    // align_points_to_xyplane works on copies of the coordinates: only the rotation is kept
+    std::vector<double> x, y, z;
+    for(const cinolib::vec3d &v : verts)
+    {
+        x.push_back(v.x());
+        y.push_back(v.y());
+        z.push_back(v.z());
+    }
+
+    MUSE::Rotation rotation;
+    align_points_to_xyplane(x, y, z, rotation);
+    return rotation;
+}
+
 //Routine for points triangulation
 cinolib::Trimesh<> points_triangulation (const std::vector<Point3D> &points, std::string opt)
 {

@@ -483,13 +483,25 @@ int main(int argc, char** argv)
 
     SwitchArg abszExtrusion             ("", "abs", "Set ABSOLUTE ELEVATION offset", cmd, false); //booleano
     /**
-     * @brief Set offset in Z direction
+     * @brief Set offset value: shift along z (--delta), absolute z elevation (--abs), or distance along the mesh normal with --dir NORMAL (--delta only)
      * @format double
      * @default 0.0
-     * @note Used with -O/--offset.
+     * @required true with -O/--offset.
+     * @note Used with -O/--offset and --dir.
      */
 
     ValueArg<double> zOffset            ("z", "zoffset", "Set offset in Z direction", false, 0.0, "double" , cmd);
+
+    std::vector<std::string> allowedOffsetDir = {"Z","NORMAL"};
+    ValuesConstraint<std::string> allowedValsOffsetDir(allowedOffsetDir);
+    /**
+     * @brief Set the direction used by -O/--offset and -T/--triobj. Z: global z axis (vertical shift). NORMAL: normal of the best-fit plane of the (first) mesh, oriented as the mesh faces; the meshes are rotated so that the normal is along z, processed and rotated back, so offset and closing work on inclined and vertical surfaces too. With NORMAL, -z is the distance along the normal.
+     * @values Z, NORMAL
+     * @default "Z"
+     * @note Used with -O/--offset (only with --delta: --abs is an absolute z elevation, not defined along the normal) and -T/--triobj (the two surfaces must be parallel).
+     * @example muse_geometry -O -p /path/to/project -m section.obj --delta -z 5 --dir NORMAL --obj
+     */
+    ValueArg<std::string> offsetDir     ("", "dir", "Set direction for offset and closing (Z or NORMAL)", false, "Z", &allowedValsOffsetDir, cmd);
 
     /**
      * @brief Append meshes
@@ -2873,8 +2885,24 @@ int main(int argc, char** argv)
             exit(1);
         }
 
+        if(!zOffset.isSet())
+        {
+            std::cerr << FRED("ERROR. Set the offset value with -z/--zoffset.") << std::endl;
+            exit(1);
+        }
+
+        const bool along_normal = (offsetDir.getValue().compare("NORMAL") == 0);
+        if(along_normal && abszExtrusion.isSet())
+        {
+            std::cerr << FRED("ERROR. --abs cannot be used with --dir NORMAL: --abs sets an absolute z elevation, which is not defined along the surface normal. Use --delta (distance along the normal) or --dir Z.") << std::endl;
+            exit(1);
+        }
+
         std::cout << FMAG("##########################################") << std::endl;
-        std::cout << FMAG("NOTA BENE: l'estrusione è solo abilitata in direzione z") << std::endl;
+        if(along_normal)
+            std::cout << FMAG("NOTE: the offset is applied along the mesh normal (--dir NORMAL)") << std::endl;
+        else
+            std::cout << FMAG("NOTE: the offset is applied only in z direction") << std::endl;
         std::cout << FMAG("##########################################") << std::endl;
         std::cout << std::endl;
 
@@ -2909,6 +2937,27 @@ int main(int argc, char** argv)
 
         std::string out_name = out_surf +"/" + basename;
 
+        // --dir NORMAL: rotate the mesh so that its normal is the z axis, apply the z offset, rotate back
+        MUSE::Rotation normalRotation;
+        double normal_sign = 1.0;
+        if(along_normal)
+        {
+            normalRotation = rotation_to_xyplane(mesh.vector_verts());
+            if(normalRotation.rotation)
+                rotation_on_trimesh(mesh, normalRotation);
+
+            // orientation of the normal given by the mesh faces
+            mesh.update_normals();
+            double nz = 0.0;
+            for(uint pid=0; pid < mesh.num_polys(); pid++)
+                nz += mesh.poly_data(pid).normal.z();
+            if(nz < 0.0)
+                normal_sign = -1.0;
+
+            std::vector<double> n = normalRotation.rotation ? normalRotation.normal_vec_original : std::vector<double>{0.0, 0.0, 1.0};
+            std::cout << "=== Offset direction (mesh normal): [" << normal_sign*n.at(0) << ", " << normal_sign*n.at(1) << ", " << normal_sign*n.at(2) << "]" << std::endl;
+        }
+
         MUSE::SurfaceMeta::Extrusion objinfo;
 
         if(deltazExtrusion.isSet()) //estrusione con delta costante (z + delta)
@@ -2918,12 +2967,12 @@ int main(int argc, char** argv)
 
             if(zOffset.isSet())
             {
-                std::cout << "The extrusion value is set on " << zOffset.getValue() << " in z direction ..." << std::endl;
                 objinfo.value = zOffset.getValue();
-                objinfo.direction = "z";
+                objinfo.direction = along_normal ? "n" : "z";
+                std::cout << "The extrusion value is set on " << zOffset.getValue() << " in " << (along_normal ? "normal" : "z") << " direction ..." << std::endl;
 
                 for(size_t vid =0 ; vid < mesh.num_verts(); vid++)
-                    mesh.vert(vid).z() = mesh.vert(vid).z() + zOffset.getValue();
+                    mesh.vert(vid).z() = mesh.vert(vid).z() + normal_sign * zOffset.getValue();
 
                 //out_name = out_name + "dz" + std::to_string(zOffset.getValue());
                 out_name = out_name + "_d" + objinfo.direction;
@@ -2972,6 +3021,9 @@ int main(int argc, char** argv)
             exit(1);
         }
 
+        if(along_normal && normalRotation.rotation)
+            rotation_on_trimesh(mesh, normalRotation, true); //back to the original reference system
+
         mesh.save((out_name + ext_surf).c_str());
         std::cout << "\033[0;32mExport mesh file: " << out_name + ext_surf << " ... COMPLETED.\033[0m" << std::endl;
 
@@ -2987,7 +3039,10 @@ int main(int argc, char** argv)
     if(createTriObject.isSet() && meshFiles.getValue().size() == 2)
     {
         std::cout << FMAG("##########################################") << std::endl;
-        std::cout << FMAG("NOTA BENE: la chiusura delle mesh avviene per ora solo per mesh triangolari e in direzione z") << std::endl;
+        if(offsetDir.getValue().compare("NORMAL") == 0)
+            std::cout << FMAG("NOTE: mesh closing is available only for triangle meshes, along the normal of the first mesh (--dir NORMAL)") << std::endl;
+        else
+            std::cout << FMAG("NOTE: mesh closing is available only for triangle meshes and in z direction") << std::endl;
         std::cout << FMAG("##########################################") << std::endl;
         std::cout << std::endl;
 
@@ -3004,6 +3059,36 @@ int main(int argc, char** argv)
         std::cout << "\033[0;32mLoading mesh file: " << files.at(1) << " ... COMPLETED.\033[0m" << std::endl;
         std::string filename1 = files.at(1).substr(files.at(1).find_last_of("/")+1, files.at(1).length());
         std::string basename1 = get_basename(filename1);
+
+        // --dir NORMAL: rotate both meshes so that the normal of the first mesh is the z axis;
+        // the closing below works in this local frame and the result is rotated back before saving
+        const bool along_normal = (offsetDir.getValue().compare("NORMAL") == 0);
+        MUSE::Rotation normalRotation;
+        if(along_normal)
+        {
+            std::cout << "=== Closing along the normal of the first mesh (--dir NORMAL) ..." << std::endl;
+            normalRotation = rotation_to_xyplane(trimesh0.vector_verts());
+            if(normalRotation.rotation)
+            {
+                rotation_on_trimesh(trimesh0, normalRotation);
+                rotation_on_trimesh(trimesh1, normalRotation);
+                trimesh0.update_bbox();
+                trimesh1.update_bbox();
+            }
+
+            std::vector<double> x1, y1, z1;
+            for(const cinolib::vec3d &v : trimesh1.vector_verts())
+            {
+                x1.push_back(v.x());
+                y1.push_back(v.y());
+                z1.push_back(v.z());
+            }
+            if(check_align_points_to_xyplane(x1, y1, z1))
+            {
+                std::cerr << FRED("ERROR. With --dir NORMAL the two meshes must be parallel (angle between their planes > 1 degree).") << std::endl;
+                exit(1);
+            }
+        }
 
         std::cout << "bb1 completa: " << trimesh1.bbox()<< std::endl;
         std::cout << "bb0 completa: " << trimesh0.bbox()<< std::endl;
@@ -3542,6 +3627,9 @@ int main(int argc, char** argv)
             std::cout << "\033[0;31mERROR on surfaces closing!\033[0m" << std::endl;
             exit(1);
         }
+
+        if(along_normal && normalRotation.rotation)
+            rotation_on_trimesh(closed_m, normalRotation, true); //back to the original reference system
 
         std::string out_closed_mesh = out_surf +"/" + basename0 +"-" + basename1 + ext_surf;
         closed_m.save(out_closed_mesh.c_str());

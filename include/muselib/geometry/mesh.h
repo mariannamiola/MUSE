@@ -9,6 +9,7 @@
 #include <cinolib/triangle_wrap.h>
 #include <cinolib/meshes/drawable_trimesh.h>
 #include <cinolib/meshes/quadmesh.h>
+#include <cinolib/meshes/polygonmesh.h>
 
 using namespace MUSE;
 
@@ -20,6 +21,8 @@ void remove_isolate_vertices                    (cinolib::Trimesh<> &mesh);
 void mesh_summary                               (cinolib::Trimesh<> &mesh);
 
 void rotation_on_trimesh                        (cinolib::Trimesh<> &trimesh, const MUSE::Rotation &bound_Rotation, bool reverse = false);
+void rotation_on_trimesh                        (cinolib::Polygonmesh<> &mesh, const MUSE::Rotation &bound_Rotation, bool reverse = false);
+MUSE::Rotation rotation_to_xyplane              (const std::vector<cinolib::vec3d> &verts); //rotation bringing the best-fit plane of verts onto the XY plane (normal -> Z)
 
 cinolib::Trimesh<> points_triangulation         (const std::vector<Point3D> &points, std::string opt);
 
