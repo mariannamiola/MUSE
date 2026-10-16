@@ -462,7 +462,11 @@ static double parseWellRadius(const std::string& well_str)
 
 static cinolib::Octree buildSurfaceOctree(const cinolib::Trimesh<>& surface)
 {
-    cinolib::Octree octree;
+    // items per leaf below the number of triangles, so that the root is always split:
+    // cinolib::Octree::intersects_ray fails (items.at(-1)) when the root is a leaf,
+    // e.g. coarse surfaces with less than 50 triangles (the default items per leaf)
+    const uint items_per_leaf = std::min<uint>(50, std::max<uint>(1, surface.num_polys() / 2));
+    cinolib::Octree octree(7, items_per_leaf);
     for (uint fid = 0; fid < surface.num_polys(); ++fid)
     {
         octree.push_triangle(fid, surface.poly_vert(fid, 0), surface.poly_vert(fid, 1), surface.poly_vert(fid, 2));

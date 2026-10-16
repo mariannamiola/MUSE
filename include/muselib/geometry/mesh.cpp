@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include "cinolib/octree.h"
+#include <cinolib/geometry/plane.h>
 
 using namespace MUSE;
 
@@ -202,6 +203,48 @@ MUSE::Rotation rotation_to_xyplane (const std::vector<cinolib::vec3d> &verts)
     MUSE::Rotation rotation;
     align_points_to_xyplane(x, y, z, rotation);
     return rotation;
+}
+
+MUSE::Rotation rotation_to_zaxis (const cinolib::vec3d &dir, const cinolib::vec3d &center)
+{
+    // same encoding as align_points_to_xyplane (autoalign: axis in rotation_axis_vec, angle in degree),
+    // so that rotation_on_trimesh can apply it and undo it
+    MUSE::Rotation rotation;
+
+    cinolib::vec3d u = dir;
+    u.normalize();
+    cinolib::vec3d z (0.0, 0.0, 1.0);
+
+    double dot = std::min(1.0, std::max(-1.0, u.dot(z)));
+    double angle_deg = std::acos(dot) * 180.0 / M_PI;
+    if(angle_deg < 1e-6)
+        return rotation; //already along +Z: no rotation
+
+    cinolib::vec3d axis = u.cross(z);
+    if(axis.norm() < 1e-10) //anti-parallel to Z
+        axis = cinolib::vec3d(1.0, 0.0, 0.0);
+    else
+        axis.normalize();
+
+    rotation.autoalign = true;
+    rotation.rotation  = true;
+    rotation.rotation_axis_vec = { axis.x(), axis.y(), axis.z() };
+    rotation.rotation_angle    = angle_deg;
+    rotation.rotation_center_x = center.x();
+    rotation.rotation_center_y = center.y();
+    rotation.rotation_center_z = center.z();
+    rotation.normal_vec_original = { u.x(), u.y(), u.z() };
+    rotation.normal_vec_rotated  = { 0.0, 0.0, 1.0 };
+
+    return rotation;
+}
+
+cinolib::vec3d best_fit_normal (const std::vector<cinolib::vec3d> &verts)
+{
+    cinolib::Plane plane(verts);
+    cinolib::vec3d n = plane.n;
+    n.normalize();
+    return n;
 }
 
 //Routine for points triangulation

@@ -23,6 +23,8 @@ void mesh_summary                               (cinolib::Trimesh<> &mesh);
 void rotation_on_trimesh                        (cinolib::Trimesh<> &trimesh, const MUSE::Rotation &bound_Rotation, bool reverse = false);
 void rotation_on_trimesh                        (cinolib::Polygonmesh<> &mesh, const MUSE::Rotation &bound_Rotation, bool reverse = false);
 MUSE::Rotation rotation_to_xyplane              (const std::vector<cinolib::vec3d> &verts); //rotation bringing the best-fit plane of verts onto the XY plane (normal -> Z)
+MUSE::Rotation rotation_to_zaxis                (const cinolib::vec3d &dir, const cinolib::vec3d &center); //rotation around center bringing the direction dir onto +Z
+cinolib::vec3d best_fit_normal                  (const std::vector<cinolib::vec3d> &verts); //unit normal of the best-fit plane of verts (sign not defined)
 
 cinolib::Trimesh<> points_triangulation         (const std::vector<Point3D> &points, std::string opt);
 
