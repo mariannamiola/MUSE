@@ -795,7 +795,7 @@ std::vector<exp_variog> dir_exp_variogram_lagconst (const vector<double> &values
                     //se dir_degree rientra nella fascia che sto considerando (-/+tolerance_degree)
                     if(dir_degree >= check_dir-degree_tolerance && dir_degree <= check_dir+degree_tolerance)
                     {
-                        double dretta = point_to_line_distance(0.0, 0.0, alfa_rad, md_x, md_y);
+                        double dretta = point_to_line_distance(0.0, 0.0, get_radians(90.0 - check_dir), md_x, md_y);
                         //std::cout << "distanza punto retta = " << dretta << std::endl;
 
                         if(dretta <= bandwidth)
@@ -896,7 +896,7 @@ std::vector<exp_variog> dir_exp_variogram_lagconst (const vector<double> &values
                     //se dir_degree rientra nella fascia che sto considerando (-/+tolerance_degree)
                     if(dir_degree >= check_dir-degree_tolerance && dir_degree <= check_dir+degree_tolerance)
                     {
-                        double dretta = point_to_line_distance(0.0, 0.0, alfa_rad, md_x, md_y);
+                        double dretta = point_to_line_distance(0.0, 0.0, get_radians(90.0 - check_dir), md_x, md_y);
                         //cout<<"Computed distance: "<< md << " Indici: row/col " << row << "/" << col << std::endl;
 
                         if(dretta <= bandwidth)
@@ -2150,7 +2150,7 @@ std::vector<exp_variog> dir_exp_variogram_lagvar (const vector<double> &values, 
                     //se dir_degree rientra nella fascia che sto considerando (-/+tolerance_degree)
                     if(dir_degree >= check_dir-degree_tolerance && dir_degree <= check_dir+degree_tolerance)
                     {
-                        double dretta = point_to_line_distance(0.0, 0.0, alfa_rad, md_x, md_y);
+                        double dretta = point_to_line_distance(0.0, 0.0, get_radians(90.0 - check_dir), md_x, md_y);
                         //std::cout << "distanza punto retta = " << dretta << std::endl;
 
                         if(dretta <= bandwidth)
@@ -2246,7 +2246,7 @@ std::vector<exp_variog> dir_exp_variogram_lagvar (const vector<double> &values, 
                     {
                         count_pass_angle++;
 
-                        double dretta = point_to_line_distance(0.0, 0.0, alfa_rad, md_x, md_y);
+                        double dretta = point_to_line_distance(0.0, 0.0, get_radians(90.0 - check_dir), md_x, md_y);
                         //std::cout << "distanza punto retta = " << dretta << std::endl;
 
                         if(dretta <= bandwidth)
