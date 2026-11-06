@@ -46,7 +46,13 @@ export BUILD=${APPS}/build
 cd ${BUILD}
 #cmake ..
 
-cmake -DCMAKE_BUILD_TYPE=Release -DMUSE_BUILD_EXPORT=${BUILD_EXPORT} ..
+MUSE_DEFAULT_FP_FLAGS=""
+case "$(uname -m)" in
+    aarch64|arm64) MUSE_DEFAULT_FP_FLAGS="-ffp-contract=off" ;;
+esac
+MUSE_FP_FLAGS="${MUSE_FP_FLAGS-${MUSE_DEFAULT_FP_FLAGS}}"
+cmake -DCMAKE_BUILD_TYPE=Release -DMUSE_BUILD_EXPORT=${BUILD_EXPORT} \
+    -DMUSE_FP_FLAGS:STRING="${MUSE_FP_FLAGS}" ..
 
 cmake --build . #--target \
 	#${project} \

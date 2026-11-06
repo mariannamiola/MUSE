@@ -75,6 +75,18 @@ chmod +x 00_installDeps.sh 00_buildDeps.sh 00_exe_creation.sh
 
 Apps executables will be made available in _${ROOT}/bin_ folder.
 
+On ARM64 (`aarch64`/`arm64`), application builds default to
+`-ffp-contract=off` for TetGen, Triangle, Shewchuk predicates, and applications
+using cinolib. This preserves separate floating-point roundings while retaining
+Release optimization. Other architectures use no additional flags. The default
+also applies to direct CMake configuration, using the target architecture.
+Override it with `MUSE_FP_FLAGS="-ffp-contract=off -g" ./00_exe_creation.sh`,
+or `-DMUSE_FP_FLAGS:STRING="-ffp-contract=off -g"` with CMake. An explicitly
+empty value disables the additional flags. CMake caches explicit overrides;
+change them explicitly when reusing a build directory. The default flag is
+intended for GCC/Clang-compatible compilers. The script detects the host
+architecture; use direct CMake configuration for cross-compilation.
+
 `muse_export` (and `muse_export_raster`) is optional and not required by the core pipeline. If it fails to build on your system, skip it with:
 
 ```bash

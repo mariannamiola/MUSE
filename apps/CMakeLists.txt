@@ -140,6 +140,12 @@ set(CINOLIB_USES_VTK                  OFF )
 set(cinolib_DIR "${PROJECT_SOURCE_DIR}/../external/cinolib")
 message(${cinolib_DIR})
 find_package(cinolib REQUIRED)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/RobustPredicates.cmake)
+
+# Suppress unchecked stdio return-value warnings in the external TetGen sources.
+if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+    target_compile_options(tetgen PRIVATE -Wno-unused-result)
+endif()
 
 # Keep cinolib as an opt-in dependency so apps that do not use it
 # avoid carrying triangle/tetgen/shewchuk build dependencies.
