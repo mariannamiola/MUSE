@@ -3,6 +3,11 @@
 
 #include <vector>
 #include <float.h>
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <Eigen/Sparse>
+#include <Eigen/SparseLU>
 
 #include <concaveman.h>
 #include <unordered_set>
@@ -701,7 +706,99 @@ cinolib::Trimesh<> concavehull_triangulation (const std::vector<Point3D> &concav
 
 
 
-cinolib::Trimesh<> constrained_triangulation2 (const std::vector<Point3D> &boundary3d, const std::vector<Point3D> &points, std::string opt)
+uint interpolate_unknown_z (cinolib::Trimesh<> &trimesh, const std::vector<bool> &known, bool restrict_boundary)
+{
+    const uint nv = trimesh.num_verts();
+    assert(known.size() == nv);
+
+    // Neighbours (and weights) used in the equation of each unknown vertex
+    std::vector<std::vector<std::pair<uint,double>>> nbrs(nv);
+    std::vector<uint> unknown;
+    for (uint vid=0; vid < nv; vid++)
+    {
+        if (known.at(vid))
+            continue;
+        unknown.push_back(vid);
+
+        const bool only_boundary = restrict_boundary && trimesh.vert_is_boundary(vid);
+        for (uint eid : trimesh.adj_v2e(vid))
+        {
+            if (only_boundary && !trimesh.edge_is_boundary(eid))
+                continue;
+            const uint nid = trimesh.vert_opposite_to(eid, vid);
+            const cinolib::vec3d &p = trimesh.vert(vid), &q = trimesh.vert(nid);
+            const double len = std::hypot(p.x()-q.x(), p.y()-q.y());
+            nbrs.at(vid).emplace_back(nid, 1.0/std::max(len, 1e-9));
+        }
+    }
+    if (unknown.empty())
+        return 0;
+
+    // 1. Reachability: an unknown vertex can be solved only if it depends (through its equation) on a known vertex
+    std::vector<bool> reached = known;
+    bool changed = true;
+    while (changed)
+    {
+        changed = false;
+        for (uint vid : unknown)
+        {
+            if (reached.at(vid))
+                continue;
+            for (const auto &nw : nbrs.at(vid))
+                if (reached.at(nw.first)) { reached.at(vid) = true; changed = true; break; }
+        }
+    }
+
+    std::vector<int> col(nv, -1);
+    std::vector<uint> active;
+    uint n_unreached = 0;
+    for (uint vid : unknown)
+    {
+        if (reached.at(vid)) { col.at(vid) = static_cast<int>(active.size()); active.push_back(vid); }
+        else                 n_unreached++;
+    }
+    if (active.empty())
+        return n_unreached;
+
+    // 2. Harmonic system: sum_n w_vn (z_v - z_n) = 0, known vertices act as Dirichlet conditions
+    std::vector<Eigen::Triplet<double>> entries;
+    Eigen::VectorXd rhs = Eigen::VectorXd::Zero(active.size());
+    for (size_t r=0; r < active.size(); r++)
+    {
+        const uint vid = active.at(r);
+        double wsum = 0.0;
+        for (const auto &nw : nbrs.at(vid))
+        {
+            if (!reached.at(nw.first))
+                continue;
+            wsum += nw.second;
+            if (known.at(nw.first)) rhs(r) += nw.second * trimesh.vert(nw.first).z();
+            else                    entries.emplace_back(r, col.at(nw.first), -nw.second);
+        }
+        entries.emplace_back(r, r, wsum);
+    }
+    Eigen::SparseMatrix<double> A(active.size(), active.size());
+    A.setFromTriplets(entries.begin(), entries.end());
+
+    Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+    solver.compute(A);
+    Eigen::VectorXd z;
+    if (solver.info() == Eigen::Success)
+        z = solver.solve(rhs);
+    if (solver.info() != Eigen::Success)
+    {
+        std::cerr << "\033[0;31mERROR: z interpolation failed (sparse solver) - z left unchanged.\033[0m" << std::endl;
+        return static_cast<uint>(unknown.size());
+    }
+
+    for (size_t r=0; r < active.size(); r++)
+        trimesh.vert(active.at(r)).z() = z(r);
+
+    return n_unreached;
+}
+
+
+cinolib::Trimesh<> constrained_triangulation2 (const std::vector<Point3D> &boundary3d, const std::vector<Point3D> &points, std::string opt, BoundaryZ boundary_z)
 {
     std::vector<double> triangle_points_in;
     std::vector<double> triangle_holes_in;
@@ -877,18 +974,105 @@ cinolib::Trimesh<> constrained_triangulation2 (const std::vector<Point3D> &bound
             }
             else
             {
-                std::cout << "z value is set on 0.0" << std::endl;
-                triangle_points_out_coords.push_back(0.0);
+                triangle_points_out_coords.push_back(0.0); //placeholder, interpolated below
                 counter_null++;
             }
         }
         vid++;
     }
-    std::cout << "### Number of additional points (by Triangle) with null z-coordinate: " << counter_null << std::endl;
-    std::cout << "Assigned z values at vertices ... COMPLETED." << std::endl;
+    std::cout << "### Number of additional points (by Triangle): " << counter_null << std::endl;
 
     cinolib::Trimesh<> trimesh (triangle_points_out_coords, triangle_tris_out);
     std::cout << "Creation trimesh data structure ... COMPLETED." << std::endl;
+
+    // Vertex order in Triangle output: internal data points, boundary points, additional (Steiner) points
+    const size_t n_data = id_inpoints.size();
+    const size_t n_data_boundary = n_data + id_boundary.size();
+    const uint nv = trimesh.num_verts();
+
+    // Original z values of the boundary vertices
+    std::vector<double> z_boundary;
+    for (size_t v=n_data; v < n_data_boundary; v++)
+        z_boundary.push_back(trimesh.vert(v).z());
+
+    bool project = false;
+    std::vector<bool> known (nv, false);
+    uint n_unreached = 0;
+
+    // 2D boundary: all its z values are null (e.g. 2D shape)
+    size_t n_zero = 0;
+    for (double z : z_boundary)
+        if (z == 0.0)
+            n_zero++;
+    const bool boundary_2d = !z_boundary.empty() && (n_zero == z_boundary.size());
+
+    if (n_data == 0)
+    {
+        if (boundary_2d || boundary_z == BoundaryZ::PROJECT)
+            std::cout << "\033[0;33mWARNING: no data points inside the boundary - boundary cannot be projected, its z values are kept.\033[0m" << std::endl;
+    }
+    else
+    {
+        // Projection of the boundary on the data surface: boundary (and Steiner) z interpolated from the data points
+        for (uint v=0; v < nv; v++)
+            known.at(v) = (v < n_data);
+        n_unreached = interpolate_unknown_z(trimesh, known, false);
+
+        project = boundary_2d || (boundary_z == BoundaryZ::PROJECT);
+
+        if (project)
+        {
+            if (boundary_2d)
+                std::cout << "\033[0;33m=== Boundary has null z (2D shape).\033[0m" << std::endl;
+            else
+                std::cout << "\033[0;33m=== Projection of the 3D boundary forced (--projbz).\033[0m" << std::endl;
+            std::cout << "\033[0;33m=== Projecting boundary points on the data surface: z interpolated as weighted average of neighbouring vertices (weights = 1/edge length).\033[0m" << std::endl;
+        }
+        else
+        {
+            // 3D boundary (z kept): check its z values against the data surface (warnings only)
+            double data_zmin = DBL_MAX, data_zmax = -DBL_MAX;
+            for (size_t v=0; v < n_data; v++)
+            {
+                data_zmin = std::min(data_zmin, trimesh.vert(v).z());
+                data_zmax = std::max(data_zmax, trimesh.vert(v).z());
+            }
+            std::vector<double> dz;
+            for (size_t i=0; i < z_boundary.size(); i++)
+                dz.push_back(std::fabs(z_boundary.at(i) - trimesh.vert(n_data+i).z()));
+            std::sort(dz.begin(), dz.end());
+            const double dz_median = dz.empty() ? 0.0 : dz.at(dz.size()/2);
+            const double dz_max    = dz.empty() ? 0.0 : dz.back();
+
+            const double data_range = data_zmax - data_zmin;
+            const double tol = (data_range > 0.0) ? 0.01 * data_range : 1e-6 * (1.0 + std::fabs(data_zmax));
+
+            std::cout << "=== 3D boundary: |dz| between boundary and data surface: median = " << dz_median << ", max = " << dz_max << std::endl;
+            if (n_zero > 0)
+                std::cout << "\033[0;33mWARNING: " << n_zero << " boundary vertices with z = 0 (missing z values?).\033[0m" << std::endl;
+            if (dz_median > tol)
+                std::cout << "\033[0;33mWARNING: boundary z far from data (|dz| median = " << dz_median << " > 1% of data z range = " << tol
+                          << "): expect a step along the boundary (use --projbz to project the boundary on the data).\033[0m" << std::endl;
+        }
+    }
+
+    if (!project)
+    {
+        // Keep the boundary z values: restore them, interpolate the remaining vertices (Steiner points)
+        for (size_t i=0; i < z_boundary.size(); i++)
+            trimesh.vert(n_data+i).z() = z_boundary.at(i);
+        for (uint v=0; v < nv; v++)
+            known.at(v) = (v < n_data_boundary);
+        n_unreached = interpolate_unknown_z(trimesh, known, true);
+        std::cout << "=== Boundary z values are taken from the boundary (3D boundary)." << std::endl;
+    }
+
+    const uint n_unknown = static_cast<uint>(std::count(known.begin(), known.end(), false));
+    if (n_unknown > n_unreached)
+        std::cout << "### Interpolated z on " << n_unknown - n_unreached << " vertices." << std::endl;
+    if (n_unreached > 0)
+        std::cout << "\033[0;33mWARNING: " << n_unreached << " vertices not connected to any vertex with known z - z left unchanged.\033[0m" << std::endl;
+    std::cout << "Assigned z values at vertices ... COMPLETED." << std::endl;
 
     //std::cout << "Constrained Delaunay Triangulation on boundary ... COMPLETED." << std::endl;
 

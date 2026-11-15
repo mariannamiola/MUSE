@@ -31,7 +31,12 @@
 #include <algorithm>
 #include <filesystem>
 #include <float.h>
+#include <cmath>
+#include <cstdint>
+#include <numeric>
+#include <random>
 #include <set>
+#include <unordered_map>
 
 #include <tclap/CmdLine.h>
 #include "muselib/project_check.h"
@@ -103,6 +108,82 @@
 
 using namespace MUSE;
 using namespace TCLAP;
+
+// Boundary z mode of the constrained triangulation: 2D boundary projected / 3D boundary kept (default), or always projected (--projbz)
+BoundaryZ boundaryZMode (const SwitchArg &projBoundaryZ)
+{
+    return projBoundaryZ.getValue() ? BoundaryZ::PROJECT : BoundaryZ::AUTO;
+}
+
+// RANDOM subset: k distinct indices out of n, in increasing order (selection sampling, Knuth Algorithm S).
+// mt19937_64 and the uniform mapping below are fully specified, so a given seed gives the same subset on any platform.
+std::vector<size_t> random_subset_ids (const size_t n, const size_t k, const uint64_t seed)
+{
+    std::vector<size_t> ids;
+    if (k >= n)
+    {
+        ids.resize(n);
+        std::iota(ids.begin(), ids.end(), 0);
+        return ids;
+    }
+
+    std::mt19937_64 gen(seed);
+    ids.reserve(k);
+    size_t needed = k;
+    for (size_t i=0; i < n && needed > 0; i++)
+    {
+        const double u = static_cast<double>(gen() >> 11) * 0x1.0p-53; // uniform in [0,1)
+        if (u * static_cast<double>(n - i) < static_cast<double>(needed))
+        {
+            ids.push_back(i);
+            needed--;
+        }
+    }
+    return ids;
+}
+
+// GRID subset: one point per square cell of size h on the XY plane (the point nearest to the cell centre),
+// indices in increasing order. Deterministic.
+std::vector<size_t> grid_subset_ids (const std::vector<Point3D> &points, const double h)
+{
+    double xmin = DBL_MAX, ymin = DBL_MAX, xmax = -DBL_MAX, ymax = -DBL_MAX;
+    for (const Point3D &p : points)
+    {
+        xmin = std::min(xmin, p.x); xmax = std::max(xmax, p.x);
+        ymin = std::min(ymin, p.y); ymax = std::max(ymax, p.y);
+    }
+    if ((xmax - xmin) / h >= 4.0e9 || (ymax - ymin) / h >= 4.0e9)
+    {
+        std::cerr << FRED("ERROR: --cellsize too small for the extent of the points.") << std::endl;
+        exit(1);
+    }
+
+    std::unordered_map<uint64_t, std::pair<size_t,double>> best; // cell -> (point index, squared distance from the cell centre)
+    best.reserve(points.size() / 4 + 1);
+    for (size_t i=0; i < points.size(); i++)
+    {
+        const double fx = (points.at(i).x - xmin) / h;
+        const double fy = (points.at(i).y - ymin) / h;
+        const uint64_t ix = static_cast<uint64_t>(std::floor(fx));
+        const uint64_t iy = static_cast<uint64_t>(std::floor(fy));
+        const double dx = fx - (static_cast<double>(ix) + 0.5);
+        const double dy = fy - (static_cast<double>(iy) + 0.5);
+        const double d2 = dx*dx + dy*dy;
+
+        auto it = best.find((ix << 32) | iy);
+        if (it == best.end())
+            best.emplace((ix << 32) | iy, std::make_pair(i, d2));
+        else if (d2 < it->second.second)
+            it->second = std::make_pair(i, d2);
+    }
+
+    std::vector<size_t> ids;
+    ids.reserve(best.size());
+    for (const auto &cell : best)
+        ids.push_back(cell.second.first);
+    std::sort(ids.begin(), ids.end());
+    return ids;
+}
 
 // Unit direction u used by -O/--offset and -T/--triobj (--dir):
 // Z -> (0,0,1); VEC -> normalized --dirvec "dx,dy,dz"; NORMAL -> normal of the best-fit plane of verts (sign not defined)
@@ -347,9 +428,11 @@ int main(int argc, char** argv)
      * - --convex: Convex hull triangulation (mutually exclusive with --concave)
      * - --concave: Concave hull triangulation (mutually exclusive with --convex)
      * OPTIONAL:
-     * - --boundary: External boundary file
+     * - --boundary: External boundary file (constrained triangulation inside the boundary)
+     * - --projbz: Project a 3D boundary on the data surface
      * - --opt: Optimization flags
-     * @example --tri --convex OR --tri --concave --boundary /path/to/boundary.shp
+     * The triangulation is performed on the XY plane; the data points keep their z values, the points added by Triangle (e.g. with --opt "q") get z interpolated from the mesh.
+     * @example --tri --convex OR --tri --concave OR --tri --boundary /path/to/boundary.dat
      */
 
     SwitchArg triFlag                   ("", "tri", "Set triangulation for 2D meshing", cmd, false); //booleano
@@ -369,18 +452,35 @@ int main(int argc, char** argv)
      */
 
     SwitchArg concaveFlag               ("", "concave", "Set concave hull for points triangulation", cmd, false); //booleano
+    
     /**
-
      * @brief Set external boundary for points triangulation
-
-     * @format string (path to a boundary file)
+     * @format string (path to the boundary file; the accepted format depends on the command, see below)
      * @default empty (no external boundary is used).
-     * @note Optional. Used with --tri.
-
+     * @note Optional. Used with --tri: constrained Delaunay triangulation (on the XY plane) of the points inside the boundary, which is kept as constraint; points outside the boundary are discarded.
+     * Accepted boundary files:
+     * - -P/--pcl (point cloud) and -R/--raster: ASCII text file of the boundary vertices, one vertex per line as three numbers "x y z" separated by blanks or tabs (no header, no commas; any extension, e.g. .dat, .xyz, .txt). The vertices must be ordered along the boundary (clockwise or counterclockwise); the polygon is closed automatically (a repeated first vertex is removed as duplicate). One polygon only, without holes. A .shp/.gpkg polygon is converted into this format by -V --save, which writes one .dat file per polygon in out/geometry/surf. With -R/--raster the boundary is used as 2D XY clipping domain (no rotation is applied).
+     * - -V/--vector (points read from a vector file in in/geometry): vector file .shp or .gpkg (read with GDAL, other extensions are not accepted); every polygon of the file is used as boundary of the same points. Polygons with holes (interior rings) are not supported.
+     * - -S/--split with --grid: triangle mesh file (e.g. .obj, .off); its boundary (on the XY plane) is used to cut the grid (the cells with centroid inside the boundary are kept).
+     * z values of the boundary vertices (constrained triangulation with -P, -R and -V):
+     * - 2D boundary (all z = 0, e.g. a 2D shape): always projected on the data surface (e.g. a DEM), z interpolated as weighted average of the neighbouring vertices (weights = 1/edge length). 
+     * - 3D boundary (z not all null): z values kept, the triangulation is constrained to the 3D boundary. WARNING if some boundary vertices have z = 0 or if the boundary is far from the data (median |dz| > 1% of the data z range: expect a step along the boundary).
+     * - --projbz: the 3D boundary is projected on the data surface too.
+     * If no data points lie inside the boundary, the boundary z values are kept.
+     * @example muse_geometry -P -p /path/to/project --points /path/to/dem.xyz --tri --boundary /path/to/boundary.dat --opt q30 --obj
      */
 
     ValueArg<std::string> setBoundary   ("", "boundary", "Set external boundary for points triangulation", false, "", "filename", cmd);
-    
+
+    /**
+     * @brief Project the external boundary on the data surface in the constrained triangulation, also when the boundary is 3D
+     * @default false (2D boundary with all z = 0 is projected on the data surface; 3D boundary keeps its z values).
+     * @format boolean flag
+     * @note Used with --tri (with --boundary or with a fixed boundary). By default a 2D boundary (all z = 0, e.g. a 2D shape) is always projected on the triangulated data (e.g. a DEM): its z values are interpolated as weighted average of the neighbouring vertices (weights = 1/edge length), so that no step is produced along the border. A 3D boundary (z not all null) keeps its z values and the triangulation is constrained to it; warnings are printed if some of its vertices have z = 0 or if its z values are far from the data surface (median |dz| > 1% of the data z range). Set --projbz to project a 3D boundary too (e.g. boundary z values not reliable). Points added by Triangle (e.g. with --opt "q") always get interpolated z.
+     * @example muse_geometry -P -p /path/to/project --points /path/to/dem.xyz --tri --boundary /path/to/boundary3d.dat --projbz --obj
+     */
+    SwitchArg projBoundaryZ             ("", "projbz", "Project the external boundary on the data surface also when it is 3D (default: only 2D boundary, z = 0)", cmd, false);
+
     /**
      * @brief Set optimization flags to optimize triangulation (e.g., "pq20" for preserve+quality 20) or tetrahedralization (e.g., "pq20" for preserve+quality 20 in TetGen)
      * @format string (Triangle/TetGen optimization flags, e.g. "pq20")
@@ -450,16 +550,48 @@ int main(int argc, char** argv)
     //ValueArg<std::string> setFeatures   ("", "features", "Set features", false, "DEFAULT", "string" , cmd);
 
     /**
-
-     * @brief Set (random) subset of points
-
-     * @format int (number of points in the random subset)
-     * @default 10
-     * @note Optional. Extracts a random subset of the input points.
-
+     * @brief Set the number of points of the RANDOM subset
+     * @format int (number of distinct points randomly drawn from the input points, > 0)
+     * @default not set (all the input points are used).
+     * @note Optional. Used with -P/--pcl --points, with --submode RANDOM (default). Exactly the requested number of distinct points is drawn (all the points if the number is larger than the input), keeping the input order, from the whole input file, i.e. before the clipping with --boundary. The seed of the random generator is printed: set it with --seed to reproduce the same subset. The subset is saved in out/geometry/surf/_subset.xyz. See --submode for the characteristics of the returned subset.
+     * @example muse_geometry -P -p /path/to/project --points /path/to/dem.xyz --subset 100000 --seed 42 --tri --boundary /path/to/boundary.dat --obj
      */
 
-    ValueArg<int> subSet                ("", "subset", "Set (random) subset of points", false, 10,"int", cmd); //booleano
+    ValueArg<int> subSet                ("", "subset", "Set the number of points of the RANDOM subset", false, 0, "int", cmd);
+
+    std::vector<std::string> allowedSubMode = {"RANDOM","GRID"};
+    ValuesConstraint<std::string> allowedValsSubMode(allowedSubMode);
+    /**
+     * @brief Set the method used to extract a subset of the input points. RANDOM: --subset distinct points drawn at random (reproducible with --seed). GRID: the XY plane is divided in square cells of size --cellsize and one point per cell is kept (the point nearest to the cell centre), so the points are evenly spaced; deterministic.
+     * @values RANDOM, GRID
+     * @default "RANDOM"
+     * @note Optional. Used with -P/--pcl --points. RANDOM requires --subset; GRID requires --cellsize. Both methods work on the whole input file (before the clipping with --boundary) and return original input points (z values are neither interpolated nor averaged), in the input order; the subset is saved in out/geometry/surf/_subset.xyz and replaces the input points in the following steps (e.g. --tri). Printed: method, seed (RANDOM) or cell size (GRID), number of points before and after the subset.
+     * Returned subset:
+     * - RANDOM: exactly --subset distinct points (all the points if --subset is larger than the input). The spacing is irregular (clusters and gaps): with --tri --opt "q" Triangle adds many points (z interpolated) to reach the requested quality. A different subset at each run, unless --seed is set (the seed used is always printed).
+     * - GRID: one point for each non-empty square cell of size --cellsize (the point nearest to the cell centre). The number of points is not set directly: it is about (area covered by the points) / cellsize^2. The points are evenly spaced (about --cellsize), so the triangulation is regular and Triangle adds few points; deterministic (same subset at each run). GRID works on the XY plane (e.g. DEM or horizontal surfaces).
+     * - GRID on gridded data (e.g. a DEM on a regular grid): the subset is itself a regular lattice. Good for surfaces, but not recommended before the tetrahedral meshing (-M --tet) of a volume closed by surfaces with the same lattice (e.g. a DEM and its offset with -O): the regular (co-spherical) points produce flat tetrahedra (slivers, also with null volume). Use RANDOM for volume meshes.
+     * @example muse_geometry -P -p /path/to/project --points /path/to/dem.xyz --submode GRID --cellsize 10 --tri --boundary /path/to/boundary.dat --obj
+     */
+    ValueArg<std::string> subMode       ("", "submode", "Set the subset method (RANDOM or GRID)", false, "RANDOM", &allowedValsSubMode, cmd);
+
+    /**
+     * @brief Set the cell size of the GRID subset
+     * @format double (cell size on the XY plane, in the units of the points, > 0)
+     * @default not set
+     * @required true with --submode GRID.
+     * @note Used with --submode GRID: one point is kept for each square cell of size --cellsize (cells aligned with the minimum x and y of the points). The resulting spacing of the points is about --cellsize and the number of points about (area covered by the points) / cellsize^2. See --submode for the characteristics of the returned subset (and the limits with gridded data before -M --tet).
+     * @example muse_geometry -P -p /path/to/project --points /path/to/dem.xyz --submode GRID --cellsize 10 --tri --obj
+     */
+    ValueArg<double> cellSize           ("", "cellsize", "Set the cell size of the GRID subset", false, 0.0, "double", cmd);
+
+    /**
+     * @brief Set the seed of the random generator of the RANDOM subset
+     * @format unsigned int (64 bit)
+     * @default not set (random seed, different at each run; the seed used is printed).
+     * @note Used with --subset (--submode RANDOM). With the same seed and the same input file the same subset is extracted, on any platform.
+     * @example muse_geometry -P -p /path/to/project --points /path/to/dem.xyz --subset 100000 --seed 42 --tri --obj
+     */
+    ValueArg<unsigned long long> setSeed ("", "seed", "Set the seed of the RANDOM subset", false, 0, "unsigned int", cmd);
 
     // Option 5. Set z for new points (if mesh is a section in 3D space)
     // Option: compute variogram with variable/constant lag spacing
@@ -1354,7 +1486,7 @@ int main(int argc, char** argv)
                                     std::cout << "\033[0;32mStarted Triangulation on X-Y aligned data (with boundary) ...\033[0m" << std::endl;
                                     
                                     if(has_datasets)
-                                        trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt);
+                                        trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt, boundaryZMode(projBoundaryZ));
                                     else
                                         trimesh = boundary_triangulation(boundary_xy, paramSurface.opt);                                        
 
@@ -1565,7 +1697,7 @@ int main(int argc, char** argv)
                                             align_points_to_xyplane(boundary_xy, otfRotation);
                                         
                                         trimesh.clear();
-                                        trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt);
+                                        trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt, boundaryZMode(projBoundaryZ));
                                         remove_isolate_vertices(trimesh);
 
                                         if(auto_aligned)
@@ -1804,7 +1936,7 @@ int main(int argc, char** argv)
                             std::cout << "\033[0;32mStarted Constrained Triangulation on boundary ...\033[0m" << std::endl;
 
                             if(has_datasets)
-                                trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt);
+                                trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt, boundaryZMode(projBoundaryZ));
                             else
                                 trimesh = boundary_triangulation(boundary_xy, paramSurface.opt);
 
@@ -2022,7 +2154,7 @@ int main(int argc, char** argv)
                                     align_points_to_xyplane(boundary_xy, otfRotation);
 
                                 trimesh.clear();
-                                trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt);
+                                trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt, boundaryZMode(projBoundaryZ));
                                 remove_isolate_vertices(trimesh);
 
                                 if(auto_aligned)
@@ -2245,8 +2377,16 @@ int main(int argc, char** argv)
                         std::cout << "=== External boundary is interpreted as a 2D xy clipping/constrained domain for raster data triangulation." << std::endl;
                         std::cout << "=== No rotation is applied to raster data or boundary points." << std::endl;
 
-                        std::vector<Point3D> boundary;
-                        load_xyzfile(setBoundary.getValue(), boundary);
+                        std::vector<Point3D> boundary_in, boundary;
+                        load_xyzfile(setBoundary.getValue(), boundary_in);
+
+                        // As for -P: remove duplicated vertices (e.g. first vertex repeated at the end, as in the files written by -V --save)
+                        remove_duplicates_test_opt(boundary_in, boundary, setTolerance.getValue());
+                        if(boundary.size() < 3)
+                        {
+                            std::cerr << FRED("ERROR: at least 3 unique boundary points are required for triangulation.") << std::endl;
+                            exit(1);
+                        }
 
                         paramSurface.opt = "";
 
@@ -2254,7 +2394,7 @@ int main(int argc, char** argv)
                             paramSurface.opt = optFlag.getValue();
 
                         trimesh.clear();
-                        trimesh = constrained_triangulation2(boundary, data, paramSurface.opt);
+                        trimesh = constrained_triangulation2(boundary, data, paramSurface.opt, boundaryZMode(projBoundaryZ));
 
                         paramSurface.boundary = "CONSTRAINED";
                     }
@@ -2530,31 +2670,59 @@ int main(int argc, char** argv)
             dataSummary.setDataSummary(data);
             geometa.setDataSummary(dataSummary);
 
-            if(subSet.isSet())
+            const bool gridSubset = (subMode.getValue() == "GRID");
+            if(subSet.isSet() || subMode.isSet())
             {
-                std::cout << "=== Random sampling of data vector is set." << std::endl;
-                srand(time(NULL));
-                std::vector<size_t> random_id(subSet.getValue());
-                for (size_t i = 0; i < subSet.getValue(); i++)
+                std::vector<size_t> subset_id;
+
+                if(gridSubset)
                 {
-                    random_id[i] = rand() % data.size();
-                    //std::cout << "rand ID: " << random_id[i] << std::endl;
+                    if(!cellSize.isSet() || cellSize.getValue() <= 0.0)
+                    {
+                        std::cerr << FRED("ERROR: --submode GRID requires --cellsize > 0.") << std::endl;
+                        exit(1);
+                    }
+                    if(subSet.isSet() || setSeed.isSet())
+                        std::cout << FYEL("WARNING: --subset and --seed are ignored with --submode GRID.") << std::endl;
+
+                    std::cout << "=== Subset (GRID) of data vector: one point per cell, cell size = " << cellSize.getValue() << std::endl;
+                    subset_id = grid_subset_ids(data, cellSize.getValue());
+                }
+                else
+                {
+                    if(!subSet.isSet() || subSet.getValue() <= 0)
+                    {
+                        std::cerr << FRED("ERROR: --submode RANDOM requires --subset > 0.") << std::endl;
+                        exit(1);
+                    }
+                    if(cellSize.isSet())
+                        std::cout << FYEL("WARNING: --cellsize is ignored with --submode RANDOM.") << std::endl;
+
+                    uint64_t seed = setSeed.getValue();
+                    if(!setSeed.isSet())
+                    {
+                        std::random_device rd;
+                        seed = (static_cast<uint64_t>(rd()) << 32) ^ static_cast<uint64_t>(rd());
+                    }
+                    std::cout << "=== Subset (RANDOM) of data vector: " << subSet.getValue() << " points, seed = " << seed
+                              << (setSeed.isSet() ? "" : " (random: use --seed to reproduce this subset)") << std::endl;
+                    subset_id = random_subset_ids(data.size(), static_cast<size_t>(subSet.getValue()), seed);
                 }
 
-                std::sort(random_id.begin(), random_id.end());
-                random_id.erase(std::unique( random_id.begin(), random_id.end() ), random_id.end() );
-
-                std::vector<Point3D> data_rand=data;
+                std::vector<Point3D> data_all = data;
                 data.clear();
-                for(int rid:random_id)
-                    data.push_back(data_rand.at(rid));
-                std::cout << "=== Size of data vector (before random sampling): " << data_rand.size() << std::endl;
-                std::cout << "=== New size of data vector (after random sampling): " << data.size() << std::endl;
+                data.reserve(subset_id.size());
+                for(size_t sid : subset_id)
+                    data.push_back(data_all.at(sid));
+                std::cout << "=== Size of data vector (before subset): " << data_all.size() << std::endl;
+                std::cout << "=== New size of data vector (after subset): " << data.size() << std::endl;
                 std::cout << std::endl;
 
                 std::string filename_rand = "_subset.xyz";
                 export3d_xyz(out_surf + "/" + filename_rand, data);
             }
+            else if(setSeed.isSet() || cellSize.isSet())
+                std::cout << FYEL("WARNING: --seed and --cellsize are used only with --subset or --submode.") << std::endl;
 
             std::vector<Point3D> data_unique;
             remove_duplicates_test_opt(data, data_unique, setTolerance.getValue());
@@ -2722,7 +2890,7 @@ int main(int argc, char** argv)
                         paramSurface.opt = paramSurface.opt + optFlag.getValue();
 
                     trimesh.clear();
-                    trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt);
+                    trimesh = constrained_triangulation2(boundary_xy, data_xy, paramSurface.opt, boundaryZMode(projBoundaryZ));
                     remove_isolate_vertices(trimesh);
 
                     if(auto_aligned)

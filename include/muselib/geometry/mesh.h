@@ -35,7 +35,23 @@ cinolib::Trimesh<> concavehull_triangulation    (const std::vector<Point3D> &con
 unsigned int first_boundary_point_corresponding (const cinolib::vec3d &first_point, const std::vector<uint> &or_idch, cinolib::Trimesh<> mesh);
 unsigned int first_boundary_point_corresponding (const cinolib::vec3d &first_point, const std::vector<uint> &or_idch, cinolib::Quadmesh<> mesh);
 
-cinolib::Trimesh<> constrained_triangulation2   (const std::vector<Point3D> &boundary3d, const std::vector<Point3D> &points, std::string opt);
+// How the z values of the boundary vertices are set in constrained_triangulation2
+enum class BoundaryZ
+{
+    AUTO,    // 2D boundary (all z = 0): projected on the data surface; 3D boundary: its z values are kept
+    PROJECT  // always project the boundary on the data surface (z interpolated from the internal data)
+};
+
+// Constrained Delaunay triangulation of points inside boundary3d (triangulation on XY).
+// Internal data points keep their z. Points added by Triangle (Steiner) always get z interpolated from the mesh.
+// The z values of the boundary vertices are set according to boundary_z (see BoundaryZ).
+cinolib::Trimesh<> constrained_triangulation2   (const std::vector<Point3D> &boundary3d, const std::vector<Point3D> &points, std::string opt, BoundaryZ boundary_z = BoundaryZ::AUTO);
+
+// Assign z to the vertices with known[vid] == false by harmonic interpolation (inverse XY edge length weights)
+// from the vertices with known z. If restrict_boundary is true, unknown boundary vertices are interpolated
+// only along boundary edges (i.e. linearly along the boundary between known boundary vertices).
+// Returns the number of unknown vertices not reachable from any known vertex (their z is left unchanged).
+uint interpolate_unknown_z                      (cinolib::Trimesh<> &trimesh, const std::vector<bool> &known, bool restrict_boundary);
 
 bool check_poly_normals                         (cinolib::Trimesh<> mesh);
 
