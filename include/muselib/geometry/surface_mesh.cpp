@@ -56,13 +56,16 @@ void SurfaceMesh<M,V,E,P>::save(const char * filename) const
 
     if (ext.compare(".obj") == 0 || ext.compare(".off") == 0)
     {
-        if (_mesh_type == MeshType::QUADMESH)
+        // Type not set by the constructor (default-constructed mesh): detect it from the polygons
+        const MeshType mesh_type = (_mesh_type == MeshType::POLYGONMESH && this->num_polys() > 0) ? set_meshtype() : _mesh_type;
+
+        if (mesh_type == MeshType::QUADMESH)
         {
             cinolib::Quadmesh<> *m = new cinolib::Quadmesh<>(this->vector_verts(), this->vector_polys());
             m->save(filename);
             delete m;
         }
-        else if (_mesh_type == MeshType::TRIMESH)
+        else if (mesh_type == MeshType::TRIMESH)
         {
             cinolib::Trimesh<> *m = new cinolib::Trimesh<>(this->vector_verts(), this->vector_polys());
             m->save(filename);

@@ -48,7 +48,7 @@ class SurfaceMesh : public cinolib::Polygonmesh<M,V,E,P>
 
     private:
 
-        MeshType _mesh_type;
+        MeshType _mesh_type = MeshType::POLYGONMESH; // POLYGONMESH = not set (e.g. mesh filled by export_surface)
 };
 
 
