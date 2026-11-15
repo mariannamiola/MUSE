@@ -291,11 +291,10 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
                     continue;
                 }
             }
-            else
-            {
-                min_mse_model = fitvario_on_model.at(i).mse;
-                min_index_model = i;
-            }
+
+            // best model so far (a Gaussian model is accepted when its nugget is within 5% of the sill)
+            min_mse_model = fitvario_on_model.at(i).mse;
+            min_index_model = i;
         }
     }
 
@@ -503,11 +502,10 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
                     continue;
                 }
             }
-            else
-            {
-                min_mse_model = fitvario_on_model.at(i).mse;
-                min_index_model = i;
-            }
+
+            // best model so far (a Gaussian model is accepted when its nugget is within 5% of the sill)
+            min_mse_model = fitvario_on_model.at(i).mse;
+            min_index_model = i;
         }
     }
 
