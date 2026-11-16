@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <cstdlib>
 #include <string.h>
 #include <filesystem>
 
@@ -557,6 +558,38 @@ int main(int argc, char** argv)
                             break;
                         }
                     }
+
+                // The last header row (comments) must not be a data row: with fewer header rows the first
+                // sample would be read as comments and silently lost
+                if(header_ok)
+                {
+                    auto is_number = [](const std::string &s)
+                    {
+                        const size_t b = s.find_first_not_of(" \t");
+                        if(b == std::string::npos)
+                            return false;
+                        const std::string t = s.substr(b, s.find_last_not_of(" \t") - b + 1);
+                        char *end = nullptr;
+                        std::strtod(t.c_str(), &end);
+                        return end == t.c_str() + t.size();
+                    };
+
+                    const std::vector<std::string> &last = matrix_header.back();
+                    size_t n_filled = 0, n_numeric = 0;
+                    for(const std::string &field : last)
+                    {
+                        if(field.find_first_not_of(" \t") == std::string::npos)
+                            continue;
+                        n_filled++;
+                        if(is_number(field))
+                            n_numeric++;
+                    }
+                    if(n_numeric >= 2 && n_numeric == n_filled)
+                    {
+                        std::cerr << "\033[0;31mERROR: row " << n_rows_header << " of " << filename << " contains data values: the CSV has fewer than " << n_rows_header << " header rows (the first sample would be read as header).\033[0m" << std::endl;
+                        header_ok = false;
+                    }
+                }
 
                 if(!header_ok)
                 {
