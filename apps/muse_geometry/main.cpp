@@ -29,6 +29,9 @@
 
 #include <iostream>
 #include <algorithm>
+#include <array>
+#include <map>
+#include <limits>
 #include <filesystem>
 #include <float.h>
 #include <cmath>
@@ -40,6 +43,7 @@
 
 #include <tclap/CmdLine.h>
 #include "muselib/project_check.h"
+#include "muselib/output/save_obj.h"
 
 #include <cinolib/triangle_wrap.h>
 #include <cinolib/meshes/drawable_trimesh.h>
@@ -216,6 +220,52 @@ cinolib::vec3d offset_direction (const std::string &mode, const std::string &dir
     }
 
     return cinolib::vec3d(0.0, 0.0, 1.0);
+}
+
+// Reconstruct boundary vertices from the original polygon, including Steiner
+// points on its edges. A rotation round trip need not preserve a constant axis.
+static void restore_polygon_coordinates(cinolib::Trimesh<>& mesh,
+                                        const std::vector<Point3D>& local,
+                                        const std::vector<Point3D>& original,
+                                        const MUSE::Rotation& rotation)
+{
+    const auto local_vertices = mesh.vector_verts();
+    const double tolerance = 256 * std::numeric_limits<double>::epsilon() *
+                             std::max(1.0, mesh.bbox().diag());
+    rotation_on_trimesh(mesh, rotation, true);
+    for(uint v=0; v<mesh.num_verts(); ++v)
+    {
+        // A coordinate constant on the complete polygon is also constant
+        // throughout its planar triangulation.
+        for(int axis=0; axis<3; ++axis)
+        {
+            const auto coordinate = [axis](const Point3D& p) {
+                return axis==0 ? p.x : axis==1 ? p.y : p.z;
+            };
+            const double value = coordinate(original.front());
+            if(std::all_of(original.begin(), original.end(), [&](const Point3D& p) {
+                return coordinate(p)==value;
+            })) mesh.vert(v)[axis] = value;
+        }
+        if(!mesh.vert_is_boundary(v)) continue;
+        const auto& p = local_vertices[v];
+        for(size_t i=0; i<local.size(); ++i)
+        {
+            const size_t j = (i+1)%local.size();
+            const cinolib::vec3d a(local[i].x,local[i].y,0), b(local[j].x,local[j].y,0);
+            const cinolib::vec3d q(p.x(),p.y(),0), d = b-a;
+            const double length2 = d.dot(d);
+            if(length2==0) continue;
+            const double t = std::max(0.0,std::min(1.0,(q-a).dot(d)/length2));
+            if((q-(a+d*t)).norm()>tolerance) continue;
+            const cinolib::vec3d wa(original[i].x,original[i].y,original[i].z);
+            const cinolib::vec3d wb(original[j].x,original[j].y,original[j].z);
+            mesh.vert(v) = t==0 ? wa : t==1 ? wb : wa+(wb-wa)*t;
+            break;
+        }
+    }
+    mesh.update_bbox();
+    mesh.update_normals();
 }
 
 int main(int argc, char** argv)
@@ -1368,7 +1418,10 @@ int main(int argc, char** argv)
                             paramSurface.type = "POLYGONMESH";
 
                             MUSE::Polygonmesh<> polygonmesh (boundaries, polygonmesh);
-                            polygonmesh.save(out_mesh.c_str());
+                            if(ext_surf == ".obj")
+                                MUSE::save_obj(polygonmesh, out_mesh);
+                            else
+                                polygonmesh.save((out_mesh).c_str());
 
                             Surface.setSummary(polygonmesh);
                             Surface.setParameters(paramSurface);
@@ -1496,7 +1549,10 @@ int main(int argc, char** argv)
                                     
                                     Surface.setSummary(trimesh);
 
-                                    trimesh.save(out_mesh.c_str());
+                                    if(ext_surf == ".obj")
+                                        MUSE::save_obj(trimesh, out_mesh);
+                                    else
+                                        trimesh.save((out_mesh).c_str());
                                     std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
                                     std::cout << std::endl;
                                 }
@@ -1509,7 +1565,10 @@ int main(int argc, char** argv)
                                     paramSurface.resz = 0.0;
 
                                     MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), boundary_xy);
-                                    quadmesh.save(out_mesh.c_str());
+                                    if(ext_surf == ".obj")
+                                        MUSE::save_obj(quadmesh, out_mesh);
+                                    else
+                                        quadmesh.save((out_mesh).c_str());
                                     std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
                                     std::cout << std::endl;
 
@@ -1715,7 +1774,10 @@ int main(int argc, char** argv)
                                 Surface.setParameters(paramSurface);
                                 Surface.setSummary(trimesh);
 
-                                trimesh.save(out_mesh.c_str());
+                                if(ext_surf == ".obj")
+                                    MUSE::save_obj(trimesh, out_mesh);
+                                else
+                                    trimesh.save((out_mesh).c_str());
                                 std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
                                 std::cout << std::endl;
                             }
@@ -1833,7 +1895,10 @@ int main(int argc, char** argv)
 
                     MUSE::Polygonmesh<> polygonmesh (boundaries, polygonmesh);
                     std::string out_mesh = out_surf + "/" + Geometry.name + ext_surf;
-                    polygonmesh.save(out_mesh.c_str());
+                    if(ext_surf == ".obj")
+                        MUSE::save_obj(polygonmesh, out_mesh);
+                    else
+                        polygonmesh.save((out_mesh).c_str());
 
                     MUSE::Surface Surface;
                     Surface.setSummary(polygonmesh);
@@ -1947,7 +2012,10 @@ int main(int argc, char** argv)
 
                             Surface.setSummary(trimesh);
 
-                            trimesh.save(out_mesh.c_str());
+                            if(ext_surf == ".obj")
+                                MUSE::save_obj(trimesh, out_mesh);
+                            else
+                                trimesh.save((out_mesh).c_str());
                             std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
                             std::cout << std::endl;
                         }
@@ -1962,7 +2030,10 @@ int main(int argc, char** argv)
                             paramSurface.resz = 0.0;
 
                             MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), boundary_xy);
-                            quadmesh.save(out_mesh.c_str());
+                            if(ext_surf == ".obj")
+                                MUSE::save_obj(quadmesh, out_mesh);
+                            else
+                                quadmesh.save((out_mesh).c_str());
                             std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
                             std::cout << std::endl;
 
@@ -2175,7 +2246,10 @@ int main(int argc, char** argv)
                         geometa.setMeshSummary(Surface);
                         geometa.setDataRotation(otfRotation);
 
-                        trimesh.save(out_mesh.c_str());
+                        if(ext_surf == ".obj")
+                            MUSE::save_obj(trimesh, out_mesh);
+                        else
+                            trimesh.save((out_mesh).c_str());
                         std::cout << "\033[0;32mSaving mesh file: " << out_mesh << "\033[0m" << std::endl;
                         std::cout << std::endl;
                     }
@@ -2409,7 +2483,10 @@ int main(int argc, char** argv)
 
                     std::string out_mesh = out_rast + "/" + get_basename(Geometry.getName()) + ext_surf;
                     //trimesh.translate(center);
-                    trimesh.save(out_mesh.c_str());
+                    if(ext_surf == ".obj")
+                        MUSE::save_obj(trimesh, out_mesh);
+                    else
+                        trimesh.save((out_mesh).c_str());
                 }
                 else if(gridFlag.isSet())
                 {
@@ -2425,7 +2502,10 @@ int main(int argc, char** argv)
                     MUSE::Quadmesh<> quadmesh(nYSize-1, nXSize-1, XSizePixel, YSizePixel, XOrigin, YOrigin, grid);
 
                     //std::string out_mesh = out_rast + "/grid_" + get_basename(Geometry.getName()) + ext_surf;
-                    quadmesh.save(out_mesh.c_str());
+                    if(ext_surf == ".obj")
+                        MUSE::save_obj(quadmesh, out_mesh);
+                    else
+                        quadmesh.save((out_mesh).c_str());
                     Surface.setSummary(quadmesh);
 
                     Surface.setParameters(paramSurface);
@@ -2607,11 +2687,14 @@ int main(int argc, char** argv)
                 remove_isolate_vertices(trimesh);
 
                 if(auto_aligned)
-                    rotation_on_trimesh(trimesh, otfRotation, true);
+                    restore_polygon_coordinates(trimesh, boundary_xy, boundary_unique, otfRotation);
 
                 Surface.setSummary(trimesh);
                 Surface.setParameters(paramSurface);
-                trimesh.save(out_mesh.c_str());
+                if(ext_surf == ".obj")
+                    MUSE::save_obj(trimesh, out_mesh);
+                else
+                    trimesh.save((out_mesh).c_str());
             }
 
             else if(gridFlag.isSet())
@@ -2630,7 +2713,10 @@ int main(int argc, char** argv)
                 paramSurface.resz = 0.0;
 
                 MUSE::Quadmesh<> quadmesh (setResx.getValue(), setResy.getValue(), setNewZ.getValue(), boundary);
-                quadmesh.save(out_mesh.c_str());
+                if(ext_surf == ".obj")
+                    MUSE::save_obj(quadmesh, out_mesh);
+                else
+                    quadmesh.save((out_mesh).c_str());
 
                 //paramSurface.type = "GRIDMESH";
 
@@ -2905,7 +2991,10 @@ int main(int argc, char** argv)
                 Surface.setParameters(paramSurface);
                 Surface.setSummary(trimesh);
 
-                trimesh.save(out_mesh.c_str());
+                if(ext_surf == ".obj")
+                    MUSE::save_obj(trimesh, out_mesh);
+                else
+                    trimesh.save((out_mesh).c_str());
             }
             else if (gridFlag.isSet())
             {
@@ -2982,7 +3071,10 @@ int main(int argc, char** argv)
 
             std::string out_mesh = out_surf + "/grid" + ext_surf;
 
-            quadmesh.save(out_mesh.c_str());
+            if(ext_surf == ".obj")
+                MUSE::save_obj(quadmesh, out_mesh);
+            else
+                quadmesh.save((out_mesh).c_str());
 
             MUSE::Surface summary;
             MUSE::Surface::Parameters par;
@@ -3018,7 +3110,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                mesh.save(out_mesh.c_str());
+                mesh.save((out_mesh).c_str());
             }
 
             MUSE::Volume summary;
@@ -3075,7 +3167,10 @@ int main(int argc, char** argv)
         }
 
         std::string out_mesh = surface_folder +"/" + basename +"_append" + ext_surf;
-        mesh.save(out_mesh.c_str());
+        if(ext_surf == ".obj")
+            MUSE::save_obj(mesh, out_mesh);
+        else
+            mesh.save((out_mesh).c_str());
         std::cout << "\033[0;32mExport mesh file: " << out_mesh << " ... COMPLETED.\033[0m" << std::endl;
     }
 
@@ -3240,7 +3335,10 @@ int main(int argc, char** argv)
             out_name = out_name + "_abs" + dir_suffix;
         }
 
-        mesh.save((out_name + ext_surf).c_str());
+        if(ext_surf == ".obj")
+            MUSE::save_obj(mesh, (out_name + ext_surf));
+        else
+            mesh.save(((out_name + ext_surf)).c_str());
         std::cout << "\033[0;32mExport mesh file: " << out_name + ext_surf << " ... COMPLETED.\033[0m" << std::endl;
 
         MUSE::Surface summary;
@@ -3282,6 +3380,8 @@ int main(int argc, char** argv)
         // is the z axis; the closing below works in this local frame and the result is rotated back before saving
         const bool along_normal = (offsetDir.getValue().compare("NORMAL") == 0);
         const bool along_vec    = (offsetDir.getValue().compare("VEC") == 0);
+        const auto original_vertices0 = trimesh0.vector_verts();
+        const auto original_vertices1 = trimesh1.vector_verts();
         MUSE::Rotation dirRotation;
         if(along_vec)
         {
@@ -3892,10 +3992,43 @@ int main(int argc, char** argv)
         }
 
         if((along_normal || along_vec) && dirRotation.rotation)
-            rotation_on_trimesh(closed_m, dirRotation, true); //back to the original reference system
+        {
+            // Closing copies source vertices unchanged in the local frame.
+            // Restore their original world coordinates instead of applying a
+            // lossy forward/inverse rotation round trip to existing geometry.
+            using CoordinateKey = std::array<double,3>;
+            std::map<CoordinateKey,cinolib::vec3d> source_coordinates;
+            const auto remember = [&](const cinolib::Trimesh<>& mesh,
+                                      const std::vector<cinolib::vec3d>& original)
+            {
+                for(uint v=0; v<mesh.num_verts(); ++v)
+                {
+                    const auto& p = mesh.vert(v);
+                    const auto inserted = source_coordinates.emplace(
+                        CoordinateKey{p.x(),p.y(),p.z()}, original.at(v));
+                    if(!inserted.second && !(inserted.first->second == original.at(v)))
+                        throw std::runtime_error("Closing rotation collapsed distinct source vertices");
+                }
+            };
+            remember(trimesh0, original_vertices0);
+            remember(trimesh1, original_vertices1);
+            const auto local_vertices = closed_m.vector_verts();
+            rotation_on_trimesh(closed_m, dirRotation, true);
+            for(uint v=0; v<closed_m.num_verts(); ++v)
+            {
+                const auto& p = local_vertices.at(v);
+                const auto source = source_coordinates.find(CoordinateKey{p.x(),p.y(),p.z()});
+                if(source != source_coordinates.end()) closed_m.vert(v) = source->second;
+            }
+            closed_m.update_bbox();
+            closed_m.update_normals();
+        }
 
         std::string out_closed_mesh = out_surf +"/" + basename0 +"-" + basename1 + ext_surf;
-        closed_m.save(out_closed_mesh.c_str());
+        if(ext_surf == ".obj")
+            MUSE::save_obj(closed_m, out_closed_mesh);
+        else
+            closed_m.save((out_closed_mesh).c_str());
         std::cout << "\033[0;32mExport mesh file: " << out_closed_mesh << " ... COMPLETED.\033[0m" << std::endl;
 
         MUSE::Surface summary;
@@ -4022,7 +4155,10 @@ int main(int argc, char** argv)
         }
 
         std::string out_closed_mesh = out_surf +"/" + basename0 +"-" + basename1 + ext_surf;
-        closed_m.save(out_closed_mesh.c_str());
+        if(ext_surf == ".obj")
+            MUSE::save_obj(closed_m, out_closed_mesh);
+        else
+            closed_m.save((out_closed_mesh).c_str());
         std::cout << "\033[0;32mExport mesh file: " << out_closed_mesh << " ... COMPLETED.\033[0m" << std::endl;
 
         MUSE::Surface summary;
@@ -4085,7 +4221,10 @@ int main(int argc, char** argv)
             std::cout << "### Translate mesh at BBOX center: " << center << std::endl;
             trimesh.translate(-center);
             if(setSave.isSet())
-                trimesh.save((get_basename(files.at(0)) + "_translate"+ext_surf).c_str());
+                if(ext_surf == ".obj")
+                    MUSE::save_obj(trimesh, (get_basename(files.at(0)) + "_translate"+ext_surf));
+                else
+                    trimesh.save(((get_basename(files.at(0)) + "_translate"+ext_surf)).c_str());
 
             // Set parameters in opt
             std::string opt = "";
@@ -4136,7 +4275,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                volmesh.save(out_mesh.c_str());
+                volmesh.save((out_mesh).c_str());
             }
             std::cout << "\033[0;32mExport mesh file: " << out_mesh << " ... COMPLETED.\033[0m" << std::endl;
 
@@ -4170,7 +4309,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                volmesh.save(out_mesh.c_str());
+                volmesh.save((out_mesh).c_str());
             }
             std::cout << "\033[0;32mExport mesh file: " << out_mesh << " ... COMPLETED.\033[0m" << std::endl;
 
@@ -4197,7 +4336,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                hexmesh.save(out_mesh.c_str());
+                hexmesh.save((out_mesh).c_str());
             }
             std::cout << "\033[0;32mExport mesh file: " << out_mesh << " ... COMPLETED.\033[0m" << std::endl;
 
@@ -4265,7 +4404,10 @@ int main(int argc, char** argv)
                     std::cout << "Error on meshes type!" << std::endl;
                     exit(1);
                 }
-                trimesh.save(out_mesh.c_str());
+                if(ext_surf == ".obj")
+                    MUSE::save_obj(trimesh, out_mesh);
+                else
+                    trimesh.save((out_mesh).c_str());
 
                 std::cout << std::endl;
                 std::cout << "P " << trimesh.num_polys() << std::endl;
@@ -4333,7 +4475,7 @@ int main(int argc, char** argv)
                     }
                     else
                     {
-                        tetmesh.save(out_mesh.c_str());
+                        tetmesh.save((out_mesh).c_str());
                     }
                 }
                 else
@@ -4360,7 +4502,7 @@ int main(int argc, char** argv)
                     }
                     else
                     {
-                        tetmesh.save(out_mesh.c_str());
+                        tetmesh.save((out_mesh).c_str());
                     }
                 }
                 std::cout << "\033[0;32mSaving mesh file in : " << out_mesh << " ... COMPLETED.\033[0m" << std::endl;
@@ -4494,7 +4636,10 @@ int main(int argc, char** argv)
                 sub_quadmesh.remove_isolate_poly();
 
             std::string out_mesh = name + "_" + bound_name + ext_surf;
-            sub_quadmesh.save(out_mesh.c_str());
+            if(ext_surf == ".obj")
+                MUSE::save_obj(sub_quadmesh, out_mesh);
+            else
+                sub_quadmesh.save((out_mesh).c_str());
 
             std::cout << std::endl;
             std::cout << "Saving quadmesh: " << out_mesh << std::endl;
@@ -4561,7 +4706,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                sub_hexmesh.save(out_mesh.c_str());
+                sub_hexmesh.save((out_mesh).c_str());
             }
 
             std::cout << std::endl;
@@ -4644,13 +4789,19 @@ int main(int argc, char** argv)
         geometa.setMeshSummary(surf);
 
         std::string out_mesh = out_surf + "/"+ get_basename(get_filename(filename_mesh)) + "_rem";
-        mesh.save((out_mesh + ext_surf).c_str());
+        if(ext_surf == ".obj")
+            MUSE::save_obj(mesh, (out_mesh + ext_surf));
+        else
+            mesh.save(((out_mesh + ext_surf)).c_str());
         std::cout << "\033[0;32mSaving mesh file: " << out_mesh + ext_surf << "\033[0m" << std::endl;
 
         if(setRotAxis.isSet())
         {
             out_mesh += "_rot";
-            mesh.save((out_mesh + ext_surf).c_str());
+            if(ext_surf == ".obj")
+                MUSE::save_obj(mesh, (out_mesh + ext_surf));
+            else
+                mesh.save(((out_mesh + ext_surf)).c_str());
             std::cout << "\033[0;32mSaving mesh file: " << out_mesh + ext_surf << "\033[0m" << std::endl;
         }
 
@@ -4895,21 +5046,30 @@ int main(int argc, char** argv)
             point_to_translate.z() = std::stod(point_to_translate_string.at(2));
 
             mesh.translate(point_to_translate);
-            mesh.save((out_mesh + ext_surf).c_str());
+            if(ext_surf == ".obj")
+                MUSE::save_obj(mesh, (out_mesh + ext_surf));
+            else
+                mesh.save(((out_mesh + ext_surf)).c_str());
             std::cout << "\033[0;32mSaving mesh file: " << out_mesh + ext_surf << "\033[0m" << std::endl;
         }
 
         if(splitMethod.isSet())
         {
             out_mesh += "_res";
-            mesh.save((out_mesh + ext_surf).c_str());
+            if(ext_surf == ".obj")
+                MUSE::save_obj(mesh, (out_mesh + ext_surf));
+            else
+                mesh.save(((out_mesh + ext_surf)).c_str());
             std::cout << "\033[0;32mSaving mesh file: " << out_mesh + ext_surf << "\033[0m" << std::endl;
         }
 
         if(setRotAxis.isSet())
         {
             out_mesh += "_rot";
-            mesh.save((out_mesh + ext_surf).c_str());
+            if(ext_surf == ".obj")
+                MUSE::save_obj(mesh, (out_mesh + ext_surf));
+            else
+                mesh.save(((out_mesh + ext_surf)).c_str());
             std::cout << "\033[0;32mSaving mesh file: " << out_mesh + ext_surf << "\033[0m" << std::endl;
         }
 
@@ -4918,7 +5078,10 @@ int main(int argc, char** argv)
             mesh.scale(setScaleFactorX, setScaleFactorY, setScaleFactorZ);
 
             out_mesh += "_scale";
-            mesh.save((out_mesh + ext_surf).c_str());
+            if(ext_surf == ".obj")
+                MUSE::save_obj(mesh, (out_mesh + ext_surf));
+            else
+                mesh.save(((out_mesh + ext_surf)).c_str());
             std::cout << "\033[0;32mSaving mesh file: " << out_mesh + ext_surf << "\033[0m" << std::endl;
         }
 
@@ -5145,7 +5308,10 @@ int main(int argc, char** argv)
                 std::string out_surfmesh = out_surf + "/" + get_basename(get_filename(filename_mesh));
                 MUSE::SurfaceMesh<> surf_mesh;
                 export_surface(mesh, surf_mesh);
-                surf_mesh.save((out_surfmesh + ext_surf).c_str());
+                if(ext_surf == ".obj")
+                    MUSE::save_obj(surf_mesh, (out_surfmesh + ext_surf));
+                else
+                    surf_mesh.save(((out_surfmesh + ext_surf)).c_str());
                 std::cout << "\033[0;32mSaving mesh file: " << out_surfmesh + ext_surf << "\033[0m" << std::endl;
             }
         }
