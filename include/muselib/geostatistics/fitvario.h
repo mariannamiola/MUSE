@@ -229,8 +229,8 @@ double      get_gamma                           (const double &h, const double &
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
-// helper for fitting weights
-static double compute_weight(const exp_variog &ev, size_t idx, weightsType w_type);
+// helper for fitting weights: model_gamma is the value of the candidate model at the lag idx (used by CRESSIE)
+static double compute_weight(const exp_variog &ev, size_t idx, weightsType w_type, double model_gamma);
 
 
 //FITTING - OMNIDIRECTIONAL

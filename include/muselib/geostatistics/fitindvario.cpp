@@ -1,5 +1,12 @@
 #include "fitindvario.h"
 
+// Candidate models of the automatic model selection for indicator variograms.
+// The Gaussian model is excluded: an indicator variogram must satisfy the triangle inequality
+// gamma(h1+h2) <= gamma(h1) + gamma(h2) (Matheron), so it cannot be parabolic at the origin, and a
+// Gaussian (smooth) variogram is not a valid indicator variogram (Dubrule; Emery et al.). The Gaussian
+// model can still be forced from command line (muse_vario --itype GAUSSIAN!cat).
+static const std::vector<variogram_type> IND_AUTO_MODELS = {variogram_type::SPHERIC, variogram_type::EXPONENTIAL};
+
 //INDICATOR FITTING - OMNIDIRECTIONAL
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -19,7 +26,7 @@ variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, con
     variogram fitvario; //risultato finale
     double best_mse_model = DBL_MAX;
 
-    std::vector<variogram_type> model_types = {variogram_type::SPHERIC, variogram_type::GAUSSIAN, variogram_type::EXPONENTIAL}; //vettore dei variogramma modello
+    std::vector<variogram_type> model_types = IND_AUTO_MODELS; // automatic selection: Gaussian excluded for indicators
 
     for(size_t m=0; m<model_types.size(); m++)
     {
@@ -64,7 +71,7 @@ variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, con
                     if(ev.gamma.at(i) > variance)
                         continue;
 
-                    double weight_coefficient = compute_weight(ev, i, w_type);
+                    double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
                     mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                 }
 
@@ -90,21 +97,8 @@ variogram fit_ind_variogram (const exp_variog &ev, const double &range_step, con
             }
         }
 
-        // FIX: logica Gaussian corretta - aggiorna fitvario sempre se MSE migliore,
-        // salta solo se Gaussian con nugget > 5%
         if(best_mse_nug < best_mse_model)
         {
-            if(fitvario_on_nug.type.compare("Gau") == 0)
-            {
-                std::cout << "### Variogram model is Gaussian. Check on nugget value ..." << std::endl;
-                if(fitvario_on_nug.nugget > 0.05 * fitvario_on_nug.sill)
-                {
-                    std::cout << "WARNING: Nugget is major than 5% of total sill" << std::endl;
-                    std::cout << "Model: " << fitvario_on_nug.type << " | Nugget: " << fitvario_on_nug.nugget << " | Sill: " << fitvario_on_nug.sill << " | 5% sill: " << 0.05*fitvario_on_nug.sill << std::endl;
-                    continue;
-                }
-            }
-
             best_mse_model = best_mse_nug;
             fitvario = fitvario_on_nug;
         }
@@ -143,7 +137,7 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
     variogram fitvario; //risultato finale
     double best_mse_model = DBL_MAX;
 
-    std::vector<variogram_type> model_types = {variogram_type::SPHERIC, variogram_type::GAUSSIAN, variogram_type::EXPONENTIAL}; //vettore dei variogramma modello
+    std::vector<variogram_type> model_types = IND_AUTO_MODELS; // automatic selection: Gaussian excluded for indicators
 
     for(size_t m=0; m<model_types.size(); m++)
     {
@@ -178,7 +172,7 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
                 if(ev.gamma.at(i) > variance)
                     continue;
 
-                double weight_coefficient = compute_weight(ev, i, w_type);
+                double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
 
@@ -200,17 +194,6 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
 
         if(best_mse_range < best_mse_model)
         {
-            if(fitvario_on_range.type.compare("Gau") == 0)
-            {
-                std::cout << "### Variogram model is Gaussian. Check on nugget value ..." << std::endl;
-                if(fitvario_on_range.nugget > 0.05 * fitvario_on_range.sill)
-                {
-                    std::cout << "WARNING: Nugget is major than 5% of total sill" << std::endl;
-                    std::cout << "Model: " << fitvario_on_range.type << " | Nugget: " << fitvario_on_range.nugget << " | Sill: " << fitvario_on_range.sill << " | 5% sill: " << 0.05*fitvario_on_range.sill << std::endl;
-                    continue;
-                }
-            }
-
             best_mse_model = best_mse_range;
             fitvario = fitvario_on_range;
         }
@@ -277,7 +260,7 @@ variogram fit_ind_variogram_1par (const exp_variog &ev, const double &range_step
                 if(ev.gamma.at(i) > variance)
                     continue;
 
-                double weight_coefficient = compute_weight(ev, i, w_type);
+                double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
 
@@ -352,7 +335,7 @@ variogram fit_ind_variogram_2par (const exp_variog &ev, const double &range_step
             if(ev.gamma.at(i) > variance)
                 continue;
 
-            double weight_coefficient = compute_weight(ev, i, w_type);
+            double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
             mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
         }
 
@@ -437,7 +420,7 @@ MUSE::VarioError fit_ind_variogram_1par_mse (const exp_variog &ev, const double 
                 if(ev.gamma.at(i) > variance)
                     continue;
 
-                double weight_coefficient = compute_weight(ev, i, w_type);
+                double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
 
@@ -534,7 +517,7 @@ MUSE::VarioError fit_ind_variogram_2par_mse (const exp_variog &ev, const double 
             if(ev.gamma.at(i) > variance)
                 continue;
 
-            double weight_coefficient = compute_weight(ev, i, w_type);
+            double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
             mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
         }
 
@@ -586,7 +569,7 @@ MUSE::VarioError fit_ind_variogram_2par_mse (const exp_variog &ev, const double 
 vector<variogram> fit_ind_dir_variogram (const std::vector<exp_variog> &dev,const std::vector<double> &directions, const double & degree_tolerance, const double &range_step, const double &nugget_step, const double &variance, const std::vector<double> &weigth, bool is_print, weightsType w_type)
 {
     // 0) Definisco il vettore dei modelli
-    std::vector<variogram_type> types = {variogram_type::SPHERIC, variogram_type::GAUSSIAN, variogram_type::EXPONENTIAL};
+    std::vector<variogram_type> types = IND_AUTO_MODELS; // automatic selection: Gaussian excluded for indicators
     std::vector<std::vector<MUSE::VarioError>> dir_vario (types.size());
 
     // 1) Ciclo sui modelli e calcolo il fit (a modello fissato) dei variogrammi direzionali
@@ -630,40 +613,6 @@ vector<variogram> fit_ind_dir_variogram (const std::vector<exp_variog> &dev,cons
     avg_nugget = avg_nugget/sum_weights; //(directions.size());
 
 
-    if(types.at(min_index) == variogram_type::GAUSSIAN)
-    {
-        std::cout << "### Variogram model is Gaussian. Check on nugget value ..." << std::endl;
-        if(avg_nugget > 0.05 * variance)
-        {
-            std::cout << "WARNING: Nugget is major than 5% of total sill" << std::endl;
-            std::cout << "Model: " << str_model << " | Nugget: " << avg_nugget << " | Sill: " << variance << " | 5% sill: " << 0.05*variance << std::endl;
-
-            double min_mse_tmp = DBL_MAX;
-            int min_index_tmp = INT_MAX;
-            for(size_t i=0; i< sum_mse.size(); i++)
-            {
-                if((sum_mse.at(i) < min_mse_tmp) && (i != min_index))
-                {
-                    min_mse_tmp = sum_mse.at(i);
-                    min_index_tmp = i;
-                }
-            }
-            min_index = min_index_tmp;
-            min_mse = min_mse_tmp;
-
-            //ricalcolo
-            sum_weights = 0.0;
-            avg_nugget = 0.0;
-            for(size_t i=0; i<dir_vario.at(min_index).size(); i++)
-            {
-                std::cout << FMAG("### Nugget: ") << dir_vario.at(min_index).at(i).vario.nugget << FMAG("; assigned weight: ") << weigth.at(i) << std::endl;
-                avg_nugget += dir_vario.at(min_index).at(i).vario.nugget * weigth.at(i);
-                sum_weights += weigth.at(i);
-            }
-            avg_nugget = avg_nugget/sum_weights; //(directions.size());
-        }
-    }
-
 
 
     // 5) Ricalcolo il fitting a modello e nugget (medio sulle direzioni per il modello prescelto) fissato
@@ -699,7 +648,7 @@ vector<variogram> fit_ind_dir_variogram (const std::vector<exp_variog> &dev,cons
 vector<variogram> fit_ind_dir_variogram_1par (const std::vector<exp_variog> &dev, const std::vector<double> &directions, const double & degree_tolerance, const double &range_step, const double &nugget, const double &variance, bool is_print, weightsType w_type)
 {
     // 0) Definisco il vettore dei modelli
-    std::vector<variogram_type> types = {variogram_type::SPHERIC, variogram_type::GAUSSIAN, variogram_type::EXPONENTIAL};
+    std::vector<variogram_type> types = IND_AUTO_MODELS; // automatic selection: Gaussian excluded for indicators
     std::vector<std::vector<MUSE::VarioError>> dir_vario (types.size());
 
     // 1) Ciclo sui modelli e calcolo il fit (a modello fissato) dei variogrammi direzionali
@@ -730,29 +679,6 @@ vector<variogram> fit_ind_dir_variogram_1par (const std::vector<exp_variog> &dev
     std::string str_model;
     convert_to_str(str_model, types.at(min_index));
     std::cout << "Fit directional variogram model with minimum MSE on all directions: "<< str_model << "; Mean Squared Error: "<< sum_mse.at(min_index) << std::endl;
-
-    if(types.at(min_index) == variogram_type::GAUSSIAN)
-    {
-        std::cout << "### Variogram model is Gaussian. Check on nugget value ..." << std::endl;
-        if(nugget > 0.05 * variance)
-        {
-            std::cout << "WARNING: Nugget is major than 5% of total sill" << std::endl;
-            std::cout << "Model: " << str_model << " | Nugget: " << nugget << " | Sill: " << variance << " | 5% sill: " << 0.05*variance << std::endl;
-
-            double min_mse_tmp = DBL_MAX;
-            int min_index_tmp = INT_MAX;
-            for(size_t i=0; i< sum_mse.size(); i++)
-            {
-                if((sum_mse.at(i) < min_mse_tmp) && (i != min_index))
-                {
-                    min_mse_tmp = sum_mse.at(i);
-                    min_index_tmp = i;
-                }
-            }
-            min_index = min_index_tmp;
-            min_mse = min_mse_tmp;
-        }
-    }
 
     vector<variogram> vv;
     for(uint dir=0; dir< directions.size(); dir++)

@@ -8,6 +8,42 @@
 
 #include <ellipse_fit.h>
 
+#include <cmath>
+#include <iomanip>
+#include <sstream>
+
+// Common style of the variography plots (same palette of the paper figures): experimental points and
+// range points in blue, all with the same size; fitted models, ellipses and ellipsoids in red-orange;
+// sill as a light-grey dashed line. matplot++ colors are {alpha, R, G, B}, with alpha = 0 opaque.
+namespace
+{
+    const matplot::color_array VARIO_POINTS {0.f, 0.165f, 0.471f, 0.839f}; // blue    #2a78d6
+    const matplot::color_array VARIO_FIT    {0.f, 0.910f, 0.345f, 0.165f}; // orange  #e8582a
+    const matplot::color_array VARIO_SILL   {0.f, 0.788f, 0.784f, 0.761f}; // grey    #c9c8c2
+    const matplot::color_array VARIO_INK    {0.f, 0.102f, 0.102f, 0.098f}; // black   #1a1a19
+    const float VARIO_MARKER = 10.f;    // marker size of experimental and range points
+    const float VARIO_LINE   = 2.5f;    // line width of fitted models and ellipses
+
+    // Points of the variography plots: filled (or open) blue circles of constant size
+    void style_points(const matplot::line_handle &p, bool filled = true)
+    {
+        p->marker_style(matplot::line_spec::marker_style::circle);
+        p->marker_size(VARIO_MARKER);
+        p->color(VARIO_POINTS);
+        p->marker_color(VARIO_POINTS);
+        p->marker_face(filled);
+        if(filled)
+            p->marker_face_color(VARIO_POINTS);
+    }
+
+    std::string fmt_num(double v, int dec)
+    {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(dec) << v;
+        return ss.str();
+    }
+}
+
 // https://alandefreitas.github.io/matplotplusplus/plot-types/data-distribution/histogram/
 void hist_plot (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label, const size_t n_bins, bool set_bin = false)
 {
@@ -55,16 +91,12 @@ void hist_plot (const MUSE::PlotStruct &dataplot, const std::string &title, cons
 
 void biv_plot (const MUSE::PlotStruct &dataplot, const std::string &title, const std::string &x_label, const std::string &y_label)
 {
-    auto p = matplot::scatter(dataplot.x, dataplot.y);
+    auto p = matplot::plot(dataplot.x, dataplot.y, "o");
+    style_points(p);
 
     matplot::title(title);
     matplot::xlabel(x_label);
     matplot::ylabel(y_label);
-    matplot::grid(matplot::on);
-
-    p->marker_style(matplot::line_spec::marker_style::asterisk);
-
-
 
     //matplot::show();
 }
@@ -76,10 +108,8 @@ matplot::figure_handle biv_plot_leg (const MUSE::PlotStruct &dataplot, const std
     fig->backend()->run_command("unset warnings");
     fig->size(800, 600);   // golden ratio
 
-    auto p = matplot::scatter(dataplot.x, dataplot.y);
-    p->marker_style(matplot::line_spec::marker_style::point);
-    p->marker_size(10);
-    p->marker_face(true); 
+    auto p = matplot::plot(dataplot.x, dataplot.y, "o");
+    style_points(p);
 
     matplot::title(title);
     matplot::xlabel(x_label);
@@ -136,7 +166,7 @@ matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid
     // Red wireframe tracing a handful of parallels and meridians, each resampled at
     // n_wire_samples points (independently of the fill grid) so they read as smooth ellipses --
     // explicit plot3() lines, since surf()'s own edge coloring can't be trusted (see note above).
-    const matplot::color_array wire_color{0.f, 0.82f, 0.10f, 0.10f};
+    const matplot::color_array wire_color = VARIO_FIT; // red-orange, as the fitted ellipses
     const int n_wire_lat = 6;  //parallels drawn
     const int n_wire_lon = 10; //meridians drawn
     const int n_wire_samples = 60;
@@ -181,14 +211,16 @@ matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid
         // NB: color() must be given a 4-element {alpha,R,G,B} array -- a 3-element one leaves
         // the line's "user_color" flag unset, so matplot silently overrides it with the next
         // auto-cycled colororder color instead of keeping this explicit gray.
-        l->color({0.f, 0.267f, 0.267f, 0.267f}); //dark gray principal axes
+        l->color(VARIO_INK); //black principal axes
     }
 
     // Directional range points used for the ellipsoid fitting (fit quality at a glance)
     auto pts = matplot::plot3(range_points.x, range_points.y, range_points.z, "o");
     pts->marker_size(5);
     pts->marker_face(true);
-    pts->color({0.f, 0.f, 0.447f, 0.741f}); //blue markers, same convention as ellipse_plot()
+    pts->color(VARIO_POINTS); //blue markers, same convention as the range diagrams
+    pts->marker_color(VARIO_POINTS);
+    pts->marker_face_color(VARIO_POINTS);
 
     matplot::xlabel("X (East)");
     matplot::ylabel("Y (North)");
@@ -208,9 +240,23 @@ matplot::figure_handle ellipsoid_plot (const MUSE::EllipsoidParameter &ellipsoid
         for(double val : v)
             r_max = std::max(r_max, std::abs(val));
     r_max *= 1.05; // 5 % margin
+    // equal limits alone are not enough: gnuplot stretches the z axis to the plot height unless
+    // "set view equal xyz" is set (emitted by matplot when the aspect ratio is not automatic).
+    // With equal scales the z range is reduced to the vertical extent of the ellipsoid and points.
+    // half-height of the ellipsoid along z: sqrt(sum_k (semiaxis_k * dir_k,z)^2)
+    double z_max = std::sqrt(std::pow(a * ea.at(2), 2) + std::pow(b * eb.at(2), 2) + std::pow(c * ec.at(2), 2));
+    for(double val : range_points.z)
+        z_max = std::max(z_max, std::abs(val));
+    z_max *= 1.15;
     matplot::xlim({-r_max, r_max});
     matplot::ylim({-r_max, r_max});
-    matplot::zlim({-r_max, r_max});
+    matplot::zlim({-z_max, z_max});
+    matplot::gca()->axes_aspect_ratio(1.f);
+
+    // point of view rotated with the fitted major axis: looking across it (instead of along it, as
+    // the default view may do), the elongation of the ellipsoid is visible
+    const double major_deg = std::atan2(ea.at(1), ea.at(0)) * 180.0 / M_PI; // CCW from East
+    matplot::view(static_cast<float>(major_deg - 25.0), 25.f);
 
     // Title placed below the plot instead of matplot's default top position: a borderless helper
     // axes spanning a thin strip at the bottom of the figure, with its own (bold, black, enlarged)
@@ -240,35 +286,44 @@ void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, co
     auto fig = matplot::figure(true);
     fig->backend()->run_command("unset warnings");
     fig->size(800, 600);   // golden ratio
+    matplot::hold(matplot::on);
 
-    auto p1 = matplot::scatter(dataplot.x, dataplot.y);
+    // --- SILL (light-grey dashed line) ---
+    // the jpeg (libgd) terminal of gnuplot ignores dash types: the dashes are drawn as segments
+    // separated by NaN, which break the line
+    double x_max = dataplot.x.back() * 1.08;
+    std::vector<double> sx, sy;
+    const double dash = x_max / 60.0, gap = x_max / 100.0;
+    for(double s = 0.0; s < x_max; s += dash + gap)
+    {
+        sx.insert(sx.end(), {s, std::min(s + dash, x_max), NAN});
+        sy.insert(sy.end(), {model.sill, model.sill, NAN});
+    }
+    auto ps = matplot::plot(sx, sy);
+    ps->color(VARIO_SILL);
+    ps->line_width(1.5);
 
+    // --- EXPERIMENTAL POINTS ---
+    // filled: lags used by the fit (gamma <= sill); open: lags above the sill, not used by the fit
+    std::vector<double> hx_in, gy_in, hx_out, gy_out;
+    for(size_t i=0; i<dataplot.x.size() && i<dataplot.y.size(); i++)
+    {
+        if(dataplot.y.at(i) <= model.sill)
+        {
+            hx_in.push_back(dataplot.x.at(i));
+            gy_in.push_back(dataplot.y.at(i));
+        }
+        else
+        {
+            hx_out.push_back(dataplot.x.at(i));
+            gy_out.push_back(dataplot.y.at(i));
+        }
+    }
+
+    // --- AXES AND LABELS ---
     matplot::title(title);
     matplot::xlabel(x_label);
     matplot::ylabel(y_label);
-    //matplot::grid(matplot::on);
-
-    //p1->display_name("Experimental variogram");
-
-    // --- STILE DATI SPERIMENTALI ---
-    p1->marker_style(matplot::line_spec::marker_style::point);
-    p1->marker_size(10);
-    p1->marker_face(true); 
-    //p1->color("blue");
-    p1->display_name("Experimental");
-
-    // --- ASSI E LABEL ---
-    matplot::xlabel(x_label);
-    matplot::ylabel(y_label);
-    matplot::title(""); // meglio lasciare vuoto per paper
-
-    // --- GRIGLIA LEGGERA ---
-    matplot::grid(matplot::on);
-    //matplot::gca()->grid_line_style(matplot::line_spec::line_style::dashed_line);
-    //matplot::gca()->grid_alpha(0.25);
-
-    // --- HOLD ---
-    matplot::hold(matplot::on);
 
     //punto in corrispondenza di h=0 -> gamma è pari al nugget
     std::vector<double> model_gamma, model_h;
@@ -290,18 +345,32 @@ void variogram_plot (const MUSE::PlotStruct &dataplot, const variogram model, co
         model_gamma.push_back(g);
     }
 
-    // --- MODELLO ---
+    // --- MODEL (red-orange line) ---
     auto p2 = matplot::plot(model_h, model_gamma);
     p2->line_style("-");
-    //p2->color("red");   // rosso elegante
-    p2->line_width(4);
+    p2->color(VARIO_FIT);
+    p2->line_width(VARIO_LINE);
     p2->display_name("Model");
 
-    // --- LIMITI ASSI ---
-    double x_max = dataplot.x.back() * 1.08;
+    // experimental points drawn after the model, so that they stay on top of the line
+    if(!hx_in.empty())
+        style_points(matplot::plot(hx_in, gy_in, "o"), true);
+    if(!hx_out.empty())
+        style_points(matplot::plot(hx_out, gy_out, "o"), false);
+
+    // --- AXES LIMITS ---
     double y_max = model.sill * 1.20;
+    for(double g : dataplot.y)
+        y_max = std::max(y_max, 1.05 * g);
     matplot::xlim({0, x_max});
     matplot::ylim({0, y_max});
+
+    // --- MODEL PARAMETERS (bottom right, as in the paper figures) ---
+    auto t = matplot::text(0.97 * x_max, 0.06 * y_max,
+                           model.type + ", r = " + fmt_num(model.range, 1) + ", nugget = " + fmt_num(model.nugget, 2));
+    t->alignment(matplot::labels::alignment::right);
+    t->color(VARIO_INK);
+    t->font("");   // terminal default: the matplot default (Helvetica) is not found by gnuplot's libgd
 
     //matplot::ylim({0, model.sill + eps_y}); //0.05
 
@@ -594,12 +663,26 @@ void ellipse_plot (matplot::figure_handle fig, const MUSE::EllipseParameter &ell
         y_points.push_back(y);
     }
 
+    matplot::hold(matplot::on);
+
+    // fitted ellipse (red-orange, as the fitted variogram models)
     auto p1 = matplot::plot(x_points, y_points);
-    //p1->marker_style(matplot::line_spec::marker_style::point);
-    //p1->marker_size(10);
-    p1->marker_face(true); 
-    p1->line_width(4);
+    p1->line_width(VARIO_LINE);
     p1->line_style("-");
+    p1->color(VARIO_FIT);
+
+    // principal axes of the ellipse (thin black lines through the centre)
+    const double cx = ellipse_par.center_x, cy = ellipse_par.center_y, ph = ellipse_par.phi_rad;
+    const double a = ellipse_par.max_semiaxis, b = ellipse_par.min_semiaxis;
+    auto ax_max = matplot::plot(std::vector<double>{cx - a * cos(ph), cx + a * cos(ph)},
+                                std::vector<double>{cy - a * sin(ph), cy + a * sin(ph)});
+    auto ax_min = matplot::plot(std::vector<double>{cx + b * sin(ph), cx - b * sin(ph)},
+                                std::vector<double>{cy - b * cos(ph), cy + b * cos(ph)});
+    for(auto &l : {ax_max, ax_min})
+    {
+        l->color(VARIO_INK);
+        l->line_width(1.f);
+    }
 
     //Setting limits for axis
     double max_x = *max_element(x_points.begin(), x_points.end()) + eps;
@@ -609,7 +692,11 @@ void ellipse_plot (matplot::figure_handle fig, const MUSE::EllipseParameter &ell
     else
         matplot::axis({-max_y, max_y, -max_y, max_y});
 
-    // --- GRIGLIA LEGGERA ---
+    // light grid, as a reference for the range values
+    auto gl = matplot::gca()->grid_line_style();
+    gl.color({0.6f, 0.8f, 0.8f, 0.8f});
+    gl.line_width(0.5f);
+    matplot::gca()->grid_line_style(gl);
     matplot::grid(matplot::on);
 
     if(!caption.empty())

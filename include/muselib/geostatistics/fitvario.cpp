@@ -129,11 +129,10 @@ double get_gamma (const double &h, const double &a, const double &c0, const doub
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 // helper for fitting weights
-static double compute_weight(const exp_variog &ev, size_t idx, weightsType w_type)
+static double compute_weight(const exp_variog &ev, size_t idx, weightsType w_type, double model_gamma)
 {
     double h = ev.h.at(idx);
     double N = ev.N.at(idx);
-    double gamma = ev.gamma.at(idx);
 
     // Soglie per evitare divisioni per zero / pesi esplosivi
     //constexpr double H_MIN     = 1.0;    // distanza minima "sicura" (stessa unità di h)
@@ -144,12 +143,15 @@ static double compute_weight(const exp_variog &ev, size_t idx, weightsType w_typ
     switch(w_type)
     {
         // -------------------------------------------------------------------
-        // Cressie (1985) WLS standard: w_i = N_i / γ(h_i)²
-        // Downweights i lag con variogramma alto (molto variabile)
+        // Cressie (1985) WLS: w_i = N_i / gamma(h_i; theta)^2, with the variogram of the candidate model
+        // (theta = model type, range, nugget), as in the original criterion: Var[gamma_exp(h)] ~ 2 gamma(h)^2 / N(h).
+        // The experimental value is not used: weights driven by gamma_exp give the largest weight to the lags whose
+        // experimental value is low by chance (gamma_exp = 0 gives an unbounded weight), biasing the fit.
+        // Downweights the lags with high variogram values (most variable).
         // -------------------------------------------------------------------
         case weightsType::CRESSIE:
         {
-            double gamma_tmp = std::max(gamma, THRESH);
+            double gamma_tmp = std::max(model_gamma, THRESH);
             w = N / (gamma_tmp * gamma_tmp);
             break;
         }
@@ -237,7 +239,7 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
                 {
                     if (ev.h.at(i) > 0 && ev.gamma.at(i) <= 1.0) // sill=1 per normal score
                     {
-                        double weight_coefficient = compute_weight(ev, i, w_type);
+                        double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
                         mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                     }
                 }
@@ -366,7 +368,7 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, co
             {
                 if (ev.h.at(i) > 0 && ev.gamma.at(i) <= 1.0) // sill=1 per normal score
                 {
-                    double weight_coefficient = compute_weight(ev, i, w_type);
+                    double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
                     mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                 }
             }
@@ -462,7 +464,7 @@ variogram fit_variogram_1par (const exp_variog &ev, const double &range_precisio
             {
                 if (ev.h.at(i) > 0 && ev.gamma.at(i) <= 1.0) // sill=1 per normal score
                 {
-                    double weight_coefficient = compute_weight(ev, i, w_type);
+                    double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
                     mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                 }
             }
@@ -567,7 +569,7 @@ variogram fit_variogram (const exp_variog &ev, const double &range_precision, va
         {
             if (ev.h.at(i) > 0 && ev.gamma.at(i) <= 1.0) // sill=1 per normal score
             {
-                double weight_coefficient = compute_weight(ev, i, w_type);
+                double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
         }
@@ -653,7 +655,7 @@ MUSE::VarioError fit_variogram_mse (const exp_variog &ev, const double &range_pr
             {
                 if (ev.h.at(i) > 0 && ev.gamma.at(i) <= 1.0) // sill=1 per normal score
                 {
-                    double weight_coefficient = compute_weight(ev, i, w_type);
+                    double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
                     mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
                 }
             }
@@ -752,7 +754,7 @@ MUSE::VarioError fit_variogram_mse_1par (const exp_variog &ev, const double &ran
         {
             if (ev.h.at(i) > 0 && ev.gamma.at(i) <= 1.0) // sill=1 per normal score
             {
-                double weight_coefficient = compute_weight(ev, i, w_type);
+                double weight_coefficient = compute_weight(ev, i, w_type, out.at(i));
                 mse += pow((out.at(i) - ev.gamma.at(i)),2) * weight_coefficient;
             }
         }
@@ -1456,7 +1458,7 @@ double variogram_fit_wmse (const exp_variog &ev, const variogram &v, weightsType
         if(ev.h.at(i) > 0 && ev.gamma.at(i) <= 1.0)
         {
             double out = get_gamma(ev.h.at(i), v.range, c0, c, model_type);
-            double w = compute_weight(ev, i, w_type);
+            double w = compute_weight(ev, i, w_type, out);
 
             sse += pow((out - ev.gamma.at(i)), 2) * w;
             wsum += w;

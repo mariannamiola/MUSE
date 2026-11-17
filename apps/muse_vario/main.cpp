@@ -381,7 +381,7 @@ int main(int argc, char** argv)
      * @format selected string from allowed options
      * @values AUTO, SPHERICAL, GAUSSIAN, EXPONENTIAL, LINEAR, DEFAULT
      * @note When using --vario MODEL, this flag becomes important for fitting a theoretical variogram model to the experimental variogram. Available model types include:
-     * - AUTO: The model type is automatically selected based on the characteristics of the experimental variogram. The fitting process will evaluate different model types and select the one that best fits the experimental variogram based on the specified MSE criterion (with --mse).
+     * - AUTO: (continuous variables; for indicator variables see --itype) The spherical, Gaussian and exponential models are fitted (LINEAR is not considered) and the model with the lowest weighted error (weights set by --mse) is selected. A Gaussian model is not retained when its nugget exceeds 5% of the sill (WARNING "Nugget is major than 5% of total sill" is printed): the next best model is used. For directional variograms the check uses the nugget averaged on the directions (sill = 1 for normal score values). The check applies only to the automatic selection: with --type GAUSSIAN the Gaussian model is always used.
      * - SPHERICAL: Fits a spherical variogram model to the experimental variogram.
      * - GAUSSIAN: Fits a Gaussian variogram model to the experimental variogram.
      * - EXPONENTIAL: Fits an exponential variogram model to the experimental variogram.
@@ -415,6 +415,8 @@ int main(int argc, char** argv)
      * @format type!valcat
      * @note When using --vario MODEL for indicator variables, this flag becomes important for fitting a theoretical variogram model to the experimental variogram for each category of indicator variables. 
      * The category is specified by its value (it must be an integer), allowing for the fitting of different variogram models for different categories of indicator variables, which can be useful for capturing the spatial continuity of different classes or categories in the data.
+     * For the categories without --itype the model is selected automatically between the spherical and the exponential models (lowest weighted error, weights set by --mse). The Gaussian model is excluded from the automatic selection for indicators: an indicator variogram must satisfy the triangle inequality gamma(h1+h2) <= gamma(h1) + gamma(h2) (Matheron), hence it cannot be parabolic at the origin, and a Gaussian variogram is not a valid indicator variogram (Dubrule; Emery, 2010; Emery et al., 2026). The Gaussian model can be forced with --itype GAUSSIAN!cat (a WARNING is printed).
+     * The models of the categories are fitted independently (one indicator variogram per category): the set of models is not guaranteed to be jointly consistent, and in the indicator simulation of muse_compute (SISIM criterion) the probabilities estimated by the indicator kriging are corrected for the order relations (each probability is clipped to [0,1], then the probabilities of the categories are normalized to sum 1).
      * @example --vario MODEL --itype SPHERICAL!1 --itype GAUSSIAN!2
      */
     MultiArg<std::string> setIndModel       ("", "itype", "Set type of model variogram for indicators. The category is specified by its value (it must be an integer).", false, "type!valcat", cmd);
@@ -437,22 +439,25 @@ int main(int argc, char** argv)
     
     //MultiArg<std::string> setIndSill        ("", "isill", "Set sull for indicators", false, "0.0|ncat", cmd);
 
-    // Option: different criteria for fitting variogram models for mse computation (active only for continuous variables)
+    // Option: weights of the weighted least squares fitting of the model variogram (continuous and indicator variables)
     std::vector<std::string> allowedMSEcrit = {"CRESSIE","CRESSIE_WEIGHTED","CRESSIE_WEIGHTED_MODIFIED","DEFAULT"};
     ValuesConstraint<std::string> allowedValsMSE(allowedMSEcrit);
     /**
-     * @brief Set criterion for fitting variogram models for mse computation (active only for continuous variables). This option allows you to specify the criterion to be used for fitting theoretical variogram models to the experimental variogram based on mean squared error (MSE) computation when using the --vario MODEL option for continuous variables. The choice of criterion can influence the selection of the best-fitting variogram model and can help to achieve a more accurate representation of spatial continuity in the data.
-     * @default CRESSIE_WEIGHTED_MODIFIED. 
+     * @brief Set the weights of the weighted least squares fitting of the model variogram to the experimental variogram (--vario MODEL), for continuous and indicator variables.
+     * @default CRESSIE_WEIGHTED_MODIFIED
      * @format selected string from allowed options
      * @values CRESSIE, CRESSIE_WEIGHTED, CRESSIE_WEIGHTED_MODIFIED, DEFAULT
-     * @note When using --vario MODEL for continuous variables, this flag becomes important for fitting theoretical variogram models to the experimental variogram based on mean squared error (MSE) computation. Available criteria include:
-     * - CRESSIE: Uses the Cressie criterion for fitting variogram models, which is a commonly used approach that weights the squared differences between the experimental and model variogram values by the number of point pairs contributing to each variogram point, providing a more robust fitting that accounts for the variability in the number of point pairs across different lag distances.
-     * - CRESSIE_WEIGHTED: Uses a weighted version of the Cressie criterion for fitting variogram models, which further emphasizes the influence of variogram points with a higher number of point pairs, providing an even more robust fitting that can help to mitigate the influence of noisy variogram points that are computed with a low number of point pairs.
-     * - CRESSIE_WEIGHTED_MODIFIED: Uses a modified weighted version of the Cressie criterion for fitting variogram models, which incorporates additional adjustments to the weighting scheme to further enhance the robustness of the fitting process, particularly in cases where the experimental variogram may have a high level of noise or variability in the number of point pairs across different lag distances.
-     * - DEFAULT: Uses a default criterion for fitting variogram models based on MSE computation, which may be predefined in the software and can provide a standard approach to variogram model fitting without requiring the user to specify a particular criterion, allowing for a more streamlined analysis when the specific choice of criterion is not a primary concern for the user.
-     * @example --vario MODEL --mse CRESSIE_WEIGHTED
+     * @note Used with --vario MODEL. The range and the nugget (and the model type, with --type AUTO or for the categories without --itype) are searched on a grid of values (--rangestep, --nugstep) and the solution with the minimum weighted sum of squared errors is selected:
+     * SSE = sum_i w_i (gamma_model(h_i) - gamma_exp(h_i))^2
+     * on the lags with h_i > 0 and gamma_exp(h_i) not larger than the sill (1 for the normal score values of continuous variables, the variance of the indicator for indicator variables); N(h_i) is the number of pairs of the lag h_i. Available weights:
+     * - CRESSIE_WEIGHTED_MODIFIED (default): w_i = N(h_i) / h_i. Heuristic weights (not depending on gamma): larger weight on the lags with many pairs and on the short lags.
+     * - CRESSIE: w_i = N(h_i) / gamma_model(h_i)^2, the criterion of Cressie (1985): the weights use the variogram of the candidate model (type, range, nugget) evaluated in the search, since Var[gamma_exp(h)] is approximately 2 gamma(h)^2 / N(h). Larger weight on the lags with many pairs and low model values (short lags). The experimental variogram is not used in the weights, which would give the largest weight to the lags with a low experimental value by chance.
+     * - CRESSIE_WEIGHTED: w_i = N(h_i) / h_i^2. Heuristic weights as the default, with a stronger weight on the short lags.
+     * - DEFAULT: same as CRESSIE_WEIGHTED_MODIFIED.
+     * The criterion used is printed ("MSE criterion for fitting is set on: ..."). See --type AUTO (continuous variables) and --itype (indicator variables) for the candidate models of the automatic selection.
+     * @example --vario MODEL --mse CRESSIE
      */
-    ValueArg<std::string> setMSEcriterion ("", "mse", "Set mse criterion for fitting variogram. (Active only for continuos variables).", false, "CRESSIE_WEIGHTED_MODIFIED", &allowedValsMSE, cmd);
+    ValueArg<std::string> setMSEcriterion ("", "mse", "Set the weights of the weighted least squares fitting of the model variogram (continuous and indicator variables)", false, "CRESSIE_WEIGHTED_MODIFIED", &allowedValsMSE, cmd);
 
     allowedStratigraphicCondition.clear();
     allowedVarioType.clear();
@@ -832,8 +837,12 @@ int main(int argc, char** argv)
 
             size_t n_sample = data.text_values.size();
 
-            // Check if the number of samples in the coordinate vectors matches the number of samples in the variable data
-            if(xCoord.size() != n_sample)
+            // Check if the number of samples in the coordinate vectors matches the number of samples in the variable data.
+            // With --sub and a stratigraphic transformation the coordinates are those of the sub-dataset only (samples
+            // inside the domain, written by muse_manipulate): their number is checked against the extraction indices below.
+            if(subDataset.isSet() && stratCondition.isSet())
+                std::cout << "=== Stratigraphic coordinates of the sub-dataset: " << xCoord.size() << " of " << n_sample << " samples (samples inside the domain)." << std::endl;
+            else if(xCoord.size() != n_sample)
             {
                 std::cerr << "=== WARNING in loading data. The number of samples in the coordinate vectors does not match the number of samples in the variable data." << std::endl;
                 std::cerr << "=== WARNING: mismatch coordinates (" << xCoord.size() << " vs " << n_sample << ")." << std::endl;
@@ -1140,6 +1149,10 @@ int main(int argc, char** argv)
 
                                 mod_setcat = true;
                                 fix_mod = modpair.first;
+
+                                // The Gaussian model is excluded from the automatic selection for indicators: allowed only when forced
+                                if(fix_mod.compare("GAUSSIAN") == 0 || fix_mod.compare("Gau") == 0)
+                                    std::cout << FYEL("WARNING: Gaussian model forced for category " + modpair.second + ": a Gaussian variogram is not a valid indicator variogram (it does not satisfy the triangle inequality of indicator variograms near the origin).") << std::endl;
                                 break;
                             }
                         }
