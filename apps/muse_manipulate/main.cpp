@@ -82,10 +82,39 @@
 #include "muselib/geometry/volume_mesh.h"
 
 #include "muselib/stratigraphic_trasformation/coord_transf.h"
+#include "muselib/stratigraphic_trasformation/robust_columns.h"
 
 
 using namespace MUSE;
 using namespace TCLAP;
+
+// Prefer the geometry-derived reference so sample density cannot change scale.
+static double common_reference_thickness(const std::string &folder, const std::string &top,
+    const std::string &bottom, const std::string &direction, bool explicit_value, double value, double fallback)
+{
+    if(explicit_value) {
+        if(!std::isfinite(value) || value<=0) throw std::runtime_error("Reference thickness must be finite and positive");
+        return value;
+    }
+    const std::string domain = top.size()>4 && top.substr(top.size()-4)=="_top" ? top.substr(0,top.size()-4) : "";
+    MUSE::ManipulateMeta geometry;
+    const bool tetrahedral = !domain.empty() && std::filesystem::exists(folder+"/geom_"+domain+".json") &&
+        geometry.read(folder+"/geom_"+domain+".json") && geometry.getDataProjection().data_type=="TET";
+    if(tetrahedral && std::filesystem::exists(folder+"/geom_"+top+".dat") && std::filesystem::exists(folder+"/geom_"+bottom+".dat")) {
+        std::vector<Point3D> a,b;
+        load_xyzfile(folder+"/geom_"+top+".dat",a);load_xyzfile(folder+"/geom_"+bottom+".dat",b);
+        if(a.empty() || a.size()!=b.size()) throw std::runtime_error("Invalid geometry projection counts");
+        long double total=0;
+        for(size_t i=0;i<a.size();++i) {
+            double d=direction=="X"?a[i].x-b[i].x:direction=="Y"?a[i].y-b[i].y:a[i].z-b[i].z;
+            if(!std::isfinite(d) || d<=0) throw std::runtime_error("Invalid geometry layer thickness");
+            total+=d;
+        }
+        return static_cast<double>(total/a.size());
+    }
+    if(!std::isfinite(fallback) || fallback<=0) throw std::runtime_error("Invalid layer thickness");
+    return fallback;
+}
 
 int sign(const double x) 
 {
@@ -353,6 +382,10 @@ int main(int argc, char** argv)
      * @note When using -T/--strat, requires --top, --bot and --sttype (stratigraphic condition).
      * @example muse_manipulate -T -p /path/to/project --top top.obj --bot bot.obj --sttype PROPORTIONAL
      */
+    ValueArg<double> geometricTolerance("", "geom-tolerance", "Absolute column tolerance in model units; default 1e-9 times model extent", false, 0.0, "double", cmd);
+
+    ValueArg<double> referenceThickness("", "thickness", "Common positive reference thickness for samples and geometry", false, 1.0, "double", cmd);
+
     SwitchArg setStratigraphicTransf        ("T", "strat", "Points projection on surfaces", cmd, false);
 
     /**
@@ -521,8 +554,8 @@ int main(int argc, char** argv)
         if(list_dir.empty())
             list_dir.push_back(abs_datadir);
 
-        if((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
-            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0))
+        if(list_dir.size() == 2 && ((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
+            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0)))
         {
             list_dir.clear();
             list_dir.resize(1, abs_datadir);
@@ -900,8 +933,8 @@ int main(int argc, char** argv)
         if(list_dir.empty())
             list_dir.push_back(abs_datadir);
 
-        if((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
-            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0))
+        if(list_dir.size() == 2 && ((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
+            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0)))
         {
             list_dir.clear();
             list_dir.resize(1, abs_datadir);
@@ -1153,8 +1186,8 @@ int main(int argc, char** argv)
         if(list_dir.empty())
             list_dir.push_back(abs_datadir);
 
-        if((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
-            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0))
+        if(list_dir.size() == 2 && ((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
+            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0)))
         {
             list_dir.clear();
             list_dir.resize(1, abs_datadir);
@@ -1898,8 +1931,8 @@ int main(int argc, char** argv)
         if(list_dir.empty())
             list_dir.push_back(abs_datadir);
 
-        if((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
-            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0))
+        if(list_dir.size() == 2 && ((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
+            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0)))
         {
             list_dir.clear();
             list_dir.resize(1, abs_datadir);
@@ -2510,8 +2543,8 @@ int main(int argc, char** argv)
         if(list_dir.empty())
             list_dir.push_back(abs_datadir);
 
-        if((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
-            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0))
+        if(list_dir.size() == 2 && ((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
+            || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0)))
         {
             list_dir.clear();
             list_dir.resize(1, abs_datadir);
@@ -2563,6 +2596,71 @@ int main(int argc, char** argv)
             dataProjection.data_type = setType.getValue();
 
             std::string geom_name;
+
+            // Final-mesh columns replace ordering/region-growing assumptions for
+            // tetrahedra. Surface/section/hex workflows retain their own paths.
+            if(geomModel.isSet() && (setType.getValue()=="TET" || setType.getValue()=="SAMPLES"))
+            {
+                const int axis=setProjDir.getValue()=="X"?0:setProjDir.getValue()=="Y"?1:setProjDir.getValue()=="Z"?2:-1;
+                MUSE::VolumeMesh<> model;
+                model.load(geomModel.getValue().c_str());
+                if(geometricTolerance.isSet() && (!std::isfinite(geometricTolerance.getValue()) || geometricTolerance.getValue()<=0))
+                    throw std::runtime_error("--geom-tolerance must be finite and positive");
+                MUSE::RobustColumns columns(model,axis,geometricTolerance.getValue());
+                std::cout << "Geometric column tolerance: " << std::setprecision(17) << columns.tol << " model units" << std::endl;
+                geom_name=geomName.isSet()?geomName.getValue():get_basename(get_filename(geomModel.getValue()));
+                const bool samples=setType.getValue()=="SAMPLES";
+                std::vector<cinolib::vec3d> points;
+                std::vector<uint> original_ids;
+                if(samples) {
+                    if(list_json.size()!=1) throw std::runtime_error("Expected one original data metadata file");
+                    MUSE::DataMeta meta; meta.read(list_json[0]);
+                    std::vector<double> x,y,z;
+                    readCoordinate(l+"/data/"+meta.getInfoData().x_name+".dat",x);
+                    readCoordinate(l+"/data/"+meta.getInfoData().y_name+".dat",y);
+                    readCoordinate(l+"/data/"+meta.getInfoData().z_name+".dat",z);
+                    if(x.size()!=y.size() || x.size()!=z.size()) throw std::runtime_error("Coordinate counts differ");
+                    if(setRotAxis.isSet()) throw std::runtime_error("Final-mesh projection requires coordinates in the mesh reference frame");
+                    // Recompute selection from original coordinates, never a stale extraction.
+                    for(size_t i=0;i<x.size();++i) points.emplace_back(x[i],y[i],z[i]);
+                } else {
+                    for(uint i=0;i<model.num_verts();++i) points.push_back(model.vert(i));
+                }
+                std::vector<Point3D> top,bottom;
+                size_t excluded=0;
+                for(size_t i=0;i<points.size();++i) {
+                    auto bounds=columns.bounds(points[i]);
+                    if(bounds.status==MUSE::RobustColumns::ambiguous)
+                        throw std::runtime_error("Ambiguous layer column at point "+std::to_string(i));
+                    bool inside=bounds.status==MUSE::RobustColumns::ok && points[i][axis]>=bounds.bottom-columns.tol && points[i][axis]<=bounds.top+columns.tol;
+                    if(!inside) {
+                        if(!samples) throw std::runtime_error("Invalid volume column at vertex "+std::to_string(i));
+                        ++excluded;continue;
+                    }
+                    auto a=points[i],b=points[i]; a[axis]=bounds.top;b[axis]=bounds.bottom;
+                    Point3D tp,bp;tp.x=a[0];tp.y=a[1];tp.z=a[2];bp.x=b[0];bp.y=b[1];bp.z=b[2];
+                    top.push_back(tp);bottom.push_back(bp);
+                    if(samples) original_ids.push_back(static_cast<uint>(i));
+                }
+                if(top.empty()) throw std::runtime_error("No valid layer columns");
+                if(samples) {
+                    ExtractionMeta extraction; extraction.setProject(Project);
+                    ExtractionMeta::DataExtraction selection;
+                    selection.geometry=geom_name;selection.id_points=original_ids;selection.n_points=original_ids.size();
+                    extraction.setDataExtraction(selection);
+                    extraction.write(app_folder+"/"+(subDataset.isSet()?subDataset.getValue():geom_name)+".json");
+                    dataProjection.subdataset_is_set=true;
+                }
+                dataProjection.mesh=geom_name;dataProjection.proj_direction=setProjDir.getValue();
+                dataProjection.top_name=geom_name+"_top";dataProjection.bottom_name=geom_name+"_bot";
+                manmeta.setDataProjection(dataProjection);
+                const std::string prefix=samples?"samples_":"geom_";
+                export3d_xyz(app_folder+"/"+prefix+dataProjection.top_name+".dat",top,17);
+                export3d_xyz(app_folder+"/"+prefix+dataProjection.bottom_name+".dat",bottom,17);
+                manmeta.write(app_folder+"/"+prefix+geom_name+".json");
+                std::cout << "Robust final-mesh projection: " << top.size() << " accepted, " << excluded << " outside/tangent" << std::endl;
+                continue;
+            }
 
             if((setType.getValue().compare("SAMPLES") == 0)  && (!setRegionGrowing.isSet())) //leggo in automatico le coordinate del set di dati (da json data)
             {
@@ -4386,8 +4484,8 @@ int main(int argc, char** argv)
             if(list_dir.empty())
                 list_dir.push_back(abs_datadir);
 
-            if((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
-                || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0))
+            if(list_dir.size() == 2 && ((get_filename(list_dir.at(0)).compare("data") == 0 && get_filename(list_dir.at(1)).compare("metadata") == 0)
+                || (get_filename(list_dir.at(1)).compare("data") == 0 && get_filename(list_dir.at(0)).compare("metadata") == 0)))
             {
                 list_dir.clear();
                 list_dir.resize(1, abs_datadir);
@@ -4573,7 +4671,7 @@ int main(int argc, char** argv)
                             double thick = abs(pztop.at(i).y - pzbot.at(i).y);
                             sum += thick;
                         }
-                        strat.avg_thick = sum/pztop.size();
+                        strat.avg_thick = common_reference_thickness(app_folder, topSurface.getValue(), botSurface.getValue(), setProjDir.getValue(), referenceThickness.isSet(), referenceThickness.getValue(), sum/pztop.size());
 
                         for(size_t i=0; i<coord_samples.size(); i++)
                         {
@@ -4597,7 +4695,7 @@ int main(int argc, char** argv)
                             double thick = abs(pztop.at(i).x - pzbot.at(i).x);
                             sum += thick;
                         }
-                        strat.avg_thick = sum/pztop.size();
+                        strat.avg_thick = common_reference_thickness(app_folder, topSurface.getValue(), botSurface.getValue(), setProjDir.getValue(), referenceThickness.isSet(), referenceThickness.getValue(), sum/pztop.size());
 
                         for(size_t i=0; i<coord_samples.size(); i++)
                         {
@@ -4621,7 +4719,7 @@ int main(int argc, char** argv)
                             double thick = abs(pztop.at(i).z - pzbot.at(i).z);
                             sum += thick;
                         }
-                        strat.avg_thick = sum/pztop.size();
+                        strat.avg_thick = common_reference_thickness(app_folder, topSurface.getValue(), botSurface.getValue(), setProjDir.getValue(), referenceThickness.isSet(), referenceThickness.getValue(), sum/pztop.size());
 
                         for(size_t i=0; i<coord_samples.size(); i++)
                         {
@@ -4650,7 +4748,7 @@ int main(int argc, char** argv)
 
                      manmeta.setStratigraphicTransf(strat);
                      manmeta.write(app_folder + "/samples_" + geomName.getValue() + ".json");
-                     export3d_xyz(app_folder + "/samples_" + geomName.getValue() + ".xyz", coord_samples_transformed);
+                     export3d_xyz(app_folder + "/samples_" + geomName.getValue() + ".xyz", coord_samples_transformed, 17);
                 }
 
 
@@ -4725,7 +4823,7 @@ int main(int argc, char** argv)
                             double thick = abs(pztop.at(i).y-pzbot.at(i).y);
                             sum += thick;
                         }
-                        strat.avg_thick = sum/pztop.size();
+                        strat.avg_thick = common_reference_thickness(app_folder, topSurface.getValue(), botSurface.getValue(), setProjDir.getValue(), referenceThickness.isSet(), referenceThickness.getValue(), sum/pztop.size());
 
                         for(size_t vid=0; vid< model.num_verts(); vid++)
                         {
@@ -4744,7 +4842,7 @@ int main(int argc, char** argv)
                             double thick = abs(pztop.at(i).x-pzbot.at(i).x);
                             sum += thick;
                         }
-                        strat.avg_thick = sum/pztop.size();
+                        strat.avg_thick = common_reference_thickness(app_folder, topSurface.getValue(), botSurface.getValue(), setProjDir.getValue(), referenceThickness.isSet(), referenceThickness.getValue(), sum/pztop.size());
 
                         for(size_t vid=0; vid< model.num_verts(); vid++)
                         {
@@ -4802,7 +4900,7 @@ int main(int argc, char** argv)
                     std::cout << std::endl;
 
                     std::string geom_name = geomModel.getValue().substr(geomModel.getValue().find_last_of("/")+1, geomModel.getValue().length());
-                    geom_name = get_basename(geom_name);
+                    geom_name = geomName.isSet() ? geomName.getValue() : get_basename(geom_name);
 
                     // bool mesh_is_tet = false;
                     // for(uint pid=0; pid<model.num_polys(); pid++)
@@ -4819,6 +4917,31 @@ int main(int argc, char** argv)
                     load_xyzfile(app_folder + "/geom_" + topSurface.getValue() + ".dat", pztop);
                     load_xyzfile(app_folder + "/geom_" + botSurface.getValue() + ".dat", pzbot);
 
+                    if(pztop.size()!=model.num_verts() || pzbot.size()!=model.num_verts())
+                        throw std::runtime_error("Volume projection counts differ from mesh vertices");
+                    // Polyhedralmesh may reorder a cell's local vertex list during
+                    // topology initialization. Preserve the source VTK connectivity.
+                    std::vector<std::vector<uint>> source_cells;
+                    const auto source_extension=filesystem::path(geomModel.getValue()).extension().string();
+                    if(source_extension==".vtk" || source_extension==".VTK") {
+                        std::vector<cinolib::vec3d> source_points;
+                        if(load_vtk(geomModel.getValue(),source_points,source_cells)!=0 ||
+                           source_points.size()!=model.num_verts() || source_cells.size()!=model.num_polys())
+                            throw std::runtime_error("Cannot preserve original volume connectivity");
+                    } else {
+                        for(uint pid=0;pid<model.num_polys();++pid) source_cells.push_back(model.poly_verts_id(pid));
+                    }
+                    auto signed_volume = [&](uint pid) {
+                        const auto &ids=source_cells[pid];
+                        const auto a=model.vert(ids[1])-model.vert(ids[0]);
+                        const auto b=model.vert(ids[2])-model.vert(ids[0]);
+                        const auto c=model.vert(ids[3])-model.vert(ids[0]);
+                        return a.dot(b.cross(c));
+                    };
+                    std::vector<double> original_volumes(model.num_polys());
+                    for(uint pid=0;pid<model.num_polys();++pid)
+                        if(model.poly_verts_id(pid).size()==4) original_volumes[pid]=signed_volume(pid);
+
                     /////////////////////////////////////////////////////////////////////////////////
                     /////////////////////////////////////////////////////////////////////////////////
                     /////////////////////////////////////////////////////////////////////////////////
@@ -4832,19 +4955,11 @@ int main(int argc, char** argv)
                             double thick = abs(pztop.at(i).y-pzbot.at(i).y);
                             sum += thick;
                         }
-                        strat.avg_thick = sum/pztop.size();
+                        strat.avg_thick = common_reference_thickness(app_folder, topSurface.getValue(), botSurface.getValue(), setProjDir.getValue(), referenceThickness.isSet(), referenceThickness.getValue(), sum/pztop.size());
 
                         // strat_model = model;
                         for(size_t vid=0; vid< model.num_verts(); vid++)
                         {
-                            if(pztop.at(vid).y == pzbot.at(vid).y)
-                            {
-                                std::cerr << "### ERROR - Equal values for ID = " << vid << std::endl;
-                                std::cerr << "### y-value on top surface: " << pztop.at(vid).y << std::endl;
-                                std::cerr << "### y-value on bottom surface: " << pzbot.at(vid).y << std::endl;
-                                exit(1);
-                            }
-
                             double y_original = model.vert(vid).y();
                             forward_transformation(stratCond, y_original, pztop.at(vid).y, pzbot.at(vid).y, model.vert(vid).y(), strat.avg_thick);
                         }
@@ -4858,19 +4973,11 @@ int main(int argc, char** argv)
                             double thick = abs(pztop.at(i).x-pzbot.at(i).x);
                             sum += thick;
                         }
-                        strat.avg_thick = sum/pztop.size();
+                        strat.avg_thick = common_reference_thickness(app_folder, topSurface.getValue(), botSurface.getValue(), setProjDir.getValue(), referenceThickness.isSet(), referenceThickness.getValue(), sum/pztop.size());
 
                         // strat_model = model;
                         for(size_t vid=0; vid< model.num_verts(); vid++)
                         {
-                            if(pztop.at(vid).x == pzbot.at(vid).x)
-                            {
-                                std::cerr << "### ERROR - Equal values for ID = " << vid << std::endl;
-                                std::cerr << "### x-value on top surface: " << pztop.at(vid).x << std::endl;
-                                std::cerr << "### x-value on bottom surface: " << pzbot.at(vid).x << std::endl;
-                                exit(1);
-                            }
-
                             double x_original = model.vert(vid).x();
                             forward_transformation(stratCond, x_original, pztop.at(vid).x, pzbot.at(vid).x, model.vert(vid).x(), strat.avg_thick);
                         }
@@ -4884,19 +4991,11 @@ int main(int argc, char** argv)
                             double thick = abs(pztop.at(i).z-pzbot.at(i).z);
                             sum += thick;
                         }
-                        strat.avg_thick = sum/pztop.size();
+                        strat.avg_thick = common_reference_thickness(app_folder, topSurface.getValue(), botSurface.getValue(), setProjDir.getValue(), referenceThickness.isSet(), referenceThickness.getValue(), sum/pztop.size());
 
                         //strat_model = model;
                         for(size_t vid=0; vid< model.num_verts(); vid++)
                         {
-                            if(pztop.at(vid).z == pzbot.at(vid).z)
-                            {
-                                std::cerr << "### ERROR - Equal values for ID = " << vid << std::endl;
-                                std::cerr << "### z-value on top surface: " << pztop.at(vid).z << std::endl;
-                                std::cerr << "### z-value on bottom surface: " << pzbot.at(vid).z << std::endl;
-                                exit(1);
-                            }
-
                             double z_original = model.vert(vid).z();
                             forward_transformation(stratCond, z_original, pztop.at(vid).z, pzbot.at(vid).z, model.vert(vid).z(), strat.avg_thick);
                         }
@@ -4907,12 +5006,32 @@ int main(int argc, char** argv)
                         exit(1);
                     }
 
+                    size_t collapsed=0, invalid=0;
+                    std::vector<uint> examples;
+                    for(uint pid=0;pid<model.num_polys();++pid) {
+                        if(model.poly_verts_id(pid).size()!=4) continue;
+                        double before=original_volumes[pid], after=signed_volume(pid);
+                        bool collapse=std::abs(after)<=std::abs(before)*1e-12;
+                        bool bad=!std::isfinite(after) || (!collapse && std::signbit(before)!=std::signbit(after));
+                        collapsed+=collapse;invalid+=bad;
+                        if((collapse || bad) && examples.size()<10) examples.push_back(pid);
+                    }
+                    if(collapsed || invalid) {
+                        std::cerr << "WARNING: transformed tetrahedra: " << collapsed << " collapsed, " << invalid
+                                  << " inverted/nonfinite volume. Continuing with unchanged connectivity. First IDs:";
+                        for(auto id:examples) std::cerr << " " << id;
+                        std::cerr << std::endl;
+                    }
+
                     std::string ext_mesh = ".mesh";
                     if(vtkConversion.isSet() == true)
                         ext_mesh = ".vtk";
 
                     std::string strat_model_name = app_folder + "/geom_" + geom_name + ext_mesh;
-                    model.write_poly_VTK(strat_model_name.c_str());
+                    if(ext_mesh==".vtk") {
+                        if(save_vtk(strat_model_name,model.vector_verts(),source_cells)!=0)
+                            throw std::runtime_error("Cannot write stratigraphic volume");
+                    } else model.save(strat_model_name.c_str(), model.set_meshtype());
                     /////////////////////////////////////////////////////////////////////////////////
                     /////////////////////////////////////////////////////////////////////////////////
                     /////////////////////////////////////////////////////////////////////////////////
@@ -5664,7 +5783,8 @@ int main(int argc, char** argv)
 
 
     } catch (ArgException &e)  // catch exceptions
-    { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; }
+    { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; return 1; }
+    catch (const std::exception &e) { std::cerr << "ERROR: " << e.what() << std::endl; return 1; }
 
 }
 
