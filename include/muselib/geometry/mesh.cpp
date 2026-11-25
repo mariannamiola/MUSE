@@ -1397,13 +1397,15 @@ cinolib::Quadmesh<> add_lateral_polys (cinolib::Quadmesh<> &closed_m, const std:
 /// \param step represents the costant step to discretize along z direction
 /// \return closed mesh adding triangles as lateral surface
 ///
-cinolib::Trimesh<> closing_2trimeshes (cinolib::Trimesh<> &mesh_sup, cinolib::Trimesh<> &mesh_inf, const double &step)
+cinolib::Trimesh<> closing_2trimeshes (cinolib::Trimesh<> &mesh_sup, cinolib::Trimesh<> &mesh_inf, const double &step, const uint nsteps_z)
 {
     cinolib::Trimesh<> closed_m;
 
     double offset = mesh_sup.bbox().center().z() - mesh_inf.bbox().center().z();
 
-    uint nstep_z = static_cast<uint>(offset/step); //ncelle su asse z
+    // Preserve the automatic band count, but distribute the remainder uniformly.
+    uint nstep_z = nsteps_z > 0 ? nsteps_z : std::max(1u, static_cast<uint>(offset/step));
+    const double uniform_step = offset / nstep_z;
     std::cout << "n steps: " << nstep_z << std::endl;
     std::cout << std::endl;
 
@@ -1450,7 +1452,7 @@ cinolib::Trimesh<> closing_2trimeshes (cinolib::Trimesh<> &mesh_sup, cinolib::Tr
 
                 for(uint i:or_idch0)
                 {
-                    cinolib::vec3d v (mesh_sup.vert(i).x(), mesh_sup.vert(i).y(), mesh_sup.vert(i).z() - step);
+                    cinolib::vec3d v (mesh_sup.vert(i).x(), mesh_sup.vert(i).y(), mesh_sup.vert(i).z() - uniform_step);
                     uint id_v = closed_m.vert_add(v);
                     or_idch1.push_back(id_v);
                 }
@@ -1485,7 +1487,7 @@ cinolib::Trimesh<> closing_2trimeshes (cinolib::Trimesh<> &mesh_sup, cinolib::Tr
 
                 for(uint i:or_idch0)
                 {
-                    cinolib::vec3d v (closed_m.vert(i).x(), closed_m.vert(i).y(), closed_m.vert(i).z() - step);
+                    cinolib::vec3d v (closed_m.vert(i).x(), closed_m.vert(i).y(), closed_m.vert(i).z() - uniform_step);
                     uint id_v = closed_m.vert_add(v);
                     or_idch1.push_back(id_v);
                 }
@@ -1501,13 +1503,15 @@ cinolib::Trimesh<> closing_2trimeshes (cinolib::Trimesh<> &mesh_sup, cinolib::Tr
 
 
 
-cinolib::Quadmesh<> closing_2quadmeshes (cinolib::Quadmesh<> &mesh_sup, cinolib::Quadmesh<> &mesh_inf, const double &step)
+cinolib::Quadmesh<> closing_2quadmeshes (cinolib::Quadmesh<> &mesh_sup, cinolib::Quadmesh<> &mesh_inf, const double &step, const uint nsteps_z)
 {
     cinolib::Quadmesh<> closed_m;
 
     double offset = mesh_sup.bbox().center().z() - mesh_inf.bbox().center().z();
 
-    uint nstep_z = static_cast<uint>(offset/step); //ncelle su asse z
+    // Preserve the automatic band count, but distribute the remainder uniformly.
+    uint nstep_z = nsteps_z > 0 ? nsteps_z : std::max(1u, static_cast<uint>(offset/step));
+    const double uniform_step = offset / nstep_z;
     std::cout << "n steps: " << nstep_z << std::endl;
     std::cout << std::endl;
 
@@ -1554,7 +1558,7 @@ cinolib::Quadmesh<> closing_2quadmeshes (cinolib::Quadmesh<> &mesh_sup, cinolib:
 
                 for(uint i:or_idch0)
                 {
-                    cinolib::vec3d v (mesh_sup.vert(i).x(), mesh_sup.vert(i).y(), mesh_sup.vert(i).z() - step);
+                    cinolib::vec3d v (mesh_sup.vert(i).x(), mesh_sup.vert(i).y(), mesh_sup.vert(i).z() - uniform_step);
                     uint id_v = closed_m.vert_add(v);
                     or_idch1.push_back(id_v);
                 }
@@ -1589,7 +1593,7 @@ cinolib::Quadmesh<> closing_2quadmeshes (cinolib::Quadmesh<> &mesh_sup, cinolib:
 
                 for(uint i:or_idch0)
                 {
-                    cinolib::vec3d v (closed_m.vert(i).x(), closed_m.vert(i).y(), closed_m.vert(i).z() - step);
+                    cinolib::vec3d v (closed_m.vert(i).x(), closed_m.vert(i).y(), closed_m.vert(i).z() - uniform_step);
                     uint id_v = closed_m.vert_add(v);
                     or_idch1.push_back(id_v);
                 }

@@ -639,6 +639,16 @@ Must be used together with [--resx](#resx)
 
 ---
 
+#### `--zsteps` {#zsteps}
+
+Positive integer: number of equal-height lateral bands for `-T/--triobj` or `-Q/--quadobj`.
+If omitted, the count is `max(1, floor(offset / max(avg_edge_top, avg_edge_bottom)))`.
+The vertical step is then `offset / count`, so the last band has the same height as the others (for surfaces related by a constant Z offset).
+
+**Example:** `muse_geometry -T -p /path/to/project -m top.obj -m bottom.obj --zsteps 10 --obj`
+
+---
+
 #### `-m`, `--mesh` {#mesh}
 
 **Type:** Value | `std::string`, repeatable

@@ -751,6 +751,9 @@ int main(int argc, char** argv)
      * @note Used with the object-creation operations.
      * @example muse_geometry -T -p /path/to/project -m top.off -m bottom.off
      */
+    /** Number of equal-height lateral bands for -T/-Q; omitted: derive from average edge length. */
+    ValueArg<int> setZSteps ("", "zsteps", "Number of equal-height lateral bands (positive integer, -T/-Q)", false, 0, "int", cmd);
+
     MultiArg<std::string> meshFiles     ("m", "mesh", "Set (multi) mesh files", false, "string", cmd );
 
     /**
@@ -1194,6 +1197,12 @@ int main(int argc, char** argv)
 
     // Parse the argv array.
     cmd.parse(argc, argv);
+    if(setZSteps.isSet() && (setZSteps.getValue() <= 0 ||
+       (!createTriObject.getValue() && !createQuadObject.getValue())))
+    {
+        std::cerr << "ERROR: --zsteps requires a positive integer and -T/--triobj or -Q/--quadobj." << std::endl;
+        return 1;
+    }
 
     // ---------------------------------------------------------------------------------------------------------
     // SETTINGS:
@@ -3957,16 +3966,16 @@ int main(int argc, char** argv)
         std::cout << "Step to discretize lateral gap: " << step << std::endl;
 
         std::cout << FMAG("##########################################") << std::endl;
-        std::cout << FMAG("Lo step di discretizzazione viene definito in base all'edge medio (minimo edge medio tra le due mesh)") << std::endl;
+        std::cout << FMAG("Bande uniformi: numero da --zsteps, se specificato, altrimenti dal massimo edge medio tra le due mesh") << std::endl;
         std::cout << FMAG("##########################################") << std::endl;
 
         trimesh0.edge_mark_boundaries();
         trimesh1.edge_mark_boundaries();
 
         if(offset < 0)
-            closed_m = closing_2trimeshes(trimesh0, trimesh1, step);
+            closed_m = closing_2trimeshes(trimesh0, trimesh1, step, static_cast<uint>(setZSteps.getValue()));
         else
-            closed_m = closing_2trimeshes(trimesh1, trimesh0, step);
+            closed_m = closing_2trimeshes(trimesh1, trimesh0, step, static_cast<uint>(setZSteps.getValue()));
 
         if(!check_closing_mesh(closed_m))
         {
@@ -4140,13 +4149,13 @@ int main(int argc, char** argv)
         std::cout << "Step to discretize lateral gap: " << step << std::endl;
 
         std::cout << FMAG("##########################################") << std::endl;
-        std::cout << FMAG("Lo step di discretizzazione viene definito in base all'edge medio (minimo edge medio tra le due mesh)") << std::endl;
+        std::cout << FMAG("Bande uniformi: numero da --zsteps, se specificato, altrimenti dal massimo edge medio tra le due mesh") << std::endl;
         std::cout << FMAG("##########################################") << std::endl;
 
         if(offset < 0)
-            closed_m = closing_2quadmeshes(trimesh0, trimesh1, step);
+            closed_m = closing_2quadmeshes(trimesh0, trimesh1, step, static_cast<uint>(setZSteps.getValue()));
         else
-            closed_m = closing_2quadmeshes(trimesh1, trimesh0, step);
+            closed_m = closing_2quadmeshes(trimesh1, trimesh0, step, static_cast<uint>(setZSteps.getValue()));
 
         if(!check_closing_mesh(closed_m))
         {

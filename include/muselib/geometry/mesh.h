@@ -60,8 +60,8 @@ std::vector<cinolib::vec3d> search_ordered_boundary_points(cinolib::Trimesh<> &m
 bool check_closing_mesh                         (cinolib::Trimesh<> closed_mesh);
 bool check_closing_mesh                         (cinolib::Quadmesh<> closed_mesh);
 
-cinolib::Trimesh<> closing_2trimeshes           (cinolib::Trimesh<> &mesh_sup, cinolib::Trimesh<> &mesh_inf, const double &step);
-cinolib::Quadmesh<> closing_2quadmeshes         (cinolib::Quadmesh<> &mesh_sup, cinolib::Quadmesh<> &mesh_inf, const double &step);
+cinolib::Trimesh<> closing_2trimeshes           (cinolib::Trimesh<> &mesh_sup, cinolib::Trimesh<> &mesh_inf, const double &step, const uint nsteps_z = 0);
+cinolib::Quadmesh<> closing_2quadmeshes         (cinolib::Quadmesh<> &mesh_sup, cinolib::Quadmesh<> &mesh_inf, const double &step, const uint nsteps_z = 0);
 
 cinolib::Trimesh<> add_lateral_polys            (cinolib::Trimesh<> &closed_m, const std::vector<uint> &or_idch0, const std::vector<uint> &or_idch1);
 cinolib::Quadmesh<> add_lateral_polys           (cinolib::Quadmesh<> &closed_m, const std::vector<uint> &or_idch0, const std::vector<uint> &or_idch1);
